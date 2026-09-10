@@ -88,12 +88,15 @@ function renderCards(containerId, items, type) {
   container.innerHTML = items
     .map((item) => {
       const photoText = item.photoAlt || 'Photo coming soon';
+      // If the data entry has a real "photo" path, show that image instead
+      // of the "coming soon" placeholder. object-fit:contain (set in CSS)
+      // means logos/cover art of any shape show whole, never cropped.
+      const photoBlock = item.photo
+        ? `<div class="card-photo"><img src="${escapeAttr(item.photo)}" alt="${escapeAttr(photoText)}" loading="lazy"></div>`
+        : `<div class="photo-slot" aria-hidden="true">${placeholderIcon}<span>${escapeHtml(photoText)}</span></div>`;
       return `
         <article class="card ${type} reveal">
-          <div class="photo-slot" aria-hidden="true">
-            ${placeholderIcon}
-            <span>${escapeHtml(photoText)}</span>
-          </div>
+          ${photoBlock}
           <span class="tag">${escapeHtml(tagLabel)}</span>
           <h3>${escapeHtml(item.title)}</h3>
           ${item.meta ? `<p class="mono-num" style="margin-bottom:0;">${escapeHtml(item.meta)}</p>` : ''}
@@ -113,6 +116,12 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = String(str ?? '');
   return div.innerHTML;
+}
+
+/* Same as escapeHtml, but also safe to drop inside a double-quoted HTML
+   attribute (escapes " too, which escapeHtml alone doesn't need to). */
+function escapeAttr(str) {
+  return escapeHtml(str).replace(/"/g, '&quot;');
 }
 
 document.addEventListener('DOMContentLoaded', () => {

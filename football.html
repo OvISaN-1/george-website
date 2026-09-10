@@ -8,7 +8,20 @@
   <meta name="description" content="George's football page — Nottingham Forest, favourite players, and his own Sunday league stats.">
   <meta name="robots" content="noindex, nofollow">
   <!-- EDIT ME before going live: replace example.com with the real GitHub Pages URL on every page's canonical tag. -->
-  <link rel="canonical" href="https://example.com/football.html">
+  <link rel="canonical" href="https://ovisan-1.github.io/george-website/football.html">
+
+  <!-- Social preview (Open Graph + Twitter Card) -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ovisan-1.github.io/george-website/football.html">
+  <meta property="og:title" content="Football — George's Nottingham Forest Page">
+  <meta property="og:description" content="George's football page — Nottingham Forest, favourite players, and his own Sunday league stats.">
+  <meta property="og:image" content="https://ovisan-1.github.io/george-website/assets/images/gallery/george-matchday.webp">
+  <meta property="og:image:width" content="520">
+  <meta property="og:image:height" content="1093">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Football — George's Nottingham Forest Page">
+  <meta name="twitter:description" content="George's football page — Nottingham Forest, favourite players, and his own Sunday league stats.">
+  <meta name="twitter:image" content="https://ovisan-1.github.io/george-website/assets/images/gallery/george-matchday.webp">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -72,15 +85,14 @@
         <div class="contact-card">
           <div>
             <h3 style="margin-bottom:4px;">Nottingham Forest</h3>
-            <!-- EDIT ME: update the league position by hand, or wire this up to a free football-data API later. -->
+            <!-- EDIT ME: update the league position by hand each week. Left manual on purpose —
+                 the only genuinely free football API returns stale/incomplete data, and a real
+                 paid one would need a key that can't safely sit in a public static site. -->
             <p style="margin:0;">Current league position: [Insert — update each week]</p>
           </div>
-          <div class="photo-slot" style="width:96px; height:96px; flex-shrink:0;" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M3 16l5-4.5 4 3.2 3.5-3.7L21 15"/></svg>
-            <span style="font-size:0.68rem;">Club badge</span>
+          <div class="card-photo" style="width:96px; height:96px; flex-shrink:0;">
+            <img src="assets/images/players/forest-badge.webp" alt="Nottingham Forest club badge" width="96" height="96">
           </div>
-          <!-- Replace the div above with your own copy of the club crest: <img src="assets/images/players/forest-badge.png" alt="Nottingham Forest badge" style="width:96px;height:96px;">
-               Note: club badges are trademarked, so this one's left for you to add rather than sourced automatically. -->
         </div>
       </div>
     </section>
