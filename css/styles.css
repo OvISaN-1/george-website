@@ -108,6 +108,10 @@ body[data-page="school"]{
   --accent: var(--gold); --accent-text: var(--gold); --accent-ink: var(--gold-ink); --glow-accent: var(--glow-gold);
   --btn-bg: var(--gold); --on-accent: var(--ink); /* chalk-on-gold was 1.52:1 — badly fails AA. Ink-on-gold is 10.7:1. */
 }
+body[data-page="quiz-zone"]{
+  --accent: var(--volt); --accent-text: var(--volt-text); --accent-ink: var(--volt-ink); --glow-accent: var(--glow-volt);
+  --btn-bg: var(--volt); --on-accent: var(--ink);
+}
 
 /* 3. Base typography -------------------------------------------------- */
 body{
