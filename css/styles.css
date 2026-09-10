@@ -1,0 +1,438 @@
+/* ===========================================================
+   GEORGE'S WEBSITE — Garibaldi Grid design system
+   One stylesheet, shared by every page (fast to load, cached
+   after the first visit). Organised in the order below:
+
+   1. Fonts & reset
+   2. Design tokens
+   3. Base typography
+   4. Layout helpers
+   5. Header & navigation
+   6. Buttons
+   7. Hero (home) + page banners
+   8. Cards
+   9. Section blocks (stats, quick-fire, gallery, footer)
+   10. Footer
+   11. Motion
+   12. Accessibility & responsive
+   =========================================================== */
+
+/* 1. Fonts & reset --------------------------------------------------
+   Fonts are NOT loaded here with @import — that forces the browser to
+   download this file, parse it, discover the @import, and only then
+   start the font request: one extra network round-trip before a single
+   font byte arrives. Each HTML page instead loads the font stylesheet
+   with its own <link rel="stylesheet">, right after the <link
+   rel="preconnect"> hints, so the connection and the request start
+   together as soon as the page is parsed. */
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+body { margin: 0; }
+img { max-width: 100%; display: block; }
+button, input, textarea { font: inherit; color: inherit; }
+a { text-decoration: none; color: inherit; }
+ul { list-style: none; margin: 0; padding: 0; }
+
+/* 2. Design tokens --------------------------------------------------
+   Same tokens published in the Garibaldi Grid style guide —
+   keep this block in sync if the palette ever changes. */
+:root{
+  --ink:#121014;
+  --surface:#1c1820;
+  --surface-raised:#241f29;
+  --line: rgba(241,237,233,0.10);
+  --line-strong: rgba(241,237,233,0.18);
+  --chalk:#f1ede9;
+  --chalk-dim:#b9b2ac;
+  --chalk-faint:#8a857e; /* was #7d7770 — 4.27:1 on ink, fails AA for the footer/caption text it's used on. This passes at 5.17:1. */
+
+  --garibaldi:#e1102c;
+  --garibaldi-ink:#3a0a12;
+  --volt:#9d5cff;
+  --volt-ink:#241a3a;
+  --gold:#f5b942;
+  --gold-ink:#3a2a0c;
+
+  /* Accessibility note: the raw brand colours above are tuned for large
+     surfaces, glows and borders, where WCAG contrast rules don't apply
+     the same way. Used as small TEXT on a dark background, garibaldi and
+     volt both fall short of the 4.5:1 AA minimum (measured ~3.5-4.2:1).
+     These are lightened, text-safe variants for that specific job — same
+     hue, still clearly "the same colour", but legible.
+     Gold and chalk-dim/faint are covered separately below. */
+  --garibaldi-text:#e84c61;   /* was #e1102c as text → 3.5-3.9:1. Now 4.6-5.1:1 */
+  --volt-text:#a264ff;        /* was #9d5cff as text → 4.2-4.9:1. Now 4.5-5.2:1 */
+  /* gold (#f5b942) already passes AA as text (7.9-10.7:1) — no variant needed */
+
+  /* A solid button fill needs to hold contrast against chalk (button
+     label) text. #e1102c + chalk = 4.18:1 (fails). This fill is ~10%
+     darker — 5.0:1 — and reads as the same red at button size. */
+  --garibaldi-solid:#ca0e28;
+
+  --r-sm:8px; --r-md:12px; --r-lg:20px; --r-pill:999px;
+
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:64px; --s9:96px;
+
+  --shadow-card: 0 10px 30px rgba(0,0,0,0.45);
+  --glow-garibaldi: 0 0 0 1px rgba(225,16,44,0.4), 0 0 28px rgba(225,16,44,0.35);
+  --glow-volt: 0 0 0 1px rgba(157,92,255,0.4), 0 0 28px rgba(157,92,255,0.35);
+  --glow-gold: 0 0 0 1px rgba(245,185,66,0.4), 0 0 28px rgba(245,185,66,0.35);
+
+  --font-display:'Rajdhani', 'Arial Narrow', sans-serif;
+  --font-body:'Manrope', -apple-system, 'Segoe UI', sans-serif;
+
+  --accent: var(--garibaldi);
+  --accent-text: var(--garibaldi-text);
+  --accent-ink: var(--garibaldi-ink);
+  --glow-accent: var(--glow-garibaldi);
+  /* Text colour to put ON a filled --btn-bg swatch. Dark ink reads on the
+     light accents (gold); light chalk reads on the dark/saturated ones
+     (garibaldi's solid fill, volt). Getting this backwards is how you end
+     up with a school-zone button at 1.5:1 contrast — see the audit note
+     in the button rules below. */
+  --btn-bg: var(--garibaldi-solid);
+  --on-accent: var(--chalk);
+}
+
+/* Per-page accent: the current section's colour drives the nav
+   underline, hero glow and primary button on that page only. */
+body[data-page="games"]{
+  --accent: var(--volt); --accent-text: var(--volt-text); --accent-ink: var(--volt-ink); --glow-accent: var(--glow-volt);
+  --btn-bg: var(--volt); --on-accent: var(--ink); /* chalk-on-volt was 3.33:1 — fails AA. Ink-on-volt is 4.87:1. */
+}
+body[data-page="school"]{
+  --accent: var(--gold); --accent-text: var(--gold); --accent-ink: var(--gold-ink); --glow-accent: var(--glow-gold);
+  --btn-bg: var(--gold); --on-accent: var(--ink); /* chalk-on-gold was 1.52:1 — badly fails AA. Ink-on-gold is 10.7:1. */
+}
+
+/* 3. Base typography -------------------------------------------------- */
+body{
+  background: var(--ink);
+  color: var(--chalk);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; color: var(--chalk); text-wrap: balance; margin: 0 0 var(--s3); }
+h1 { font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.05; }
+h2 { font-size: clamp(1.3rem, 2.4vw, 1.55rem); line-height: 1.2; }
+h3 { font-size: 1.1rem; }
+p { margin: 0 0 var(--s4); max-width: 62ch; color: var(--chalk-dim); }
+.lede { font-size: 1.1rem; color: var(--chalk); }
+.eyebrow{
+  font-family: var(--font-display); font-weight: 600; font-size: 0.8rem;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-text);
+  margin: 0 0 var(--s2);
+}
+code, .mono-num { font-variant-numeric: tabular-nums; font-family: var(--font-display); letter-spacing: 0.02em; }
+
+/* 4. Layout helpers -------------------------------------------------- */
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: var(--s4); }
+main { display: block; }
+section { padding-block: var(--s7); }
+section + section { border-top: 1px solid var(--line); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s5); }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s5); }
+@media (max-width: 800px){
+  .grid-3, .grid-2 { grid-template-columns: 1fr; }
+}
+.skip-link{
+  position: absolute; left: -9999px; top: 0; background: var(--garibaldi); color: var(--chalk);
+  padding: 12px 20px; z-index: 1000; border-radius: 0 0 var(--r-sm) 0; font-family: var(--font-display); font-weight: 600;
+}
+.skip-link:focus { left: 0; }
+
+/* 5. Header & navigation ---------------------------------------------- */
+.site-header{
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(18,16,20,0.85); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line-strong);
+}
+.nav-bar{
+  max-width: 1080px; margin: 0 auto; padding: var(--s3) var(--s4);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s4);
+}
+.logo{ font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; }
+.logo span { color: var(--garibaldi); }
+.nav-links{ display: flex; gap: var(--s5); }
+.nav-links a{
+  font-family: var(--font-display); font-weight: 600; font-size: 0.9rem; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--chalk-dim); padding-bottom: 4px; border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.nav-links a:hover, .nav-links a:focus-visible { color: var(--chalk); }
+.nav-links a[aria-current="page"] { color: var(--accent-text); border-color: var(--accent); }
+
+.nav-toggle{
+  display: none; background: none; border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+  width: 44px; height: 44px; align-items: center; justify-content: center; cursor: pointer;
+}
+.nav-toggle svg { width: 22px; height: 22px; color: var(--chalk); }
+
+.mobile-nav{
+  display: none; flex-direction: column; gap: var(--s2); padding: var(--s4);
+  border-top: 1px solid var(--line-strong); background: var(--surface);
+}
+.mobile-nav a{
+  font-family: var(--font-display); font-weight: 600; display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border-radius: var(--r-sm); color: var(--chalk-dim); min-height: 44px;
+}
+.mobile-nav a[aria-current="page"] { background: var(--accent-ink); color: var(--accent-text); }
+.mobile-nav svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+@media (max-width: 760px){
+  .nav-links { display: none; }
+  .nav-toggle { display: inline-flex; }
+  body.nav-open .mobile-nav { display: flex; }
+}
+
+/* 6. Buttons ------------------------------------------------------------ */
+.btn{
+  font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; letter-spacing: 0.03em; text-transform: uppercase;
+  border-radius: var(--r-pill); padding: 14px 28px; border: none; cursor: pointer; min-height: 44px;
+  display: inline-flex; align-items: center; gap: 8px; transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.btn:active { transform: scale(0.97); }
+.btn:focus-visible { outline: 2px solid var(--chalk); outline-offset: 3px; }
+/* Text-on-fill contrast varies by colour, so background + text come from
+   the paired --btn-bg/--on-accent tokens (set per page above), never
+   --accent + a hardcoded chalk — that combination is what produced an
+   unreadable 1.5:1 button on the gold-accented School page. */
+.btn-primary{ background: var(--btn-bg); color: var(--on-accent); box-shadow: var(--glow-accent); }
+.btn-primary:hover, .btn-primary:focus-visible { filter: brightness(1.08); }
+.btn-secondary{ background: transparent; color: var(--accent-text); border: 2px solid var(--accent); padding: 12px 26px; }
+.btn-secondary:hover, .btn-secondary:focus-visible { box-shadow: var(--glow-accent); }
+.btn-ghost{ background: var(--surface-raised); color: var(--chalk); border: 1px solid var(--line-strong); }
+.btn-ghost:hover, .btn-ghost:focus-visible { border-color: var(--gold); color: var(--gold); }
+.btn-row { display: flex; gap: var(--s4); flex-wrap: wrap; }
+
+/* 7. Hero (home) + page banners ------------------------------------------ */
+.hero{
+  background:
+    radial-gradient(120% 140% at 15% 0%, rgba(225,16,44,0.16), transparent 55%),
+    radial-gradient(100% 120% at 100% 10%, rgba(157,92,255,0.12), transparent 55%),
+    var(--surface);
+  border-bottom: 1px solid var(--line-strong);
+  padding-block: var(--s8) var(--s7);
+}
+.hero-wordmark{
+  font-family: var(--font-display); font-weight: 700; font-size: clamp(2.6rem, 9vw, 5.5rem);
+  line-height: 0.95; letter-spacing: -0.01em; color: var(--chalk);
+  text-shadow: 0 0 40px rgba(225,16,44,0.45); animation: pulseGlow 3.4s ease-in-out infinite;
+}
+.hero-wordmark span { color: var(--garibaldi); }
+@keyframes pulseGlow{
+  0%,100% { text-shadow: 0 0 40px rgba(225,16,44,0.45); }
+  50% { text-shadow: 0 0 58px rgba(225,16,44,0.75), 0 0 20px rgba(157,92,255,0.25); }
+}
+.hero-tag{ color: var(--chalk-dim); font-size: 1.1rem; max-width: 46ch; }
+
+.hero-inner{ display: flex; align-items: center; justify-content: space-between; gap: var(--s7); flex-wrap: wrap; }
+.hero-copy{ flex: 1 1 380px; }
+.hero-photo{ flex: 0 1 260px; max-width: 260px; }
+.hero-photo img{
+  width: 100%; height: auto; display: block; border-radius: var(--r-lg);
+  border: 1px solid var(--line-strong); box-shadow: var(--glow-garibaldi);
+}
+.hero-photo figcaption{ font-size: 0.8rem; color: var(--chalk-faint); margin-top: var(--s2); text-align: center; }
+
+/* A real photo used as a feature (not squeezed into a small card slot). */
+.feature-photo{ max-width: 300px; }
+.feature-photo img{
+  width: 100%; height: auto; display: block; border-radius: var(--r-lg);
+  border: 1px solid var(--line-strong); box-shadow: var(--glow-accent);
+}
+.feature-photo figcaption{ font-size: 0.85rem; color: var(--chalk-dim); margin-top: var(--s3); }
+.feature-row{ display: flex; gap: var(--s6); align-items: center; flex-wrap: wrap; }
+.feature-row .feature-text{ flex: 1 1 320px; }
+
+.page-banner{
+  background: var(--surface);
+  border-bottom: 1px solid var(--line-strong);
+  padding-block: var(--s7) var(--s6);
+  position: relative;
+  overflow: hidden;
+}
+.page-banner::before{
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(120% 160% at 10% 0%, var(--accent-ink), transparent 60%);
+  opacity: 0.6;
+  pointer-events: none;
+}
+.page-banner .wrap { position: relative; }
+.page-banner h1 { font-size: clamp(1.9rem, 5vw, 2.75rem); }
+
+/* 8. Cards ----------------------------------------------------------------
+   Deliberately NOT a coloured top-border rail on every card — that reads
+   as a template default. At rest, a card is quiet (neutral border, no
+   accent). The accent only shows up in the tag chip, and the border
+   only picks up the accent colour and glow when a visitor is actually
+   interacting with the card (hover / keyboard focus). */
+.card{
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
+  padding: var(--s5); display: flex; flex-direction: column; gap: var(--s3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.card:hover, .card:focus-within { transform: translateY(-4px); }
+.card.football:hover, .card.football:focus-within { border-color: var(--garibaldi); box-shadow: var(--glow-garibaldi); }
+.card.gaming:hover, .card.gaming:focus-within { border-color: var(--volt); box-shadow: var(--glow-volt); }
+.card.school:hover, .card.school:focus-within { border-color: var(--gold); box-shadow: var(--glow-gold); }
+
+/* A considered empty state, not a wireframe box: soft gradient, a quiet
+   icon, small-caps label underneath — reads as "photo coming soon"
+   rather than "unfinished placeholder". */
+.photo-slot{
+  height: 130px; border-radius: var(--r-sm);
+  background: radial-gradient(120% 140% at 30% 15%, rgba(241,237,233,0.05), transparent 65%), var(--surface-raised);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  color: var(--chalk-faint); font-size: 0.72rem; font-family: var(--font-body); letter-spacing: 0.02em;
+  border: 1px solid var(--line); text-align: center; padding: var(--s3);
+}
+.photo-slot svg{ width: 22px; height: 22px; opacity: 0.55; }
+.card.football .photo-slot svg{ color: var(--garibaldi); }
+.card.gaming .photo-slot svg{ color: var(--volt); }
+.card.school .photo-slot svg{ color: var(--gold); }
+
+.card h3 { font-size: 1.1rem; margin-bottom: 0; }
+.card p { margin: 0; color: var(--chalk-dim); font-size: 0.92rem; }
+.tag{
+  align-self: flex-start; font-family: var(--font-display); font-size: 0.75rem; font-weight: 600;
+  letter-spacing: 0.02em; padding: 4px 10px; border-radius: var(--r-pill);
+}
+.card.football .tag { background: var(--garibaldi-ink); color: var(--garibaldi-text); }
+.card.gaming .tag { background: var(--volt-ink); color: var(--volt-text); }
+.card.school .tag { background: var(--gold-ink); color: var(--gold); }
+
+/* Card CTA affordance: an arrow that nudges right on hover. Used on the
+   three Home tiles so they read as "go here", not just decorative panels. */
+.card-arrow{
+  margin-top: auto; display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-display); font-weight: 600; font-size: 0.9rem;
+}
+.card-arrow svg{ width: 16px; height: 16px; transition: transform 0.2s ease; }
+.card:hover .card-arrow svg, .card:focus-within .card-arrow svg{ transform: translateX(4px); }
+.card.football .card-arrow{ color: var(--garibaldi-text); }
+.card.gaming .card-arrow{ color: var(--volt-text); }
+.card.school .card-arrow{ color: var(--gold); }
+
+/* 9. Section blocks: stats, live badge, quick-fire, gallery -------------- */
+.section-head { margin-bottom: var(--s5); }
+.section-head p { margin-top: var(--s2); }
+
+.stat-strip { display: flex; gap: var(--s6); flex-wrap: wrap; }
+.stat .num { font-family: var(--font-display); font-weight: 700; font-size: 2.4rem; }
+.stat.red .num { color: var(--garibaldi); }
+.stat.violet .num { color: var(--volt); }
+.stat.gold .num { color: var(--gold); }
+.stat .cap { color: var(--chalk-dim); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em; }
+
+.live-badge{
+  display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 700;
+  font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--volt-text);
+  background: var(--volt-ink); border-radius: var(--r-pill); padding: 8px 16px;
+}
+.live-dot{ width: 8px; height: 8px; border-radius: 50%; background: var(--volt); animation: livePulse 1.8s ease-in-out infinite; }
+@keyframes livePulse{ 0%,100% { box-shadow: 0 0 0 0 rgba(157,92,255,0.6); } 50% { box-shadow: 0 0 0 8px rgba(157,92,255,0); } }
+
+.fact-list{ display: flex; flex-direction: column; gap: var(--s3); }
+.fact-list li{
+  position: relative; padding-left: var(--s5); color: var(--chalk);
+}
+.fact-list li::before{
+  content: ''; position: absolute; left: 0; top: 0.55em; width: 8px; height: 8px;
+  border-radius: 50%; background: var(--accent);
+}
+
+.qf-list { display: flex; flex-direction: column; gap: var(--s3); }
+.qf-item { display: flex; gap: var(--s4); padding: var(--s3) 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.qf-item dt { font-family: var(--font-display); font-weight: 600; color: var(--chalk); min-width: 220px; }
+.qf-item dd { margin: 0; color: var(--chalk-dim); }
+
+.gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s4); }
+@media (max-width: 700px){ .gallery-grid { grid-template-columns: repeat(2, 1fr); } }
+.gallery-item { aspect-ratio: 4/3; border-radius: var(--r-md); overflow: hidden; }
+.gallery-item .photo-slot { height: 100%; border-radius: var(--r-md); }
+.gallery-item figcaption{ font-size: 0.8rem; color: var(--chalk-faint); margin-top: var(--s2); text-align: center; }
+
+.faq-list { display: flex; flex-direction: column; gap: var(--s3); }
+.faq-item { border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+.faq-item summary{
+  cursor: pointer; padding: var(--s4); font-family: var(--font-display); font-weight: 600;
+  list-style: none; display: flex; justify-content: space-between; align-items: center; min-height: 44px;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after { content: '+'; color: var(--accent-text); font-size: 1.4rem; }
+.faq-item[open] summary::after { content: '\2212'; }
+.faq-item p { padding: 0 var(--s4) var(--s4); margin: 0; }
+
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 0.9rem; }
+th { font-family: var(--font-display); font-weight: 600; letter-spacing: 0.02em; font-size: 0.85rem; color: var(--chalk-dim); }
+td { color: var(--chalk-dim); }
+td.mono-num { color: var(--chalk); }
+
+.contact-card{
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s4); flex-wrap: wrap;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-lg); padding: var(--s5);
+}
+
+/* A personal aside (a fact, a prediction, a goal) is not the same thing
+   as an info panel (club stats, an email link) — giving it its own
+   quieter, left-accented treatment instead of the same bordered box
+   stops every block on the page from reading as one repeated component. */
+.note-block{
+  position: relative; padding: var(--s4) var(--s5); padding-left: calc(var(--s5) + var(--s2));
+  border-left: 3px solid var(--accent);
+}
+.note-block p{ margin: 0; color: var(--chalk); font-size: 1.05rem; }
+.note-block .note-label{
+  display: block; font-family: var(--font-display); font-weight: 600; font-size: 0.78rem;
+  letter-spacing: 0.04em; color: var(--accent-text); margin-bottom: 6px;
+}
+
+/* 10. Footer --------------------------------------------------------------- */
+.site-footer{
+  border-top: 1px solid var(--line); padding-block: var(--s6);
+  color: var(--chalk-faint); font-size: 0.85rem;
+}
+.footer-row{
+  max-width: 1080px; margin: 0 auto; padding-inline: var(--s4);
+  display: flex; justify-content: space-between; gap: var(--s4); flex-wrap: wrap;
+}
+.footer-row a { color: var(--chalk-dim); }
+.footer-row a:hover { color: var(--accent); }
+
+/* 11. Motion --------------------------------------------------------------
+   Content is visible by default — the fade-in is a bonus for viewers who
+   have JS and no reduced-motion preference, never a requirement for
+   seeing the page. If JS fails to load, is blocked, or hasn't run yet,
+   .reveal elements are just... visible. The <html class="js"> hook is
+   set by a one-line inline script in each page's <head>. */
+.reveal { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: no-preference){
+  html.js .reveal{ opacity: 0; transform: translateY(16px); transition: opacity 0.5s ease, transform 0.5s ease; }
+  html.js .reveal.is-visible{ opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce){
+  .hero-wordmark, .live-dot { animation: none; }
+  .card { transition: none; }
+}
+
+/* 12. Accessibility & responsive helpers ----------------------------------- */
+:focus-visible { outline: 2px solid var(--chalk); outline-offset: 2px; }
+.visually-hidden{
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+@media (max-width: 700px){
+  section { padding-block: var(--s6); }
+  .stat-strip { gap: var(--s5); }
+}
