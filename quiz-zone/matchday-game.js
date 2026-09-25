@@ -87,12 +87,12 @@
     // wonder: chances of an unstoppable "worldie" from their best player.
     // keeper / wall: how good their keeper is and how many in the wall, for George's set pieces.
     // finish: how often a right answer turns into a goal against them (their keeper and defence).
-    1: { attacks: 5, defends: 4, defendLevels: [1, 2, 2], timer: 0, goalIfWrong: 0.6, goalIfRight: 0.08, finish: 0.62, poss: 0.56, wonder: [0.25], keeper: 0.5, wall: 3 },
-    2: { attacks: 5, defends: 5, defendLevels: [2, 2, 3], timer: 1, goalIfWrong: 0.7, goalIfRight: 0.13, finish: 0.6, poss: 0.5, wonder: [0.45], keeper: 0.6, wall: 4 },
-    3: { attacks: 4, defends: 5, defendLevels: [2, 3, 3], timer: 2, goalIfWrong: 0.85, goalIfRight: 0.16, finish: 0.58, poss: 0.42, wonder: [0.7, 0.35], keeper: 0.72, wall: 5 },
+    1: { attacks: 5, defends: 3, defendLevels: [1, 1, 2], timer: 0, goalIfWrong: 0.5, goalIfRight: 0.04, finish: 0.68, poss: 0.58, wonder: [0.12], keeper: 0.45, wall: 3 },
+    2: { attacks: 4, defends: 4, defendLevels: [1, 2, 2], timer: 1, goalIfWrong: 0.6, goalIfRight: 0.08, finish: 0.64, poss: 0.52, wonder: [0.3], keeper: 0.55, wall: 4 },
+    3: { attacks: 4, defends: 5, defendLevels: [2, 2, 3], timer: 1, goalIfWrong: 0.72, goalIfRight: 0.12, finish: 0.6, poss: 0.45, wonder: [0.55, 0.2], keeper: 0.66, wall: 5 },
   };
   // Seconds on the clock for each question level, before the opponent's tier knocks some off.
-  const LEVEL_TIME = { 1: 15, 2: 13, 3: 11, 4: 11 };
+  const LEVEL_TIME = { 1: 17, 2: 15, 3: 13, 4: 13 };
   const LEVEL_NAME = { 1: "Easy", 2: "Medium", 3: "Hard", 4: "World Class" };
 
   /* How often a chance goes in when George gets the question right,
@@ -404,6 +404,13 @@
   }
 
   function targetFor(p, t) {
+    // The player with the ball must actually be at the ball. If it isn't at
+    // his feet (after a restart, a block, a deflection), he runs to it.
+    if (S.carrier === p && !S.ballFlying) {
+      const d = Math.hypot(S.ball.x - p.x, S.ball.y - p.y);
+      if (d > 2.4) return { x: S.ball.x - (p.team === "f" ? 1 : -1), y: S.ball.y, chase: true };
+    }
+    if (p.chase && !S.ballFlying) return { x: S.ball.x, y: S.ball.y, chase: true };
     if (p.hold) return p.hold;
     if (S.phase === "kickoff") return kickoffSpot(p);
     const dir = p.team === "f" ? 1 : -1;
@@ -446,16 +453,28 @@
     S.players.forEach((p) => {
       if (!p.on) return;
       const tg = targetFor(p, t);
-      const kk = p.hold ? 1 - Math.exp(-dt / (p.fast ? 170 : 300)) : k;
-      p.x += (tg.x - p.x) * kk;
-      p.y += (tg.y - p.y) * kk;
+      const kk = p.hold || tg.chase ? 1 - Math.exp(-dt / (p.fast || tg.chase ? 170 : 300)) : k;
+      let dx = (tg.x - p.x) * kk, dy = (tg.y - p.y) * kk;
+      // Nobody runs faster than a sprinter (sped up a bit, like the clock).
+      const maxStep = ((p.fast || tg.chase ? 15 : 10) * dt) / 1000;
+      const step = Math.hypot(dx, dy);
+      if (step > maxStep) { dx *= maxStep / step; dy *= maxStep / step; }
+      p.vx = dx; p.vy = dy;
+      p.x += dx;
+      p.y += dy;
       p.el.setAttribute("transform", `translate(${(p.x * U).toFixed(1)} ${(p.y * U).toFixed(1)})`);
     });
     // Ball follows whoever has it.
     if (S.carrier && !S.ballFlying) {
-      const dir = S.carrier.team === "f" ? 1 : -1;
-      S.ball.x += (S.carrier.x + dir * 1.3 - S.ball.x) * 0.35;
-      S.ball.y += (S.carrier.y + 0.7 - S.ball.y) * 0.35;
+      const c = S.carrier;
+      const gap = Math.hypot(S.ball.x - c.x, S.ball.y - c.y);
+      // Only dribble it once he's got to it. Ball sits just ahead, in the direction he's running.
+      if (gap < 2.6) {
+        const sp = Math.hypot(c.vx || 0, c.vy || 0);
+        const ux = sp > 0.01 ? c.vx / sp : c.team === "f" ? 1 : -1, uy = sp > 0.01 ? c.vy / sp : 0;
+        S.ball.x += (c.x + ux * 1.2 - S.ball.x) * 0.3;
+        S.ball.y += (c.y + uy * 1.2 + 0.5 - S.ball.y) * 0.3;
+      }
       S.ball.h = 0;
     }
     const bx = S.ball.x * U, by = S.ball.y * U, lift = S.ball.h * 6;
@@ -593,16 +612,22 @@
   /* ================================================================
      Ball movement helpers
      ================================================================ */
+  // A kicked ball is quickest when it leaves the boot and slows down after.
+  const kickEase = (k) => 1 - Math.pow(1 - k, 2);
   async function passTo(p, ms, lob) {
     const from = { x: S.ball.x, y: S.ball.y };
     const dir = p.team === "f" ? 1 : -1;
-    const to = { x: p.x + dir * 2, y: p.y };
+    // Longer passes take a little longer.
+    const dist = Math.hypot(p.x - from.x, p.y - from.y);
+    const dur = ms ? Math.max(ms * 0.6, Math.min(ms * 1.4, ms * (0.55 + dist / 40))) : 480;
     S.ballFlying = true;
     S.carrier = null;
-    await guardedTween(reduced ? 60 : ms || 480, (k) => {
-      S.ball.x = lerp(from.x, to.x, k); S.ball.y = lerp(from.y, to.y, k);
+    // Aim at where the receiver is at each moment, so it arrives at his feet.
+    await guardedTween(reduced ? 60 : dur, (k) => {
+      const tx = p.x + dir * 1.2, ty = p.y + 0.5;
+      S.ball.x = lerp(from.x, tx, k); S.ball.y = lerp(from.y, ty, k);
       S.ball.h = lob ? Math.sin(Math.PI * k) * lob : 0;
-    }, util.easeInOut);
+    }, kickEase);
     S.ballFlying = false;
     S.carrier = p;
     S.poss = p.team;
@@ -614,8 +639,96 @@
     await guardedTween(reduced ? 60 : ms, (k) => {
       S.ball.x = lerp(from.x, x, k); S.ball.y = lerp(from.y, y, k);
       S.ball.h = lift ? Math.sin(Math.PI * Math.min(1, k * 1.1)) * lift : 0;
-    }, (k) => k);
+    }, (k) => 1 - Math.pow(1 - k, 1.6));
     S.ballFlying = false;
+  }
+
+  /* Restarts: the ref puts the ball down, nobody kicks it there. */
+  async function placeBall(x, y) {
+    S.carrier = null;
+    S.ballFlying = true;
+    const el = S.ballEl;
+    el.style.transition = "opacity .18s ease";
+    el.style.opacity = "0";
+    await wait(reduced ? 0 : 200);
+    S.ball.x = x; S.ball.y = y; S.ball.h = 0;
+    await wait(reduced ? 0 : 60);
+    el.style.opacity = "1";
+    S.ballFlying = false;
+  }
+  // Give the ball to a player where he stands (keeper after a save, after a close-up).
+  async function giveTo(p) {
+    await placeBall(p.x + (p.team === "f" ? 1.2 : -1.2), p.y + 0.5);
+    S.carrier = p;
+    S.poss = p.team;
+  }
+  const nearestTo = (list, x, y) => list.slice().sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0];
+
+  /* Before normal play carries on: is the ball out of play, or loose? */
+  async function keepBallInPlay() {
+    const b = S.ball;
+    if (b.x < 0 || b.x > PW) {
+      // Over the goal line: goal kick.
+      const t = b.x < 0 ? "f" : "o";
+      const gk = keeperOf(t);
+      const spot = { x: t === "f" ? 5.5 : PW - 5.5, y: 34 + (b.y < 34 ? -7 : 7) };
+      await placeBall(spot.x, spot.y);
+      holdAt(gk, spot.x - (t === "f" ? 1 : -1), spot.y, true);
+      await wait(reduced ? 100 : 500);
+      S.carrier = gk; S.poss = t;
+      gk.hold = null;
+      const target = pick(outfield(t).filter((p) => p.line === "mid" || p.line === "att")) || pick(outfield(t));
+      await passTo(target, 800, 5);
+      return;
+    }
+    if (b.y < 0 || b.y > PH) {
+      // Over the touchline: throw-in to whoever didn't put it out.
+      const t = S.poss === "f" ? "o" : "f";
+      const x = clamp(b.x, 3, PW - 3), y = b.y < 0 ? 0.3 : PH - 0.3;
+      await placeBall(x, y);
+      const thrower = nearestTo(outfield(t), x, y);
+      holdAt(thrower, x, y, true);
+      await wait(reduced ? 100 : 600);
+      S.carrier = thrower; S.poss = t;
+      thrower.hold = null;
+      const mate = nearestTo(outfield(t).filter((p) => p !== thrower), x, y + (y < 1 ? 8 : -8));
+      if (mate) await passTo(mate, 420, 1.2);
+      return;
+    }
+    if (!S.carrier) {
+      // A loose ball: the nearest player gets to it first.
+      const all = outfield("f").concat(outfield("o"));
+      const p = nearestTo(all, b.x, b.y);
+      p.chase = true;
+      const t0 = performance.now();
+      while (Math.hypot(p.x - b.x, p.y - b.y) > 1.8 && performance.now() - t0 < 1500) await wait(60);
+      p.chase = false;
+      S.carrier = p; S.poss = p.team;
+    }
+  }
+
+  // Make sure team t has the ball, in play, before a move starts.
+  async function ensureBall(t) {
+    await keepBallInPlay();
+    if (!S.carrier || S.carrier.team !== t) await tackle(t);
+    S.poss = t;
+  }
+
+  /* The other team wins the ball: a tackle, not a magic pass. */
+  async function tackle(t) {
+    const c = S.carrier;
+    const tackler = nearestTo(outfield(t), S.ball.x, S.ball.y);
+    if (!tackler) return;
+    holdAt(tackler, S.ball.x, S.ball.y, true);
+    const t0 = performance.now();
+    while (Math.hypot(tackler.x - S.ball.x, tackler.y - S.ball.y) > 1.6 && performance.now() - t0 < 900) {
+      tackler.hold = { x: S.ball.x, y: S.ball.y };
+      await wait(50);
+    }
+    tackler.hold = null;
+    S.carrier = tackler; S.poss = t;
+    S.stats[t].tackles += 1;
+    if (c && !c.gk) { c.hold = null; }
   }
   function holdAt(p, x, y, fast) { p.hold = { x, y }; p.fast = !!fast; }
   function releaseAll() { S.players.forEach((p) => { p.hold = null; p.fast = false; }); }
@@ -690,14 +803,31 @@
     const t0 = performance.now();
     // Keep the ball moving: a pass or two each minute.
     const T = S.tier;
-    if (!S.carrier) S.carrier = pick(outfield(S.poss));
-    if (rand() < 0.45) {
-      // Who has the ball this minute. Over a match Forest end up with about T.poss of it.
-      S.poss = rand() < T.poss + (S.oppDown || 0) * 0.08 ? "f" : "o";
+    await keepBallInPlay();
+    // Who has the ball this minute. Over a match Forest end up with about T.poss of it.
+    if (rand() < 0.4) {
+      const want = rand() < T.poss + (S.oppDown || 0) * 0.08 ? "f" : "o";
+      if (S.carrier && want !== S.carrier.team) await tackle(want);
     }
-    const mates = outfield(S.poss).filter((p) => p !== S.carrier);
-    const tgt = pick(mates.filter((p) => (S.poss === "f" ? p.x > S.ball.x - 12 : p.x < S.ball.x + 12)).concat(mates.slice(0, 1)));
-    await passTo(tgt, S.minuteMs * 0.75, rand() < 0.2 ? 3 : 0);
+    const c = S.carrier;
+    if (c && c.gk) {
+      // Keepers roll it out to a defender.
+      const def = nearestTo(outfield(c.team).filter((p) => p.line === "def"), c.x, c.y);
+      if (def) await passTo(def, 520);
+    } else if (c && rand() < 0.35) {
+      // Carry the ball forward a few yards.
+      const dir = c.team === "f" ? 1 : -1;
+      holdAt(c, clamp(c.x + dir * (5 + rand() * 6), 4, PW - 4), clamp(c.y + (rand() - 0.5) * 8, 3, PH - 3), false);
+      await wait(S.minuteMs * 0.55);
+      c.hold = null;
+    } else if (c) {
+      // Pass to a team-mate within range, usually forwards.
+      const dir = c.team === "f" ? 1 : -1;
+      const mates = outfield(c.team).filter((p) => p !== c && Math.hypot(p.x - c.x, p.y - c.y) < 32);
+      const fwd = mates.filter((p) => (p.x - c.x) * dir > -6);
+      const tgt = pick(fwd.length ? fwd : mates.length ? mates : outfield(c.team).filter((p) => p !== c));
+      if (tgt) await passTo(tgt, S.minuteMs * 0.7, rand() < 0.2 ? 3 : 0);
+    }
     S.stats[S.poss].poss += 1;
     const elapsed = performance.now() - t0;
     if (elapsed < S.minuteMs) await wait(S.minuteMs - elapsed);
@@ -723,23 +853,38 @@
       momentum(S.poss === "f" ? 1.5 : -1.5);
       return;
     }
-    if (r < 0.13) {
-      // Forest shots are mostly George's.
-      const shooter = S.poss === "f" && rand() < 0.7 ? S.george : pick(outfield(S.poss).filter((p) => p.line !== "def"));
-      S.stats[S.poss].shots += 1;
-      S.stats[S.poss].xg += 0.04;
+    if (r < 0.13 && S.carrier && !S.carrier.gk) {
+      // A hopeful shot from distance that goes over or wide. Forest's are mostly George's.
+      const t = S.carrier.team;
+      const shooter = t === "f" && rand() < 0.7 ? S.george : S.carrier;
+      if (shooter !== S.carrier) await passTo(shooter, 420);
+      S.stats[t].shots += 1;
+      S.stats[t].xg += 0.04;
       say(`${shooter.george ? "George" : shooter.short} tries his luck from distance... ${pick(["over the bar", "wide of the post", "straight into the crowd"])}.`, { icon: "info" });
-      momentum(S.poss === "f" ? 1.5 : -1.5);
+      sfx.kick();
+      const y = rand() < 0.5 ? GOAL_TOP - 2 - rand() * 6 : GOAL_BOT + 2 + rand() * 6;
+      await ballTo(t === "f" ? PW + 3 : -3, y, 650, 2.5);
+      if (t === "f") ooh();
+      momentum(t === "f" ? 1.5 : -1.5);
     }
   }
 
   async function foul() {
-    const offenderTeam = rand() < 0.62 ? "o" : "f";
-    const victimTeam = other(offenderTeam);
-    const offender = pick(outfield(offenderTeam).filter((p) => p.line !== "fwd"));
-    const victim = offenderTeam === "o" && rand() < 0.5 ? S.george : pick(outfield(victimTeam));
+    // The foul happens on whoever has the ball, by the nearest opponent.
+    if (!S.carrier || S.carrier.gk) return;
+    const victim = S.carrier;
+    const offenderTeam = other(victim.team);
+    const offender = nearestTo(outfield(offenderTeam), victim.x, victim.y);
+    if (!offender) return;
     S.stats[offenderTeam].fouls += 1;
-    await passTo(victim, 300);
+    holdAt(offender, victim.x, victim.y, true);
+    const t0 = performance.now();
+    while (Math.hypot(offender.x - victim.x, offender.y - victim.y) > 1.8 && performance.now() - t0 < 900) {
+      offender.hold = { x: victim.x, y: victim.y };
+      await wait(50);
+    }
+    offender.hold = null;
+    sfx.thud();
     sfx.whistle();
     const card = rand() < 0.4;
     if (!card) { say(`Free kick. ${offender.short} catches ${victim.george ? "George" : victim.short}. ${S.ref} has a word.`, { icon: "whistle" }); return; }
@@ -807,7 +952,9 @@
     sfx.whistle();
     await wait(reduced ? 300 : 1100);
     la.el.querySelectorAll(".flag").forEach((f) => f.setAttribute("opacity", "0"));
-    S.poss = other(t);
+    // Free kick to the defending team where the ball is.
+    const def = nearestTo(outfield(other(t)), S.ball.x, S.ball.y);
+    if (def) await giveTo(def);
   }
 
   async function forestSubs() {
@@ -837,6 +984,20 @@
      ================================================================ */
   let answerKeyHandler = null;
   // Make sure the question is on screen without losing the pitch.
+  // Bring the pitch back into view (under the pinned scoreboard) so no action is missed.
+  function revealStage() {
+    const r = $("stage").getBoundingClientRect();
+    const hdr = document.querySelector(".site-header");
+    const top = (hdr ? hdr.offsetHeight : 0) + $("scoreboard").offsetHeight + 10;
+    if (r.top < top - 4 || r.top > window.innerHeight * 0.45) window.scrollBy({ top: r.top - top, behavior: reduced ? "auto" : "smooth" });
+  }
+  // A right answer: a short freeze on the pitch before the action plays.
+  function focusPitch() {
+    const st = $("stage");
+    st.classList.remove("focus"); void st.offsetWidth; st.classList.add("focus");
+    pop("RIGHT!", "ok");
+    setTimeout(() => st.classList.remove("focus"), 1100);
+  }
   function revealPanel() {
     const r = $("panel").getBoundingClientRect();
     if (r.bottom > window.innerHeight) window.scrollBy({ top: r.bottom - window.innerHeight + 12, behavior: reduced ? "auto" : "smooth" });
@@ -910,7 +1071,14 @@
           S.asked += 1; S.levels[level][1] += 1;
           if (correct) { S.right += 1; S.levels[level][0] += 1; }
         }
-        setTimeout(() => { if (g !== GEN) return; panel.hidden = true; panel.innerHTML = ""; resolve(correct); }, reduced ? 350 : correct ? 900 : 1500);
+        setTimeout(async () => {
+          if (g !== GEN) return;
+          panel.hidden = true; panel.innerHTML = "";
+          revealStage();
+          if (correct && !reduced) { focusPitch(); await sleep(850); if (g !== GEN) return; }
+          else await sleep(reduced ? 0 : 300);
+          resolve(correct);
+        }, reduced ? 350 : correct ? 700 : 1400);
       }
       panel.querySelectorAll(".md-opt").forEach((b) => b.addEventListener("click", () => finish(Number(b.dataset.i), "click")));
       panel.querySelectorAll(".md-power").forEach((b) => b.addEventListener("click", () => {
@@ -952,6 +1120,7 @@
         document.removeEventListener("keydown", onKey);
         if (g !== GEN) return;
         panel.hidden = true; panel.innerHTML = "";
+        revealStage();
         resolve(choices[i].id);
       }
       panel.querySelectorAll(".md-choice").forEach((b) => b.addEventListener("click", () => done(Number(b.dataset.i))));
@@ -968,7 +1137,7 @@
       panel.hidden = false;
       revealPanel();
       $("btn-continue").focus({ preventScroll: true });
-      $("btn-continue").addEventListener("click", () => { if (g !== GEN) return; panel.hidden = true; panel.innerHTML = ""; resolve(); });
+      $("btn-continue").addEventListener("click", () => { if (g !== GEN) return; panel.hidden = true; panel.innerHTML = ""; revealStage(); resolve(); });
     });
   }
 
@@ -1019,19 +1188,80 @@
     return "goal";
   }
 
+  /* After George scores: he runs off to the corner flag and his team-mates
+     pile on, then he picks a celebration (any he's unlocked). */
   async function celebrateGeorge() {
-    const c = S.gear.cele;
+    const g = S.george;
+    if ($("stage").classList.contains("setpiece")) {
+      // Cut back from the close-up to the pitch for the celebration. The replay comes after.
+      MDSP.hide();
+      $("stage").classList.remove("setpiece");
+      S.carrier = null;
+      S.ball.x = PW + 0.8; S.ball.y = 34; S.ball.h = 0;
+    }
+    {
+      const cy = g.y < 34 ? 3 : PH - 3, side = cy < 34 ? 1 : -1;
+      holdAt(g, PW - 3, cy, true);
+      outfield("f").filter((p) => !p.george).sort((a, b) => Math.hypot(a.x - g.x, a.y - g.y) - Math.hypot(b.x - g.x, b.y - g.y)).slice(0, 5)
+        .forEach((p, i) => holdAt(p, PW - 4.5 - (i % 3) * 1.5, cy + side * (1.4 + Math.floor(i / 3) * 1.4), true));
+      await wait(reduced ? 200 : 1500);
+    }
+    const list = MDC.celebrations();
+    let c = S.gear.cele;
+    if (list.length > 1 && !reduced) c = await pickCelebration(list, c);
     const cele = $("celebration");
     $("cele-avatar").innerHTML = GK.avatar({ pose: c.pose, kit: S.gear.kit, happy: true });
     const av = $("cele-avatar").querySelector("svg");
     if (av && !reduced) av.classList.add(c.anim);
     $("cele-text").textContent = c.shout;
+    // Floating hearts, stars, crowns... for the celebrations that have them.
+    $("cele-fx").innerHTML = c.fx && !reduced ? Array.from({ length: 16 }, () =>
+      `<span style="left:${Math.round(rand() * 94)}%;animation-delay:${(rand() * 1.2).toFixed(2)}s;font-size:${Math.round(22 + rand() * 22)}px">${c.fx}</span>`).join("") : "";
     cele.hidden = false;
-    const g = GEN;
+    sfx.fanfare();
+    const gen = GEN;
     await new Promise((resolve) => {
-      const t = setTimeout(done, reduced ? 700 : 2300);
-      function done() { clearTimeout(t); cele.hidden = true; cele.removeEventListener("click", done); if (g === GEN) resolve(); }
+      const t = setTimeout(done, reduced ? 700 : 2600);
+      function done() { clearTimeout(t); cele.hidden = true; cele.removeEventListener("click", done); if (gen === GEN) resolve(); }
       cele.addEventListener("click", done);
+    });
+  }
+
+  // Like FC: pick how to celebrate. The favourite plays if you don't choose.
+  function pickCelebration(list, fav) {
+    const g = GEN;
+    return new Promise((resolve) => {
+      const panel = $("panel");
+      panel.innerHTML = `
+        <div class="md-q choose cele-pick">
+          <div class="md-q-head"><span class="md-kicker">⚽ GOAL! How does George celebrate?</span><span class="md-level">Favourite in 5s</span></div>
+          <div class="md-timer" aria-hidden="true"><span id="cp-timer"></span></div>
+          <div class="md-celes">${list.map((c, i) => `<button type="button" class="md-cele-btn${c.id === fav.id ? " fav" : ""}" data-i="${i}"><span class="e" aria-hidden="true">${MDC.celeIcon(c)}</span><span class="n">${escapeHtml(c.name)}</span>${i < 9 ? `<kbd>${i + 1}</kbd>` : ""}</button>`).join("")}</div>
+        </div>`;
+      panel.hidden = false;
+      const start = performance.now(), ms = 5000;
+      let done = false;
+      const onKey = (e) => { const n = Number(e.key); if (n >= 1 && n <= Math.min(9, list.length)) { e.preventDefault(); finish(list[n - 1]); } };
+      function finish(c) {
+        if (done) return;
+        done = true;
+        document.removeEventListener("keydown", onKey);
+        if (g !== GEN) return;
+        panel.hidden = true; panel.innerHTML = "";
+        resolve(c);
+      }
+      (function tick(now) {
+        if (done || g !== GEN) return;
+        const left = 1 - (now - start) / ms;
+        const b = $("cp-timer");
+        if (b) b.style.width = Math.max(0, left * 100) + "%";
+        if (left <= 0) return finish(fav);
+        requestAnimationFrame(tick);
+      })(start);
+      document.addEventListener("keydown", onKey);
+      panel.querySelectorAll(".md-cele-btn").forEach((b) => b.addEventListener("click", () => finish(list[Number(b.dataset.i)])));
+      const first = panel.querySelector(".md-cele-btn.fav") || panel.querySelector(".md-cele-btn");
+      if (first) first.focus({ preventScroll: true });
     });
   }
 
@@ -1188,6 +1418,7 @@
       // Close-up replay of the penalty or free kick.
       say(pick(["Let's see that again...", "Watch the replay!", "In slow motion... look at that!"]), { icon: "info" });
       const g = GEN;
+      $("stage").classList.add("setpiece");
       await MDSP.replay();
       if (g !== GEN) await never;
       endSetPiece();
@@ -1213,8 +1444,9 @@
     S.kickoffTeam = kickTeam;
     releaseAll();
     S.carrier = null;
-    await ballTo(52.5, 34, 500, 0);
-    await wait(reduced ? 200 : 900);
+    await wait(reduced ? 100 : 500);
+    await placeBall(52.5, 34);
+    await wait(reduced ? 200 : 700);
     const taker = kickTeam === "f" ? S.george : outfield("o").find((p) => p.line === "fwd") || outfield("o")[0];
     S.carrier = taker;
     sfx.whistle();
@@ -1229,8 +1461,7 @@
     if (t === "f") crowd.swell(0.1, 2.5);
     S.poss = t;
     S.phase = "play";
-    const mids = outfield(t).filter((p) => p.line === "mid" || p.line === "def");
-    if (!S.carrier || S.carrier.team !== t) await passTo(pick(mids), 380);
+    await ensureBall(t);
     const chain = t === "f"
       ? [byIdx("f", 8), rand() < 0.5 ? byIdx("f", 7) : byIdx("f", 9)].filter((p) => p && p.on)
       : shuffle(outfield("o").filter((p) => p.line === "att" || p.line === "mid")).slice(0, 2);
@@ -1281,6 +1512,7 @@
       }
       const scorer = pickScorer(0.75, [7, 9]);
       await passTo(scorer, 360);
+      if (scorer.george) return georgeShot("tapin", cutter);
       const res = await shoot(scorer, "f", scores("tapin", true, scorer) ? "goal" : pick(["save", "save", "miss", "post"]), { xg: 0.58, ms: 360, lift: 0.3 });
       if (res === "goal") return forestGoalFlow(scorer, scorer.george ? cutter : g, "tap-in");
       if (res === "save") {
@@ -1306,6 +1538,7 @@
         say(res === "save" ? `Good header, better save from ${keeperOf("o").short}.` : `${scorer.george ? "George" : scorer.short} rises... and heads it over.`, { icon: res === "save" ? "save" : "info" });
         return;
       }
+      if (scorer.george) return georgeShot("cross", winger);
       const res = await shoot(scorer, "f", scores("cross", true, scorer) ? "goal" : missKind(), { xg: 0.32, lift: 1.3 });
       if (res === "goal") return forestGoalFlow(scorer, winger, "header");
       if (res === "save" && rand() < 0.6) {
@@ -1319,21 +1552,19 @@
     // Long shot: always George.
     await passTo(g, 420);
     holdAt(g, 80, g.y, false);
-    say("George has space 25 yards out... he's going to shoot!", { icon: "chance" });
+    say("George has space outside the box... he's going to shoot!", { icon: "chance" });
     const ok = await askQuestion(3, { kicker: "Long shot", title: "Hit it!", powers: ["gw", "neco"], kind: "attack" });
     if (!ok) {
       const res = await shoot(g, "f", pick(["miss", "save", "post"]), { xg: 0.09, lift: 2.5, ms: 480 });
       say(res === "post" ? "OFF THE POST! Inches away from a wonder goal!" : res === "save" ? `Fingertip save from ${keeperOf("o").short}!` : "It flies over the bar. Worth a go!", { icon: "info" });
       return;
     }
-    const res = await shoot(g, "f", scores("long", true, g) ? "goal" : pick(["post", "save", "save", "miss"]), { xg: 0.09, lift: 2.2, ms: 460, corner: rand() < 0.5 ? "left" : "right" });
-    if (res === "goal") { pop("WORLDIE!", "gold"); return forestGoalFlow(g, holder, "long shot"); }
-    ooh();
-    say(res === "post" ? "Off the woodwork! The crowd can't believe it." : res === "miss" ? "Just over the bar! Great effort." : `Great strike, even better save from ${keeperOf("o").short}!`, { icon: res === "save" ? "save" : "info" });
+    return georgeShot("long", holder);
   }
 
+
   async function cornerMoment() {
-    await ballTo(PW - 0.5, rand() < 0.5 ? 0.5 : PH - 0.5, 500, 0);
+    await placeBall(PW - 0.5, rand() < 0.5 ? 0.5 : PH - 0.5);
     const taker = byIdx("f", 8).on ? byIdx("f", 8) : byIdx("f", 7);
     holdAt(taker, S.ball.x, S.ball.y, true);
     holdAt(S.george, 94, 36, true);
@@ -1344,6 +1575,7 @@
     const ok = await askQuestion(2, { kicker: "Corner", title: "Attack the ball!", powers: ["neco"], kind: "attack" });
     const scorer = rand() < 0.65 ? S.george : pick([byIdx("f", 2), byIdx("f", 3)]);
     await passTo(scorer, 520, 4);
+    if (ok && scorer.george) return georgeShot("corner", taker);
     const res = await shoot(scorer, "f", scores("corner", ok, scorer) ? "goal" : pick(["miss", "save"]), { xg: 0.12, lift: 1 });
     if (res === "goal") return forestGoalFlow(scorer, taker, "header");
     say(res === "save" ? "Headed at the keeper." : "Headed wide. So close!", { icon: "info" });
@@ -1437,7 +1669,7 @@
     await wait(reduced ? 300 : 1200);
     hideBanner();
     releaseAll();
-    await ballTo(11, 34, 400, 0);
+    await placeBall(11, 34);
     const taker = attacker;
     holdAt(taker, 13.5, 34, true);
     const gk = keeperOf("f");
@@ -1487,7 +1719,7 @@
     if (rand() < 0.5) await showCard(fouler, "yellow", "for the foul on George");
     releaseAll();
     S.phase = "set";
-    await ballTo(PW - 11, 34, 400, 0);
+    await placeBall(PW - 11, 34);
     holdAt(g, PW - 13.5, 34, true);
     const gk = keeperOf("o");
     holdAt(gk, PW - 0.6, 34, true);
@@ -1499,7 +1731,7 @@
     if (r.goal) return forestGoalFlow(g, null, "penalty", { setpiece: true });
     endSetPiece();
     say({ saved: `Saved by ${gk.short}! He guessed right.`, post: "Off the post! Agonising.", over: "Over the bar! George can't believe it.", wide: "Wide! Just wide of the post." }[r.result] || "Missed!", { icon: r.result === "saved" ? "save" : "info" });
-    S.carrier = gk;
+    await giveTo(gk);
   }
 
   async function freeKickMoment() {
@@ -1516,7 +1748,7 @@
     releaseAll();
     S.phase = "set";
     const spotY = 34 + (rand() - 0.5) * 16;
-    await ballTo(PW - 21, spotY, 400, 0);
+    await placeBall(PW - 21, spotY);
     holdAt(g, PW - 23, spotY + 1.5, true);
     // The wall: four defenders 10 yards (9.15 m) away.
     const wall = outfield("o").slice(0, 4);
@@ -1540,7 +1772,7 @@
     }
     endSetPiece();
     say({ wall: "Straight into the wall!", saved: `${gk.short} claws it away!`, post: "Off the woodwork! So close!", over: "Over the wall... and over the bar.", wide: "Curls just wide!" }[r.result] || "Missed!", { icon: r.result === "saved" ? "save" : "info" });
-    S.carrier = gk;
+    await giveTo(gk);
   }
 
   /* Cut to the close-up view. Right answer = aim line + bigger green zone. */
@@ -1550,25 +1782,27 @@
     return k;
   }
   function bootsColour() { return S.gear.boots; }
-  async function setPiece(kind, kick, ok, title) {
+  async function setPiece(kind, kick, ok, title, extra) {
+    const x = extra || {};
     stopClock();
     S.recPaused = true;
     $("stage").classList.add("setpiece");
     const g = GEN;
     const pr = MDSP.play({
       root: $("stage"), panel: $("panel"), kind, kick, advantage: ok, title, zoneBonus: S.fx.zone,
+      curl: x.curl, guide: x.guide, timeLimit: x.timeLimit,
       oppKit: { shirt: S.oppKit.shirt, shorts: S.oppKit.shorts }, keeperKit: S.opp.keeperKit,
       kitKey: georgeKitKey(), boots: bootsColour(), night: S.night, home: S.home, ground: S.ground,
       crowd: S.home ? ["#e1102c", "#e1102c", "#ffffff", "#7a0d20", "#e1102c"] : [S.oppKit.shirt, S.oppKit.trim, S.oppKit.shirt],
       sfx, reduced,
     });
-    revealPanel();
+    revealStage();
     const r = await pr;
     if (g !== GEN) await never;
     $("panel").hidden = true; $("panel").innerHTML = "";
     const f = S.stats.f;
     f.shots += 1;
-    f.xg += kind === "penalty" ? 0.76 : 0.07;
+    f.xg += x.xg != null ? x.xg : kind === "penalty" ? 0.76 : 0.07;
     if (["goal", "saved", "post-in"].includes(r.result)) f.onTarget += 1;
     if (r.result === "saved") S.stats.o.saves += 1;
     if (!r.goal) {
@@ -1582,6 +1816,34 @@
     MDSP.close();
     $("stage").classList.remove("setpiece");
     S.recPaused = false;
+  }
+
+  /* ---------------- George's own shot ----------------
+     After a right answer on a chance George is taking, the camera cuts
+     to behind him and he aims and shoots himself. A defender is closing
+     in, so there's a short clock. No aim line: that's all George. */
+  const SHOTS = {
+    tapin:  { dist: [8, 10], curl: false, time: 8500, keeper: -0.3, xg: 0.58, title: "Six yards out... tap it in!", kind: "tap-in" },
+    cross:  { dist: [9, 12], curl: false, time: 8000, keeper: -0.22, xg: 0.32, title: "Here's the cross... volley it!", kind: "volley" },
+    corner: { dist: [8, 11], curl: false, time: 8000, keeper: -0.2, xg: 0.12, title: "Up for the header... pick your spot!", kind: "header" },
+    long:   { dist: [22, 26], curl: true, time: 11000, keeper: -0.12, xg: 0.09, title: "Space outside the box... hit it!", kind: "long shot" },
+  };
+  async function georgeShot(type, assister) {
+    const c = SHOTS[type], g = S.george;
+    const dist = c.dist[0] + rand() * (c.dist[1] - c.dist[0]);
+    const side = clamp(Math.round(((g.y - 34) / 16) * 10) / 10, -1, 1);
+    const r = await setPiece("shot", { dist, side, wallN: 0, keeperSkill: clamp(S.tier.keeper + c.keeper, 0.15, 0.7) }, true, c.title,
+      { curl: c.curl, guide: false, timeLimit: c.time, xg: c.xg });
+    S.phase = "play";
+    if (r.goal) {
+      if (r.topBins) pop("TOP BINS!", "gold");
+      return forestGoalFlow(g, assister, c.kind, { setpiece: true });
+    }
+    endSetPiece();
+    ooh();
+    const gk = keeperOf("o");
+    say({ saved: `Saved! ${gk.short} gets across to stop George.`, post: "Off the post! Inches away!", "post-in": "In off the post!", over: "Over the bar! George had to hit it quickly.", wide: "Just wide of the post!" }[r.result] || "Missed! So close.", { icon: r.result === "saved" ? "save" : "info" });
+    await giveTo(gk);
   }
 
   /* ---------------- An unstoppable worldie from their best player ---------------- */
@@ -1630,7 +1892,7 @@
     releaseAll();
     S.phase = "set";
     const spotY = clamp(lane, 20, 48);
-    await ballTo(PW - 21, spotY, 400, 0);
+    await placeBall(PW - 21, spotY);
     holdAt(g, PW - 23, spotY + 1.5, true);
     outfield("o").slice(0, 4).forEach((p, i) => holdAt(p, PW - 21 + 9.15, spotY + (34 - spotY) * 0.3 + (i - 1.5) * 1.1, true));
     await wait(reduced ? 200 : 800);
@@ -1640,8 +1902,9 @@
   /* ---------------- From the halfway line! ---------------- */
   async function halfwayMoment() {
     const g = S.george, gk = keeperOf("o");
-    S.poss = "f"; S.phase = "play";
+    S.phase = "play";
     releaseAll();
+    await ensureBall("f");
     holdAt(g, 50, 26 + rand() * 16, true);
     await passTo(g, 450);
     holdAt(gk, PW - 17, 34, false);
@@ -1818,6 +2081,11 @@
     S.career = MDC.award({
       goals: S.george.goals, assists: S.george.assists, right: S.right, asked: S.asked, won, draw,
       motm: motm && motm.george, cleanSheet: S.score.o === 0, halfway: S.halfwayGoals > 0, rating: ratings[S.george.id],
+      // Special celebrations are earned by doing these.
+      ach: [
+        S.george.goals >= 3 && "hattrick", S.halfwayGoals > 0 && "halfway", won && S.tierN === 3 && "giant",
+        won && S.score.o === 0 && "clean", S.varWins > 0 && "var", S.oppReds > 0 && "red",
+      ].filter(Boolean),
     });
     let badges = [];
     if (window.GZ && GZ.recordMatchday) {
@@ -1946,7 +2214,7 @@
         <p class="md-small">${c.parts.map(([k, v]) => `${escapeHtml(k)} +${v}`).join(" · ")}</p>
         <div class="mdc-xp"><span style="width:${pct}%"></span></div>
         ${c.spGained ? `<p class="mdc-sp"><b>+${c.spGained}</b> skill points to spend on George's stats!</p>` : ""}
-        ${c.unlocks.length ? `<p class="md-unlocks">🔓 Unlocked: ${c.unlocks.map((u) => `<b>${escapeHtml(u.name)}</b>`).join(", ")}</p>` : ""}
+        ${c.unlocks.length ? `<p class="md-unlocks">🔓 Unlocked: ${c.unlocks.map((u) => `<b>${u.special ? "🏆 " : ""}${escapeHtml(u.name)}${u.type === "cele" ? " (celebration)" : ""}</b>`).join(", ")}</p>` : ""}
         <button type="button" class="btn-primary" id="r-career">${MDC.sp() ? "Upgrade George ⬆" : "George's card"}</button>
       </div>
     </section>`;
