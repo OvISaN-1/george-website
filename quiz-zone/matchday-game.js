@@ -87,8 +87,8 @@
     // wonder: chances of an unstoppable "worldie" from their best player.
     // keeper / wall: how good their keeper is and how many in the wall, for George's set pieces.
     // finish: how often a right answer turns into a goal against them (their keeper and defence).
-    1: { attacks: 6, defends: 4, defendLevels: [1, 2, 2], timer: 0, goalIfWrong: 0.55, goalIfRight: 0.06, finish: 0.8, poss: 0.58, wonder: [0.15], keeper: 0.45, wall: 3 },
-    2: { attacks: 5, defends: 5, defendLevels: [2, 2, 3], timer: 1, goalIfWrong: 0.7, goalIfRight: 0.13, finish: 0.66, poss: 0.5, wonder: [0.45], keeper: 0.6, wall: 4 },
+    1: { attacks: 5, defends: 4, defendLevels: [1, 2, 2], timer: 0, goalIfWrong: 0.6, goalIfRight: 0.08, finish: 0.62, poss: 0.56, wonder: [0.25], keeper: 0.5, wall: 3 },
+    2: { attacks: 5, defends: 5, defendLevels: [2, 2, 3], timer: 1, goalIfWrong: 0.7, goalIfRight: 0.13, finish: 0.6, poss: 0.5, wonder: [0.45], keeper: 0.6, wall: 4 },
     3: { attacks: 4, defends: 5, defendLevels: [2, 3, 3], timer: 2, goalIfWrong: 0.85, goalIfRight: 0.16, finish: 0.58, poss: 0.42, wonder: [0.7, 0.35], keeper: 0.72, wall: 5 },
   };
   // Seconds on the clock for each question level, before the opponent's tier knocks some off.
@@ -1169,7 +1169,7 @@
     let p = CHANCE[kind] * S.tier.finish;
     if (!shooter || shooter.george) p *= S.fx.finish;
     if (kind === "tapin" || kind === "cross") p *= S.fx.pass;
-    p += 0.07 * (S.oppDown || 0);
+    p += 0.04 * (S.oppDown || 0);
     return rand() < clamp(p, 0.05, 0.9);
   }
   // A missed chance: saved, off the woodwork, wide or blocked.
