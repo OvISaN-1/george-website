@@ -180,6 +180,8 @@
   }
   function clampAim(x, y) {
     const L = st.L;
+    // George's open-play shots: the aim stays inside the goal frame, so a slightly off tap still hits the target.
+    if (st.kind === "shot") return { x: clamp(x, L.left + 8 * L.k, L.right - 8 * L.k), y: clamp(y, L.bar + 8 * L.k, L.gy - 4) };
     return { x: clamp(x, L.left - 30 * L.k, L.right + 30 * L.k), y: clamp(y, L.bar - 18 * L.k, L.gy - 3) };
   }
   function showAim() {
@@ -231,13 +233,14 @@
     // Right answer: big green zone. Wrong answer: a smaller one, and the needle is quicker.
     // George's shooting stat makes the green zone a bit bigger.
     const bonus = Math.min(6, st.zoneBonus || 0);
-    const g = (st.advantage ? 12 : 6) + bonus, ok = (st.advantage ? 21 : 14) + bonus;
+    const extra = st.kind === "shot" ? 5 : 0;   // George's own shots are a bit more forgiving
+    const g = (st.advantage ? 12 : 6) + bonus + extra, ok = (st.advantage ? 21 : 14) + bonus + extra;
     const z = (id, a, w) => { const e = st.panel.querySelector(id); e.style.left = clamp(a, 0, 100) + "%"; e.style.width = w + "%"; };
     z("#sp-ok", ideal - ok, ok * 2);
     z("#sp-good", ideal - g, g * 2);
     instr("Power: tap SHOOT in the green!");
     const start = performance.now();
-    const period = st.advantage ? 1400 : 1050;
+    const period = st.kind === "shot" ? 1650 : st.advantage ? 1400 : 1050;
     const needle = st.panel.querySelector("#sp-power-needle");
     const my = token;
     (function frame(now) {
@@ -259,6 +262,9 @@
     const shot = FKP.shoot(st.kick, st.aim, st.curl, st.power);
     // Penalties: the keeper guesses. Right answer = he usually guesses wrong.
     if (st.kind === "penalty" && shot.result === "saved" && st.advantage && rand() < 0.5) shot.result = "goal";
+    // George's own shots: some "saves" squeeze under the keeper, and near misses clip the post and go in.
+    if (st.kind === "shot" && shot.result === "saved" && rand() < 0.4) { shot.result = "goal"; st.squeezed = true; }
+    if (st.kind === "shot" && shot.result === "post" && rand() < 0.5) shot.result = "post-in";
     st.lastShot = shot;
     await runUp();
     st.sfx.kick();

@@ -87,9 +87,9 @@
     // wonder: chances of an unstoppable "worldie" from their best player.
     // keeper / wall: how good their keeper is and how many in the wall, for George's set pieces.
     // finish: how often a right answer turns into a goal against them (their keeper and defence).
-    1: { attacks: 5, defends: 4, defendLevels: [1, 2, 2], timer: 0, goalIfWrong: 0.6, goalIfRight: 0.08, finish: 0.62, poss: 0.56, wonder: [0.25], keeper: 0.5, wall: 3 },
-    2: { attacks: 5, defends: 5, defendLevels: [2, 2, 3], timer: 1, goalIfWrong: 0.7, goalIfRight: 0.13, finish: 0.6, poss: 0.5, wonder: [0.45], keeper: 0.6, wall: 4 },
-    3: { attacks: 4, defends: 5, defendLevels: [2, 3, 3], timer: 2, goalIfWrong: 0.85, goalIfRight: 0.16, finish: 0.58, poss: 0.42, wonder: [0.7, 0.35], keeper: 0.72, wall: 5 },
+    1: { attacks: 4, defends: 4, defendLevels: [1, 2, 2], timer: 0, goalIfWrong: 0.6, goalIfRight: 0.08, finish: 0.62, poss: 0.56, wonder: [0.25], keeper: 0.5, wall: 3 },
+    2: { attacks: 4, defends: 5, defendLevels: [2, 2, 3], timer: 1, goalIfWrong: 0.7, goalIfRight: 0.13, finish: 0.6, poss: 0.5, wonder: [0.45], keeper: 0.6, wall: 4 },
+    3: { attacks: 3, defends: 5, defendLevels: [2, 3, 3], timer: 2, goalIfWrong: 0.85, goalIfRight: 0.16, finish: 0.58, poss: 0.42, wonder: [0.7, 0.35], keeper: 0.72, wall: 5 },
   };
   // Seconds on the clock for each question level, before the opponent's tier knocks some off.
   const LEVEL_TIME = { 1: 15, 2: 13, 3: 11, 4: 11 };
@@ -1614,16 +1614,16 @@
      to behind him and he aims and shoots himself. A defender is closing
      in, so there's a short clock. No aim line: that's all George. */
   const SHOTS = {
-    tapin:  { dist: [8, 10], curl: false, time: 6500, keeper: -0.05, xg: 0.58, title: "Six yards out... tap it in!", kind: "tap-in" },
-    cross:  { dist: [9, 12], curl: false, time: 6000, keeper: 0.05, xg: 0.32, title: "Here's the cross... volley it!", kind: "volley" },
-    corner: { dist: [8, 11], curl: false, time: 6000, keeper: 0.08, xg: 0.12, title: "Up for the header... pick your spot!", kind: "header" },
-    long:   { dist: [23, 28], curl: true, time: 9000, keeper: 0.12, xg: 0.09, title: "Space outside the box... hit it!", kind: "long shot" },
+    tapin:  { dist: [8, 10], curl: false, time: 8500, keeper: -0.3, xg: 0.58, title: "Six yards out... tap it in!", kind: "tap-in" },
+    cross:  { dist: [9, 12], curl: false, time: 8000, keeper: -0.22, xg: 0.32, title: "Here's the cross... volley it!", kind: "volley" },
+    corner: { dist: [8, 11], curl: false, time: 8000, keeper: -0.2, xg: 0.12, title: "Up for the header... pick your spot!", kind: "header" },
+    long:   { dist: [22, 26], curl: true, time: 11000, keeper: -0.12, xg: 0.09, title: "Space outside the box... hit it!", kind: "long shot" },
   };
   async function georgeShot(type, assister) {
     const c = SHOTS[type], g = S.george;
     const dist = c.dist[0] + rand() * (c.dist[1] - c.dist[0]);
     const side = clamp(Math.round(((g.y - 34) / 16) * 10) / 10, -1, 1);
-    const r = await setPiece("shot", { dist, side, wallN: 0, keeperSkill: clamp(S.tier.keeper + c.keeper, 0.3, 0.95) }, true, c.title,
+    const r = await setPiece("shot", { dist, side, wallN: 0, keeperSkill: clamp(S.tier.keeper + c.keeper, 0.15, 0.7) }, true, c.title,
       { curl: c.curl, guide: false, timeLimit: c.time, xg: c.xg });
     S.phase = "play";
     if (r.goal) {
