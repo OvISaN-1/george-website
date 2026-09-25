@@ -837,6 +837,20 @@
      ================================================================ */
   let answerKeyHandler = null;
   // Make sure the question is on screen without losing the pitch.
+  // Bring the pitch back into view (under the pinned scoreboard) so no action is missed.
+  function revealStage() {
+    const r = $("stage").getBoundingClientRect();
+    const hdr = document.querySelector(".site-header");
+    const top = (hdr ? hdr.offsetHeight : 0) + $("scoreboard").offsetHeight + 10;
+    if (r.top < top - 4 || r.top > window.innerHeight * 0.45) window.scrollBy({ top: r.top - top, behavior: reduced ? "auto" : "smooth" });
+  }
+  // A right answer: a short freeze on the pitch before the action plays.
+  function focusPitch() {
+    const st = $("stage");
+    st.classList.remove("focus"); void st.offsetWidth; st.classList.add("focus");
+    pop("RIGHT!", "ok");
+    setTimeout(() => st.classList.remove("focus"), 1100);
+  }
   function revealPanel() {
     const r = $("panel").getBoundingClientRect();
     if (r.bottom > window.innerHeight) window.scrollBy({ top: r.bottom - window.innerHeight + 12, behavior: reduced ? "auto" : "smooth" });
@@ -910,7 +924,14 @@
           S.asked += 1; S.levels[level][1] += 1;
           if (correct) { S.right += 1; S.levels[level][0] += 1; }
         }
-        setTimeout(() => { if (g !== GEN) return; panel.hidden = true; panel.innerHTML = ""; resolve(correct); }, reduced ? 350 : correct ? 900 : 1500);
+        setTimeout(async () => {
+          if (g !== GEN) return;
+          panel.hidden = true; panel.innerHTML = "";
+          revealStage();
+          if (correct && !reduced) { focusPitch(); await sleep(850); if (g !== GEN) return; }
+          else await sleep(reduced ? 0 : 300);
+          resolve(correct);
+        }, reduced ? 350 : correct ? 700 : 1400);
       }
       panel.querySelectorAll(".md-opt").forEach((b) => b.addEventListener("click", () => finish(Number(b.dataset.i), "click")));
       panel.querySelectorAll(".md-power").forEach((b) => b.addEventListener("click", () => {
@@ -952,6 +973,7 @@
         document.removeEventListener("keydown", onKey);
         if (g !== GEN) return;
         panel.hidden = true; panel.innerHTML = "";
+        revealStage();
         resolve(choices[i].id);
       }
       panel.querySelectorAll(".md-choice").forEach((b) => b.addEventListener("click", () => done(Number(b.dataset.i))));
@@ -968,7 +990,7 @@
       panel.hidden = false;
       revealPanel();
       $("btn-continue").focus({ preventScroll: true });
-      $("btn-continue").addEventListener("click", () => { if (g !== GEN) return; panel.hidden = true; panel.innerHTML = ""; resolve(); });
+      $("btn-continue").addEventListener("click", () => { if (g !== GEN) return; panel.hidden = true; panel.innerHTML = ""; revealStage(); resolve(); });
     });
   }
 
@@ -1281,6 +1303,7 @@
       }
       const scorer = pickScorer(0.75, [7, 9]);
       await passTo(scorer, 360);
+      if (scorer.george) return georgeShot("tapin", cutter);
       const res = await shoot(scorer, "f", scores("tapin", true, scorer) ? "goal" : pick(["save", "save", "miss", "post"]), { xg: 0.58, ms: 360, lift: 0.3 });
       if (res === "goal") return forestGoalFlow(scorer, scorer.george ? cutter : g, "tap-in");
       if (res === "save") {
@@ -1306,6 +1329,7 @@
         say(res === "save" ? `Good header, better save from ${keeperOf("o").short}.` : `${scorer.george ? "George" : scorer.short} rises... and heads it over.`, { icon: res === "save" ? "save" : "info" });
         return;
       }
+      if (scorer.george) return georgeShot("cross", winger);
       const res = await shoot(scorer, "f", scores("cross", true, scorer) ? "goal" : missKind(), { xg: 0.32, lift: 1.3 });
       if (res === "goal") return forestGoalFlow(scorer, winger, "header");
       if (res === "save" && rand() < 0.6) {
@@ -1319,18 +1343,16 @@
     // Long shot: always George.
     await passTo(g, 420);
     holdAt(g, 80, g.y, false);
-    say("George has space 25 yards out... he's going to shoot!", { icon: "chance" });
+    say("George has space outside the box... he's going to shoot!", { icon: "chance" });
     const ok = await askQuestion(3, { kicker: "Long shot", title: "Hit it!", powers: ["gw", "neco"], kind: "attack" });
     if (!ok) {
       const res = await shoot(g, "f", pick(["miss", "save", "post"]), { xg: 0.09, lift: 2.5, ms: 480 });
       say(res === "post" ? "OFF THE POST! Inches away from a wonder goal!" : res === "save" ? `Fingertip save from ${keeperOf("o").short}!` : "It flies over the bar. Worth a go!", { icon: "info" });
       return;
     }
-    const res = await shoot(g, "f", scores("long", true, g) ? "goal" : pick(["post", "save", "save", "miss"]), { xg: 0.09, lift: 2.2, ms: 460, corner: rand() < 0.5 ? "left" : "right" });
-    if (res === "goal") { pop("WORLDIE!", "gold"); return forestGoalFlow(g, holder, "long shot"); }
-    ooh();
-    say(res === "post" ? "Off the woodwork! The crowd can't believe it." : res === "miss" ? "Just over the bar! Great effort." : `Great strike, even better save from ${keeperOf("o").short}!`, { icon: res === "save" ? "save" : "info" });
+    return georgeShot("long", holder);
   }
+
 
   async function cornerMoment() {
     await ballTo(PW - 0.5, rand() < 0.5 ? 0.5 : PH - 0.5, 500, 0);
@@ -1344,6 +1366,7 @@
     const ok = await askQuestion(2, { kicker: "Corner", title: "Attack the ball!", powers: ["neco"], kind: "attack" });
     const scorer = rand() < 0.65 ? S.george : pick([byIdx("f", 2), byIdx("f", 3)]);
     await passTo(scorer, 520, 4);
+    if (ok && scorer.george) return georgeShot("corner", taker);
     const res = await shoot(scorer, "f", scores("corner", ok, scorer) ? "goal" : pick(["miss", "save"]), { xg: 0.12, lift: 1 });
     if (res === "goal") return forestGoalFlow(scorer, taker, "header");
     say(res === "save" ? "Headed at the keeper." : "Headed wide. So close!", { icon: "info" });
@@ -1550,25 +1573,27 @@
     return k;
   }
   function bootsColour() { return S.gear.boots; }
-  async function setPiece(kind, kick, ok, title) {
+  async function setPiece(kind, kick, ok, title, extra) {
+    const x = extra || {};
     stopClock();
     S.recPaused = true;
     $("stage").classList.add("setpiece");
     const g = GEN;
     const pr = MDSP.play({
       root: $("stage"), panel: $("panel"), kind, kick, advantage: ok, title, zoneBonus: S.fx.zone,
+      curl: x.curl, guide: x.guide, timeLimit: x.timeLimit,
       oppKit: { shirt: S.oppKit.shirt, shorts: S.oppKit.shorts }, keeperKit: S.opp.keeperKit,
       kitKey: georgeKitKey(), boots: bootsColour(), night: S.night, home: S.home, ground: S.ground,
       crowd: S.home ? ["#e1102c", "#e1102c", "#ffffff", "#7a0d20", "#e1102c"] : [S.oppKit.shirt, S.oppKit.trim, S.oppKit.shirt],
       sfx, reduced,
     });
-    revealPanel();
+    revealStage();
     const r = await pr;
     if (g !== GEN) await never;
     $("panel").hidden = true; $("panel").innerHTML = "";
     const f = S.stats.f;
     f.shots += 1;
-    f.xg += kind === "penalty" ? 0.76 : 0.07;
+    f.xg += x.xg != null ? x.xg : kind === "penalty" ? 0.76 : 0.07;
     if (["goal", "saved", "post-in"].includes(r.result)) f.onTarget += 1;
     if (r.result === "saved") S.stats.o.saves += 1;
     if (!r.goal) {
@@ -1582,6 +1607,34 @@
     MDSP.close();
     $("stage").classList.remove("setpiece");
     S.recPaused = false;
+  }
+
+  /* ---------------- George's own shot ----------------
+     After a right answer on a chance George is taking, the camera cuts
+     to behind him and he aims and shoots himself. A defender is closing
+     in, so there's a short clock. No aim line: that's all George. */
+  const SHOTS = {
+    tapin:  { dist: [8, 10], curl: false, time: 6500, keeper: -0.05, xg: 0.58, title: "Six yards out... tap it in!", kind: "tap-in" },
+    cross:  { dist: [9, 12], curl: false, time: 6000, keeper: 0.05, xg: 0.32, title: "Here's the cross... volley it!", kind: "volley" },
+    corner: { dist: [8, 11], curl: false, time: 6000, keeper: 0.08, xg: 0.12, title: "Up for the header... pick your spot!", kind: "header" },
+    long:   { dist: [23, 28], curl: true, time: 9000, keeper: 0.12, xg: 0.09, title: "Space outside the box... hit it!", kind: "long shot" },
+  };
+  async function georgeShot(type, assister) {
+    const c = SHOTS[type], g = S.george;
+    const dist = c.dist[0] + rand() * (c.dist[1] - c.dist[0]);
+    const side = clamp(Math.round(((g.y - 34) / 16) * 10) / 10, -1, 1);
+    const r = await setPiece("shot", { dist, side, wallN: 0, keeperSkill: clamp(S.tier.keeper + c.keeper, 0.3, 0.95) }, true, c.title,
+      { curl: c.curl, guide: false, timeLimit: c.time, xg: c.xg });
+    S.phase = "play";
+    if (r.goal) {
+      if (r.topBins) pop("TOP BINS!", "gold");
+      return forestGoalFlow(g, assister, c.kind, { setpiece: true });
+    }
+    endSetPiece();
+    ooh();
+    const gk = keeperOf("o");
+    say({ saved: `Saved! ${gk.short} gets across to stop George.`, post: "Off the post! Inches away!", "post-in": "In off the post!", over: "Over the bar! George had to hit it quickly.", wide: "Just wide of the post!" }[r.result] || "Missed! So close.", { icon: r.result === "saved" ? "save" : "info" });
+    S.carrier = gk;
   }
 
   /* ---------------- An unstoppable worldie from their best player ---------------- */

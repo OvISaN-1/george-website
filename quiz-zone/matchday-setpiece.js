@@ -197,14 +197,14 @@
   }
 
   function afterAim() {
-    if (st.kind === "penalty") { st.curl = 0; startPower(); }
+    if (!st.curlPhase) { st.curl = 0; startPower(); }
     else startCurl();
   }
 
   function startCurl() {
     st.phase = "curl";
     controls("curl");
-    instr("Curl: tap LOCK when the bend is right. Bend it round the wall!");
+    instr(st.kind === "shot" ? "Curl: tap LOCK when the bend is right. Bend it into the corner!" : "Curl: tap LOCK when the bend is right. Bend it round the wall!");
     const start = performance.now(), period = 1500;
     const needle = st.panel.querySelector("#sp-curl-needle");
     const my = token;
@@ -359,7 +359,9 @@
     token += 1;
     return new Promise((resolve) => {
       st = {
-        kind: opts.kind, kick: Object.assign({ wind: 0 }, opts.kick), advantage: !!opts.advantage, guide: !!opts.advantage, zoneBonus: opts.zoneBonus || 0,
+        kind: opts.kind, kick: Object.assign({ wind: 0 }, opts.kick), advantage: !!opts.advantage,
+        guide: opts.guide != null ? !!opts.guide : !!opts.advantage, zoneBonus: opts.zoneBonus || 0,
+        curlPhase: opts.curl != null ? !!opts.curl : opts.kind === "freekick",
         panel: opts.panel, sfx: opts.sfx, reduced: !!opts.reduced, phase: "aim", curl: 0, power: 0, aim: null,
         done: (r) => { document.removeEventListener("keydown", onKey); resolve(r); },
       };
@@ -370,13 +372,16 @@
       drawScene(opts);
       const L = st.L;
       st.aim = { x: (L.left + L.right) / 2 + (opts.kind === "penalty" ? L.gW * 0.3 : 0), y: L.bar + L.gH * 0.45 };
-      const pen = opts.kind === "penalty";
+      const pen = opts.kind === "penalty", shotKind = opts.kind === "shot";
+      const kicker = pen ? "Penalty" : shotKind ? "George's shot · " + Math.round(st.kick.dist) + " yards" : "Free kick · " + Math.round(st.kick.dist) + " yards";
+      const perk = shotKind ? "✅ Right answer: it's your shot!" : st.advantage ? "✅ Right answer: aim line, big green zone" : "❌ No aim line, small green zone";
       opts.panel.innerHTML = `
-        <div class="md-q setpiece">
-          <div class="md-q-head"><span class="md-kicker">${pen ? "Penalty" : "Free kick · " + Math.round(st.kick.dist) + " yards"}</span>
-            <span class="md-level">${st.advantage ? "✅ Right answer: aim line, big green zone" : "❌ No aim line, small green zone"}</span></div>
+        <div class="md-q setpiece${shotKind ? " shot" : ""}">
+          <div class="md-q-head"><span class="md-kicker">${kicker}</span>
+            <span class="md-level">${perk}</span></div>
           <h3 class="md-q-title">${opts.title || (pen ? "George steps up..." : "Bend it round the wall!")}</h3>
-          <p class="md-q-text" id="sp-instr">Tap in the goal where you want to aim.${pen ? " Corners are hardest to save." : ""}</p>
+          ${opts.timeLimit ? `<div class="md-timer sp-clock" aria-hidden="true"><span id="sp-timer"></span></div>` : ""}
+          <p class="md-q-text" id="sp-instr">Tap in the goal where you want to aim.${pen || shotKind ? " Corners are hardest to save." : ""}</p>
           <div class="fk-meter" id="sp-curl" hidden>
             <div class="fk-track curl"><span class="lab l">↶ Bend left</span><span class="lab c">straight</span><span class="lab r">Bend right ↷</span><div class="fk-needle" id="sp-curl-needle"></div></div>
             <button class="btn-primary fk-lock-btn" id="sp-btn-curl" type="button">Lock curl</button>
@@ -385,15 +390,33 @@
             <div class="fk-track"><div class="fk-zone ok" id="sp-ok"></div><div class="fk-zone good" id="sp-good"></div><span class="lab l">soft</span><span class="lab r">blast</span><div class="fk-needle" id="sp-power-needle"></div></div>
             <button class="btn-primary fk-lock-btn" id="sp-btn-shoot" type="button">⚽ Shoot!</button>
           </div>
-          <p class="md-small">Keys: arrows to aim, Enter to lock, Space for ${pen ? "" : "curl and "}shoot.</p>
+          <p class="md-small">Keys: arrows to aim, Enter to lock, Space for ${st.curlPhase ? "curl and " : ""}shoot.</p>
         </div>`;
       opts.panel.hidden = false;
       opts.panel.querySelector("#sp-btn-curl").addEventListener("click", lockCurl);
       opts.panel.querySelector("#sp-btn-shoot").addEventListener("click", shoot);
       showAim();
       document.addEventListener("keydown", onKey);
+      if (opts.timeLimit) startShotClock(opts.timeLimit);
     });
   };
+
+  /* Open-play shots: a defender is closing in, so George can't wait forever.
+     If the bar runs out he has to hit it there and then. */
+  function startShotClock(ms) {
+    const my = token, start = performance.now();
+    const bar = st.panel.querySelector("#sp-timer");
+    (function frame(now) {
+      if (!st || my !== token || st.phase === "flying" || st.phase === "closed") return;
+      const left = Math.max(0, 1 - (now - start) / ms);
+      if (bar) { bar.style.width = left * 100 + "%"; bar.classList.toggle("low", left < 0.3); }
+      if (left > 0) { requestAnimationFrame(frame); return; }
+      instr("Too slow! The defender's closing in, George has to hit it now!");
+      if (st.phase === "aim") showAim();
+      if (st.phase !== "power") { st.phase = "power"; st.power = 25 + Math.random() * 60; }
+      shoot();
+    })(start);
+  }
 
   MDSP.replay = async function () {
     if (!st || !st.lastShot) return;
