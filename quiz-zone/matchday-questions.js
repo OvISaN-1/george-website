@@ -67,11 +67,50 @@
     { l: 3, q: "How wide is a full-size goal?", a: "8 yards", w: ["7 yards", "10 yards", "6 yards"] },
     { l: 3, q: "Which country has won the most World Cups?", a: "Brazil", w: ["Germany", "Italy", "Argentina"] },
     { l: 3, q: "How many substitutes can a Premier League team use in a match?", a: "5", w: ["3", "4", "6"] },
+    // more level 1
+    { l: 1, q: "Who is in charge of a football match?", a: "The referee", w: ["The captain", "The manager", "The goalkeeper"] },
+    { l: 1, q: "What does a yellow card mean?", a: "A warning", w: ["You're sent off", "A goal", "Half-time"] },
+    { l: 1, q: "Harry Kane plays for which country?", a: "England", w: ["Scotland", "Wales", "Ireland"] },
+    { l: 1, q: "Mohamed Salah is from which country?", a: "Egypt", w: ["Morocco", "Nigeria", "Brazil"] },
+    { l: 1, q: "Kylian Mbappé plays for which country?", a: "France", w: ["Belgium", "Spain", "Portugal"] },
+    { l: 1, q: "Which team plays at the Emirates Stadium?", a: "Arsenal", w: ["Tottenham", "Chelsea", "Fulham"] },
+    { l: 1, q: "Which team plays at Stamford Bridge?", a: "Chelsea", w: ["Arsenal", "Brentford", "Leeds"] },
+    { l: 1, q: "What is the line across the middle of the pitch called?", a: "The halfway line", w: ["The goal line", "The touchline", "The penalty line"] },
+    { l: 1, q: "What is the big box in front of each goal called?", a: "The penalty area", w: ["The centre circle", "The dugout", "The corner"] },
+    { l: 1, q: "Who wears gloves and can use their hands?", a: "The goalkeeper", w: ["The referee", "The striker", "The linesman"] },
+    { l: 1, q: "What does the linesman wave when a player is offside?", a: "A flag", w: ["A card", "A whistle", "A scarf"] },
+    // more level 2
+    { l: 2, q: "How long is each half of a normal match?", a: "45 minutes", w: ["40 minutes", "50 minutes", "30 minutes"] },
+    { l: 2, q: "What is a 'clean sheet'?", a: "Not letting in any goals", w: ["A new kit", "A match with no fouls", "Winning by five"] },
+    { l: 2, q: "Which club is nicknamed 'The Gunners'?", a: "Arsenal", w: ["Tottenham", "Chelsea", "West Ham"] },
+    { l: 2, q: "Which club is nicknamed 'The Magpies'?", a: "Newcastle", w: ["Sunderland", "Fulham", "Everton"] },
+    { l: 2, q: "Which club is nicknamed 'The Seagulls'?", a: "Brighton", w: ["Bournemouth", "Ipswich", "Hull"] },
+    { l: 2, q: "Which club is nicknamed 'The Bees'?", a: "Brentford", w: ["Leeds", "Coventry", "Fulham"] },
+    { l: 2, q: "Which club is nicknamed 'Spurs'?", a: "Tottenham", w: ["Arsenal", "Chelsea", "Crystal Palace"] },
+    { l: 2, q: "Which club plays at the Etihad Stadium?", a: "Manchester City", w: ["Manchester United", "Everton", "Leeds"] },
+    { l: 2, q: "Which club plays at Elland Road?", a: "Leeds", w: ["Hull", "Sunderland", "Coventry"] },
+    { l: 2, q: "How many teams are in the Premier League?", a: "20", w: ["18", "22", "24"] },
+    { l: 2, q: "How long is extra time altogether?", a: "30 minutes", w: ["20 minutes", "45 minutes", "10 minutes"] },
+    { l: 2, q: "Which country won Euro 2024?", a: "Spain", w: ["England", "France", "Germany"] },
+    { l: 2, q: "What are England's women's team called?", a: "The Lionesses", w: ["The Tigers", "The Roses", "The Eagles"] },
+    { l: 2, q: "What is it called when a player scores two goals in a match?", a: "A brace", w: ["A hat-trick", "A double top", "A pair"] },
+    // more level 3
+    { l: 3, q: "Which country won the very first World Cup in 1930?", a: "Uruguay", w: ["Argentina", "Brazil", "Italy"] },
+    { l: 3, q: "Which club did Steven Gerrard captain?", a: "Liverpool", w: ["Everton", "Chelsea", "Manchester United"] },
+    { l: 3, q: "Which club is nicknamed 'The Villans'?", a: "Aston Villa", w: ["West Ham", "Coventry", "Crystal Palace"] },
+    { l: 3, q: "Which club is nicknamed 'The Eagles'?", a: "Crystal Palace", w: ["Brighton", "Fulham", "Brentford"] },
+    { l: 3, q: "Which club plays at Portman Road?", a: "Ipswich", w: ["Hull", "Coventry", "Norwich"] },
+    { l: 3, q: "Which club plays at the Stadium of Light?", a: "Sunderland", w: ["Newcastle", "Leeds", "Hull"] },
+    { l: 3, q: "In which year did the Premier League start?", a: "1992", w: ["1988", "1995", "2000"] },
+    { l: 3, q: "Which player has won the most Ballon d'Or awards?", a: "Lionel Messi", w: ["Cristiano Ronaldo", "Michel Platini", "Johan Cruyff"] },
+    { l: 3, q: "How high is the crossbar from the ground?", a: "8 feet", w: ["7 feet", "9 feet", "10 feet"] },
+    { l: 3, q: "Which country has won the Men's Euros the most times?", a: "Spain", w: ["Germany", "France", "Italy"] },
+    { l: 3, q: "What is a 'Panenka'?", a: "A chipped penalty down the middle", w: ["A bicycle kick", "A back-heel pass", "A long throw"] },
   ];
 
   /* ---------------- Forest ----------------
-     Levels 1 and 2 come from forest-questions.js (shared with the
-     Penalty Shootout and Free Kick games). These are the hard ones. */
+     Most come from forest-questions.js (shared with the Penalty
+     Shootout and Free Kick games). These are Matchday extras. */
   const FOREST_HARD = [
     { l: 3, q: "Who scored the winner for Forest in the 1979 European Cup final?", a: "Trevor Francis", w: ["John Robertson", "Garry Birtles", "Tony Woodcock"] },
     { l: 3, q: "Who scored the winner for Forest in the 1980 European Cup final?", a: "John Robertson", w: ["Trevor Francis", "Garry Birtles", "Martin O'Neill"] },
@@ -81,6 +120,19 @@
     { l: 3, q: "In which season did Forest win the English league title?", a: "1977/78", w: ["1979/80", "1975/76", "1990/91"] },
     { l: 3, q: "Which Forest legend was nicknamed 'Psycho'?", a: "Stuart Pearce", w: ["Roy Keane", "Des Walker", "Nigel Clough"] },
     { l: 3, q: "In which year was Nottingham Forest founded?", a: "1865", w: ["1878", "1892", "1901"] },
+    // Nottingham and Forest extras (levels 1 and 2 too)
+    { l: 1, q: "What is the name of Nottingham's famous castle?", a: "Nottingham Castle", w: ["Windsor Castle", "Edinburgh Castle", "Warwick Castle"] },
+    { l: 1, q: "Robin Hood lived in which forest?", a: "Sherwood Forest", w: ["Epping Forest", "The New Forest", "Kielder Forest"] },
+    { l: 1, q: "What sport do Nottingham Forest play?", a: "Football", w: ["Rugby", "Cricket", "Hockey"] },
+    { l: 2, q: "What were Robin Hood's band of friends called?", a: "The Merry Men", w: ["The Happy Gang", "The Green Team", "The Forest Five"] },
+    { l: 2, q: "Who was the baddie in the Robin Hood stories?", a: "The Sheriff of Nottingham", w: ["The Mayor of Derby", "King Arthur", "The Duke of York"] },
+    { l: 2, q: "Which manager took Forest back to the Premier League in 2022?", a: "Steve Cooper", w: ["Sean Dyche", "Nuno Espírito Santo", "Martin O'Neill"] },
+    { l: 2, q: "Which European competition did Forest play in in 2025/26?", a: "Europa League", w: ["Champions League", "Conference League", "Intertoto Cup"] },
+    { l: 3, q: "Which Nottingham club is the oldest professional club in the world?", a: "Notts County", w: ["Nottingham Forest", "Sheffield FC", "Stoke City"] },
+    { l: 3, q: "Which Forest keeper was the play-off semi-final shootout hero in 2022?", a: "Brice Samba", w: ["Matz Sels", "Dean Henderson", "Ethan Horvath"] },
+    { l: 3, q: "Which Forest legend scored a free kick in the 1991 FA Cup final?", a: "Stuart Pearce", w: ["Nigel Clough", "Des Walker", "Roy Keane"] },
+    { l: 3, q: "Brian Clough's son played up front for Forest. What is his name?", a: "Nigel Clough", w: ["Simon Clough", "Peter Clough", "David Clough"] },
+    { l: 3, q: "Which Nottingham pub claims to be the oldest inn in England?", a: "Ye Olde Trip to Jerusalem", w: ["The Robin Hood Arms", "The Castle Inn", "The Sherwood Oak"] },
   ];
 
   /* ---------------- Capitals ----------------
@@ -104,6 +156,15 @@
     ["Pakistan", "Islamabad", 3, "Asia", ["Karachi", "Lahore"]], ["Vietnam", "Hanoi", 3, "Asia", ["Ho Chi Minh City"]],
     ["Iceland", "Reykjavík", 3, "Europe"], ["Croatia", "Zagreb", 3, "Europe", ["Split"]], ["Colombia", "Bogotá", 3, "Americas", ["Medellín"]],
     ["Chile", "Santiago", 3, "Americas"], ["Peru", "Lima", 3, "Americas"], ["Finland", "Helsinki", 3, "Europe"],
+    ["Thailand", "Bangkok", 2, "Asia", ["Phuket"]], ["Jamaica", "Kingston", 2, "Americas", ["Montego Bay"]], ["Cuba", "Havana", 2, "Americas"],
+    ["Ukraine", "Kyiv", 2, "Europe", ["Odesa"]], ["Indonesia", "Jakarta", 2, "Asia", ["Bali"]], ["the Philippines", "Manila", 2, "Asia"],
+    ["Northern Ireland", "Belfast", 2, "Europe", ["Derry"]], ["Monaco", "Monaco", 2, "Europe", ["Monte Carlo"]], ["Singapore", "Singapore", 2, "Asia"],
+    ["Serbia", "Belgrade", 3, "Europe"], ["Bulgaria", "Sofia", 3, "Europe"], ["Slovakia", "Bratislava", 3, "Europe"], ["Slovenia", "Ljubljana", 3, "Europe"],
+    ["Estonia", "Tallinn", 3, "Europe"], ["Latvia", "Riga", 3, "Europe"], ["Lithuania", "Vilnius", 3, "Europe"], ["Malta", "Valletta", 3, "Europe"],
+    ["Ghana", "Accra", 3, "Africa"], ["Ethiopia", "Addis Ababa", 3, "Africa"], ["Tanzania", "Dodoma", 3, "Africa", ["Dar es Salaam", "Zanzibar"]],
+    ["Saudi Arabia", "Riyadh", 3, "Asia", ["Jeddah", "Mecca"]], ["the United Arab Emirates", "Abu Dhabi", 3, "Asia", ["Dubai"]],
+    ["Malaysia", "Kuala Lumpur", 3, "Asia"], ["Iran", "Tehran", 3, "Asia"], ["Bangladesh", "Dhaka", 3, "Asia"],
+    ["Uruguay", "Montevideo", 3, "Americas"], ["Venezuela", "Caracas", 3, "Americas"], ["Ecuador", "Quito", 3, "Americas", ["Guayaquil"]],
   ];
 
   /* ---------------- Mountains ---------------- */
@@ -124,6 +185,23 @@
     { l: 3, q: "What is the highest mountain in Australia?", a: "Mount Kosciuszko", w: ["Uluru", "Mount Townsend", "Mount Bogong"] },
     { l: 3, q: "What is the highest mountain in Romania?", a: "Moldoveanu", w: ["Negoiu", "Omu", "Parângu Mare"] },
     { l: 3, q: "About how tall is Ben Nevis?", a: "1,345 m", w: ["1,085 m", "978 m", "2,100 m"] },
+    { l: 1, q: "What do we call a mountain that can erupt?", a: "A volcano", w: ["A glacier", "A canyon", "A valley"] },
+    { l: 1, q: "Which is usually bigger: a mountain or a hill?", a: "A mountain", w: ["A hill", "They're the same", "A molehill"] },
+    { l: 1, q: "The Alps are mountains on which continent?", a: "Europe", w: ["Asia", "Africa", "South America"] },
+    { l: 1, q: "The Rocky Mountains are on which continent?", a: "North America", w: ["Europe", "Asia", "Australia"] },
+    { l: 2, q: "Mount Everest is in which mountain range?", a: "The Himalayas", w: ["The Alps", "The Andes", "The Rockies"] },
+    { l: 2, q: "Which long mountain range runs down South America?", a: "The Andes", w: ["The Alps", "The Urals", "The Atlas"] },
+    { l: 2, q: "Which mountains are on the border of France and Spain?", a: "The Pyrenees", w: ["The Alps", "The Dolomites", "The Carpathians"] },
+    { l: 2, q: "Which volcano buried the Roman town of Pompeii?", a: "Vesuvius", w: ["Etna", "Stromboli", "Fuji"] },
+    { l: 2, q: "Mount Olympus is in which country?", a: "Greece", w: ["Italy", "Turkey", "Cyprus"] },
+    { l: 2, q: "Table Mountain looks over which city?", a: "Cape Town", w: ["Nairobi", "Cairo", "Lagos"] },
+    { l: 2, q: "Who first climbed Everest in 1953?", a: "Edmund Hillary and Tenzing Norgay", w: ["George Mallory and Andrew Irvine", "Reinhold Messner", "Neil Armstrong"] },
+    { l: 3, q: "Kilimanjaro is in which country?", a: "Tanzania", w: ["Kenya", "Uganda", "Ethiopia"] },
+    { l: 3, q: "What is the highest mountain in Ireland?", a: "Carrauntoohil", w: ["Slieve Donard", "Croagh Patrick", "Lugnaquilla"] },
+    { l: 3, q: "Mount Etna is a volcano on which island?", a: "Sicily", w: ["Sardinia", "Crete", "Corsica"] },
+    { l: 3, q: "Ben Nevis is in which mountain range?", a: "The Grampians", w: ["The Cairngorms", "The Pennines", "The Cheviots"] },
+    { l: 3, q: "Which mountains run between Europe and Asia in Russia?", a: "The Urals", w: ["The Caucasus", "The Carpathians", "The Balkans"] },
+    { l: 3, q: "What is the line on a mountain above which trees can't grow?", a: "The tree line", w: ["The snow line", "The contour line", "The ridge line"] },
   ];
 
   /* ---------------- Build the bank ---------------- */

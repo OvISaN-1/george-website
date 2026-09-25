@@ -35,6 +35,8 @@
     { id: "clean-sheet",       emoji: "🧱", name: "Clean Sheet",     desc: "Keep a clean sheet in Matchday" },
     { id: "giant-killer",      emoji: "🗡️", name: "Giant Killer",    desc: "Beat Arsenal, Liverpool, Chelsea or Man City in Matchday" },
     { id: "var-drama",         emoji: "📺", name: "VAR Drama",       desc: "Win a VAR check in Matchday" },
+    { id: "halfway-hero",      emoji: "🌠", name: "Halfway Hero",    desc: "Score from the halfway line in Matchday" },
+    { id: "red-mist",          emoji: "🟥", name: "Seeing Red",      desc: "Get an opposition player sent off in Matchday" },
   ];
 
   function defaultStats() {
@@ -192,7 +194,7 @@
     return { stats: s, newBadges: newlyAwarded.map(bid => BADGES.find(b => b.id === bid)).filter(Boolean) };
   }
 
-  /* Matchday: r = { score, won, georgeGoals, cleanSheet, giantKiller, varWin } */
+  /* Matchday: r = { score, won, georgeGoals, cleanSheet, giantKiller, varWin, halfway, oppReds } */
   function recordMatchday(r) {
     const s = load();
     const id = "matchday";
@@ -210,6 +212,8 @@
     if (r.cleanSheet) award("clean-sheet");
     if (r.giantKiller) award("giant-killer");
     if (r.varWin) award("var-drama");
+    if (r.halfway) award("halfway-hero");
+    if (r.oppReds > 0) award("red-mist");
     if ((s.streak || 0) >= 3) award("three-day-streak");
     save(s);
     return { stats: s, newBadges: newlyAwarded.map(bid => BADGES.find(b => b.id === bid)).filter(Boolean) };

@@ -29,9 +29,13 @@
 
   /* How hard each type of opponent is. tier 1 / 2 / 3 */
   const TIERS = {
-    1: { attacks: 6, defends: 3, defendLevels: [1, 1, 2], timer: 0, goalIfWrong: 0.5, saveIfRight: 0.12, poss: 0.6 },
-    2: { attacks: 5, defends: 4, defendLevels: [1, 2, 2], timer: 1, goalIfWrong: 0.58, saveIfRight: 0.22, poss: 0.52 },
-    3: { attacks: 5, defends: 5, defendLevels: [2, 2, 3], timer: 2, goalIfWrong: 0.66, saveIfRight: 0.32, poss: 0.44 },
+    // goalIfWrong: chance they score when you get the defending question wrong.
+    // goalIfRight: chance a top striker scores anyway, even after a right answer.
+    // wonder: chances of an unstoppable "worldie" from their best player.
+    // keeper / wall: how good their keeper is and how many in the wall, for George's set pieces.
+    1: { attacks: 6, defends: 3, defendLevels: [1, 1, 2], timer: 0, goalIfWrong: 0.45, goalIfRight: 0, saveIfRight: 0.12, poss: 0.6, wonder: [0.05], keeper: 0.35, wall: 3 },
+    2: { attacks: 5, defends: 4, defendLevels: [1, 2, 2], timer: 1, goalIfWrong: 0.62, goalIfRight: 0.06, saveIfRight: 0.22, poss: 0.52, wonder: [0.3], keeper: 0.5, wall: 4 },
+    3: { attacks: 5, defends: 5, defendLevels: [2, 2, 3], timer: 2, goalIfWrong: 0.8, goalIfRight: 0.1, saveIfRight: 0.32, poss: 0.44, wonder: [0.65, 0.25], keeper: 0.62, wall: 5 },
   };
   // Seconds on the clock for each question level, before the opponent's tier knocks some off.
   const LEVEL_TIME = { 1: 15, 2: 13, 3: 11 };
@@ -129,7 +133,8 @@
       stats: { f: blankStats(), o: blankStats() },
       used: new Set(), powers: { gw: true, murillo: true, neco: true },
       asked: 0, right: 0, levels: { 1: [0, 0], 2: [0, 0], 3: [0, 0] },
-      varWins: 0, penaltiesWon: 0, bigChances: 0,
+      varWins: 0, penaltiesWon: 0, bigChances: 0, halfwayGoals: 0, oppReds: 0,
+      rec: [], recClock: 0, recPaused: false, replay: null, goalRec: null,
       heat: new Array(21 * 14).fill(0),
       players: [], carrier: null, poss: "f", phase: "kickoff",
       ball: { x: 52.5, y: 34, h: 0 },
@@ -173,6 +178,9 @@
     for (let i = 0; i < T.defends; i++) moments.push("defend");
     if (rand() < 0.5) moments.push("penalty");
     if (rand() < 0.55) moments.push("freekick");
+    T.wonder.forEach((p) => { if (rand() < p) moments.push("wonder"); });
+    if (rand() < 0.45) moments.push("redcard");
+    if (rand() < 0.4) moments.push("halfway");
     let order = shuffle(moments);
     // Start with a Forest chance so there's something to do straight away.
     const firstAttack = order.indexOf("attack");
@@ -274,8 +282,9 @@
     const kit = p.team === "f" ? (p.george ? S.georgeKit : S.forestKit) : S.oppKit;
     const keeperFill = p.team === "f" ? MD.FOREST.keeperKit : S.opp.keeperKit;
     const fill = p.gk ? keeperFill : kit.shirt;
-    const stroke = p.gk ? "#15121a" : kit.trim;
-    const txt = p.gk ? "#15121a" : kit.text;
+    const dark = p.gk && hexRgb(keeperFill).reduce((a, b) => a + b, 0) < 200;
+    const stroke = p.gk ? (dark ? "#ffffff" : "#15121a") : kit.trim;
+    const txt = p.gk ? (dark ? "#ffffff" : "#15121a") : kit.text;
     const r = p.george ? 21 : 16;
     return `<g class="md-tok${p.george ? " george" : ""}" id="tok-${p.id}">
       <ellipse cx="3" cy="${r * 0.75}" rx="${r}" ry="${r * 0.42}" fill="#000" opacity=".28"/>
@@ -377,6 +386,7 @@
   function frame(t) {
     const dt = Math.min(64, t - (lastT || t));
     lastT = t;
+    if (S.replay) { drawReplay(dt); return; }
     const k = 1 - Math.exp(-dt / 520);
     S.players.forEach((p) => {
       if (!p.on) return;
@@ -435,6 +445,94 @@
       const hx = clamp(Math.floor(S.george.x / 5), 0, 20), hy = clamp(Math.floor(S.george.y / 5), 0, 13);
       S.heat[hy * 21 + hx] += dt;
     }
+    record(dt);
+  }
+
+  /* ================================================================
+     Replays: the last few seconds of action are recorded all the
+     time (except while a question is on screen), so goals and VAR
+     checks can be shown again in slow motion.
+     ================================================================ */
+  function record(dt) {
+    if (S.recPaused || !$("panel").hidden) return;
+    S.recClock += dt;
+    const n = S.players.length;
+    const xy = new Float32Array(n * 2 + 3);
+    S.players.forEach((p, i) => { xy[i * 2] = p.x; xy[i * 2 + 1] = p.y; });
+    xy[n * 2] = S.ball.x; xy[n * 2 + 1] = S.ball.y; xy[n * 2 + 2] = S.ball.h;
+    S.rec.push({ t: S.recClock, xy, rx: S.refP.x, ry: S.refP.y });
+    while (S.rec.length && S.rec[0].t < S.recClock - 12000) S.rec.shift();
+  }
+
+  function frameAt(clip, t) {
+    let i = 0;
+    while (i < clip.length - 2 && clip[i + 1].t < t) i++;
+    const a = clip[i], b = clip[i + 1] || a;
+    const k = b.t > a.t ? clamp((t - a.t) / (b.t - a.t), 0, 1) : 0;
+    const xy = a.xy.map((v, j) => v + (b.xy[j] - v) * k);
+    return { xy, rx: a.rx + (b.rx - a.rx) * k, ry: a.ry + (b.ry - a.ry) * k };
+  }
+
+  function drawReplay(dt) {
+    const R = S.replay;
+    let pt;
+    if (R.frozen != null) pt = R.frozen;
+    else {
+      pt = R.t0 + (performance.now() - R.start) * R.speed;
+      if (R.freezeAt != null && pt >= R.freezeAt) {
+        pt = R.freezeAt; R.frozen = pt;
+        if (R.onFreeze) R.onFreeze(frameAt(R.clip, pt));
+      }
+      pt = Math.min(pt, R.clip[R.clip.length - 1].t);
+    }
+    const f = frameAt(R.clip, pt);
+    const n = S.players.length;
+    S.players.forEach((p, i) => { p.el.setAttribute("transform", `translate(${(f.xy[i * 2] * U).toFixed(1)} ${(f.xy[i * 2 + 1] * U).toFixed(1)})`); });
+    const bx = f.xy[n * 2] * U, by = f.xy[n * 2 + 1] * U, lift = f.xy[n * 2 + 2] * 6;
+    S.ballSh.setAttribute("cx", bx + lift * 0.3);
+    S.ballSh.setAttribute("cy", by + 4);
+    S.ballB.setAttribute("transform", `translate(${bx.toFixed(1)} ${(by - lift).toFixed(1)}) scale(${(1 + f.xy[n * 2 + 2] * 0.09).toFixed(2)})`);
+    S.refP.el.setAttribute("transform", `translate(${(f.rx * U).toFixed(1)} ${(f.ry * U).toFixed(1)})`);
+    $("carrier-label").setAttribute("opacity", "0");
+    // Replay camera: always zoomed in on the ball.
+    const c = S.cam, tw = 720, th = 488;
+    const cx = clamp(bx - tw / 2, -90, 1270 - 90 - tw), cy = clamp(by - th / 2, -90, 860 - 90 - th);
+    const ck = 1 - Math.exp(-dt / 260);
+    c.x += (cx - c.x) * ck; c.y += (cy - c.y) * ck; c.w += (tw - c.w) * ck; c.h += (th - c.h) * ck;
+    $("pitch").setAttribute("viewBox", `${c.x.toFixed(1)} ${c.y.toFixed(1)} ${c.w.toFixed(1)} ${c.h.toFixed(1)}`);
+  }
+
+  /* o: { endAt, back, fwd, speed, label, freezeFrac, hold, onFreeze } (times in ms of recorded action) */
+  async function playReplay(o) {
+    if (reduced || !S.rec.length) return false;
+    const end = o.endAt != null ? o.endAt : S.recClock;
+    const clip = S.rec.filter((r) => r.t >= end - o.back && r.t <= Math.min(S.recClock, end + (o.fwd || 0)));
+    if (clip.length < 10) return false;
+    const g = GEN;
+    stopClock();
+    const stage = $("stage");
+    $("replay-tag").textContent = o.label || "▶ REPLAY";
+    stage.classList.add("replaying");
+    const first = clip[0].t, last = clip[clip.length - 1].t;
+    const R = { clip, t0: first, start: performance.now(), speed: o.speed || 0.5, frozen: null, onFreeze: o.onFreeze,
+      freezeAt: o.freezeFrac != null ? first + (last - first) * o.freezeFrac : null };
+    S.replay = R;
+    const ms = ((R.freezeAt != null ? R.freezeAt : last) - first) / R.speed + (R.freezeAt != null ? (o.hold || 2200) : 350);
+    await new Promise((res) => {
+      const tm = setTimeout(res, ms);
+      S.skipReplay = () => { clearTimeout(tm); res(); };
+    });
+    S.skipReplay = null;
+    if (g !== GEN) await never;
+    S.replay = null;
+    stage.classList.remove("replaying");
+    return true;
+  }
+
+  async function goalReplay(t, label) {
+    if (S.goalRec == null) return;
+    say(t === "f" ? pick(["Let's see that again...", "Here it is again in slow motion.", "Watch this again!"]) : `Here's how ${S.opp.name} scored.`, { icon: "info" });
+    await playReplay({ endAt: S.goalRec, back: 3200, fwd: 350, speed: t === "f" ? 0.42 : 0.55, label: label || "▶ REPLAY" });
   }
 
   /* ================================================================
@@ -588,9 +686,11 @@
     S.stats[offenderTeam].fouls += 1;
     await passTo(victim, 300);
     sfx.whistle();
-    const card = rand() < 0.38;
+    const card = rand() < 0.4;
     if (!card) { say(`Free kick. ${offender.short} catches ${victim.george ? "George" : victim.short}. ${S.ref} has a word.`, { icon: "whistle" }); return; }
-    await showCard(offender, "yellow", `for a late tackle on ${victim.george ? "George" : victim.short}`);
+    // Straight reds happen, far more often to the other lot.
+    const straightRed = rand() < (offenderTeam === "o" ? 0.14 : 0.03);
+    await showCard(offender, straightRed ? "red" : "yellow", straightRed ? `for a horror tackle on ${victim.george ? "George" : victim.short}` : `for a late tackle on ${victim.george ? "George" : victim.short}`);
   }
 
   async function showCard(p, colour, why) {
@@ -610,14 +710,36 @@
     $("card-ref").textContent = `Referee: ${S.ref}`;
     $("card-overlay").hidden = false;
     sfx.whistle();
-    say(`${c === "yellow" ? "Yellow card" : "Red card"}! ${S.ref} books ${p.short} ${why}.`, { icon: c === "yellow" ? "yellow" : "red", log: true, team: t, voice: c !== "yellow", voiceText: `Red card for ${p.short}!` });
+    say(c === "yellow" ? `Yellow card! ${S.ref} books ${p.short} ${why}.` : `Red card! ${S.ref} sends off ${p.short} ${why}.`, { icon: c === "yellow" ? "yellow" : "red", log: true, team: t, voice: c !== "yellow", voiceText: `Red card for ${p.short}!` });
     await wait(reduced ? 500 : 1700);
     $("card-overlay").hidden = true;
     if (c !== "yellow") {
+      if (t === "o") {
+        // George loves this bit.
+        pop("RED CARD!", "red");
+        sfx.roar();
+        GK.confetti($("confetti"), 90, ["#e1102c", "#ff5a6e", "#ffffff"]);
+        S.oppReds += 1;
+        momentum(3);
+      }
+      // The long walk off.
+      if (S.carrier === p) S.carrier = null;
+      holdAt(p, p.x, p.y < 34 ? -3 : PH + 3, false);
+      p.walking = true;
+      say(t === "o"
+        ? pick([`OFF HE GOES! ${p.short} is sent off and the Forest fans are loving it!`, `See ya! ${p.short} takes the long walk. ${teamName} down to ${team(t).length - 1} men!`, `RED CARD! ${p.short} is off! Big advantage Forest!`])
+        : `${p.short} is off. Forest are down to ${team(t).length - 1} men.`, { icon: "red", voice: t === "o", excited: true, voiceText: `${p.short} is sent off!` });
+      await wait(reduced ? 300 : 1500);
       p.on = false;
+      p.hold = null;
       p.el.style.display = "none";
-      if (t === "o") S.oppDown = (S.oppDown || 0) + 1;
-      say(`${p.short} is off. ${teamName} are down to ${team(t).length} men.`, { icon: "red" });
+      if (t === "o") {
+        S.oppDown = (S.oppDown || 0) + 1;
+        // Extra space to play in: one more Forest chance later on.
+        const at = S.min + 3 + Math.floor(rand() * 6);
+        const end = S.half === 1 ? 45 : 90;
+        if (at < end) S.schedule.push({ type: "attack", min: at, half: S.half, done: false });
+      }
     }
   }
 
@@ -671,7 +793,7 @@
       const q = MQ.nextQuestion(level, SAVE.subjects, S.used);
       S.used.add(q.id);
       S.currentQ = q;
-      const secs = Math.max(6, LEVEL_TIME[level] - S.tier.timer);
+      const secs = Math.max(5, LEVEL_TIME[level] - S.tier.timer + (o.timerAdjust || 0));
       const panel = $("panel");
       const powers = (o.powers || []).filter((k) => S.powers[k]);
       const POWER = {
@@ -833,6 +955,7 @@
     // Goal!
     holdAt(keeper, keeper.x, target.y < 34 ? target.y + 3 : target.y - 3, true);
     await ballTo(target.x, target.y, o.ms || 520, o.lift || 1.2);
+    S.goalRec = S.recClock;
     const net = $(t === "f" ? "net-r" : "net-l");
     net.classList.remove("flash"); void net.getBBox(); net.classList.add("flash");
     return "goal";
@@ -900,25 +1023,46 @@
   }
 
   /* VAR: draws the offside lines and makes a call. */
-  async function varCheck(kind, verdictGood, attackTeam) {
+  /* VAR: slow-motion replay, freeze, lines, decision.
+     verdictGood: "onside" | "offside" | "foul". who: the player being checked. */
+  async function varCheck(kind, verdictGood, attackTeam, who) {
     stopClock();
     sfx.tick();
     banner("var", "VAR CHECK", kind);
     say(`Hold on... ${S.varRef} in the VAR room at Stockley Park is checking for ${kind.toLowerCase()}.`, { icon: "var", voice: true, voiceText: "VAR check" });
+    const offsideCheck = /offside/i.test(kind);
+    const gapN = verdictGood === "offside" ? 0.2 + rand() * 0.7 : 0.3 + rand() * 0.9;
+    const gap = gapN.toFixed(2);
     const fx = $("fx-pitch");
-    const attackX = attackTeam === "f" ? clamp(S.ball.x - 12 + rand() * 3, 60, 96) : clamp(S.ball.x + 12 - rand() * 3, 9, 45);
-    const defX = verdictGood === "onside"
-      ? attackX + (attackTeam === "f" ? 0.4 + rand() : -(0.4 + rand()))
-      : attackX + (attackTeam === "f" ? -(0.3 + rand() * 0.7) : 0.3 + rand() * 0.7);
-    if (/offside/i.test(kind)) {
-      fx.insertAdjacentHTML("beforeend", `<g id="var-lines" class="var-lines">
-        <rect x="0" y="0" width="${PW}" height="${PH}" fill="#0a1a3a" opacity=".25"/>
-        <line x1="${attackX}" y1="0" x2="${attackX}" y2="${PH}" stroke="#ff4d62" stroke-width="0.3"/>
-        <line x1="${defX}" y1="0" x2="${defX}" y2="${PH}" stroke="#4db8ff" stroke-width="0.3"/>
-      </g>`);
+    const drawFor = (ax, ay) => {
+      if (offsideCheck) {
+        // Onside: the defender line is nearer goal than the attacker. Offside: the attacker is past it.
+        const towardGoal = attackTeam === "f" ? 1 : -1;
+        const defX = ax + towardGoal * (verdictGood === "offside" ? -gapN : gapN);
+        fx.insertAdjacentHTML("beforeend", `<g id="var-lines" class="var-lines">
+          <rect x="0" y="0" width="${PW}" height="${PH}" fill="#0a1a3a" opacity=".3"/>
+          <circle cx="${ax}" cy="${ay}" r="2.6" fill="none" stroke="#ff4d62" stroke-width="0.35"/>
+          <line x1="${ax}" y1="0" x2="${ax}" y2="${PH}" stroke="#ff4d62" stroke-width="0.3"/>
+          <line x1="${defX}" y1="0" x2="${defX}" y2="${PH}" stroke="#4db8ff" stroke-width="0.3"/>
+        </g>`);
+      } else {
+        fx.insertAdjacentHTML("beforeend", `<g id="var-lines" class="var-lines">
+          <rect x="0" y="0" width="${PW}" height="${PH}" fill="#0a1a3a" opacity=".25"/>
+          <circle cx="${ax}" cy="${ay}" r="3.2" fill="none" stroke="#f5d000" stroke-width="0.4" stroke-dasharray="1 0.6"/>
+        </g>`);
+      }
+    };
+    const idx = who ? S.players.indexOf(who) : -1;
+    const played = await playReplay({
+      endAt: offsideCheck && S.goalRec != null ? S.goalRec : S.recClock,
+      back: offsideCheck ? 2600 : 2000, speed: 0.33, label: "📺 VAR REPLAY",
+      freezeFrac: offsideCheck ? 0.5 : 0.85, hold: 2600,
+      onFreeze: (f) => { if (idx >= 0) drawFor(f.xy[idx * 2], f.xy[idx * 2 + 1]); else drawFor(S.ball.x, S.ball.y); },
+    });
+    if (!played) {
+      drawFor(who ? who.x : S.ball.x, who ? who.y : S.ball.y);
+      await wait(reduced ? 500 : 2400);
     }
-    await wait(reduced ? 500 : 2400);
-    const gap = Math.abs(attackX - defX).toFixed(2);
     const lines = $("var-lines");
     if (lines) lines.remove();
     return gap;
@@ -933,6 +1077,9 @@
     else if (m.type === "defend") await defendMoment();
     else if (m.type === "penalty") await penaltyMoment();
     else if (m.type === "freekick") await freeKickMoment();
+    else if (m.type === "wonder") await oppWonderGoal();
+    else if (m.type === "redcard") await redCardMoment();
+    else if (m.type === "halfway") await halfwayMoment();
     releaseAll();
     renderStats();
   }
@@ -943,11 +1090,23 @@
     return alts.length ? pick(alts) : S.george;
   }
 
-  async function forestGoalFlow(scorer, assister, kind) {
-    // Sometimes VAR has a look at George's goal. It always stands: he timed his run perfectly.
+  async function forestGoalFlow(scorer, assister, kind, opts) {
+    const o = opts || {};
     await scoreGoal("f", scorer, assister, kind);
-    if (rand() < 0.22) {
-      const gap = await varCheck("Possible offside", "onside", "f");
+    if (o.setpiece) {
+      // Close-up replay of the penalty or free kick.
+      say(pick(["Let's see that again...", "Watch the replay!", "In slow motion... look at that!"]), { icon: "info" });
+      const g = GEN;
+      await MDSP.replay();
+      if (g !== GEN) await never;
+      endSetPiece();
+      return restart("o");
+    }
+    // Sometimes VAR has a look at George's goal. It always stands: he timed his run perfectly.
+    if (rand() >= 0.22) {
+      await goalReplay("f", kind === "halfway" ? "▶ REPLAY · FROM THE HALFWAY LINE!" : null);
+    } else {
+      const gap = await varCheck("Possible offside", "onside", "f", scorer);
       banner("good", "GOAL STANDS ✅", `Onside by ${gap} m`);
       sfx.roar();
       say(`Check complete. Onside by ${gap} metres! The goal stands!`, { icon: "var", log: true, team: "f", voice: true, excited: true, voiceText: "The goal stands!" });
@@ -1100,6 +1259,18 @@
     sfx.tick();
     const level = pick(S.tier.defendLevels);
     const ok = await askQuestion(level, { kicker: "Defend!", title: `Stop ${attacker.short}!`, powers: ["murillo", "neco"], kind: "defend" });
+    if (ok && rand() < S.tier.goalIfRight * (S.oppDown ? 0.5 : 1)) {
+      // Top teams: even a great tackle isn't always enough.
+      const mate = pick(outfield("o").filter((p) => p !== attacker && p.line !== "def")) || attacker;
+      await passTo(defender, 240);
+      sfx.thud();
+      say(`${defender.short} gets a foot in... but it falls straight to ${mate.short}!`, { icon: "chance" });
+      await passTo(mate, 320);
+      await shoot(mate, "o", "goal", { xg: 0.3, lift: 1 });
+      await scoreGoal("o", mate, attacker, "shot");
+      if (rand() < 0.6) await goalReplay("o");
+      return restart("f");
+    }
     if (ok) {
       S.stats.f.tackles += 1;
       defender.tackles = (defender.tackles || 0) + 1;
@@ -1125,7 +1296,7 @@
     }
     // Wrong answer: trouble.
     if (rand() < 0.14) return oppPenalty(attacker, defender);
-    const goal = rand() < S.tier.goalIfWrong;
+    const goal = rand() < Math.max(0.2, S.tier.goalIfWrong - 0.12 * (S.oppDown || 0));
     const res = await shoot(attacker, "o", goal ? "goal" : pick(["save", "miss", "post"]), { xg: 0.35, lift: 1 });
     if (res !== "goal") {
       if (res === "save") { const gk = keeperOf("f"); gk.saves = (gk.saves || 0) + 1; }
@@ -1133,10 +1304,12 @@
       return;
     }
     await scoreGoal("o", attacker, null, "shot");
-    if (rand() < 0.4) {
+    if (rand() >= 0.4) {
+      if (rand() < 0.6) await goalReplay("o");
+    } else {
       banner("var", "VAR CHECK", "Possible offside");
       const ok2 = await askQuestion(2, { kicker: "VAR check", title: "Help the VAR get it right!", powers: ["neco"], kind: "var" });
-      const gap = await varCheck("Possible offside", ok2 ? "offside" : "onside", "o");
+      const gap = await varCheck("Possible offside", ok2 ? "offside" : "onside", "o", attacker);
       if (ok2) {
         unscoreLast("o");
         banner("good", "NO GOAL ❌", `${attacker.short} offside by ${gap} m`);
@@ -1182,7 +1355,7 @@
     }
     const res = await shoot(taker, "o", rand() < 0.88 ? "goal" : "post", { xg: 0.76, corner: dive === "left" ? "right" : "left", ms: 420, lift: 0.6 });
     S.phase = "play";
-    if (res === "goal") { await scoreGoal("o", taker, null, "penalty"); await restart("f"); }
+    if (res === "goal") { await scoreGoal("o", taker, null, "penalty"); await goalReplay("o"); await restart("f"); }
     else say("It hits the post! Forest escape!", { icon: "info" });
   }
 
@@ -1198,7 +1371,7 @@
     S.poss = "f";
     say(`George goes down in the box! ${fouler.short} was all over him! ${S.ref} waves play on...`, { icon: "chance" });
     await wait(reduced ? 300 : 1000);
-    await varCheck("Possible penalty", "pen", "f");
+    await varCheck("Possible penalty", "foul", "f", S.george);
     banner("var", "ON-FIELD REVIEW", `${S.ref} goes to the monitor`);
     say(`${S.ref} is going to the pitch-side monitor...`, { icon: "var" });
     await wait(reduced ? 300 : 1600);
@@ -1217,20 +1390,14 @@
     const gk = keeperOf("o");
     holdAt(gk, PW - 0.6, 34, true);
     outfield("f").concat(outfield("o")).filter((p) => !p.george).forEach((p) => holdAt(p, clamp(p.x, 60, PW - 18.5), p.y, false));
-    const ok = await askQuestion(2, { kicker: "Penalty", title: "George steps up...", powers: ["neco"], kind: "attack" });
-    const corner = await choose("Where does George put it?", "Pick your spot.", [
-      { id: "left", icon: "↖️", label: "Top left", sub: "Into the corner" },
-      { id: "middle", icon: "⬆️", label: "Down the middle", sub: "Brave!" },
-      { id: "right", icon: "↗️", label: "Top right", sub: "Into the corner" },
-    ]);
-    // Right answer: the keeper guesses wrong nearly every time.
-    const keeperGoes = ok ? pick(["left", "right", "middle"].filter((c) => c !== corner)) : corner;
-    holdAt(gk, PW - 0.6, keeperGoes === "left" ? GOAL_TOP + 1.2 : keeperGoes === "right" ? GOAL_BOT - 1.2 : 34, true);
-    const result = ok ? "goal" : pick(["save", "save", "post"]);
-    const res = await shoot(g, "f", result, { xg: 0.76, corner, ms: 420, lift: 0.7 });
+    await wait(reduced ? 200 : 700);
+    const ok = await askQuestion(2, { kicker: "Penalty", title: "Get it right for the best chance!", powers: ["neco"], kind: "attack" });
+    const r = await setPiece("penalty", { dist: 12, side: 0, wallN: 0, keeperSkill: S.tier.keeper }, ok, "George steps up...");
     S.phase = "play";
-    if (res === "goal") return forestGoalFlow(g, null, "penalty");
-    say(res === "save" ? `Saved by ${gk.short}! He guessed right.` : "Off the post! Agonising.", { icon: res === "save" ? "save" : "info" });
+    if (r.goal) return forestGoalFlow(g, null, "penalty", { setpiece: true });
+    endSetPiece();
+    say({ saved: `Saved by ${gk.short}! He guessed right.`, post: "Off the post! Agonising.", over: "Over the bar! George can't believe it.", wide: "Wide! Just wide of the post." }[r.result] || "Missed!", { icon: r.result === "saved" ? "save" : "info" });
+    S.carrier = gk;
   }
 
   async function freeKickMoment() {
@@ -1255,12 +1422,142 @@
     const gk = keeperOf("o");
     holdAt(gk, PW - 0.8, 34, true);
     await wait(reduced ? 200 : 900);
-    say("George over the ball. The wall's lined up... this is Free Kick Masters territory!", { icon: "info" });
-    const ok = await askQuestion(3, { kicker: "Free kick", title: "Bend it round the wall!", powers: ["gw", "neco"], kind: "attack" });
-    const res = await shoot(g, "f", ok ? (rand() < S.tier.saveIfRight + 0.1 ? "save" : "goal") : pick(["miss", "save", "miss"]), { xg: 0.07, lift: 2.6, ms: 620, corner: spotY < 34 ? "right" : "left" });
+    await georgeFreeKick(19 + rand() * 10, (spotY - 34) / 12);
+  }
+
+  /* The close-up free kick, shared by fouls and red-card moments. */
+  async function georgeFreeKick(dist, side) {
+    const g = S.george, gk = keeperOf("o");
+    say(`George over the ball, ${Math.round(dist)} yards out. The wall's lined up... this is Free Kick Masters territory!`, { icon: "info" });
+    const ok = await askQuestion(dist > 25 ? 3 : 2, { kicker: "Free kick", title: "Get it right for the best chance!", powers: ["neco"], kind: "attack" });
+    const r = await setPiece("freekick", { dist, side: clamp(Math.round(side * 10) / 10, -1, 1), wallN: S.tier.wall - (S.oppDown ? 1 : 0), keeperSkill: S.tier.keeper }, ok, "Bend it round the wall!");
     S.phase = "play";
-    if (res === "goal") { pop("TOP BINS!", "gold"); return forestGoalFlow(g, null, "free kick"); }
-    say(res === "save" ? `${gk.short} claws it away!` : "Over the wall... and over the bar.", { icon: res === "save" ? "save" : "info" });
+    if (r.goal) {
+      if (r.topBins) pop("TOP BINS!", "gold");
+      return forestGoalFlow(g, null, "free kick", { setpiece: true });
+    }
+    endSetPiece();
+    say({ wall: "Straight into the wall!", saved: `${gk.short} claws it away!`, post: "Off the woodwork! So close!", over: "Over the wall... and over the bar.", wide: "Curls just wide!" }[r.result] || "Missed!", { icon: r.result === "saved" ? "save" : "info" });
+    S.carrier = gk;
+  }
+
+  /* Cut to the close-up view. Right answer = aim line + bigger green zone. */
+  function georgeKitKey() {
+    const k = S.gear.kit;
+    if (k === "home" || k === "away") return S.forestKit === MD.FOREST.away ? "away" : "home";
+    return k;
+  }
+  function bootsColour() {
+    const b = ((freeKickSave().selected) || {}).boots;
+    return { red: "#e1102c", neon: "#a3e635", gold: "#f5b942" }[b] || "#15121a";
+  }
+  async function setPiece(kind, kick, ok, title) {
+    stopClock();
+    S.recPaused = true;
+    $("stage").classList.add("setpiece");
+    const g = GEN;
+    const pr = MDSP.play({
+      root: $("stage"), panel: $("panel"), kind, kick, advantage: ok, title,
+      oppKit: { shirt: S.oppKit.shirt, shorts: S.oppKit.shorts }, keeperKit: S.opp.keeperKit,
+      kitKey: georgeKitKey(), boots: bootsColour(), night: S.night, home: S.home, ground: S.ground,
+      crowd: S.home ? ["#e1102c", "#e1102c", "#ffffff", "#7a0d20", "#e1102c"] : [S.oppKit.shirt, S.oppKit.trim, S.oppKit.shirt],
+      sfx, reduced,
+    });
+    revealPanel();
+    const r = await pr;
+    if (g !== GEN) await never;
+    $("panel").hidden = true; $("panel").innerHTML = "";
+    const f = S.stats.f;
+    f.shots += 1;
+    f.xg += kind === "penalty" ? 0.76 : 0.07;
+    if (["goal", "saved", "post-in"].includes(r.result)) f.onTarget += 1;
+    if (r.result === "saved") S.stats.o.saves += 1;
+    if (!r.goal) {
+      sfx.aww();
+      pop({ wall: "BLOCKED!", saved: "SAVED!", over: "OVER!", wide: "WIDE!", post: "OFF THE POST!" }[r.result] || "MISSED", "soft");
+    }
+    await wait(reduced ? 300 : 900);
+    return r;
+  }
+  function endSetPiece() {
+    MDSP.close();
+    $("stage").classList.remove("setpiece");
+    S.recPaused = false;
+  }
+
+  /* ---------------- An unstoppable worldie from their best player ---------------- */
+  async function oppWonderGoal() {
+    await buildUp("o");
+    const star = pick(outfield("o").filter((p) => p.line === "fwd" || p.line === "att")) || pick(outfield("o"));
+    holdAt(star, 27, 18 + rand() * 32, true);
+    await passTo(star, 420);
+    say(`${star.short} picks it up 25 yards out... he shapes to shoot...`, { icon: "chance" });
+    await wait(reduced ? 200 : 900);
+    await shoot(star, "o", "goal", { xg: 0.05, lift: 2.2, ms: 520, corner: pick(["left", "right"]) });
+    const gk = keeperOf("f");
+    await scoreGoal("o", star, null, "wonder");
+    say(pick([`What a strike from ${star.short}. Nothing ${gk.short} could do about that.`, `Unstoppable! ${star.short} bends it into the top corner. That's why they're one of the best.`, `Wow. ${star.short} with a worldie. Even the Forest fans are clapping that one.`]), { icon: "goal" });
+    await wait(reduced ? 200 : 1200);
+    await goalReplay("o");
+    await restart("f");
+  }
+
+  /* ---------------- Last man brings George down: straight red! ---------------- */
+  async function redCardMoment() {
+    const g = S.george;
+    await buildUp("f");
+    const lane = 26 + rand() * 16;
+    holdAt(g, 78, lane, true);
+    await passTo(g, 420);
+    const lastMan = pick(outfield("o").filter((p) => p.line === "def")) || pick(outfield("o"));
+    say(`George is clean through! Only ${lastMan.short} to beat...`, { icon: "chance" });
+    holdAt(lastMan, 84, lane + 1, true);
+    holdAt(g, 84, lane, true);
+    await wait(reduced ? 200 : 900);
+    sfx.thud();
+    sfx.whistle();
+    S.stats.o.fouls += 1;
+    say(`${lastMan.short} drags George down! He was the last man!`, { icon: "whistle" });
+    await wait(reduced ? 200 : 800);
+    if (rand() < 0.45) {
+      // The ref only gives yellow at first... VAR steps in.
+      say(`${S.ref} reaches for a yellow... but wait, VAR wants a look.`, { icon: "var" });
+      await varCheck("Possible red card", "foul", "f", g);
+      banner("var", "ON-FIELD REVIEW", `${S.ref} goes to the monitor`);
+      await wait(reduced ? 300 : 1400);
+      hideBanner();
+    }
+    await showCard(lastMan, "red", "for denying George a clear goal-scoring chance");
+    releaseAll();
+    S.phase = "set";
+    const spotY = clamp(lane, 20, 48);
+    await ballTo(PW - 21, spotY, 400, 0);
+    holdAt(g, PW - 23, spotY + 1.5, true);
+    outfield("o").slice(0, 4).forEach((p, i) => holdAt(p, PW - 21 + 9.15, spotY + (34 - spotY) * 0.3 + (i - 1.5) * 1.1, true));
+    await wait(reduced ? 200 : 800);
+    await georgeFreeKick(20 + rand() * 3, (spotY - 34) / 12);
+  }
+
+  /* ---------------- From the halfway line! ---------------- */
+  async function halfwayMoment() {
+    const g = S.george, gk = keeperOf("o");
+    S.poss = "f"; S.phase = "play";
+    releaseAll();
+    holdAt(g, 50, 26 + rand() * 16, true);
+    await passTo(g, 450);
+    holdAt(gk, PW - 17, 34, false);
+    await wait(reduced ? 200 : 1000);
+    say(`${gk.short} is miles off his line... George looks up... he's going to try it from the HALFWAY LINE!`, { icon: "chance", voice: true, excited: true, voiceText: "From the halfway line?!" });
+    const ok = await askQuestion(3, { kicker: "Halfway line!", title: "Chip the keeper from 50 metres!", powers: ["gw", "neco"], kind: "attack", timerAdjust: -2 });
+    if (ok && rand() < 0.85) {
+      await shoot(g, "f", "goal", { xg: 0.02, lift: 10, ms: 1800, corner: "middle" });
+      S.halfwayGoals += 1;
+      pop("FROM HALFWAY!!!", "gold");
+      GK.confetti($("confetti"), 260);
+      return forestGoalFlow(g, null, "halfway");
+    }
+    const res = await shoot(g, "f", ok ? "post" : pick(["miss", "save"]), { xg: 0.02, lift: 10, ms: 1800 });
+    say(res === "post" ? "OFF THE BAR from the halfway line! That would have been the goal of the season!" : res === "save" ? `${gk.short} scrambles back and just about tips it over!` : "Just over the bar. What a try though!", { icon: "info" });
   }
 
   /* ================================================================
@@ -1389,6 +1686,8 @@
       ["Right answers", Math.round(S.right * 20 * mult)],
       ["George hat-trick", S.george.goals >= 3 ? 200 : 0],
       ["VAR drama", S.varWins * 50],
+      ["Halfway line wonder goal", S.halfwayGoals * 150],
+      ["Their red cards", S.oppReds * 50],
     ];
     return { parts: parts.filter((p) => p[1] > 0), total: parts.reduce((t, p) => t + p[1], 0) };
   }
@@ -1412,7 +1711,7 @@
     persist();
     let badges = [];
     if (window.GZ && GZ.recordMatchday) {
-      const r = GZ.recordMatchday({ score: pts.total, won, georgeGoals: S.george.goals, cleanSheet: S.score.o === 0, giantKiller: won && S.tierN === 3, varWin: S.varWins > 0 });
+      const r = GZ.recordMatchday({ score: pts.total, won, georgeGoals: S.george.goals, cleanSheet: S.score.o === 0, giantKiller: won && S.tierN === 3, varWin: S.varWins > 0, halfway: S.halfwayGoals > 0, oppReds: S.oppReds });
       badges = r.newBadges || [];
       GZ.announceBadges(badges);
     }
@@ -1699,6 +1998,8 @@
     if (!S || S.oppKey !== oppKey || S.over) setupMatch(oppKey, venue, fixture);
     S.quit = false;
     GEN += 1;
+    MDSP.close();
+    $("stage").classList.remove("setpiece", "replaying");
     show("screen-match");
     SOUND.wake && SOUND.wake();
     buildStage();
@@ -1748,11 +2049,14 @@
     if (S) setZoom();
   });
   document.querySelectorAll(".md-tab").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
+  $("btn-skip").addEventListener("click", () => { if (S && S.skipReplay) S.skipReplay(); });
   $("btn-quit").addEventListener("click", () => {
     if (!S) return;
     if (!confirm("Leave this match? It won't count.")) return;
     S.quit = true; S.over = true;
     GEN += 1;
+    MDSP.close();
+    $("stage").classList.remove("setpiece", "replaying");
     document.removeEventListener("keydown", answerKeyHandler);
     $("panel").hidden = true;
     renderMenu(); show("screen-menu");
