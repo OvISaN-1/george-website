@@ -105,10 +105,23 @@
      Save data (this device only)
      ================================================================ */
   function defaults() {
-    return { results: {}, sims: {}, subjects: Object.keys(MQ.SUBJECTS), played: 0, wins: 0, draws: 0, losses: 0, georgeGoals: 0, best: 0, zoom: "auto" };
+    return { results: {}, sims: {}, subjects: Object.keys(MQ.SUBJECTS), knownSubjects: Object.keys(MQ.SUBJECTS), played: 0, wins: 0, draws: 0, losses: 0, georgeGoals: 0, best: 0, zoom: "auto" };
   }
   function loadSave() {
-    try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s) return Object.assign(defaults(), s); } catch (e) {}
+    try {
+      const s = JSON.parse(localStorage.getItem(SAVE_KEY));
+      if (s) {
+        const save = Object.assign(defaults(), s);
+        // Switch on any subject added since this save was made.
+        const all = Object.keys(MQ.SUBJECTS);
+        const known = s.knownSubjects || ["maths", "capitals", "mountains", "football", "forest"];
+        all.forEach((k) => { if (!known.includes(k) && !save.subjects.includes(k)) save.subjects.push(k); });
+        save.subjects = save.subjects.filter((k) => all.includes(k));
+        if (!save.subjects.length) save.subjects = all;
+        save.knownSubjects = all;
+        return save;
+      }
+    } catch (e) {}
     return defaults();
   }
   function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); } catch (e) {} }
