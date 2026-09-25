@@ -204,6 +204,59 @@
     { l: 3, q: "What is the line on a mountain above which trees can't grow?", a: "The tree line", w: ["The snow line", "The contour line", "The ridge line"] },
   ];
 
+  /* ---------------- World Class (level 4) ----------------
+     For when George is getting nearly everything right. */
+  const WORLD_CLASS = [
+    // football
+    ["football", "Which club won the 2005 Champions League final in Istanbul?", "Liverpool", ["AC Milan", "Chelsea", "Barcelona"]],
+    ["football", "Which team won the Premier League in 2015/16 as 5000-1 outsiders?", "Leicester City", ["Tottenham", "West Ham", "Southampton"]],
+    ["football", "Who scored the famous last-minute goal to win Man City the 2012 title?", "Sergio Agüero", ["Edin Džeko", "Yaya Touré", "Mario Balotelli"]],
+    ["football", "Which country won Euro 2016?", "Portugal", ["France", "Wales", "Germany"]],
+    ["football", "Which club won the very first Premier League title in 1992/93?", "Manchester United", ["Aston Villa", "Blackburn Rovers", "Arsenal"]],
+    ["football", "Who scored the winner in the 2014 World Cup final?", "Mario Götze", ["Thomas Müller", "Lionel Messi", "Miroslav Klose"]],
+    ["football", "Brazil lost 7-1 at their own World Cup in 2014. Who beat them?", "Germany", ["Netherlands", "Argentina", "Spain"]],
+    ["football", "Which Italian club is nicknamed 'The Old Lady'?", "Juventus", ["AC Milan", "Inter Milan", "Roma"]],
+    ["football", "What is Barcelona's stadium called?", "Camp Nou", ["Bernabéu", "Metropolitano", "Mestalla"]],
+    ["football", "What is Bayern Munich's stadium called?", "Allianz Arena", ["Signal Iduna Park", "Olympiastadion", "Red Bull Arena"]],
+    ["football", "Ajax are a famous club from which country?", "Netherlands", ["Belgium", "Denmark", "Greece"]],
+    ["football", "Who scored 36 goals in the 2022/23 Premier League, a record?", "Erling Haaland", ["Mohamed Salah", "Harry Kane", "Alan Shearer"]],
+    ["football", "How many Premier League titles did Arsène Wenger win with Arsenal?", "3", ["2", "4", "5"]],
+    ["football", "Which country hosted the 2018 World Cup?", "Russia", ["Qatar", "Brazil", "Germany"]],
+    // Forest
+    ["forest", "In which year did Forest move to the City Ground?", "1898", ["1865", "1919", "1935"]],
+    ["forest", "Forest won the 1978 League Cup final replay against which team?", "Liverpool", ["Everton", "Leeds", "Southampton"]],
+    ["forest", "Who did Forest beat 3-2 in the 1979 League Cup final?", "Southampton", ["Liverpool", "Arsenal", "Wolves"]],
+    ["forest", "Who was Forest's manager when they won the League Cup in 1989 and 1990?", "Brian Clough", ["Frank Clark", "Peter Taylor", "Dave Bassett"]],
+    ["forest", "Forest's record scorer, with over 200 goals, is...", "Grenville Morris", ["Trevor Francis", "Ian Storey-Moore", "Nigel Clough"]],
+    // capitals
+    ["capitals", "What is the capital of Kazakhstan?", "Astana", ["Almaty", "Tashkent", "Bishkek"]],
+    ["capitals", "What is the capital of Myanmar?", "Naypyidaw", ["Yangon", "Mandalay", "Bangkok"]],
+    ["capitals", "What is the capital of Côte d'Ivoire (Ivory Coast)?", "Yamoussoukro", ["Abidjan", "Accra", "Dakar"]],
+    ["capitals", "What is the capital of Belize?", "Belmopan", ["Belize City", "San Salvador", "Kingston"]],
+    ["capitals", "What is the capital of Bhutan?", "Thimphu", ["Kathmandu", "Paro", "Dhaka"]],
+    ["capitals", "What is the capital of Mongolia?", "Ulaanbaatar", ["Astana", "Bishkek", "Harbin"]],
+    ["capitals", "What is the capital of Liechtenstein?", "Vaduz", ["Schaan", "Bern", "Innsbruck"]],
+    ["capitals", "What is the capital of Madagascar?", "Antananarivo", ["Toamasina", "Maputo", "Nairobi"]],
+    ["capitals", "What is the capital of Paraguay?", "Asunción", ["Montevideo", "Encarnación", "La Paz"]],
+    ["capitals", "What is the capital of Georgia (the country)?", "Tbilisi", ["Batumi", "Yerevan", "Baku"]],
+    ["capitals", "What is the capital of Cameroon?", "Yaoundé", ["Douala", "Lagos", "Libreville"]],
+    ["capitals", "What is the capital of Burkina Faso?", "Ouagadougou", ["Bamako", "Niamey", "Bobo-Dioulasso"]],
+    ["capitals", "What is the capital of Montenegro?", "Podgorica", ["Kotor", "Sarajevo", "Tirana"]],
+    ["capitals", "What is the capital of North Macedonia?", "Skopje", ["Ohrid", "Sofia", "Pristina"]],
+    ["capitals", "What is the capital of Nepal?", "Kathmandu", ["Pokhara", "Thimphu", "Lhasa"]],
+    // mountains
+    ["mountains", "What is the highest mountain in Antarctica?", "Mount Vinson", ["Mount Erebus", "Mount Kirkpatrick", "Mount Tyree"]],
+    ["mountains", "Aconcagua, South America's highest mountain, is in which country?", "Argentina", ["Chile", "Peru", "Bolivia"]],
+    ["mountains", "What was Denali called until 2015?", "Mount McKinley", ["Mount Washington", "Mount Rainier", "Mount Lincoln"]],
+    ["mountains", "About how tall is Kilimanjaro?", "5,895 m", ["4,807 m", "6,961 m", "3,776 m"]],
+    ["mountains", "About how tall is Mount Fuji?", "3,776 m", ["2,915 m", "4,478 m", "5,642 m"]],
+    ["mountains", "Which country has the most of the world's 8,000-metre peaks?", "Nepal", ["China", "Pakistan", "India"]],
+    ["mountains", "What is the highest mountain in Canada?", "Mount Logan", ["Mount Robson", "Denali", "Mount Assiniboine"]],
+    ["mountains", "What is the highest mountain in New Zealand?", "Aoraki / Mount Cook", ["Mount Ruapehu", "Mount Taranaki", "Mount Aspiring"]],
+    ["mountains", "The highest mountain in Spain is a volcano on Tenerife. What is it called?", "Teide", ["Mulhacén", "Aneto", "Etna"]],
+    ["mountains", "What is the highest mountain in Scandinavia?", "Galdhøpiggen", ["Kebnekaise", "Glittertind", "Halti"]],
+  ];
+
   /* ---------------- Build the bank ---------------- */
   const BANK = [];
   let n = 0;
@@ -220,12 +273,14 @@
     add("capitals", { id: "cap-" + country, l, q: `What is the capital of ${country}?`, a: city, w: (trick || []).concat(shuffle(near)), far });
   });
   MOUNTAINS.forEach((x, i) => add("mountains", Object.assign({ id: "mt" + i }, x)));
+  WORLD_CLASS.forEach(([subject, q, a, w], i) => add(subject, { id: "wc" + i, l: 4, q, a, w }));
 
   /* ---------------- Times tables (made up on the spot) ----------------
      Easy: x1, x2, x5, x10.  Medium: x3, x4, x6, x11.  Hard: x7, x8, x9, x12,
      plus "missing number" sums like ? x 8 = 72. */
   const TABLES = { 1: [2, 5, 10], 2: [3, 4, 6, 11], 3: [7, 8, 9, 12] };
   function mathsQuestion(level) {
+    if (level >= 4) return mathsWorldClass();
     const a = pick(TABLES[level]);
     const b = level === 1 ? 1 + Math.floor(rand() * 10) : 2 + Math.floor(rand() * 11);
     const [x, y] = rand() < 0.5 ? [a, b] : [b, a];
@@ -244,6 +299,27 @@
       if (level === 1) wrong = [ans + 10 + Math.floor(rand() * 10), Math.max(1, ans - 9 - Math.floor(rand() * 8)), ans * 2 + 3].filter((v) => v !== ans);
     }
     return { id, subject: "maths", l: level, q, a: String(right), w: wrong.map(String), maths: true };
+  }
+
+  /* World Class sums: bigger times tables, squares and sharing. */
+  function mathsWorldClass() {
+    const kind = pick(["big", "big", "square", "divide"]);
+    let q, ans, id, wrong;
+    if (kind === "big") {
+      const a = 12 + Math.floor(rand() * 14), b = 3 + Math.floor(rand() * 7);
+      ans = a * b; q = `${a} × ${b} = ?`; id = `m4:${a}x${b}`;
+      wrong = [a * (b + 1), a * (b - 1), ans + 10, ans - 10, ans + 2];
+    } else if (kind === "square") {
+      const a = 11 + Math.floor(rand() * 5);
+      ans = a * a; q = `${a} × ${a} = ?`; id = `m4:sq${a}`;
+      wrong = [a * (a + 1), a * (a - 1), ans + 10, ans - 11];
+    } else {
+      const b = 6 + Math.floor(rand() * 7), c = 6 + Math.floor(rand() * 7);
+      ans = c; q = `${b * c} ÷ ${b} = ?`; id = `m4:${b * c}d${b}`;
+      wrong = [c + 1, c - 1, c + 2, c - 2];
+    }
+    wrong = wrong.filter((v, i, arr) => v > 0 && v !== ans && arr.indexOf(v) === i);
+    return { id, subject: "maths", l: 4, q, a: String(ans), w: wrong.map(String), maths: true };
   }
 
   /* ================================================================
@@ -267,8 +343,21 @@
       if (acc >= 0.8) lvl -= 1;
       else if (acc < 0.5) lvl += 1;
     }
-    return Math.max(1, Math.min(3, lvl));
+    return Math.max(1, Math.min(4, lvl));
   }
+
+  /* Form: the last 24 answers. When George is on fire, every question
+     gets pushed up a level (up to World Class). */
+  const FORM_KEY = "gz_matchday_form_v1";
+  let form = [];
+  try { form = JSON.parse(localStorage.getItem(FORM_KEY)) || []; } catch (e) { form = []; }
+  function stretch() {
+    if (form.length < 10) return 0;
+    const acc = form.reduce((a, b) => a + b, 0) / form.length;
+    return acc >= 0.8 ? 1 : acc < 0.45 ? -1 : 0;
+  }
+  function adjust(level) { return Math.max(1, Math.min(4, level + stretch())); }
+  function formPct() { return form.length ? Math.round((form.reduce((a, b) => a + b, 0) / form.length) * 100) : null; }
 
   function record(q, correct) {
     const s = brain[q.id] || { seen: 0, right: 0, last: 0, wrongStreak: 0, text: "" };
@@ -279,6 +368,9 @@
     s.lastResult = correct ? 1 : 0;
     brain[q.id] = s;
     saveBrain();
+    form.push(correct ? 1 : 0);
+    if (form.length > 24) form = form.slice(-24);
+    try { localStorage.setItem(FORM_KEY, JSON.stringify(form)); } catch (e) {}
   }
 
   /* How likely a question is to be picked. Ones George got wrong come
@@ -323,7 +415,7 @@
     if (!pool.length) pool = BANK.filter((q) => subs.includes(q.subject) && !used.has(q.id));
     if (!pool.length) pool = BANK.slice();
     // Closest level first: exact match, then one away, then anything.
-    for (const gap of [0, 1, 2]) {
+    for (const gap of [0, 1, 2, 3]) {
       const fit = pool.filter((q) => Math.abs(effectiveLevel(q) - level) === gap);
       if (fit.length) return present(weightedPick(fit), level);
     }
@@ -333,11 +425,12 @@
   /* Turn a bank question into what goes on screen for a given level:
      level 1 -> 2 buttons (least tricky wrong answer)
      level 2 -> 3 buttons
-     level 3 -> 4 buttons (trickiest wrong answers) */
+     level 3 -> 4 buttons (trickiest wrong answers)
+     level 4 -> 4 buttons, trickiest, World Class */
   function present(q, level) {
     const count = level === 1 ? 1 : level === 2 ? 2 : 3;
     let wrong;
-    if (level === 3) wrong = q.w.slice(0, count);
+    if (level >= 3) wrong = q.w.slice(0, count);
     else if (level === 2) wrong = shuffle(q.w.slice(0, 4)).slice(0, count);
     else wrong = q.far ? [pick(q.far)] : [q.w[q.w.length - 1]];
     wrong = wrong.filter((x) => x !== q.a);
@@ -359,5 +452,8 @@
   MQ.record = record;
   MQ.report = report;
   MQ.effectiveLevel = effectiveLevel;
+  MQ.adjust = adjust;
+  MQ.stretch = stretch;
+  MQ.formPct = formPct;
   MQ._bank = BANK;
 })(window.MQ = window.MQ || {});

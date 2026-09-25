@@ -51,6 +51,10 @@
     away:   { name: "Away",          shirt: "#f4f1ee", trim: "#d7102b", text: "#d7102b", shorts: "#15121a", socks: "#f4f1ee", sockTop: "#d7102b" },
     retro:  { name: "1979 European Cup", shirt: "#c8102e", trim: "#ffffff", text: "#ffffff", shorts: "#ffffff", socks: "#c8102e", sockTop: "#ffffff", retro: true },
     legend: { name: "Forest Legend", shirt: "#d4a52c", trim: "#3a0e18", text: "#3a0e18", shorts: "#3a0e18", socks: "#d4a52c", sockTop: "#3a0e18" },
+    // Matchday career unlocks
+    third:  { name: "Third kit", shirt: "#15121a", trim: "#f5b942", text: "#f5b942", shorts: "#15121a", socks: "#15121a", sockTop: "#f5b942" },
+    retro90:{ name: "1990 League Cup", shirt: "#c8102e", trim: "#f4f1ee", text: "#f4f1ee", shorts: "#f4f1ee", socks: "#c8102e", sockTop: "#f4f1ee", retro: true },
+    pink:   { name: "Pink away", shirt: "#f7a8c4", trim: "#15121a", text: "#15121a", shorts: "#15121a", socks: "#f7a8c4", sockTop: "#15121a" },
   };
 
   let avatarCount = 0;
