@@ -87,12 +87,12 @@
     // wonder: chances of an unstoppable "worldie" from their best player.
     // keeper / wall: how good their keeper is and how many in the wall, for George's set pieces.
     // finish: how often a right answer turns into a goal against them (their keeper and defence).
-    1: { attacks: 4, defends: 4, defendLevels: [1, 2, 2], timer: 0, goalIfWrong: 0.6, goalIfRight: 0.08, finish: 0.62, poss: 0.56, wonder: [0.25], keeper: 0.5, wall: 3 },
-    2: { attacks: 4, defends: 5, defendLevels: [2, 2, 3], timer: 1, goalIfWrong: 0.7, goalIfRight: 0.13, finish: 0.6, poss: 0.5, wonder: [0.45], keeper: 0.6, wall: 4 },
-    3: { attacks: 3, defends: 5, defendLevels: [2, 3, 3], timer: 2, goalIfWrong: 0.85, goalIfRight: 0.16, finish: 0.58, poss: 0.42, wonder: [0.7, 0.35], keeper: 0.72, wall: 5 },
+    1: { attacks: 5, defends: 3, defendLevels: [1, 1, 2], timer: 0, goalIfWrong: 0.5, goalIfRight: 0.04, finish: 0.68, poss: 0.58, wonder: [0.12], keeper: 0.45, wall: 3 },
+    2: { attacks: 4, defends: 4, defendLevels: [1, 2, 2], timer: 1, goalIfWrong: 0.6, goalIfRight: 0.08, finish: 0.64, poss: 0.52, wonder: [0.3], keeper: 0.55, wall: 4 },
+    3: { attacks: 4, defends: 5, defendLevels: [2, 2, 3], timer: 1, goalIfWrong: 0.72, goalIfRight: 0.12, finish: 0.6, poss: 0.45, wonder: [0.55, 0.2], keeper: 0.66, wall: 5 },
   };
   // Seconds on the clock for each question level, before the opponent's tier knocks some off.
-  const LEVEL_TIME = { 1: 15, 2: 13, 3: 11, 4: 11 };
+  const LEVEL_TIME = { 1: 17, 2: 15, 3: 13, 4: 13 };
   const LEVEL_NAME = { 1: "Easy", 2: "Medium", 3: "Hard", 4: "World Class" };
 
   /* How often a chance goes in when George gets the question right,
