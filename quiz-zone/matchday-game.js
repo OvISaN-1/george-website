@@ -23,6 +23,59 @@
   const sfx = SOUND.sfx;
   const VOICE = GK.createVoice("gz_matchday_voice");
 
+  /* ---------------- Extra match sounds ----------------
+     Made in the browser like the others (no sound files). */
+  function actx() { return SOUND.isOn() && SOUND.wake ? SOUND.wake() : null; }
+  function noiseBuffer(a, secs) {
+    const len = Math.floor(a.sampleRate * secs), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }   // soft "brown" noise
+    return buf;
+  }
+  function tone(freq, dur, type, vol, when) {
+    const a = actx(); if (!a) return;
+    const t0 = a.currentTime + (when || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type || "sine"; o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(vol || 0.1, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+    o.connect(g); g.connect(a.destination); o.start(t0); o.stop(t0 + dur);
+  }
+  function burst(when, dur, vol, freq) {
+    const a = actx(); if (!a) return;
+    const t0 = a.currentTime + (when || 0), src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+    src.buffer = noiseBuffer(a, dur); f.type = "bandpass"; f.frequency.value = freq || 1800; f.Q.value = 0.9;
+    g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+    src.connect(f); f.connect(g); g.connect(a.destination); src.start(t0);
+  }
+  // The crowd murmurs all match and swells when something happens.
+  const crowd = (() => {
+    let src = null, gain = null;
+    const BASE = 0.05;
+    return {
+      start() {
+        const a = actx(); if (!a || src || reduced) return;
+        src = a.createBufferSource(); src.buffer = noiseBuffer(a, 3); src.loop = true;
+        const f = a.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 520; f.Q.value = 0.4;
+        gain = a.createGain(); gain.gain.value = 0;
+        src.connect(f); f.connect(gain); gain.connect(a.destination); src.start();
+        gain.gain.setTargetAtTime(BASE, a.currentTime, 0.8);
+      },
+      swell(v, secs) {
+        const a = actx(); if (!a || !gain) return;
+        const t = a.currentTime;
+        gain.gain.cancelScheduledValues(t);
+        gain.gain.setTargetAtTime(v, t, 0.12);
+        gain.gain.setTargetAtTime(BASE, t + (secs || 1.5), 0.7);
+      },
+      stop() { if (src) { try { src.stop(); } catch (e) {} } src = null; gain = null; },
+    };
+  })();
+  function ooh() { burst(0, 1.1, 0.35, 420); crowd.swell(0.14, 0.8); }
+  function applause() { for (let i = 0; i < 16; i++) burst(Math.random() * 1.4, 0.06, 0.25, 2200 + Math.random() * 1500); }
+  function varChime() { tone(784, 0.35, "triangle", 0.09); tone(587, 0.5, "triangle", 0.09, 0.32); }
+  function goalHorn() { tone(233, 0.9, "sawtooth", 0.05); tone(294, 0.9, "sawtooth", 0.04); tone(349, 0.9, "sawtooth", 0.03); }
+  // "Clap clap, clap-clap-clap" from the Forest end.
+  function claps() { [0, 0.4, 0.8, 1.0, 1.2, 1.8, 2.2, 2.6, 2.8, 3.0].forEach((t) => burst(t, 0.07, 0.4, 1900)); }
+
   const PW = 105, PH = 68;           // pitch size in metres
   const U = 10;                       // SVG units per metre
   const GOAL_TOP = 34 - 3.66, GOAL_BOT = 34 + 3.66;
@@ -33,26 +86,26 @@
     // goalIfRight: chance a top striker scores anyway, even after a right answer.
     // wonder: chances of an unstoppable "worldie" from their best player.
     // keeper / wall: how good their keeper is and how many in the wall, for George's set pieces.
-    1: { attacks: 6, defends: 3, defendLevels: [1, 1, 2], timer: 0, goalIfWrong: 0.45, goalIfRight: 0, saveIfRight: 0.12, poss: 0.6, wonder: [0.05], keeper: 0.35, wall: 3 },
-    2: { attacks: 5, defends: 4, defendLevels: [1, 2, 2], timer: 1, goalIfWrong: 0.62, goalIfRight: 0.06, saveIfRight: 0.22, poss: 0.52, wonder: [0.3], keeper: 0.5, wall: 4 },
-    3: { attacks: 5, defends: 5, defendLevels: [2, 2, 3], timer: 2, goalIfWrong: 0.8, goalIfRight: 0.1, saveIfRight: 0.32, poss: 0.44, wonder: [0.65, 0.25], keeper: 0.62, wall: 5 },
+    // finish: how often a right answer turns into a goal against them (their keeper and defence).
+    1: { attacks: 5, defends: 4, defendLevels: [1, 2, 2], timer: 0, goalIfWrong: 0.6, goalIfRight: 0.08, finish: 0.62, poss: 0.56, wonder: [0.25], keeper: 0.5, wall: 3 },
+    2: { attacks: 5, defends: 5, defendLevels: [2, 2, 3], timer: 1, goalIfWrong: 0.7, goalIfRight: 0.13, finish: 0.6, poss: 0.5, wonder: [0.45], keeper: 0.6, wall: 4 },
+    3: { attacks: 4, defends: 5, defendLevels: [2, 3, 3], timer: 2, goalIfWrong: 0.85, goalIfRight: 0.16, finish: 0.58, poss: 0.42, wonder: [0.7, 0.35], keeper: 0.72, wall: 5 },
   };
   // Seconds on the clock for each question level, before the opponent's tier knocks some off.
-  const LEVEL_TIME = { 1: 15, 2: 13, 3: 11 };
+  const LEVEL_TIME = { 1: 15, 2: 13, 3: 11, 4: 11 };
+  const LEVEL_NAME = { 1: "Easy", 2: "Medium", 3: "Hard", 4: "World Class" };
 
-  const CELES = {
-    armsup: { pose: "up", anim: "cele-jump", shout: "GET IN!" },
-    slide: { pose: "out", anim: "cele-slide", shout: "KNEE SLIDE!" },
-    siuuu: { pose: "out", anim: "cele-siuuu", shout: "SIUUUU!" },
-    badge: { pose: "point", anim: "cele-zoom", shout: "FOREST!" },
-    robot: { pose: "out", anim: "cele-robot", shout: "BEEP BOOP GOAL" },
-  };
+  /* How often a chance goes in when George gets the question right,
+     before the opponent and George's stats are counted. Wrong answers
+     almost never score. */
+  const CHANCE = { tapin: 0.56, cross: 0.4, long: 0.22, corner: 0.3, counter: 0.45, halfway: 0.38, header: 0.35 };
+
 
   /* ================================================================
      Save data (this device only)
      ================================================================ */
   function defaults() {
-    return { results: {}, subjects: Object.keys(MQ.SUBJECTS), played: 0, wins: 0, draws: 0, losses: 0, georgeGoals: 0, best: 0, zoom: "auto" };
+    return { results: {}, sims: {}, subjects: Object.keys(MQ.SUBJECTS), played: 0, wins: 0, draws: 0, losses: 0, georgeGoals: 0, best: 0, zoom: "auto" };
   }
   function loadSave() {
     try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s) return Object.assign(defaults(), s); } catch (e) {}
@@ -61,12 +114,8 @@
   function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); } catch (e) {} }
   let SAVE = loadSave();
 
-  // George's kit and celebration come from Free Kick Masters.
-  function freeKickSave() { try { return JSON.parse(localStorage.getItem("gz_freekick_v1")) || {}; } catch (e) { return {}; } }
-  function georgeGear() {
-    const sel = (freeKickSave().selected) || {};
-    return { kit: GK.KITS[sel.kit] ? sel.kit : "home", cele: CELES[sel.celebration] ? sel.celebration : "armsup" };
-  }
+  // George's kit, boots and celebration come from his Matchday career locker.
+  function georgeGear() { return MDC.gear(); }
 
   const FIXTURES = (((window.SITE || {}).football || {}).fixtures || [])
     .map((f, i) => Object.assign({ index: i }, f))
@@ -115,7 +164,10 @@
 
     const kickoffTime = fixture ? fixture.time : "15:00";
     const night = parseInt(kickoffTime, 10) >= 17;
-    const rain = rand() < 0.25;
+    const month = fixture ? kickoffOf(fixture).getMonth() : new Date().getMonth();
+    const winter = month === 11 || month <= 1;
+    const snow = winter && rand() < 0.35;
+    const rain = !snow && rand() < 0.25;
     const refs = shuffle(MD.REFEREES);
     const tier = TIERS[opp.tier];
 
@@ -123,7 +175,7 @@
       opp, oppKey, home, fixture, venue,
       ground: home ? MD.FOREST.ground : opp.ground,
       forestKit, oppKit, georgeKit, gear,
-      night, rain, temp: 8 + Math.floor(rand() * 12),
+      night, rain, snow, temp: snow ? Math.floor(rand() * 3) : winter ? 2 + Math.floor(rand() * 7) : 8 + Math.floor(rand() * 12),
       ref: refs[0], varRef: refs[1], fourth: refs[2],
       attendance: home ? 30000 + Math.floor(rand() * 400) : 20000 + Math.floor(rand() * 40000),
       tier, tierN: opp.tier,
@@ -132,7 +184,7 @@
       score: { f: 0, o: 0 }, goals: [], events: [], mom: [],
       stats: { f: blankStats(), o: blankStats() },
       used: new Set(), powers: { gw: true, murillo: true, neco: true },
-      asked: 0, right: 0, levels: { 1: [0, 0], 2: [0, 0], 3: [0, 0] },
+      asked: 0, right: 0, levels: { 1: [0, 0], 2: [0, 0], 3: [0, 0], 4: [0, 0] },
       varWins: 0, penaltiesWon: 0, bigChances: 0, halfwayGoals: 0, oppReds: 0,
       rec: [], recClock: 0, recPaused: false, replay: null, goalRec: null,
       heat: new Array(21 * 14).fill(0),
@@ -174,13 +226,15 @@
   function buildSchedule() {
     const T = S.tier;
     const moments = [];
-    for (let i = 0; i < T.attacks; i++) moments.push("attack");
+    const E = MDC.effects();
+    S.fx = E;
+    for (let i = 0; i < T.attacks + E.extraAttacks; i++) moments.push("attack");
     for (let i = 0; i < T.defends; i++) moments.push("defend");
-    if (rand() < 0.5) moments.push("penalty");
-    if (rand() < 0.55) moments.push("freekick");
+    if (rand() < 0.42 + E.fouls) moments.push("penalty");
+    if (rand() < 0.5 + E.fouls) moments.push("freekick");
     T.wonder.forEach((p) => { if (rand() < p) moments.push("wonder"); });
-    if (rand() < 0.45) moments.push("redcard");
-    if (rand() < 0.4) moments.push("halfway");
+    if (rand() < 0.4 + E.fouls) moments.push("redcard");
+    if (rand() < E.halfway) moments.push("halfway");
     let order = shuffle(moments);
     // Start with a Forest chance so there's something to do straight away.
     const firstAttack = order.indexOf("attack");
@@ -245,7 +299,7 @@
       </defs>
       <g transform="scale(${U})">
         <rect x="-14" y="-12" width="${PW + 28}" height="${PH + 24}" fill="${night ? "#0d0b12" : "#1b1720"}"/>
-        <g opacity="${night ? 0.8 : 0.95}">${crowd}</g>
+        <g id="crowd-g" opacity="${night ? 0.8 : 0.95}">${crowd}</g>
         <rect x="-4.6" y="-4.6" width="${PW + 9.2}" height="${PH + 9.2}" fill="${night ? "#1a4d26" : "#276b33"}"/>
         <!-- LED boards -->
         <rect x="-4.6" y="-4.9" width="${PW + 9.2}" height="1.1" fill="url(#g-led)"/>
@@ -321,6 +375,7 @@
     S.ballB = $("ball-b");
     S.ballSh = $("ball-sh");
     $("stage").classList.toggle("rain", S.rain);
+    $("stage").classList.toggle("snow", !!S.snow);
     $("stage").classList.toggle("night", S.night);
     setZoom();
   }
@@ -786,9 +841,12 @@
     const r = $("panel").getBoundingClientRect();
     if (r.bottom > window.innerHeight) window.scrollBy({ top: r.bottom - window.innerHeight + 12, behavior: reduced ? "auto" : "smooth" });
   }
-  function askQuestion(level, opts) {
+  function askQuestion(baseLevel, opts) {
     const o = opts || {};
     const g = GEN;
+    // When George is on fire, the game pushes every question up a level.
+    const level = MQ.adjust(baseLevel);
+    const stretched = level > baseLevel;
     return new Promise((resolve) => {
       const q = MQ.nextQuestion(level, SAVE.subjects, S.used);
       S.used.add(q.id);
@@ -801,12 +859,12 @@
         murillo: { img: "murillo", name: "Murillo", what: "Last-ditch block: counts as right" },
         neco: { img: "neco-williams", name: "Neco Williams", what: "+10 seconds" },
       };
-      const stars = "★".repeat(level) + "☆".repeat(3 - level);
+      const stars = level === 4 ? "🌟 WORLD CLASS" : "★".repeat(level) + "☆".repeat(3 - level);
       panel.innerHTML = `
         <div class="md-q ${o.kind || ""}">
           <div class="md-q-head">
             <span class="md-kicker">${escapeHtml(o.kicker || "Question")}</span>
-            <span class="md-level" title="Difficulty">${stars} · ${MQ.SUBJECTS[q.subject] ? MQ.SUBJECTS[q.subject].emoji : ""} ${escapeHtml(MQ.SUBJECTS[q.subject] ? MQ.SUBJECTS[q.subject].label : "")}</span>
+            <span class="md-level${level === 4 ? " wc" : ""}" title="Difficulty: ${LEVEL_NAME[level]}">${stretched ? "🔥 " : ""}${stars} · ${MQ.SUBJECTS[q.subject] ? MQ.SUBJECTS[q.subject].emoji : ""} ${escapeHtml(MQ.SUBJECTS[q.subject] ? MQ.SUBJECTS[q.subject].label : "")}</span>
           </div>
           <h3 class="md-q-title">${escapeHtml(o.title || "")}</h3>
           <p class="md-q-text" id="q-text">${escapeHtml(q.q)}</p>
@@ -962,7 +1020,7 @@
   }
 
   async function celebrateGeorge() {
-    const c = CELES[S.gear.cele];
+    const c = S.gear.cele;
     const cele = $("celebration");
     $("cele-avatar").innerHTML = GK.avatar({ pose: c.pose, kit: S.gear.kit, happy: true });
     const av = $("cele-avatar").querySelector("svg");
@@ -977,6 +1035,20 @@
     });
   }
 
+  // TV-style graphic along the bottom of the pitch.
+  function lowerThird(t, g) {
+    const el = $("lower-third");
+    const kit = t === "f" ? S.forestKit : S.oppKit;
+    el.style.setProperty("--lt", kit.shirt === "#f4f1ee" || kit.shirt === "#ffffff" ? "#d7102b" : kit.shirt);
+    el.innerHTML = `<b>⚽ GOAL</b><span>${escapeHtml(g.who.toUpperCase())} ${g.minLabel}'</span><em>NFO ${S.score.f} – ${S.score.o} ${escapeHtml(S.opp.abbr)}</em>`;
+    el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+  }
+  function bounceCrowd() {
+    const c = $("crowd-g");
+    if (!c || reduced) return;
+    c.classList.remove("bounce"); void c.getBBox(); c.classList.add("bounce");
+  }
+
   async function scoreGoal(t, scorer, assister, kind) {
     const g = { team: t, min: S.min, minLabel: minuteLabel(S.min), who: scorer.george ? "George" : scorer.short, id: scorer.id, assist: assister ? assister.short : null, kind };
     S.goals.push(g);
@@ -985,8 +1057,12 @@
     if (assister) assister.assists += 1;
     drawScore();
     $("scoreboard").classList.remove("goal-flash"); void $("scoreboard").offsetWidth; $("scoreboard").classList.add("goal-flash");
+    lowerThird(t, g);
     if (t === "f") {
       sfx.roar();
+      goalHorn();
+      crowd.swell(0.3, 3.5);
+      bounceCrowd();
       pop("GOAL!");
       if (!reduced) $("stage").classList.add("shake");
       setTimeout(() => $("stage").classList.remove("shake"), 600);
@@ -999,8 +1075,10 @@
       await wait(reduced ? 200 : 1300);
       if (scorer.george) await celebrateGeorge();
       else await wait(reduced ? 300 : 1200);
+      claps();
     } else {
       sfx.aww();
+      crowd.swell(0.02, 3);
       pop(`${S.opp.abbr} GOAL`, "soft");
       say(`${S.opp.name} score. ${scorer.short} finds the net. ${S.score.f}-${S.score.o}.`, { icon: "goal", log: true, team: "o", voice: true });
       momentum(-5);
@@ -1029,6 +1107,7 @@
     stopClock();
     sfx.tick();
     banner("var", "VAR CHECK", kind);
+    varChime();
     say(`Hold on... ${S.varRef} in the VAR room at Stockley Park is checking for ${kind.toLowerCase()}.`, { icon: "var", voice: true, voiceText: "VAR check" });
     const offsideCheck = /offside/i.test(kind);
     const gapN = verdictGood === "offside" ? 0.2 + rand() * 0.7 : 0.3 + rand() * 0.9;
@@ -1084,6 +1163,18 @@
     renderStats();
   }
 
+  /* Does a chance go in? kind: a key of CHANCE. ok: was the question right? */
+  function scores(kind, ok, shooter) {
+    if (!ok) return rand() < 0.04;
+    let p = CHANCE[kind] * S.tier.finish;
+    if (!shooter || shooter.george) p *= S.fx.finish;
+    if (kind === "tapin" || kind === "cross") p *= S.fx.pass;
+    p += 0.04 * (S.oppDown || 0);
+    return rand() < clamp(p, 0.05, 0.9);
+  }
+  // A missed chance: saved, off the woodwork, wide or blocked.
+  const missKind = () => pick(["save", "save", "miss", "miss", "post"]);
+
   function pickScorer(pGeorge, alternatives) {
     if (rand() < pGeorge || !S.george.on) return S.george;
     const alts = alternatives.map((i) => byIdx("f", i)).filter((p) => p && p.on);
@@ -1135,6 +1226,7 @@
   }
 
   async function buildUp(t, finalBall) {
+    if (t === "f") crowd.swell(0.1, 2.5);
     S.poss = t;
     S.phase = "play";
     const mids = outfield(t).filter((p) => p.line === "mid" || p.line === "def");
@@ -1165,7 +1257,6 @@
       { id: "cross", icon: "🎯", label: "Cross", sub: "1 medium question: George attacks the ball", xg: 0.32 },
       { id: "long", icon: "🚀", label: "Long shot", sub: "1 hard question, less time: a worldie", xg: 0.09 },
     ]);
-    const saveChance = S.tier.saveIfRight;
     if (choice === "tapin") {
       const ok1 = await askQuestion(1, { kicker: "Tap-in · pass 1 of 2", title: "Keep the ball moving", powers: ["gw", "neco"], kind: "attack" });
       if (!ok1) {
@@ -1190,11 +1281,16 @@
       }
       const scorer = pickScorer(0.75, [7, 9]);
       await passTo(scorer, 360);
-      const res = await shoot(scorer, "f", rand() < saveChance * 0.6 ? "save" : "goal", { xg: 0.58, ms: 360, lift: 0.3 });
+      const res = await shoot(scorer, "f", scores("tapin", true, scorer) ? "goal" : pick(["save", "save", "miss", "post"]), { xg: 0.58, ms: 360, lift: 0.3 });
       if (res === "goal") return forestGoalFlow(scorer, scorer.george ? cutter : g, "tap-in");
-      S.stats.f.corners += 1;
-      say(`Denied! ${keeperOf("o").short} gets down to save. Corner.`, { icon: "save" });
-      return cornerMoment();
+      if (res === "save") {
+        S.stats.f.corners += 1;
+        say(`Denied! ${keeperOf("o").short} gets down to save. Corner.`, { icon: "save" });
+        return cornerMoment();
+      }
+      ooh();
+      say(res === "post" ? `Off the post! ${scorer.george ? "George" : scorer.short} can't believe it.` : `${scorer.george ? "George" : scorer.short} scuffs it wide from six yards!`, { icon: "info" });
+      return;
     }
     if (choice === "cross") {
       const winger = rand() < 0.5 ? byIdx("f", 7) : byIdx("f", 1);
@@ -1210,11 +1306,15 @@
         say(res === "save" ? `Good header, better save from ${keeperOf("o").short}.` : `${scorer.george ? "George" : scorer.short} rises... and heads it over.`, { icon: res === "save" ? "save" : "info" });
         return;
       }
-      const res = await shoot(scorer, "f", rand() < saveChance ? "save" : "goal", { xg: 0.32, lift: 1.3 });
+      const res = await shoot(scorer, "f", scores("cross", true, scorer) ? "goal" : missKind(), { xg: 0.32, lift: 1.3 });
       if (res === "goal") return forestGoalFlow(scorer, winger, "header");
-      S.stats.f.corners += 1;
-      say(`What a save! ${keeperOf("o").short} tips it over. Corner to Forest.`, { icon: "save" });
-      return cornerMoment();
+      if (res === "save" && rand() < 0.6) {
+        S.stats.f.corners += 1;
+        say(`What a save! ${keeperOf("o").short} tips it over. Corner to Forest.`, { icon: "save" });
+        return cornerMoment();
+      }
+      ooh();
+      say(res === "save" ? `Great header, straight at ${keeperOf("o").short}.` : res === "post" ? "Header crashes off the bar!" : `${scorer.george ? "George" : scorer.short} gets his head to it... just over.`, { icon: res === "save" ? "save" : "info" });
     }
     // Long shot: always George.
     await passTo(g, 420);
@@ -1226,9 +1326,10 @@
       say(res === "post" ? "OFF THE POST! Inches away from a wonder goal!" : res === "save" ? `Fingertip save from ${keeperOf("o").short}!` : "It flies over the bar. Worth a go!", { icon: "info" });
       return;
     }
-    const res = await shoot(g, "f", rand() < saveChance + 0.1 ? pick(["post", "save"]) : "goal", { xg: 0.09, lift: 2.2, ms: 460, corner: rand() < 0.5 ? "left" : "right" });
+    const res = await shoot(g, "f", scores("long", true, g) ? "goal" : pick(["post", "save", "save", "miss"]), { xg: 0.09, lift: 2.2, ms: 460, corner: rand() < 0.5 ? "left" : "right" });
     if (res === "goal") { pop("WORLDIE!", "gold"); return forestGoalFlow(g, holder, "long shot"); }
-    say(res === "post" ? "Off the woodwork! The crowd can't believe it." : `Great strike, even better save from ${keeperOf("o").short}!`, { icon: res === "post" ? "info" : "save" });
+    ooh();
+    say(res === "post" ? "Off the woodwork! The crowd can't believe it." : res === "miss" ? "Just over the bar! Great effort." : `Great strike, even better save from ${keeperOf("o").short}!`, { icon: res === "save" ? "save" : "info" });
   }
 
   async function cornerMoment() {
@@ -1243,7 +1344,7 @@
     const ok = await askQuestion(2, { kicker: "Corner", title: "Attack the ball!", powers: ["neco"], kind: "attack" });
     const scorer = rand() < 0.65 ? S.george : pick([byIdx("f", 2), byIdx("f", 3)]);
     await passTo(scorer, 520, 4);
-    const res = await shoot(scorer, "f", ok && rand() < 0.7 ? "goal" : pick(["miss", "save"]), { xg: 0.12, lift: 1 });
+    const res = await shoot(scorer, "f", scores("corner", ok, scorer) ? "goal" : pick(["miss", "save"]), { xg: 0.12, lift: 1 });
     if (res === "goal") return forestGoalFlow(scorer, taker, "header");
     say(res === "save" ? "Headed at the keeper." : "Headed wide. So close!", { icon: "info" });
   }
@@ -1259,7 +1360,7 @@
     sfx.tick();
     const level = pick(S.tier.defendLevels);
     const ok = await askQuestion(level, { kicker: "Defend!", title: `Stop ${attacker.short}!`, powers: ["murillo", "neco"], kind: "defend" });
-    if (ok && rand() < S.tier.goalIfRight * (S.oppDown ? 0.5 : 1)) {
+    if (ok && rand() < S.tier.goalIfRight * S.fx.defend * (S.oppDown ? 0.5 : 1)) {
       // Top teams: even a great tackle isn't always enough.
       const mate = pick(outfield("o").filter((p) => p !== attacker && p.line !== "def")) || attacker;
       await passTo(defender, 240);
@@ -1277,6 +1378,7 @@
       if (rand() < 0.3) {
         const gk = keeperOf("f");
         S.stats.o.shots += 1; S.stats.o.onTarget += 1; S.stats.o.xg += 0.25; S.stats.f.saves += 1;
+        applause();
         gk.saves = (gk.saves || 0) + 1;
         await ballTo(3, attacker.y < 34 ? 31 : 37, 400, 0.8);
         sfx.save();
@@ -1291,12 +1393,12 @@
         await wait(reduced ? 200 : 600);
       }
       // Win it back and break forward sometimes.
-      if (rand() < 0.18 && S.min < 88) { await attackMoment(true); }
+      if (rand() < S.fx.counter && S.min < 88) { await attackMoment(true); }
       return;
     }
     // Wrong answer: trouble.
     if (rand() < 0.14) return oppPenalty(attacker, defender);
-    const goal = rand() < Math.max(0.2, S.tier.goalIfWrong - 0.12 * (S.oppDown || 0));
+    const goal = rand() < Math.max(0.2, S.tier.goalIfWrong * S.fx.defend - 0.12 * (S.oppDown || 0));
     const res = await shoot(attacker, "o", goal ? "goal" : pick(["save", "miss", "post"]), { xg: 0.35, lift: 1 });
     if (res !== "goal") {
       if (res === "save") { const gk = keeperOf("f"); gk.saves = (gk.saves || 0) + 1; }
@@ -1447,17 +1549,14 @@
     if (k === "home" || k === "away") return S.forestKit === MD.FOREST.away ? "away" : "home";
     return k;
   }
-  function bootsColour() {
-    const b = ((freeKickSave().selected) || {}).boots;
-    return { red: "#e1102c", neon: "#a3e635", gold: "#f5b942" }[b] || "#15121a";
-  }
+  function bootsColour() { return S.gear.boots; }
   async function setPiece(kind, kick, ok, title) {
     stopClock();
     S.recPaused = true;
     $("stage").classList.add("setpiece");
     const g = GEN;
     const pr = MDSP.play({
-      root: $("stage"), panel: $("panel"), kind, kick, advantage: ok, title,
+      root: $("stage"), panel: $("panel"), kind, kick, advantage: ok, title, zoneBonus: S.fx.zone,
       oppKit: { shirt: S.oppKit.shirt, shorts: S.oppKit.shorts }, keeperKit: S.opp.keeperKit,
       kitKey: georgeKitKey(), boots: bootsColour(), night: S.night, home: S.home, ground: S.ground,
       crowd: S.home ? ["#e1102c", "#e1102c", "#ffffff", "#7a0d20", "#e1102c"] : [S.oppKit.shirt, S.oppKit.trim, S.oppKit.shirt],
@@ -1549,7 +1648,7 @@
     await wait(reduced ? 200 : 1000);
     say(`${gk.short} is miles off his line... George looks up... he's going to try it from the HALFWAY LINE!`, { icon: "chance", voice: true, excited: true, voiceText: "From the halfway line?!" });
     const ok = await askQuestion(3, { kicker: "Halfway line!", title: "Chip the keeper from 50 metres!", powers: ["gw", "neco"], kind: "attack", timerAdjust: -2 });
-    if (ok && rand() < 0.85) {
+    if (scores("halfway", ok, g)) {
       await shoot(g, "f", "goal", { xg: 0.02, lift: 10, ms: 1800, corner: "middle" });
       S.halfwayGoals += 1;
       pop("FROM HALFWAY!!!", "gold");
@@ -1614,6 +1713,7 @@
     if (S.quit) return;
     await restart("f");
     logEvent("whistle", "Kick-off!", "");
+    crowd.start();
     for (const half of [1, 2]) {
       S.half = half;
       if (half === 2) {
@@ -1702,13 +1802,23 @@
     S.over = true;
     const { ratings, motm } = computeRatings();
     const pts = points();
+    crowd.stop();
     // Save
     SAVE.played += 1;
     if (won) SAVE.wins += 1; else if (draw) SAVE.draws += 1; else SAVE.losses += 1;
     SAVE.georgeGoals += S.george.goals;
     SAVE.best = Math.max(SAVE.best, pts.total);
-    if (S.fixture) SAVE.results[fixtureKey(S.fixture)] = { f: S.score.f, o: S.score.o, george: S.george.goals };
+    if (S.fixture) {
+      const key = fixtureKey(S.fixture);
+      // The rest of the league plays that week too (only the first time).
+      if (!SAVE.sims[key]) SAVE.sims[key] = MDL.simWeek(S.fixture.index, S.fixture.opponent);
+      SAVE.results[key] = { f: S.score.f, o: S.score.o, george: S.george.goals, opp: S.fixture.opponent, venue: S.fixture.venue };
+    }
     persist();
+    S.career = MDC.award({
+      goals: S.george.goals, assists: S.george.assists, right: S.right, asked: S.asked, won, draw,
+      motm: motm && motm.george, cleanSheet: S.score.o === 0, halfway: S.halfwayGoals > 0, rating: ratings[S.george.id],
+    });
     let badges = [];
     if (window.GZ && GZ.recordMatchday) {
       const r = GZ.recordMatchday({ score: pts.total, won, georgeGoals: S.george.goals, cleanSheet: S.score.o === 0, giantKiller: won && S.tierN === 3, varWin: S.varWins > 0, halfway: S.halfwayGoals > 0, oppReds: S.oppReds });
@@ -1812,6 +1922,36 @@
     </svg>`;
   }
 
+  const ordinal = (n) => n + (n % 10 === 1 && n % 100 !== 11 ? "st" : n % 10 === 2 && n % 100 !== 12 ? "nd" : n % 10 === 3 && n % 100 !== 13 ? "rd" : "th");
+
+  // Forest results with the opponent and venue, for the league table.
+  function leagueResults() {
+    const out = {};
+    Object.entries(SAVE.results).forEach(([k, r]) => {
+      const f = FIXTURES.find((x) => fixtureKey(x) === k);
+      if (f) out[k] = Object.assign({ opp: f.opponent, venue: f.venue }, r);
+    });
+    return out;
+  }
+
+  function careerBlock() {
+    const c = S.career;
+    if (!c) return "";
+    const lvl = MDC.level(), next = MDC.xpFor(lvl + 1), prev = MDC.xpFor(lvl);
+    const pct = Math.min(100, Math.round(((MDC._state().xp - prev) / (next - prev)) * 100));
+    return `<section class="md-career">
+      <div class="md-career-card">${MDC.card({ small: true })}</div>
+      <div>
+        <h4>⭐ Career: +${c.gained} XP${c.newLevels ? ` · LEVEL UP! Level ${c.after}` : ""}</h4>
+        <p class="md-small">${c.parts.map(([k, v]) => `${escapeHtml(k)} +${v}`).join(" · ")}</p>
+        <div class="mdc-xp"><span style="width:${pct}%"></span></div>
+        ${c.spGained ? `<p class="mdc-sp"><b>+${c.spGained}</b> skill points to spend on George's stats!</p>` : ""}
+        ${c.unlocks.length ? `<p class="md-unlocks">🔓 Unlocked: ${c.unlocks.map((u) => `<b>${escapeHtml(u.name)}</b>`).join(", ")}</p>` : ""}
+        <button type="button" class="btn-primary" id="r-career">${MDC.sp() ? "Upgrade George ⬆" : "George's card"}</button>
+      </div>
+    </section>`;
+  }
+
   function renderResult(ratings, motm, pts, won, draw) {
     const res = won ? "WIN" : draw ? "DRAW" : "DEFEAT";
     const fScorers = S.goals.filter((g) => g.team === "f" && !g.disallowed).map((g) => `${escapeHtml(g.who)} ${g.minLabel}'${g.kind === "penalty" ? " (pen)" : ""}`).join(", ");
@@ -1822,7 +1962,7 @@
       ? GK.avatar({ pose: "up", kit: S.gear.kit, happy: true })
       : `<svg viewBox="0 0 200 230"><circle cx="100" cy="95" r="60" fill="${motm.team === "f" ? (S.forestKit.shirt === "#f4f1ee" ? "#d7102b" : S.forestKit.shirt) : S.oppKit.shirt}" stroke="#fff" stroke-width="6"/><text x="100" y="120" text-anchor="middle" font-family="Rajdhani, sans-serif" font-weight="700" font-size="70" fill="#fff">${motm.num}</text></svg>`;
     const rep = MQ.report();
-    const lvlLine = [1, 2, 3].map((l) => `${"★".repeat(l)} ${S.levels[l][0]}/${S.levels[l][1]}`).join(" · ");
+    const lvlLine = [1, 2, 3, 4].filter((l) => l < 4 || S.levels[4][1]).map((l) => `${l === 4 ? "🌟" : "★".repeat(l)} ${S.levels[l][0]}/${S.levels[l][1]}`).join(" · ");
     const forestRated = S.players.filter((p) => p.team === "f").sort((a, b) => a.idx - b.idx);
     $("result-body").innerHTML = `
       <div class="md-ft ${won ? "won" : draw ? "draw" : "lost"}">
@@ -1857,6 +1997,8 @@
           <ul class="md-ratings">${forestRated.map((p) => `<li class="${p.george ? "g" : ""}"><span>${p.num}</span><span>${escapeHtml(p.george ? "GEORGE" : p.short)}${p.subbedOff ? ` <small>(for ${escapeHtml(p.subbedOff.short)})</small>` : ""}</span><b class="r${Math.floor(ratings[p.id])}">${ratings[p.id].toFixed(1)}</b></li>`).join("")}</ul>
         </section>
       </div>
+      ${careerBlock()}
+      ${S.fixture ? `<section class="md-brain"><h4>🏆 Premier League table</h4><div id="r-table"></div><p class="md-small">Forest are ${ordinal(MDL.forestPosition(leagueResults(), SAVE.sims))}. The other teams played their matches this week too.</p></section>` : ""}
       <section class="md-brain">
         <h4>🧠 What the game learned about you</h4>
         <p>Right answers by difficulty: ${lvlLine}</p>
@@ -1879,6 +2021,9 @@
         <button type="button" class="ps-ghost" id="r-menu">Menu</button>
       </div>`;
     $("r-name").value = "George";
+    if ($("r-table")) MDL.render($("r-table"), leagueResults(), SAVE.sims, { around: true });
+    if ($("r-career")) $("r-career").onclick = () => { renderCareer(); show("screen-career"); };
+    if (S.career && S.career.newLevels) setTimeout(() => { sfx.unlock(); GK.confetti($("confetti-page"), 160, ["#f5b942", "#ffffff", "#e1102c"]); }, 600);
     $("r-save").addEventListener("submit", async (e) => {
       e.preventDefault();
       const name = $("r-name").value.trim();
@@ -1901,7 +2046,8 @@
      Screens: menu, pick a team, season, team sheet
      ================================================================ */
   function show(id) {
-    ["screen-menu", "screen-pick", "screen-season", "screen-sheet", "screen-match", "screen-result"].forEach((s) => { $(s).hidden = s !== id; });
+    ["screen-menu", "screen-pick", "screen-season", "screen-sheet", "screen-match", "screen-result", "screen-career"].forEach((s) => { $(s).hidden = s !== id; });
+    if (id !== "screen-match") crowd.stop();
     if (id !== "screen-match" && VOICE.supported) speechSynthesis.cancel();
     window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
   }
@@ -1909,7 +2055,8 @@
   function nextUnplayed() { return FIXTURES.find((f) => !SAVE.results[fixtureKey(f)]); }
 
   function renderMenu() {
-    $("menu-avatar").innerHTML = GK.avatar({ pose: "point", kit: georgeGear().kit, happy: true });
+    $("menu-avatar").innerHTML = MDC.card({ small: true });
+    $("career-sub").textContent = `OVR ${MDC.ovr()} · Level ${MDC.level()}${MDC.sp() ? ` · ${MDC.sp()} skill point${MDC.sp() === 1 ? "" : "s"} to spend!` : ""}`;
     const f = nextFixture();
     if (f) {
       $("btn-week").hidden = false;
@@ -1962,7 +2109,9 @@
       </li>`;
     }).join("");
     const total = pts.w * 3 + pts.d;
-    $("season-summary").textContent = `W${pts.w} D${pts.d} L${pts.l} · Goals ${pts.gf}-${pts.ga} · ${total} points`;
+    const pos = MDL.forestPosition(leagueResults(), SAVE.sims);
+    $("season-summary").textContent = `W${pts.w} D${pts.d} L${pts.l} · Goals ${pts.gf}-${pts.ga} · ${total} points · ${ordinal(pos)} in the table`;
+    MDL.render($("season-table"), leagueResults(), SAVE.sims);
     $("season-list").querySelectorAll(".md-fx-play").forEach((b) => b.addEventListener("click", () => {
       const f = FIXTURES.find((x) => x.index === Number(b.dataset.i));
       showSheet(f.opponent, f.venue, f);
@@ -1982,7 +2131,7 @@
         <h2 class="ps-h2">${escapeHtml(homeName)} v ${escapeHtml(awayName)}</h2>
         <div class="md-facts">
           <span>🏟️ ${escapeHtml(S.ground)}</span><span>🧑‍⚖️ Referee: ${escapeHtml(S.ref)}</span><span>📺 VAR: ${escapeHtml(S.varRef)}</span>
-          <span>${S.night ? "🌙 Floodlights" : "☀️ Daytime"} · ${S.rain ? "🌧️ Rain" : "Dry"} · ${S.temp}°C</span><span>👥 ${S.attendance.toLocaleString("en-GB")}</span>
+          <span>${S.night ? "🌙 Floodlights" : "☀️ Daytime"} · ${S.snow ? "❄️ Snow" : S.rain ? "🌧️ Rain" : "Dry"} · ${S.temp}°C</span><span>👥 ${S.attendance.toLocaleString("en-GB")}</span>
           <span>Difficulty ${"★".repeat(o.tier)}${"☆".repeat(3 - o.tier)}</span>
         </div>
       </div>
@@ -1990,7 +2139,7 @@
         <div><h4><i style="background:${S.forestKit.shirt}"></i>Forest <small>${MD.FOREST.formation}</small></h4><ul class="md-xi">${xi("f")}</ul></div>
         <div><h4><i style="background:${S.oppKit.shirt}"></i>${escapeHtml(o.name)} <small>${o.formation}</small></h4><ul class="md-xi">${xi("o")}</ul></div>
       </div>
-      <p class="md-small">George wears ${escapeHtml(GK.KITS[S.gear.kit].name)} kit from Free Kick Masters. Power-up cards this match: Gibbs-White (magic pass), Murillo (last-ditch block), Neco Williams (+10 seconds). One use each.</p>`;
+      <p class="md-small">George (OVR ${MDC.ovr()}) wears the ${escapeHtml(GK.KITS[S.gear.kit].name)} kit and celebrates with "${escapeHtml(S.gear.cele.name)}". Change them in George's card. Power-up cards this match: Gibbs-White (magic pass), Murillo (last-ditch block), Neco Williams (+10 seconds). One use each.</p>`;
     show("screen-sheet");
   }
 
@@ -2005,6 +2154,14 @@
     buildStage();
     setTab("stats");
     playMatch().catch((e) => { console.error(e); });
+  }
+
+  function renderCareer() {
+    MDC.render($("career-body"), (what) => {
+      if (what === "upgrade") { sfx.ding(); }
+      else if (what === "gear") { sfx.tick(); }
+      else if (what === "locked") { sfx.buzz(); }
+    });
   }
 
   function setTab(name) {
@@ -2038,6 +2195,12 @@
   $("btn-week").addEventListener("click", () => { const f = nextFixture(); showSheet(f.opponent, f.venue, f); });
   $("btn-season").addEventListener("click", () => { renderSeason(); show("screen-season"); });
   $("btn-friendly").addEventListener("click", () => { renderPick(); show("screen-pick"); });
+  $("btn-career").addEventListener("click", () => { renderCareer(); show("screen-career"); });
+  document.querySelectorAll("[data-season-tab]").forEach((b) => b.addEventListener("click", () => {
+    document.querySelectorAll("[data-season-tab]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+    $("season-list").hidden = b.dataset.seasonTab !== "fixtures";
+    $("season-table").hidden = b.dataset.seasonTab !== "table";
+  }));
   $("pick-venue").addEventListener("click", () => { $("pick-venue").dataset.v = ($("pick-venue").dataset.v || "H") === "H" ? "A" : "H"; renderPick(); });
   document.querySelectorAll("[data-back]").forEach((b) => b.addEventListener("click", () => { renderMenu(); show("screen-menu"); }));
   $("btn-kickoff").addEventListener("click", () => startMatch(S.oppKey, S.venue, S.fixture));

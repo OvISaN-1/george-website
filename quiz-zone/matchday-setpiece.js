@@ -229,7 +229,9 @@
     controls("power");
     const ideal = FKP.idealPower(st.kick.dist);
     // Right answer: big green zone. Wrong answer: a smaller one, and the needle is quicker.
-    const g = st.advantage ? 13 : 7, ok = st.advantage ? 22 : 15;
+    // George's shooting stat makes the green zone a bit bigger.
+    const bonus = Math.min(6, st.zoneBonus || 0);
+    const g = (st.advantage ? 12 : 6) + bonus, ok = (st.advantage ? 21 : 14) + bonus;
     const z = (id, a, w) => { const e = st.panel.querySelector(id); e.style.left = clamp(a, 0, 100) + "%"; e.style.width = w + "%"; };
     z("#sp-ok", ideal - ok, ok * 2);
     z("#sp-good", ideal - g, g * 2);
@@ -256,7 +258,7 @@
     instr("");
     const shot = FKP.shoot(st.kick, st.aim, st.curl, st.power);
     // Penalties: the keeper guesses. Right answer = he usually guesses wrong.
-    if (st.kind === "penalty" && shot.result === "saved" && st.advantage && rand() < 0.7) shot.result = "goal";
+    if (st.kind === "penalty" && shot.result === "saved" && st.advantage && rand() < 0.5) shot.result = "goal";
     st.lastShot = shot;
     await runUp();
     st.sfx.kick();
@@ -357,7 +359,7 @@
     token += 1;
     return new Promise((resolve) => {
       st = {
-        kind: opts.kind, kick: Object.assign({ wind: 0 }, opts.kick), advantage: !!opts.advantage, guide: !!opts.advantage,
+        kind: opts.kind, kick: Object.assign({ wind: 0 }, opts.kick), advantage: !!opts.advantage, guide: !!opts.advantage, zoneBonus: opts.zoneBonus || 0,
         panel: opts.panel, sfx: opts.sfx, reduced: !!opts.reduced, phase: "aim", curl: 0, power: 0, aim: null,
         done: (r) => { document.removeEventListener("keydown", onKey); resolve(r); },
       };
