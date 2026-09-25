@@ -714,6 +714,22 @@
     S.poss = t;
   }
 
+  /* A named player wins the ball: he runs in and takes it off the man with it. */
+  async function tackleBy(p) {
+    holdAt(p, S.ball.x, S.ball.y, true);
+    const t0 = performance.now();
+    while (Math.hypot(p.x - S.ball.x, p.y - S.ball.y) > 1.6 && performance.now() - t0 < 2200) {
+      p.hold = { x: S.ball.x, y: S.ball.y };
+      await wait(50);
+    }
+    const loser = S.carrier;
+    S.carrier = p; S.poss = p.team;
+    S.stats[p.team].tackles += 1;
+    // The player who lost it stops running at goal.
+    if (loser && loser !== p) { loser.hold = null; }
+    p.hold = null;
+  }
+
   /* The other team wins the ball: a tackle, not a magic pass. */
   async function tackle(t) {
     const c = S.carrier;
@@ -721,7 +737,7 @@
     if (!tackler) return;
     holdAt(tackler, S.ball.x, S.ball.y, true);
     const t0 = performance.now();
-    while (Math.hypot(tackler.x - S.ball.x, tackler.y - S.ball.y) > 1.6 && performance.now() - t0 < 900) {
+    while (Math.hypot(tackler.x - S.ball.x, tackler.y - S.ball.y) > 1.6 && performance.now() - t0 < 2200) {
       tackler.hold = { x: S.ball.x, y: S.ball.y };
       await wait(50);
     }
@@ -817,7 +833,8 @@
     } else if (c && rand() < 0.35) {
       // Carry the ball forward a few yards.
       const dir = c.team === "f" ? 1 : -1;
-      holdAt(c, clamp(c.x + dir * (5 + rand() * 6), 4, PW - 4), clamp(c.y + (rand() - 0.5) * 8, 3, PH - 3), false);
+      // No wandering into the box in general play: big chances are the quiz moments.
+      holdAt(c, clamp(c.x + dir * (5 + rand() * 6), 18, PW - 18), clamp(c.y + (rand() - 0.5) * 8, 3, PH - 3), false);
       await wait(S.minuteMs * 0.55);
       c.hold = null;
     } else if (c) {
@@ -1145,7 +1162,7 @@
      Goals, saves and misses
      ================================================================ */
   function goalTarget(t, corner) {
-    const x = t === "f" ? PW + 0.8 : -0.8;
+    const x = t === "f" ? PW + 1.6 : -1.6;   // right into the net
     const y = corner === "left" ? GOAL_TOP + 1 : corner === "right" ? GOAL_BOT - 1 : corner === "middle" ? 34 : GOAL_TOP + 0.8 + rand() * 5.7;
     return { x, y };
   }
@@ -1180,7 +1197,8 @@
       return "miss";
     }
     // Goal!
-    holdAt(keeper, keeper.x, target.y < 34 ? target.y + 3 : target.y - 3, true);
+    // Beaten: the keeper dives the other way, never to where the ball goes.
+    holdAt(keeper, t === "f" ? PW - 1.2 : 1.2, target.y < 34 ? GOAL_BOT - 0.6 : GOAL_TOP + 0.6, true);
     await ballTo(target.x, target.y, o.ms || 520, o.lift || 1.2);
     S.goalRec = S.recClock;
     const net = $(t === "f" ? "net-r" : "net-l");
@@ -1492,7 +1510,7 @@
       const ok1 = await askQuestion(1, { kicker: "Tap-in · pass 1 of 2", title: "Keep the ball moving", powers: ["gw", "neco"], kind: "attack" });
       if (!ok1) {
         const thief = pick(outfield("o").filter((p) => p.line !== "fwd"));
-        await passTo(thief, 380);
+        await tackleBy(thief);
         S.stats.o.tackles += 1;
         say(`Intercepted! ${thief.short} reads the pass and clears.`, { icon: "info" });
         return;
@@ -1595,7 +1613,7 @@
     if (ok && rand() < S.tier.goalIfRight * S.fx.defend * (S.oppDown ? 0.5 : 1)) {
       // Top teams: even a great tackle isn't always enough.
       const mate = pick(outfield("o").filter((p) => p !== attacker && p.line !== "def")) || attacker;
-      await passTo(defender, 240);
+      await tackleBy(defender);
       sfx.thud();
       say(`${defender.short} gets a foot in... but it falls straight to ${mate.short}!`, { icon: "chance" });
       await passTo(mate, 320);
@@ -1618,7 +1636,7 @@
         S.carrier = gk;
         await wait(reduced ? 200 : 700);
       } else {
-        await passTo(defender, 260);
+        await tackleBy(defender);
         sfx.thud();
         say(pick([`What a tackle from ${defender.short}!`, `${defender.short} slides in and wins it cleanly!`, `Last-ditch block from ${defender.short}!`]), { icon: "info" });
         momentum(2);
