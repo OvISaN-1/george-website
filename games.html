@@ -7,7 +7,6 @@
   <title>Video Games — What George Is Playing</title>
   <meta name="description" content="George's video games page — what he's playing right now and his personal best scores.">
   <meta name="robots" content="noindex, nofollow">
-  <!-- EDIT ME before going live: replace example.com with the real GitHub Pages URL on every page's canonical tag. -->
   <link rel="canonical" href="https://ovisan-1.github.io/george-website/games.html">
 
   <!-- Social preview (Open Graph + Twitter Card) -->
@@ -15,17 +14,18 @@
   <meta property="og:url" content="https://ovisan-1.github.io/george-website/games.html">
   <meta property="og:title" content="Video Games — What George Is Playing">
   <meta property="og:description" content="George's video games page — what he's playing right now and his personal best scores.">
-  <meta property="og:image" content="https://ovisan-1.github.io/george-website/assets/images/gallery/george-matchday.webp">
-  <meta property="og:image:width" content="520">
-  <meta property="og:image:height" content="1093">
+  <meta property="og:image" content="https://ovisan-1.github.io/george-website/assets/images/share/games.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Video Games — What George Is Playing">
   <meta name="twitter:description" content="George's video games page — what he's playing right now and his personal best scores.">
-  <meta name="twitter:image" content="https://ovisan-1.github.io/george-website/assets/images/gallery/george-matchday.webp">
+  <meta name="twitter:image" content="https://ovisan-1.github.io/george-website/assets/images/share/games.png">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="css/shell.css">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121014'/%3E%3Ctext x='16' y='23' font-family='Arial, sans-serif' font-weight='700' font-size='19' fill='%23e1102c' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E">
 </head>
@@ -63,8 +63,8 @@
         <p class="eyebrow">Video Games</p>
         <h1>What I'm playing.</h1>
         <p class="lede">I play a lot of games, but these are the ones I keep coming back to. Some of these scores took me ages.</p>
-        <!-- EDIT ME: change the game name whenever what you're playing changes. -->
-        <p class="live-badge" style="margin-top:var(--s3);"><span class="live-dot"></span>Live: Right now I'm mostly playing EA Sports FC 26</p>
+        <!-- All the text and lists on this page come from js/content.js (the "games" part). -->
+        <p class="live-badge" style="margin-top:var(--s3);"><span class="live-dot"></span>Live: Right now I'm mostly playing&nbsp;<span id="currently-playing">EA Sports FC 26</span></p>
       </div>
     </section>
 
@@ -90,11 +90,7 @@
             <thead>
               <tr><th scope="col">Game</th><th scope="col">My best</th><th scope="col">Date</th></tr>
             </thead>
-            <tbody>
-              <!-- EDIT ME: add or remove rows as needed. -->
-              <tr><td>EA Sports FC 26</td><td class="mono-num">Division 4 (Online)</td><td class="mono-num">Sep 2026</td></tr>
-              <tr><td>Forza Horizon 6</td><td class="mono-num">Top 200 — Rivals</td><td class="mono-num">Aug 2026</td></tr>
-            </tbody>
+            <tbody id="scores-body"></tbody>
           </table>
         </div>
       </div>
@@ -105,7 +101,7 @@
       <div class="wrap reveal">
         <div class="note-block">
           <span class="note-label">Currently trying to beat</span>
-          <p>My own high score in Forza Horizon 6's speed trap challenges.</p>
+          <p id="trying-to-beat"></p>
         </div>
       </div>
     </section>
@@ -113,39 +109,12 @@
 
   <footer class="site-footer">
     <div class="footer-row">
-      <span>Last updated: September 2026 · Scores are real, screenshots to prove it.</span>
+      <span>Last updated: <span data-last-updated>September 2026</span> · Scores are real, screenshots to prove it.</span>
       <a href="index.html">Home</a>
     </div>
   </footer>
 
+  <script src="js/content.js"></script>
   <script src="js/main.js"></script>
-  <script>
-    /* ---- Real content lives here ---------------------------------------- */
-    const TOP_GAMES = [
-      {
-        title: 'Forza Horizon 6',
-        meta: 'Top 200 online in Rivals',
-        description: 'Racing round Mexico as fast as I can and smashing through the scenery when I get the chance.',
-        photo: 'assets/images/games/forza-horizon-6.webp',
-        photoAlt: 'Forza Horizon 6 logo',
-      },
-      {
-        title: 'Goat Simulator 3',
-        meta: 'Finished the campaign twice',
-        description: 'It is just really funny — you can do anything and nothing matters.',
-        photo: 'assets/images/games/goat-simulator-3.webp',
-        photoAlt: 'Goat Simulator 3 cover art',
-      },
-      {
-        title: 'EA Sports FC 26',
-        meta: 'Division 4 online',
-        description: 'I always play as Forest and try to win the league every single time.',
-        photo: 'assets/images/games/ea-fc-26.webp',
-        photoAlt: 'EA Sports FC 26 cover art',
-      },
-    ];
-
-    renderCards('games-grid', TOP_GAMES, 'gaming');
-  </script>
 </body>
 </html>

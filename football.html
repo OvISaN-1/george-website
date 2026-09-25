@@ -7,7 +7,6 @@
   <title>Football — George's Nottingham Forest Page</title>
   <meta name="description" content="George's football page — Nottingham Forest, favourite players, and his own Sunday league stats.">
   <meta name="robots" content="noindex, nofollow">
-  <!-- EDIT ME before going live: replace example.com with the real GitHub Pages URL on every page's canonical tag. -->
   <link rel="canonical" href="https://ovisan-1.github.io/george-website/football.html">
 
   <!-- Social preview (Open Graph + Twitter Card) -->
@@ -15,17 +14,18 @@
   <meta property="og:url" content="https://ovisan-1.github.io/george-website/football.html">
   <meta property="og:title" content="Football — George's Nottingham Forest Page">
   <meta property="og:description" content="George's football page — Nottingham Forest, favourite players, and his own Sunday league stats.">
-  <meta property="og:image" content="https://ovisan-1.github.io/george-website/assets/images/gallery/george-matchday.webp">
-  <meta property="og:image:width" content="520">
-  <meta property="og:image:height" content="1093">
+  <meta property="og:image" content="https://ovisan-1.github.io/george-website/assets/images/share/football.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Football — George's Nottingham Forest Page">
   <meta name="twitter:description" content="George's football page — Nottingham Forest, favourite players, and his own Sunday league stats.">
-  <meta name="twitter:image" content="https://ovisan-1.github.io/george-website/assets/images/gallery/george-matchday.webp">
+  <meta name="twitter:image" content="https://ovisan-1.github.io/george-website/assets/images/share/football.png">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="css/shell.css">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121014'/%3E%3Ctext x='16' y='23' font-family='Arial, sans-serif' font-weight='700' font-size='19' fill='%23e1102c' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E">
 </head>
@@ -58,9 +58,7 @@
   </header>
 
   <main id="main">
-    <!-- Banner + the real matchday photo, combined into one opening
-         statement (instead of a text-only banner followed by a separate
-         photo block further down the page). -->
+    <!-- All the text and lists on this page come from js/content.js (the "football" part). -->
     <section class="page-banner" style="border-top:none;">
       <div class="wrap">
         <div class="hero-inner" style="align-items:flex-start;">
@@ -71,8 +69,7 @@
           </div>
           <figure class="hero-photo reveal">
             <img src="assets/images/gallery/george-matchday.webp" width="520" height="1093" alt="George at a football match, wearing a red and white scarf" loading="eager">
-            <!-- EDIT ME: swap the caption below for whichever match/ground this actually was. -->
-            <figcaption>Matchday with Forest.</figcaption>
+            <figcaption id="matchday-caption">Matchday with Forest.</figcaption>
           </figure>
         </div>
       </div>
@@ -87,14 +84,25 @@
         <div class="contact-card">
           <div>
             <h3 style="margin-bottom:4px;">Nottingham Forest</h3>
-            <!-- EDIT ME: update the league position by hand each week. Left manual on purpose —
-                 the only genuinely free football API returns stale/incomplete data, and a real
-                 paid one would need a key that can't safely sit in a public static site. -->
-            <p style="margin:0;">Current league position: 12th (Premier League, 4 games played, 5 points)</p>
+            <p style="margin:0;" id="league-line">Current league position: see the Premier League table.</p>
+            <p style="margin:4px 0 0; font-size:0.8rem; color:var(--chalk-faint);" id="league-asof"></p>
           </div>
           <div class="card-photo" style="width:96px; height:96px; flex-shrink:0;">
             <img src="assets/images/players/forest-badge.webp" alt="Nottingham Forest club badge" width="96" height="96">
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Next match + prediction ------------------------------------------ -->
+    <section aria-labelledby="next-match-title">
+      <div class="wrap reveal">
+        <div class="section-head">
+          <h2 id="next-match-title">Next match</h2>
+          <p>Moves on to the next game by itself after every match.</p>
+        </div>
+        <div class="match-card" id="next-match">
+          <p class="prediction-line">Loading the next match...</p>
         </div>
       </div>
     </section>
@@ -104,9 +112,20 @@
       <div class="wrap">
         <div class="section-head reveal">
           <h2>My favourite players</h2>
-          <p>The three I rate most right now — updates as the season goes on.</p>
+          <p>The three I rate most right now. Updates as the season goes on.</p>
         </div>
         <div class="grid-3" id="players-grid"></div>
+      </div>
+    </section>
+
+    <!-- Prediction tracker ------------------------------------------------- -->
+    <section aria-labelledby="tracker-title">
+      <div class="wrap reveal">
+        <div class="section-head">
+          <h2 id="tracker-title">My prediction tracker</h2>
+          <p>Every guess I make, saved online, and how many points it got me.</p>
+        </div>
+        <div id="tracker"><p>Loading predictions...</p></div>
       </div>
     </section>
 
@@ -117,22 +136,11 @@
           <h2>My own football</h2>
         </div>
         <div class="contact-card" style="flex-direction:column; align-items:flex-start;">
-          <!-- EDIT ME: fill in if George plays for a team himself. Delete this whole section if not. -->
-          <p style="margin:0 0 8px;">Team: Riverside Rangers U11s · Position: Striker</p>
+          <p style="margin:0 0 8px;" id="my-team-line"></p>
           <div class="stat-strip">
-            <div class="stat red"><span class="num">6</span><div class="cap">Goals this season</div></div>
-            <div class="stat red"><span class="num">5</span><div class="cap">Appearances</div></div>
+            <div class="stat red"><span class="num" id="my-goals">–</span><div class="cap">Goals this season</div></div>
+            <div class="stat red"><span class="num" id="my-apps">–</span><div class="cap">Appearances</div></div>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Fun extra -------------------------------------------------------------- -->
-    <section aria-label="Prediction of the week">
-      <div class="wrap reveal">
-        <div class="note-block">
-          <span class="note-label">Prediction of the week</span>
-          <p>Forest to win against Coventry (home, 19 September) — 2-1.</p>
         </div>
       </div>
     </section>
@@ -140,40 +148,13 @@
 
   <footer class="site-footer">
     <div class="footer-row">
-      <span>Last updated: September 2026 · Stats checked by me, George.</span>
+      <span>Last updated: <span data-last-updated>September 2026</span> · Stats checked by me, George.</span>
       <a href="index.html">Home</a>
     </div>
   </footer>
 
+  <script src="js/content.js"></script>
+  <script src="js/db.js"></script>
   <script src="js/main.js"></script>
-  <script>
-    /* ---- Real content lives here ----------------------------------------
-       Edit this list to change who shows up above. Each object is one
-       player card. Nothing else on the page needs to change. */
-    const FOOTBALL_PLAYERS = [
-      {
-        title: 'Morgan Gibbs-White',
-        meta: 'Attacking midfielder',
-        description: 'Our captain and he wears number 10, which is the best number. He sets up so many goals.',
-        photo: 'assets/images/players/gibbs-white.webp',
-        photoAlt: 'Morgan Gibbs-White',
-      },
-      {
-        title: 'Neco Williams',
-        meta: 'Left-back',
-        description: 'Plays for Wales too and he gets forward and crosses it in like a winger, not just a defender.',
-        photo: 'assets/images/players/neco-williams.webp',
-        photoAlt: 'Neco Williams',
-      },
-      {
-        title: 'Murillo',
-        meta: 'Centre-back',
-        description: 'One of the best defenders in the league and he is only young. Wins everything in the air.',
-        photoAlt: 'Murillo',
-      },
-    ];
-
-    renderCards('players-grid', FOOTBALL_PLAYERS, 'football');
-  </script>
 </body>
 </html>

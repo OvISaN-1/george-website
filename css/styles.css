@@ -1,18 +1,19 @@
 /* ===========================================================
    GEORGE'S WEBSITE — Garibaldi Grid design system
-   One stylesheet, shared by every page (fast to load, cached
-   after the first visit). Organised in the order below:
+   Page styles for the main pages. Design tokens, the header/nav and
+   the footer live in shell.css, which every page (quiz games included)
+   loads first. Organised in the order below:
 
    1. Fonts & reset
-   2. Design tokens
+   2. Design tokens (in shell.css)
    3. Base typography
    4. Layout helpers
-   5. Header & navigation
+   5. Header & navigation (in shell.css)
    6. Buttons
    7. Hero (home) + page banners
    8. Cards
    9. Section blocks (stats, quick-fire, gallery, footer)
-   10. Footer
+   10. Footer (in shell.css)
    11. Motion
    12. Accessibility & responsive
    =========================================================== */
@@ -37,81 +38,6 @@ button, input, textarea { font: inherit; color: inherit; }
 a { text-decoration: none; color: inherit; }
 ul { list-style: none; margin: 0; padding: 0; }
 
-/* 2. Design tokens --------------------------------------------------
-   Same tokens published in the Garibaldi Grid style guide —
-   keep this block in sync if the palette ever changes. */
-:root{
-  --ink:#121014;
-  --surface:#1c1820;
-  --surface-raised:#241f29;
-  --line: rgba(241,237,233,0.10);
-  --line-strong: rgba(241,237,233,0.18);
-  --chalk:#f1ede9;
-  --chalk-dim:#b9b2ac;
-  --chalk-faint:#8a857e; /* was #7d7770 — 4.27:1 on ink, fails AA for the footer/caption text it's used on. This passes at 5.17:1. */
-
-  --garibaldi:#e1102c;
-  --garibaldi-ink:#3a0a12;
-  --volt:#9d5cff;
-  --volt-ink:#241a3a;
-  --gold:#f5b942;
-  --gold-ink:#3a2a0c;
-
-  /* Accessibility note: the raw brand colours above are tuned for large
-     surfaces, glows and borders, where WCAG contrast rules don't apply
-     the same way. Used as small TEXT on a dark background, garibaldi and
-     volt both fall short of the 4.5:1 AA minimum (measured ~3.5-4.2:1).
-     These are lightened, text-safe variants for that specific job — same
-     hue, still clearly "the same colour", but legible.
-     Gold and chalk-dim/faint are covered separately below. */
-  --garibaldi-text:#e84c61;   /* was #e1102c as text → 3.5-3.9:1. Now 4.6-5.1:1 */
-  --volt-text:#a264ff;        /* was #9d5cff as text → 4.2-4.9:1. Now 4.5-5.2:1 */
-  /* gold (#f5b942) already passes AA as text (7.9-10.7:1) — no variant needed */
-
-  /* A solid button fill needs to hold contrast against chalk (button
-     label) text. #e1102c + chalk = 4.18:1 (fails). This fill is ~10%
-     darker — 5.0:1 — and reads as the same red at button size. */
-  --garibaldi-solid:#ca0e28;
-
-  --r-sm:8px; --r-md:12px; --r-lg:20px; --r-pill:999px;
-
-  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:64px; --s9:96px;
-
-  --shadow-card: 0 10px 30px rgba(0,0,0,0.45);
-  --glow-garibaldi: 0 0 0 1px rgba(225,16,44,0.4), 0 0 28px rgba(225,16,44,0.35);
-  --glow-volt: 0 0 0 1px rgba(157,92,255,0.4), 0 0 28px rgba(157,92,255,0.35);
-  --glow-gold: 0 0 0 1px rgba(245,185,66,0.4), 0 0 28px rgba(245,185,66,0.35);
-
-  --font-display:'Rajdhani', 'Arial Narrow', sans-serif;
-  --font-body:'Manrope', -apple-system, 'Segoe UI', sans-serif;
-
-  --accent: var(--garibaldi);
-  --accent-text: var(--garibaldi-text);
-  --accent-ink: var(--garibaldi-ink);
-  --glow-accent: var(--glow-garibaldi);
-  /* Text colour to put ON a filled --btn-bg swatch. Dark ink reads on the
-     light accents (gold); light chalk reads on the dark/saturated ones
-     (garibaldi's solid fill, volt). Getting this backwards is how you end
-     up with a school-zone button at 1.5:1 contrast — see the audit note
-     in the button rules below. */
-  --btn-bg: var(--garibaldi-solid);
-  --on-accent: var(--chalk);
-}
-
-/* Per-page accent: the current section's colour drives the nav
-   underline, hero glow and primary button on that page only. */
-body[data-page="games"]{
-  --accent: var(--volt); --accent-text: var(--volt-text); --accent-ink: var(--volt-ink); --glow-accent: var(--glow-volt);
-  --btn-bg: var(--volt); --on-accent: var(--ink); /* chalk-on-volt was 3.33:1 — fails AA. Ink-on-volt is 4.87:1. */
-}
-body[data-page="school"]{
-  --accent: var(--gold); --accent-text: var(--gold); --accent-ink: var(--gold-ink); --glow-accent: var(--glow-gold);
-  --btn-bg: var(--gold); --on-accent: var(--ink); /* chalk-on-gold was 1.52:1 — badly fails AA. Ink-on-gold is 10.7:1. */
-}
-body[data-page="quiz-zone"]{
-  --accent: var(--volt); --accent-text: var(--volt-text); --accent-ink: var(--volt-ink); --glow-accent: var(--glow-volt);
-  --btn-bg: var(--volt); --on-accent: var(--ink);
-}
 
 /* 3. Base typography -------------------------------------------------- */
 body{
@@ -145,55 +71,7 @@ section + section { border-top: 1px solid var(--line); }
 @media (max-width: 800px){
   .grid-3, .grid-2 { grid-template-columns: 1fr; }
 }
-.skip-link{
-  position: absolute; left: -9999px; top: 0; background: var(--garibaldi); color: var(--chalk);
-  padding: 12px 20px; z-index: 1000; border-radius: 0 0 var(--r-sm) 0; font-family: var(--font-display); font-weight: 600;
-}
-.skip-link:focus { left: 0; }
 
-/* 5. Header & navigation ---------------------------------------------- */
-.site-header{
-  position: sticky; top: 0; z-index: 100;
-  background: rgba(18,16,20,0.85); backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--line-strong);
-}
-.nav-bar{
-  max-width: 1080px; margin: 0 auto; padding: var(--s3) var(--s4);
-  display: flex; align-items: center; justify-content: space-between; gap: var(--s4);
-}
-.logo{ font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; }
-.logo span { color: var(--garibaldi); }
-.nav-links{ display: flex; gap: var(--s5); }
-.nav-links a{
-  font-family: var(--font-display); font-weight: 600; font-size: 0.9rem; text-transform: uppercase;
-  letter-spacing: 0.04em; color: var(--chalk-dim); padding-bottom: 4px; border-bottom: 2px solid transparent;
-  transition: color 0.15s ease, border-color 0.15s ease;
-}
-.nav-links a:hover, .nav-links a:focus-visible { color: var(--chalk); }
-.nav-links a[aria-current="page"] { color: var(--accent-text); border-color: var(--accent); }
-
-.nav-toggle{
-  display: none; background: none; border: 1px solid var(--line-strong); border-radius: var(--r-sm);
-  width: 44px; height: 44px; align-items: center; justify-content: center; cursor: pointer;
-}
-.nav-toggle svg { width: 22px; height: 22px; color: var(--chalk); }
-
-.mobile-nav{
-  display: none; flex-direction: column; gap: var(--s2); padding: var(--s4);
-  border-top: 1px solid var(--line-strong); background: var(--surface);
-}
-.mobile-nav a{
-  font-family: var(--font-display); font-weight: 600; display: flex; align-items: center; gap: 10px;
-  padding: 12px 14px; border-radius: var(--r-sm); color: var(--chalk-dim); min-height: 44px;
-}
-.mobile-nav a[aria-current="page"] { background: var(--accent-ink); color: var(--accent-text); }
-.mobile-nav svg { width: 20px; height: 20px; flex-shrink: 0; }
-
-@media (max-width: 760px){
-  .nav-links { display: none; }
-  .nav-toggle { display: inline-flex; }
-  body.nav-open .mobile-nav { display: flex; }
-}
 
 /* 6. Buttons ------------------------------------------------------------ */
 .btn{
@@ -287,6 +165,7 @@ section + section { border-top: 1px solid var(--line); }
 .card.football:hover, .card.football:focus-within { border-color: var(--garibaldi); box-shadow: var(--glow-garibaldi); }
 .card.gaming:hover, .card.gaming:focus-within { border-color: var(--volt); box-shadow: var(--glow-volt); }
 .card.school:hover, .card.school:focus-within { border-color: var(--gold); box-shadow: var(--glow-gold); }
+.card.quiz:hover, .card.quiz:focus-within { border-color: var(--volt); box-shadow: var(--glow-volt), 0 0 40px rgba(245,185,66,0.18); }
 
 /* A considered empty state, not a wireframe box: soft gradient, a quiet
    icon, small-caps label underneath — reads as "photo coming soon"
@@ -295,7 +174,7 @@ section + section { border-top: 1px solid var(--line); }
   height: 130px; border-radius: var(--r-sm);
   background: radial-gradient(120% 140% at 30% 15%, rgba(241,237,233,0.05), transparent 65%), var(--surface-raised);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-  color: var(--chalk-faint); font-size: 0.72rem; font-family: var(--font-body); letter-spacing: 0.02em;
+  color: var(--chalk-dim); font-size: 0.72rem; font-family: var(--font-body); letter-spacing: 0.02em;
   border: 1px solid var(--line); text-align: center; padding: var(--s3);
 }
 .photo-slot svg{ width: 22px; height: 22px; opacity: 0.55; }
@@ -334,6 +213,7 @@ section + section { border-top: 1px solid var(--line); }
 .card.football .card-arrow{ color: var(--garibaldi-text); }
 .card.gaming .card-arrow{ color: var(--volt-text); }
 .card.school .card-arrow{ color: var(--gold); }
+.card.quiz .card-arrow{ color: var(--volt-text); }
 
 /* 9. Section blocks: stats, live badge, quick-fire, gallery -------------- */
 .section-head { margin-bottom: var(--s5); }
@@ -341,8 +221,8 @@ section + section { border-top: 1px solid var(--line); }
 
 .stat-strip { display: flex; gap: var(--s6); flex-wrap: wrap; }
 .stat .num { font-family: var(--font-display); font-weight: 700; font-size: 2.4rem; }
-.stat.red .num { color: var(--garibaldi); }
-.stat.violet .num { color: var(--volt); }
+.stat.red .num { color: var(--garibaldi-text); }
+.stat.violet .num { color: var(--volt-text); }
 .stat.gold .num { color: var(--gold); }
 .stat .cap { color: var(--chalk-dim); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em; }
 
@@ -411,17 +291,6 @@ td.mono-num { color: var(--chalk); }
   letter-spacing: 0.04em; color: var(--accent-text); margin-bottom: 6px;
 }
 
-/* 10. Footer --------------------------------------------------------------- */
-.site-footer{
-  border-top: 1px solid var(--line); padding-block: var(--s6);
-  color: var(--chalk-faint); font-size: 0.85rem;
-}
-.footer-row{
-  max-width: 1080px; margin: 0 auto; padding-inline: var(--s4);
-  display: flex; justify-content: space-between; gap: var(--s4); flex-wrap: wrap;
-}
-.footer-row a { color: var(--chalk-dim); }
-.footer-row a:hover { color: var(--accent); }
 
 /* 11. Motion --------------------------------------------------------------
    Content is visible by default — the fade-in is a bonus for viewers who
@@ -440,13 +309,76 @@ td.mono-num { color: var(--chalk); }
 }
 
 /* 12. Accessibility & responsive helpers ----------------------------------- */
-:focus-visible { outline: 2px solid var(--chalk); outline-offset: 2px; }
-.visually-hidden{
-  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
-  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
-}
 
 @media (max-width: 700px){
   section { padding-block: var(--s6); }
   .stat-strip { gap: var(--s5); }
 }
+
+
+/* 13. Additions: rotating facts, next match, prediction tracker,
+   progress bar ------------------------------------------------------------ */
+
+/* Home: a small text button under the rotating "Did you know?" fact. */
+.link-btn{
+  background: none; border: none; padding: 0; margin-top: var(--s3); cursor: pointer;
+  font-family: var(--font-display); font-weight: 600; font-size: 0.9rem; letter-spacing: 0.03em;
+  color: var(--accent-text); min-height: 44px; display: inline-flex; align-items: center; gap: 6px;
+}
+.link-btn:hover { color: var(--chalk); }
+
+/* Football: next match */
+.match-card{
+  display: grid; grid-template-columns: 1fr auto; gap: var(--s5); align-items: center;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-lg); padding: var(--s5);
+}
+@media (max-width: 640px){ .match-card { grid-template-columns: 1fr; } }
+.match-teams{ font-family: var(--font-display); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); line-height: 1.15; margin: 0; color: var(--chalk); }
+.match-meta{ margin: var(--s2) 0 0; color: var(--chalk-dim); font-size: 0.95rem; }
+.countdown{
+  font-family: var(--font-display); font-weight: 700; text-align: center; line-height: 1;
+  background: var(--garibaldi-ink); color: var(--garibaldi-text); border-radius: var(--r-md); padding: var(--s4) var(--s5);
+}
+.countdown .big{ display: block; font-size: 2.4rem; color: var(--chalk); }
+.countdown .small{ font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.prediction-line{ grid-column: 1 / -1; max-width: none; border-top: 1px solid var(--line); padding-top: var(--s4); margin: 0; color: var(--chalk); }
+.prediction-line strong{ font-family: var(--font-display); font-size: 1.2rem; color: var(--garibaldi-text); }
+
+.predict-form{ grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--s3); align-items: flex-end; }
+.predict-form label{ display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: var(--chalk-dim); font-family: var(--font-display); font-weight: 600; letter-spacing: 0.03em; }
+.predict-form input, .predict-form select{
+  background: var(--surface-raised); border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+  color: var(--chalk); padding: 10px 12px; min-height: 44px; font-size: 1rem;
+}
+.predict-form input[type=number]{ width: 5.5rem; }
+.predict-form input[type=password]{ width: 9rem; }
+.predict-form .remember{ flex-direction: row; align-items: center; gap: 8px; min-height: 44px; }
+.predict-form .remember input{ min-height: auto; width: 20px; height: 20px; }
+.form-status{ grid-column: 1 / -1; max-width: none; margin: 0; font-size: 0.9rem; min-height: 1.4em; }
+.form-status.ok{ color: #6ee7a8; }
+.form-status.err{ color: var(--garibaldi-text); }
+details.predict-toggle{ grid-column: 1 / -1; }
+details.predict-toggle summary{
+  cursor: pointer; font-family: var(--font-display); font-weight: 600; color: var(--garibaldi-text);
+  min-height: 44px; display: inline-flex; align-items: center; list-style: none;
+}
+details.predict-toggle summary::-webkit-details-marker{ display: none; }
+details.predict-toggle[open] summary{ margin-bottom: var(--s3); }
+
+.tracker-summary{ margin-bottom: var(--s5); }
+.pts-3{ color: #6ee7a8; font-weight: 700; }
+.pts-1{ color: var(--gold); font-weight: 700; }
+.pts-0{ color: var(--chalk-dim); }
+
+/* School: bronze / silver / gold progress */
+.medal-track{ display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2); margin-top: var(--s4); max-width: 520px; }
+.medal-step{
+  border-radius: var(--r-md); padding: var(--s3); text-align: center; border: 1px solid var(--line);
+  background: var(--surface); color: var(--chalk-dim); font-family: var(--font-display); font-weight: 600;
+}
+.medal-step .medal{ font-size: 1.6rem; display: block; line-height: 1.2; filter: grayscale(1) opacity(0.45); }
+.medal-step.done{ border-color: rgba(245,185,66,0.5); color: var(--chalk); background: var(--gold-ink); }
+.medal-step.done .medal{ filter: none; }
+.medal-step.next{ border-style: dashed; border-color: var(--gold); color: var(--gold); }
+.medal-bar{ height: 8px; border-radius: var(--r-pill); background: var(--surface-raised); margin-top: var(--s3); max-width: 520px; overflow: hidden; }
+.medal-bar span{ display: block; height: 100%; background: linear-gradient(90deg, #cd7f32, #c0c0c0, var(--gold)); border-radius: inherit; }

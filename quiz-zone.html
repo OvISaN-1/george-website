@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Quiz Zone — George's World</title>
-<meta name="description" content="George's Quiz Zone — Capital Quest, Peak Challenge and Football Frenzy, plus a Keepy-Uppy mini game and live top scores.">
+<meta name="description" content="George's Quiz Zone — Capital Quest, Peak Challenge, Football Frenzy and Times Tables Blitz, plus a Keepy-Uppy mini game and live top scores.">
 <meta name="robots" content="noindex, nofollow">
 <link rel="canonical" href="https://ovisan-1.github.io/george-website/quiz-zone.html">
 
@@ -12,16 +12,17 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ovisan-1.github.io/george-website/quiz-zone.html">
 <meta property="og:title" content="Quiz Zone — George's World">
-<meta property="og:description" content="George's Quiz Zone — Capital Quest, Peak Challenge and Football Frenzy, plus a Keepy-Uppy mini game and live top scores.">
-<meta property="og:image" content="https://ovisan-1.github.io/george-website/assets/images/gallery/george-matchday.webp">
-<meta property="og:image:width" content="520">
-<meta property="og:image:height" content="1093">
+<meta property="og:description" content="George's Quiz Zone — Capital Quest, Peak Challenge, Football Frenzy and Times Tables Blitz, plus a Keepy-Uppy mini game and live top scores.">
+<meta property="og:image" content="https://ovisan-1.github.io/george-website/assets/images/share/quiz.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Quiz Zone — George's World">
-<meta name="twitter:description" content="George's Quiz Zone — Capital Quest, Peak Challenge and Football Frenzy, plus a Keepy-Uppy mini game and live top scores.">
-<meta name="twitter:image" content="https://ovisan-1.github.io/george-website/assets/images/gallery/george-matchday.webp">
+<meta name="twitter:description" content="George's Quiz Zone — Capital Quest, Peak Challenge, Football Frenzy and Times Tables Blitz, plus a Keepy-Uppy mini game and live top scores.">
+<meta name="twitter:image" content="https://ovisan-1.github.io/george-website/assets/images/share/quiz.png">
 
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="css/shell.css">
 <link rel="stylesheet" href="css/styles.css">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121014'/%3E%3Ctext x='16' y='23' font-family='Arial, sans-serif' font-weight='700' font-size='19' fill='%23e1102c' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E">
 <script>document.documentElement.classList.add('js');</script>
@@ -38,34 +39,15 @@
     --pink:#e84c61;
     --forest:#e1102c;
   }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;min-height:100vh;
-    position:relative;
-    overflow-x:hidden;
-    background:
-      radial-gradient(circle at 15% 10%, rgba(157,92,255,0.18), transparent 40%),
-      radial-gradient(circle at 85% 85%, rgba(245,185,66,0.15), transparent 40%),
-      var(--navy);
-    font-family:'Manrope',sans-serif;
-    color:var(--cream);
-    display:flex;flex-direction:column;align-items:center;
-    padding:40px 16px 60px;
-  }
-  .blob-field{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
-  .blob{position:absolute;border-radius:50%;filter:blur(50px);opacity:0.22;animation:blobDrift 22s ease-in-out infinite;}
-  .blob.b1{width:280px;height:280px;background:var(--teal);top:-60px;left:-80px;animation-duration:26s;}
-  .blob.b2{width:220px;height:220px;background:var(--pink);top:40%;right:-90px;animation-duration:20s;animation-delay:-6s;}
-  .blob.b3{width:240px;height:240px;background:var(--gold);bottom:-80px;left:20%;animation-duration:24s;animation-delay:-12s;}
-  @keyframes blobDrift{
-    0%,100%{transform:translate(0,0) scale(1);}
-    33%{transform:translate(30px,-20px) scale(1.08);}
-    66%{transform:translate(-20px,25px) scale(0.95);}
-  }
-  body > *:not(.blob-field):not(.skip-link){position:relative;z-index:1;}
 
-  h1{font-family:'Rajdhani',sans-serif;font-size:34px;color:var(--gold);margin:0;}
-  p.sub{color:#b9b2ac;margin-top:8px;}
+  /* Layout: a normal page banner like every other page, then one centred
+     column for the medallion, games and panels. */
+  .qz-wrap{
+    display:flex;flex-direction:column;align-items:center;
+    padding:var(--s6) var(--s4) var(--s8);
+  }
+  .qz-wrap > *{width:100%;max-width:820px;}
+  .qz-wrap > .made-for{width:auto;}
 
   .made-for{
     text-align:center;
@@ -192,180 +174,129 @@
   }
   .aka span{color:var(--gold);}
 
+
+  /* Game cards: same card language as the rest of the site. */
   .grid{
-    display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-    gap:20px;width:100%;max-width:820px;margin-top:34px;
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+    gap:var(--s5);margin-top:var(--s6);
   }
   .game-card{
     position:relative;
-    background:var(--navy-light);
-    border-radius:24px;
-    padding:22px;
-    text-decoration:none;
-    color:var(--cream);
-    border:2px solid rgba(255,255,255,0.06);
-    box-shadow:0 10px 24px rgba(0,0,0,0.3);
-    transition:transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease, border-color .18s ease;
+    background:var(--surface);
+    border-radius:var(--r-lg);
+    padding:var(--s5);
+    color:var(--chalk);
+    border:1px solid var(--line);
+    display:flex;flex-direction:column;gap:var(--s2);
+    transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
   }
-  .game-card:hover{transform:translateY(-4px) scale(1.03) rotate(-1deg);box-shadow:0 16px 30px rgba(0,0,0,0.4);border-color:rgba(245,185,66,0.4);}
+  a.game-card:hover, a.game-card:focus-visible{transform:translateY(-4px);border-color:var(--volt);box-shadow:var(--glow-volt);}
   .game-card .emoji-badge{
-    width:56px;height:56px;border-radius:16px;
+    width:56px;height:56px;border-radius:var(--r-md);
     display:flex;align-items:center;justify-content:center;
-    font-size:30px;
-    background:rgba(255,255,255,0.07);
-    box-shadow:inset 0 0 0 2px rgba(255,255,255,0.06);
+    font-size:30px;background:var(--surface-raised);border:1px solid var(--line);
   }
-  .game-card h2{font-family:'Rajdhani',sans-serif;font-size:20px;margin:12px 0 4px;color:var(--gold);}
-  .game-card p{margin:0;font-size:14px;color:#b9b2ac;}
-  .game-card.coming{opacity:0.45;cursor:default;}
-  .game-card.coming:hover{transform:none;}
+  .game-card h2{font-family:var(--font-display);font-size:1.25rem;margin:var(--s2) 0 0;color:var(--chalk);}
+  .game-card p{margin:0;font-size:0.92rem;color:var(--chalk-dim);}
+  .game-card .new-chip{
+    position:absolute;top:14px;right:14px;font-family:var(--font-display);font-weight:700;font-size:0.75rem;
+    padding:4px 10px;border-radius:var(--r-pill);background:var(--gold-ink);color:var(--gold);
+  }
+  .game-card.coming{opacity:0.55;}
   .fan-chip{
     position:absolute;top:14px;right:14px;
-    background:linear-gradient(135deg,var(--forest),#7a0d20);
-    color:#fff;font-size:10.5px;font-weight:800;
-    padding:4px 9px;border-radius:999px;
-    letter-spacing:.3px;
-    box-shadow:0 4px 10px rgba(225,16,44,0.35);
+    background:var(--garibaldi-solid);color:#fff;font-size:0.72rem;font-weight:800;
+    padding:4px 10px;border-radius:var(--r-pill);letter-spacing:.3px;
   }
 
   .zone{
-    width:100%;max-width:820px;margin-top:34px;
-    background:var(--navy-light);
-    border-radius:24px;padding:22px 24px;
-    border:2px solid rgba(255,255,255,0.06);
-    box-shadow:0 12px 28px rgba(0,0,0,0.3);
+    margin-top:var(--s6);
+    background:var(--surface);
+    border-radius:var(--r-lg);padding:var(--s5);
+    border:1px solid var(--line);
   }
-  .zone h2{font-family:'Rajdhani',sans-serif;font-size:20px;color:var(--gold);margin:0 0 4px;}
-  .zone .zone-sub{font-size:13px;color:#8a857e;margin:0 0 14px;}
-  .zone + .zone{margin-top:20px;}
+  .zone h2{font-family:var(--font-display);font-size:1.35rem;color:var(--chalk);margin:0 0 4px;}
+  .zone .zone-sub{font-size:0.9rem;color:var(--chalk-faint);margin:0 0 var(--s4);max-width:none;}
 
   .fact-card{
-    position:relative;
-    border-radius:18px;
-    padding:20px;
-    background:rgba(255,255,255,0.05);
-    border:2px dashed rgba(245,185,66,0.35);
-    display:flex;
-    gap:14px;
-    align-items:flex-start;
+    border-radius:var(--r-md);padding:var(--s4);background:var(--surface-raised);
+    border-left:3px solid var(--gold);display:flex;gap:14px;align-items:flex-start;
     transition:opacity .18s ease, transform .18s ease;
   }
-  .fact-card.swap{opacity:0;transform:translateY(6px) scale(.98);}
-  .fact-emoji{font-size:34px;flex-shrink:0;}
-  .fact-tag{
-    display:inline-block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;
-    padding:3px 10px;border-radius:999px;margin-bottom:6px;
-  }
-  .fact-tag.football{background:rgba(225,16,44,0.18);color:#e84c61;}
-  .fact-tag.geography{background:rgba(157,92,255,0.18);color:var(--teal);}
-  .fact-tag.mountains{background:rgba(245,185,66,0.18);color:var(--gold);}
-  .fact-text{font-size:15.5px;line-height:1.5;color:var(--cream);margin:0;}
-  .fact-btn{
-    margin-top:16px;
-    font-family:'Rajdhani',sans-serif;cursor:pointer;border:none;border-radius:14px;font-weight:700;
-    background:linear-gradient(135deg,var(--pink),#c93a4f);color:#fff;
-    padding:12px 22px;font-size:15px;box-shadow:0 5px 0 #8f1f30;
-    transition:transform .05s ease;
-  }
-  .fact-btn:active{transform:translateY(4px);box-shadow:0 1px 0 #8f1f30;}
+  .fact-card.swap{opacity:0;transform:translateY(6px);}
+  .fact-emoji{font-size:34px;flex-shrink:0;line-height:1.2;}
+  .fact-tag{display:inline-block;font-family:var(--font-display);font-size:0.75rem;font-weight:700;letter-spacing:.04em;padding:3px 10px;border-radius:var(--r-pill);margin-bottom:6px;}
+  .fact-tag.football{background:var(--garibaldi-ink);color:var(--garibaldi-text);}
+  .fact-tag.geography{background:var(--volt-ink);color:var(--volt-text);}
+  .fact-tag.mountains{background:var(--gold-ink);color:var(--gold);}
+  .fact-text{font-size:1rem;line-height:1.5;color:var(--chalk);margin:0;}
+  .zone .btn{margin-top:var(--s4);}
 
-  .champ-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+  .champ-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);}
   .champ-row:last-child{border-bottom:none;}
   .champ-emoji{font-size:24px;width:30px;text-align:center;flex-shrink:0;}
-  .champ-game{font-size:12px;font-weight:800;color:#8a857e;text-transform:uppercase;letter-spacing:.3px;}
-  .champ-name{font-family:'Rajdhani',sans-serif;font-size:16px;color:var(--cream);}
+  .champ-game{font-family:var(--font-display);font-size:0.8rem;font-weight:700;color:var(--chalk-faint);text-transform:uppercase;letter-spacing:.06em;}
+  .champ-name{font-family:var(--font-display);font-size:1.05rem;color:var(--chalk);}
   .champ-name .crown{margin-right:4px;}
-  .champ-score{margin-left:auto;font-family:'Rajdhani',sans-serif;font-size:22px;color:var(--gold);flex-shrink:0;}
-  .champ-empty{color:#8a857e;font-size:13px;}
+  .champ-score{margin-left:auto;font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:var(--gold);flex-shrink:0;}
+  .champ-empty{color:var(--chalk-faint);font-size:0.85rem;}
 
+  /* Keepy-uppy */
   .keepy-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:4px;}
   .keepy-header h2{margin:0;}
+  .keepy-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
   .keepy-best{
-    background:rgba(245,185,66,0.12);border:1px solid rgba(245,185,66,0.3);
-    padding:5px 12px;border-radius:999px;font-weight:800;font-size:13px;color:var(--cream);
-    white-space:nowrap;
+    background:var(--gold-ink);border:1px solid rgba(245,185,66,0.3);
+    padding:6px 12px;border-radius:var(--r-pill);font-weight:700;font-size:0.85rem;color:var(--chalk);white-space:nowrap;
   }
   .keepy-best span{color:var(--gold);}
+  .sound-btn{
+    background:var(--surface-raised);border:1px solid var(--line-strong);border-radius:var(--r-pill);
+    color:var(--chalk);min-height:36px;padding:4px 12px;cursor:pointer;font-family:var(--font-display);font-weight:600;font-size:0.85rem;
+  }
   .keepy-stage{
-    position:relative;
-    height:260px;
-    margin-top:14px;
-    background:
-      radial-gradient(circle at 20% 20%, rgba(157,92,255,0.25), transparent 55%),
-      var(--cream);
-    border-radius:16px;
-    overflow:hidden;
-    cursor:pointer;
-    touch-action:none;
-    user-select:none;
+    position:relative;height:280px;margin-top:var(--s3);
+    background:radial-gradient(circle at 20% 20%, rgba(157,92,255,0.22), transparent 55%), var(--cream);
+    border-radius:var(--r-md);overflow:hidden;cursor:pointer;touch-action:none;user-select:none;
   }
-  .keepy-score{
-    position:absolute;top:10px;left:14px;
-    font-family:'Rajdhani',sans-serif;font-size:30px;color:#241f29;
-    z-index:2;
-  }
-  .keepy-ball{
-    position:absolute;
-    width:44px;height:44px;
-    font-size:38px;line-height:44px;text-align:center;
-    left:50%;
-    transform:translateX(-50%);
-    z-index:1;
-  }
+  .keepy-stage:focus-visible{outline:3px solid var(--gold);outline-offset:3px;}
+  .keepy-score{position:absolute;top:10px;left:14px;font-family:var(--font-display);font-weight:700;font-size:30px;color:#241f29;z-index:2;}
+  .keepy-speed{position:absolute;top:16px;right:14px;font-family:var(--font-display);font-weight:700;font-size:13px;color:#241f29;opacity:.7;z-index:2;}
+  .keepy-ball{position:absolute;width:44px;height:44px;font-size:38px;line-height:44px;text-align:center;left:0;top:0;z-index:1;will-change:transform;}
   .keepy-ground{
     position:absolute;left:0;right:0;bottom:0;height:10px;
     background:repeating-linear-gradient(90deg, rgba(36,31,41,0.18) 0 14px, transparent 14px 28px);
     border-top:2px dashed rgba(36,31,41,0.25);
   }
   .keepy-overlay{
-    position:absolute;inset:0;
-    background:rgba(18,16,20,0.6);
-    display:flex;align-items:center;justify-content:center;
-    flex-direction:column;gap:12px;
-    z-index:3;
-    text-align:center;
-    padding:20px;
+    position:absolute;inset:0;background:rgba(18,16,20,0.72);
+    display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;
+    z-index:3;text-align:center;padding:20px;
   }
-  .keepy-overlay p{color:var(--cream);font-weight:800;font-family:'Rajdhani',sans-serif;font-size:18px;margin:0;}
-  .keepy-overlay .btn-primary{
-    font-family:'Rajdhani',sans-serif;cursor:pointer;border:none;border-radius:14px;font-weight:700;
-    background:linear-gradient(135deg,var(--teal),#8a4fe0);color:var(--navy);
-    padding:13px 26px;font-size:16px;box-shadow:0 6px 0 #7c3aed;
-  }
-  .keepy-overlay .btn-primary:active{transform:translateY(3px);box-shadow:0 2px 0 #7c3aed;}
+  .keepy-overlay p{color:var(--chalk);font-weight:700;font-family:var(--font-display);font-size:1.15rem;margin:0;max-width:none;}
   .keepy-overlay.hidden{display:none;}
-
-  footer.made-with{
-    margin-top:36px;
-    text-align:center;
-    font-size:12px;
-    color:#8a857e;
+  .keepy-save[hidden]{display:none;}
+  .keepy-save{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+  .keepy-save input{
+    border-radius:var(--r-pill);border:none;padding:10px 16px;min-height:44px;width:12rem;
+    background:var(--cream);color:#241f29;font-weight:600;
   }
-  footer.made-with .heart{color:var(--pink);}
+  .keepy-save .btn{padding:10px 18px;}
+  .keepy-hint{font-size:0.85rem;color:var(--chalk-faint);margin:var(--s3) 0 0;max-width:none;}
+  .keepy-top{margin-top:var(--s3);font-size:0.9rem;color:var(--chalk-dim);}
+  .keepy-top ol{margin:6px 0 0;padding-left:1.4em;}
+  .keepy-top li{margin:2px 0;}
 
-  /* The body below is a flex column that centers its direct children —
-     that's how the original page centered everything (each piece of
-     content has its own max-width and relies on the flex parent to
-     center it, rather than margin:auto). Now that the site's shared
-     header/main/footer are body's direct children instead, that
-     centering needs to move down a level: header/footer stretch full
-     width (right, for a site header/footer), and main becomes its own
-     centering flex column so ITS children — the heading, the game
-     grid, the fact/trophy/scores panels — go back to being centered
-     exactly as before. */
-  body[data-page="quiz-zone"]{ padding: 0; } /* let the sticky header/footer sit flush, like every other page */
-  body[data-page="quiz-zone"] > .site-header,
-  body[data-page="quiz-zone"] > .site-footer{ align-self: stretch; width: 100%; }
-  body[data-page="quiz-zone"] > main{
-    align-self: stretch; width: 100%;
-    display: flex; flex-direction: column; align-items: center;
-    padding: 40px 16px 60px;
+  @media (prefers-reduced-motion: reduce){
+    .glow-ring,.orbit-arm,.orbit-icon,.name-stage .letter,.sparkle{animation:none !important;}
+    .sparkle{opacity:0.8;}
+    .game-card,.fact-card{transition:none;}
+    a.game-card:hover{transform:none;}
   }
 </style>
 </head>
 <body data-page="quiz-zone">
   <a class="skip-link" href="#main">Skip to content</a>
-
   <header class="site-header">
     <nav class="nav-bar" aria-label="Main">
       <a class="logo" href="index.html">GEORGE<span>.</span></a>
@@ -392,133 +323,148 @@
   </header>
 
   <main id="main">
-  <div class="blob-field">
-    <div class="blob b1"></div>
-    <div class="blob b2"></div>
-    <div class="blob b3"></div>
-  </div>
-  <h1>The Quiz Zone</h1>
-  <p class="sub">Pick a game to play</p>
-
-  <div class="made-for">
-    <div class="label">Made especially for</div>
-    <div class="name-medallion">
-      <div class="glow-ring"></div>
-      <div class="orbit-field">
-        <div class="orbit-arm a1"><span class="orbit-icon">⚽</span></div>
-        <div class="orbit-arm a2"><span class="orbit-icon">🌍</span></div>
-        <div class="orbit-arm a3"><span class="orbit-icon">🏔️</span></div>
-        <div class="orbit-arm a4"><span class="orbit-icon">🏆</span></div>
+    <section class="page-banner" style="border-top:none;">
+      <div class="wrap">
+        <p class="eyebrow">Quiz Zone</p>
+        <h1>The Quiz Zone</h1>
+        <p class="lede">Pick a game, beat the clock, get on the leaderboard.</p>
       </div>
-      <div class="name-stage">
-        <span class="sparkle s1">✨</span>
-        <span class="sparkle s2">⭐</span>
-        <span class="sparkle s3">🌟</span>
-        <span class="sparkle s4">✨</span>
-        <span class="sparkle s5">💫</span>
-        <span class="sparkle s6">⭐</span>
-        <span class="letter">G</span><span class="letter">e</span><span class="letter">o</span><span class="letter">r</span><span class="letter">g</span><span class="letter">e</span>
+    </section>
+
+    <div class="qz-wrap">
+      <div class="made-for">
+        <div class="label">Made especially for</div>
+        <div class="name-medallion">
+          <div class="glow-ring"></div>
+          <div class="orbit-field" aria-hidden="true">
+            <div class="orbit-arm a1"><span class="orbit-icon">⚽</span></div>
+            <div class="orbit-arm a2"><span class="orbit-icon">🌍</span></div>
+            <div class="orbit-arm a3"><span class="orbit-icon">🏔️</span></div>
+            <div class="orbit-arm a4"><span class="orbit-icon">🏆</span></div>
+          </div>
+          <div class="name-stage" aria-label="George">
+            <span class="sparkle s1" aria-hidden="true">✨</span>
+            <span class="sparkle s2" aria-hidden="true">⭐</span>
+            <span class="sparkle s3" aria-hidden="true">🌟</span>
+            <span class="sparkle s4" aria-hidden="true">✨</span>
+            <span class="sparkle s5" aria-hidden="true">💫</span>
+            <span class="sparkle s6" aria-hidden="true">⭐</span>
+            <span class="letter" aria-hidden="true">G</span><span class="letter" aria-hidden="true">e</span><span class="letter" aria-hidden="true">o</span><span class="letter" aria-hidden="true">r</span><span class="letter" aria-hidden="true">g</span><span class="letter" aria-hidden="true">e</span>
+          </div>
+        </div>
+        <div class="tagline">🏆 Your very own game zone 🏆</div>
+        <div class="aka">aka <span>ClawsTiger</span> 🐯 &middot; <span>MiniDragon</span> 🐉</div>
+      </div>
+
+      <div class="grid">
+        <a class="game-card" href="quiz-zone/geography-quiz.html">
+          <div class="emoji-badge" aria-hidden="true">🌍</div>
+          <h2>Capital Quest</h2>
+          <p>Guess the capital city from the country shape.</p>
+        </a>
+        <a class="game-card" href="quiz-zone/mountain-quiz.html">
+          <div class="emoji-badge" aria-hidden="true">🏔️</div>
+          <h2>Peak Challenge</h2>
+          <p>Name each country's highest mountain, and how tall it is.</p>
+        </a>
+        <a class="game-card" href="quiz-zone/football-quiz.html">
+          <span class="fan-chip">🌳 NFFC</span>
+          <div class="emoji-badge" aria-hidden="true">⚽</div>
+          <h2>Football Frenzy</h2>
+          <p>Legends, Premier League, Champions League and a whole Forest Corner.</p>
+        </a>
+        <a class="game-card" href="quiz-zone/times-tables-quiz.html">
+          <span class="new-chip">NEW</span>
+          <div class="emoji-badge" aria-hidden="true">✖️</div>
+          <h2>Times Tables Blitz</h2>
+          <p>2x to 12x, as fast as you can. Gold badge practice.</p>
+        </a>
+        <div class="game-card coming">
+          <div class="emoji-badge" aria-hidden="true">➕</div>
+          <h2>More coming soon</h2>
+          <p>New games get added here.</p>
+        </div>
+      </div>
+
+      <div class="zone">
+        <div class="keepy-header">
+          <h2>⚽ Keepy-Uppy Break</h2>
+          <div class="keepy-tools">
+            <button class="sound-btn" id="keepy-sound" type="button" aria-pressed="true">🔊 Sound on</button>
+            <div class="keepy-best">My best: <span id="keepy-best">0</span></div>
+          </div>
+        </div>
+        <p class="zone-sub">Tap the ball to keep it up. It moves sideways and gets faster the longer you go. On a keyboard, press Space.</p>
+        <div class="keepy-stage" id="keepy-stage" tabindex="0" role="application" aria-label="Keepy-uppy game. Press Space or Enter to kick the ball.">
+          <div class="keepy-score" id="keepy-score" aria-live="off">0</div>
+          <div class="keepy-speed" id="keepy-speed"></div>
+          <div class="keepy-ball" id="keepy-ball" aria-hidden="true">⚽</div>
+          <div class="keepy-ground"></div>
+          <div class="keepy-overlay" id="keepy-overlay">
+            <p id="keepy-msg">Ready? Hit Start, or press Space.</p>
+            <form class="keepy-save" id="keepy-save" hidden>
+              <label class="visually-hidden" for="keepy-name">Your name</label>
+              <input type="text" id="keepy-name" maxlength="18" placeholder="Your name" autocomplete="off">
+              <button class="btn btn-primary" type="submit">Save score</button>
+            </form>
+            <button class="btn btn-primary" id="keepy-start-btn" type="button">Start</button>
+          </div>
+        </div>
+        <p class="visually-hidden" id="keepy-live" aria-live="polite"></p>
+        <div class="keepy-top" id="keepy-top"></div>
+      </div>
+
+      <div class="zone">
+        <h2>🤓 Did You Know?</h2>
+        <p class="zone-sub">Random facts about football, the world and mountains.</p>
+        <div class="fact-card" id="fact-card" aria-live="polite">
+          <div class="fact-emoji" id="fact-emoji" aria-hidden="true">⚽</div>
+          <div>
+            <span class="fact-tag football" id="fact-tag">Football</span>
+            <p class="fact-text" id="fact-text">Loading a fact...</p>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="fact-btn" type="button">🎲 Another fact!</button>
+      </div>
+
+      <div class="zone">
+        <h2>🏅 My Trophy Cabinet</h2>
+        <p class="zone-sub">Badges and streaks update every time you finish a game. They save on this device.</p>
+        <div class="gz-streak-banner" id="streak-banner">Play today to start a streak! 🔥</div>
+        <div class="gz-badges-grid" id="badges-grid"></div>
+      </div>
+
+      <div class="zone">
+        <h2>📊 Top Scores</h2>
+        <p class="zone-sub">The current champion of each game, shared online with everyone who plays.</p>
+        <div id="best-scores-chart">Loading top scores...</div>
       </div>
     </div>
-    <div class="tagline">🏆 Your very own game zone 🏆</div>
-    <div class="aka">aka <span>ClawsTiger</span> 🐯 &middot; <span>MiniDragon</span> 🐉</div>
-  </div>
-
-  <div class="zone">
-    <div class="keepy-header">
-      <h2>⚽ Keepy-Uppy Break</h2>
-      <div class="keepy-best">Best: <span id="keepy-best">0</span></div>
-    </div>
-    <p class="zone-sub">Tap the ball to keep it up. Don't let it hit the ground! A bit of fun before you pick a quiz.</p>
-    <div class="keepy-stage" id="keepy-stage">
-      <div class="keepy-score" id="keepy-score">0</div>
-      <div class="keepy-ball" id="keepy-ball">⚽</div>
-      <div class="keepy-ground"></div>
-      <div class="keepy-overlay" id="keepy-overlay">
-        <p>Tap the ball to start!</p>
-        <button class="btn-primary" id="keepy-start-btn">Start</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="grid">
-    <a class="game-card" href="quiz-zone/geography-quiz.html">
-      <div class="emoji-badge">🌍</div>
-      <h2>Capital Quest</h2>
-      <p>Guess the capital city from the country shape.</p>
-    </a>
-    <a class="game-card" href="quiz-zone/mountain-quiz.html">
-      <div class="emoji-badge">🏔️</div>
-      <h2>Peak Challenge</h2>
-      <p>Name each country's highest mountain, and how tall it is.</p>
-    </a>
-    <a class="game-card" href="quiz-zone/football-quiz.html">
-      <span class="fan-chip">🌳 NFFC</span>
-      <div class="emoji-badge">⚽</div>
-      <h2>Football Frenzy</h2>
-      <p>Legends, Premier League, Champions League and more.</p>
-    </a>
-    <div class="game-card coming">
-      <div class="emoji-badge">➕</div>
-      <h2>More coming soon</h2>
-      <p>New games get added here.</p>
-    </div>
-  </div>
-
-  <div class="zone">
-    <h2>🤓 Did You Know?</h2>
-    <p class="zone-sub">Random facts about football, the world and mountains — reload for more any time.</p>
-    <div class="fact-card" id="fact-card">
-      <div class="fact-emoji" id="fact-emoji">⚽</div>
-      <div>
-        <span class="fact-tag football" id="fact-tag">Football</span>
-        <p class="fact-text" id="fact-text">Loading a fact...</p>
-      </div>
-    </div>
-    <button class="fact-btn" id="fact-btn">🎲 Another fact!</button>
-  </div>
-
-  <div class="zone">
-    <h2>🏅 My Trophy Cabinet</h2>
-    <p class="zone-sub">Badges and streaks update every time you finish a game — right here on this device.</p>
-    <div class="gz-streak-banner" id="streak-banner">Play today to start a streak! 🔥</div>
-    <div class="gz-badges-grid" id="badges-grid"></div>
-  </div>
-
-  <div class="zone">
-    <h2>📊 Top Scores</h2>
-    <p class="zone-sub">The current champion of each game, straight from the leaderboard.</p>
-    <div id="best-scores-chart">Loading top scores...</div>
-  </div>
-
   </main>
 
   <footer class="site-footer">
     <div class="footer-row">
-      <span>Built with <span class="heart">&hearts;</span> by Dad, for George.</span>
+      <span>Built with <span class="heart" aria-label="love">&hearts;</span> by Dad, for George.</span>
       <a href="index.html">Home</a>
     </div>
   </footer>
 
   <script src="js/main.js"></script>
-
-<script src="quiz-zone/stats.js"></script>
+  <script src="js/db.js"></script>
+  <script src="quiz-zone/stats.js"></script>
 <script>
   GZ.renderStreak(document.getElementById("streak-banner"));
   GZ.renderBadgesGrid(document.getElementById("badges-grid"));
 
   /* ---------- Top scores, live from the Supabase leaderboard ---------- */
   (function () {
-    /* Same Supabase project used by all three quiz pages. */
-    const SUPABASE_URL = "https://hucnucpfyjltlhmvprso.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1Y251Y3BmeWpsdGxobXZwcnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgzNjEsImV4cCI6MjEwMzU4NDM2MX0.DSjLCkiUWB47wVd4wnW_2RvWFoISbH80JI9ukB1bBdg";
-
     const GAMES = [
       { id: "football-frenzy", label: "Football Frenzy", emoji: "⚽" },
       { id: "capital-quest", label: "Capital Quest", emoji: "🌍" },
-      { id: "mountain-peaks", label: "Peak Challenge", emoji: "🏔️" }
+      { id: "mountain-peaks", label: "Peak Challenge", emoji: "🏔️" },
+      { id: "times-tables", label: "Times Tables Blitz", emoji: "✖️" },
+      { id: "keepy-uppy", label: "Keepy-Uppy", emoji: "🤹" }
     ];
-
     const chartEl = document.getElementById("best-scores-chart");
 
     function escapeHtml(str) {
@@ -527,44 +473,29 @@
       return div.innerHTML;
     }
 
-    async function fetchTopScorer(gameId) {
-      try {
-        const url = `${SUPABASE_URL}/rest/v1/leaderboard?game=eq.${gameId}&select=player_name,score&order=score.desc&limit=1`;
-        const res = await fetch(url, {
-          headers: {
-            "apikey": SUPABASE_ANON_KEY,
-            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
-          }
-        });
-        if (!res.ok) return null;
-        const data = await res.json();
-        if (!data.length) return null;
-        return { name: data[0].player_name, score: data[0].score };
-      } catch (e) {
-        console.error("Could not load top scorer for", gameId, e);
-        return null;
-      }
-    }
-
     async function renderTopScores() {
-      const results = await Promise.all(GAMES.map(g => fetchTopScorer(g.id)));
-      let html = "";
-      GAMES.forEach((g, i) => {
-        const top = results[i];
-        html += `<div class="champ-row">
-          <div class="champ-emoji">${g.emoji}</div>
-          <div>
-            <div class="champ-game">${escapeHtml(g.label)}</div>
-            ${top
-              ? `<div class="champ-name"><span class="crown">👑</span>${escapeHtml(top.name)}</div>`
-              : `<div class="champ-empty">No scores yet — be the first!</div>`}
-          </div>
-          ${top ? `<div class="champ-score">${top.score}</div>` : ""}
+      const results = await Promise.all(GAMES.map(g =>
+        DB.topScores(g.id, 1).then(r => ({ ok: true, top: r[0] || null })).catch(() => ({ ok: false }))
+      ));
+      if (results.every(r => !r.ok)) {
+        chartEl.innerHTML = '<div class="champ-empty">Couldn\'t load the top scores right now. Try again later.</div>';
+        return;
+      }
+      chartEl.innerHTML = GAMES.map((g, i) => {
+        const r = results[i];
+        const body = !r.ok
+          ? `<div class="champ-empty">Couldn't load this one.</div>`
+          : r.top
+            ? `<div class="champ-name"><span class="crown">👑</span>${escapeHtml(r.top.player_name)}</div>`
+            : `<div class="champ-empty">No scores yet. Be the first!</div>`;
+        return `<div class="champ-row">
+          <div class="champ-emoji" aria-hidden="true">${g.emoji}</div>
+          <div><div class="champ-game">${escapeHtml(g.label)}</div>${body}</div>
+          ${r.ok && r.top ? `<div class="champ-score">${Number(r.top.score)}</div>` : ""}
         </div>`;
-      });
-      chartEl.innerHTML = html;
+      }).join("");
     }
-
+    window.renderTopScores = renderTopScores;
     renderTopScores();
   })();
 
@@ -628,93 +559,204 @@
     factBtn.addEventListener("click", () => showFact(true));
   })();
 
-  /* ---------- Keepy-uppy mini game ---------- */
+  /* ---------- Keepy-uppy mini game ----------
+     The ball drifts sideways (where you hit it decides which way), bounces
+     off the walls, and gravity gets stronger as your score goes up.
+     Works with touch, mouse, and Space/Enter on a keyboard. Scores can be
+     saved to the online leaderboard as game "keepy-uppy". */
   (function () {
     const stage = document.getElementById("keepy-stage");
     const ballEl = document.getElementById("keepy-ball");
     const scoreEl = document.getElementById("keepy-score");
+    const speedEl = document.getElementById("keepy-speed");
     const bestEl = document.getElementById("keepy-best");
     const overlay = document.getElementById("keepy-overlay");
+    const msgEl = document.getElementById("keepy-msg");
+    const startBtn = document.getElementById("keepy-start-btn");
+    const saveForm = document.getElementById("keepy-save");
+    const nameInput = document.getElementById("keepy-name");
+    const liveEl = document.getElementById("keepy-live");
+    const topEl = document.getElementById("keepy-top");
+    const soundBtn = document.getElementById("keepy-sound");
 
+    const GAME_ID = "keepy-uppy";
     const GROUND_H = 10;
-    const BALL_SIZE = 44;
-    const GRAVITY = 0.18;
-    const KICK_VELOCITY = -6.2;
-    const HIT_PAD = 32; // generous hit box so it's easy for a 10-year-old to connect
+    const BALL = 44;
+    const BASE_GRAVITY = 0.18;      // per frame at 60fps
+    const GRAVITY_STEP = 0.006;     // extra gravity per keepy-uppy
+    const MAX_GRAVITY = 0.42;
+    const KICK_VY = -6.2;
+    const HIT_PAD = 32;             // generous hit box so it's easy to connect
 
-    let y = 0, vy = 0, running = false, score = 0, rafId = null;
+    let x = 0, y = 0, vx = 0, vy = 0, running = false, score = 0, rafId = null, lastT = 0;
 
-    function stageHeight() { return stage.clientHeight || 260; }
+    /* ---- Sound (tiny beeps made in the browser, no files) ---- */
+    let soundOn = true;
+    try { soundOn = localStorage.getItem("gz_keepy_sound") !== "off"; } catch (e) {}
+    let audioCtx = null;
+    function beep(freq, dur, type, vol) {
+      if (!soundOn) return;
+      try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = type || "sine"; o.frequency.value = freq;
+        g.gain.setValueAtTime(vol || 0.15, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(); o.stop(audioCtx.currentTime + dur);
+      } catch (e) { /* no audio, no problem */ }
+    }
+    function showSound() {
+      soundBtn.textContent = soundOn ? "🔊 Sound on" : "🔇 Sound off";
+      soundBtn.setAttribute("aria-pressed", String(soundOn));
+    }
+    soundBtn.addEventListener("click", () => {
+      soundOn = !soundOn;
+      try { localStorage.setItem("gz_keepy_sound", soundOn ? "on" : "off"); } catch (e) {}
+      showSound();
+    });
+    showSound();
+
+    function W() { return stage.clientWidth || 300; }
+    function H() { return stage.clientHeight || 280; }
+    function gravity() { return Math.min(MAX_GRAVITY, BASE_GRAVITY + score * GRAVITY_STEP); }
+    function place() { ballEl.style.transform = `translate(${x}px, ${y}px) rotate(${x * 2}deg)`; }
 
     function resetBall() {
-      y = stageHeight() / 2 - BALL_SIZE / 2;
-      vy = 0;
-      ballEl.style.top = y + "px";
+      x = W() / 2 - BALL / 2;
+      y = H() / 2 - BALL / 2;
+      vx = 0; vy = 0;
+      place();
     }
 
     bestEl.textContent = GZ.load().keepyUppyBest || 0;
     resetBall();
+    window.addEventListener("resize", () => { if (!running) resetBall(); });
 
     function startGame() {
       score = 0;
       scoreEl.textContent = "0";
+      speedEl.textContent = "";
       resetBall();
       running = true;
       overlay.classList.add("hidden");
+      saveForm.hidden = true;
+      stage.focus({ preventScroll: true });
       cancelAnimationFrame(rafId);
-      tick();
+      lastT = performance.now();
+      rafId = requestAnimationFrame(tick);
     }
 
-    function tick() {
+    function tick(t) {
       if (!running) return;
-      vy += GRAVITY;
-      y += vy;
-      if (y <= 2) {
-        y = 2;
-        vy = Math.max(vy, 0);
-      }
-      const maxY = stageHeight() - GROUND_H - BALL_SIZE;
+      // Frame-rate independent: a 120Hz iPad plays at the same speed as a 60Hz laptop.
+      const dt = Math.min(3, (t - lastT) / (1000 / 60));
+      lastT = t;
+      vy += gravity() * dt;
+      x += vx * dt;
+      y += vy * dt;
+      const maxX = W() - BALL;
+      if (x < 0) { x = 0; vx = Math.abs(vx) * 0.9; beep(300, 0.05, "triangle", 0.08); }
+      if (x > maxX) { x = maxX; vx = -Math.abs(vx) * 0.9; beep(300, 0.05, "triangle", 0.08); }
+      if (y <= 2) { y = 2; vy = Math.max(vy, 0); }
+      const maxY = H() - GROUND_H - BALL;
       if (y >= maxY) {
         y = maxY;
-        ballEl.style.top = y + "px";
+        place();
         gameOver();
         return;
       }
-      ballEl.style.top = y + "px";
+      place();
       rafId = requestAnimationFrame(tick);
+    }
+
+    function kick(offset) {
+      // offset: -1 (hit on the left of the ball) to 1 (hit on the right)
+      vy = KICK_VY - Math.min(2, score * 0.03);
+      const push = 1.2 + Math.min(2.4, score * 0.08);
+      vx = -offset * push + (Math.random() - 0.5) * 1.2;
+      score++;
+      scoreEl.textContent = score;
+      if (score % 5 === 0) speedEl.textContent = `Speed ${Math.round((gravity() / BASE_GRAVITY) * 10) / 10}x`;
+      beep(520 + Math.min(score, 40) * 12, 0.08, "sine", 0.18);
+    }
+
+    function tryKickAt(clientX, clientY) {
+      if (!running) return;
+      const rect = stage.getBoundingClientRect();
+      const px = clientX - rect.left;
+      const py = clientY - rect.top;
+      const cx = x + BALL / 2;
+      const cy = y + BALL / 2;
+      if (Math.abs(px - cx) <= BALL / 2 + HIT_PAD && Math.abs(py - cy) <= BALL / 2 + HIT_PAD) {
+        kick(Math.max(-1, Math.min(1, (px - cx) / (BALL / 2 + HIT_PAD))));
+      }
+    }
+
+    async function loadTop() {
+      try {
+        const rows = await DB.topScores(GAME_ID, 5);
+        topEl.innerHTML = rows.length
+          ? `<strong>Online top 5:</strong><ol>${rows.map(r => `<li>${escapeText(r.player_name)}: ${Number(r.score)}</li>`).join("")}</ol>`
+          : "No online keepy-uppy scores yet. Be the first!";
+      } catch (e) {
+        topEl.textContent = "Couldn't load the online keepy-uppy scores right now.";
+      }
+    }
+    function escapeText(str) {
+      const d = document.createElement("div"); d.textContent = String(str); return d.innerHTML;
     }
 
     function gameOver() {
       running = false;
       cancelAnimationFrame(rafId);
+      beep(160, 0.35, "sawtooth", 0.12);
       const nickname = GZ.randomNickname();
       const { isNewBest, newBadges } = GZ.recordKeepyUppy(score);
       bestEl.textContent = GZ.load().keepyUppyBest || 0;
-      overlay.innerHTML = `
-        <p>${isNewBest && score > 0 ? "New best! " : ""}${score} keepy-upp${score === 1 ? "y" : "ies"}, ${nickname}!</p>
-        <button class="btn-primary" id="keepy-start-btn">Play again</button>
-      `;
+      const text = `${isNewBest && score > 0 ? "New best! " : ""}${score} keepy-upp${score === 1 ? "y" : "ies"}, ${nickname}!`;
+      msgEl.textContent = text;
+      liveEl.textContent = text;
+      saveForm.hidden = score === 0;
+      startBtn.textContent = "Play again";
       overlay.classList.remove("hidden");
-      document.getElementById("keepy-start-btn").addEventListener("click", startGame);
+      if (score > 0) nameInput.focus({ preventScroll: true }); else startBtn.focus({ preventScroll: true });
       GZ.announceBadges(newBadges);
     }
 
-    function tryKick(clientX, clientY) {
-      if (!running) return;
-      const rect = stage.getBoundingClientRect();
-      const px = clientX - rect.left;
-      const py = clientY - rect.top;
-      const ballCenterX = rect.width / 2;
-      const ballCenterY = y + BALL_SIZE / 2;
-      if (Math.abs(px - ballCenterX) <= BALL_SIZE / 2 + HIT_PAD && Math.abs(py - ballCenterY) <= BALL_SIZE / 2 + HIT_PAD) {
-        vy = KICK_VELOCITY;
-        score++;
-        scoreEl.textContent = score;
+    saveForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = nameInput.value.trim();
+      if (!name) { nameInput.focus(); return; }
+      const btn = saveForm.querySelector("button");
+      btn.disabled = true;
+      try {
+        await DB.saveScore(GAME_ID, name, score);
+        saveForm.hidden = true;
+        msgEl.textContent = `Saved! ${score} for ${name}.`;
+        loadTop();
+        if (window.renderTopScores) window.renderTopScores();
+      } catch (err) {
+        msgEl.textContent = "Couldn't save online right now. Try again later.";
+      } finally {
+        btn.disabled = false;
       }
-    }
+    });
 
-    stage.addEventListener("pointerdown", (e) => tryKick(e.clientX, e.clientY));
-    document.getElementById("keepy-start-btn").addEventListener("click", startGame);
+    stage.addEventListener("pointerdown", (e) => {
+      if (e.target.closest("button, input, form")) return;
+      tryKickAt(e.clientX, e.clientY);
+    });
+    stage.addEventListener("keydown", (e) => {
+      if (e.target !== stage) return;
+      if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        if (!running) { startGame(); return; }
+        kick((Math.random() - 0.5) * 1.2);
+      }
+    });
+    startBtn.addEventListener("click", startGame);
+    loadTop();
   })();
 </script>
 </body>

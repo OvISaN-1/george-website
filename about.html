@@ -7,7 +7,6 @@
   <title>About George</title>
   <meta name="description" content="A bit more about George — in his own words, plus photos.">
   <meta name="robots" content="noindex, nofollow">
-  <!-- EDIT ME before going live: replace example.com with the real GitHub Pages URL on every page's canonical tag. -->
   <link rel="canonical" href="https://ovisan-1.github.io/george-website/about.html">
 
   <!-- Social preview (Open Graph + Twitter Card) -->
@@ -15,17 +14,18 @@
   <meta property="og:url" content="https://ovisan-1.github.io/george-website/about.html">
   <meta property="og:title" content="About George">
   <meta property="og:description" content="A bit more about George — in his own words, plus photos.">
-  <meta property="og:image" content="https://ovisan-1.github.io/george-website/assets/images/gallery/george-matchday.webp">
-  <meta property="og:image:width" content="520">
-  <meta property="og:image:height" content="1093">
+  <meta property="og:image" content="https://ovisan-1.github.io/george-website/assets/images/share/about.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="About George">
   <meta name="twitter:description" content="A bit more about George — in his own words, plus photos.">
-  <meta name="twitter:image" content="https://ovisan-1.github.io/george-website/assets/images/gallery/george-matchday.webp">
+  <meta name="twitter:image" content="https://ovisan-1.github.io/george-website/assets/images/share/about.png">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="css/shell.css">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121014'/%3E%3Ctext x='16' y='23' font-family='Arial, sans-serif' font-weight='700' font-size='19' fill='%23e1102c' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E">
 </head>
@@ -70,12 +70,8 @@
     <section aria-label="Fun facts">
       <div class="wrap reveal">
         <div class="section-head"><h2>Fun facts</h2></div>
-        <ul class="fact-list">
-          <!-- EDIT ME: three to five facts, in George's own words. -->
-          <li>I've been to the City Ground four times and we've won three of them.</li>
-          <li>My favourite Forest player is Morgan Gibbs-White because he wears number 10.</li>
-          <li>I can do keepy-uppies for over a minute now.</li>
-        </ul>
+        <!-- Fun facts and quick-fire answers come from js/content.js (the "about" part). -->
+        <ul class="fact-list" id="fun-facts"></ul>
       </div>
     </section>
 
@@ -83,13 +79,7 @@
     <section aria-label="Quick-fire questions">
       <div class="wrap reveal">
         <div class="section-head"><h2>Quick-fire Qs</h2></div>
-        <dl class="qf-list">
-          <div class="qf-item"><dt>Forest or anyone else?</dt><dd>Forest, obviously.</dd></div>
-          <div class="qf-item"><dt>Favourite way to spend a Saturday?</dt><dd>Football in the morning, then FC 26 in the afternoon.</dd></div>
-          <div class="qf-item"><dt>One thing you're proud of this year?</dt><dd>Getting picked to play in a better position for my team.</dd></div>
-          <div class="qf-item"><dt>Xbox, PlayStation, or PC?</dt><dd>Xbox, no contest.</dd></div>
-          <div class="qf-item"><dt>Best thing about school?</dt><dd>PE, and seeing my mates.</dd></div>
-        </dl>
+        <dl class="qf-list" id="quickfire"></dl>
       </div>
     </section>
 
@@ -144,11 +134,12 @@
 
   <footer class="site-footer">
     <div class="footer-row">
-      <span>Last updated: September 2026</span>
+      <span>Last updated: <span data-last-updated>September 2026</span></span>
       <a href="index.html">Home</a>
     </div>
   </footer>
 
+  <script src="js/content.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

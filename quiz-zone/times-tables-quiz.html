@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Times Tables Blitz — Quick-fire Maths</title>
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ovisan-1.github.io/george-website/quiz-zone/times-tables-quiz.html">
+<meta property="og:title" content="Times Tables Blitz — George's Quiz Zone">
+<meta property="og:description" content="Times tables from 2x to 12x. How many can you get right in 60 seconds?">
+<meta property="og:image" content="https://ovisan-1.github.io/george-website/assets/images/share/times-tables.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ovisan-1.github.io/george-website/assets/images/share/times-tables.png">
+<meta name="description" content="Times tables from 2x to 12x. How many can you get right in 60 seconds?">
+<meta name="robots" content="noindex, nofollow">
+<link rel="canonical" href="https://ovisan-1.github.io/george-website/quiz-zone/times-tables-quiz.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121014'/%3E%3Ctext x='16' y='23' font-family='Arial, sans-serif' font-weight='700' font-size='19' fill='%23e1102c' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/shell.css">
+<link rel="stylesheet" href="stats.css">
+<style>
+  :root{
+    --navy:#121014;
+    --navy-light:#1c1820;
+    --cream:#f1ede9;
+    --gold:#f5b942;
+    --teal:#9d5cff;
+    --pink:#e84c61;
+    --ink:#241f29;
+    --good:#3DCC7C;
+    --bad:#FF5D5D;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(157,92,255,0.18), transparent 40%),
+      radial-gradient(circle at 85% 85%, rgba(245,185,66,0.15), transparent 40%),
+      var(--navy);
+    font-family:'Manrope',sans-serif;
+    color:var(--cream);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:24px 16px 60px;
+  }
+  h1,h2,h3{font-family:'Rajdhani',sans-serif;margin:0;}
+
+  .card{
+    width:100%;max-width:720px;
+    background:var(--navy-light);
+    border-radius:20px;
+    padding:24px;
+    box-shadow:0 12px 30px rgba(0,0,0,0.35);
+    border:1px solid rgba(255,255,255,0.06);
+  }
+
+  #start-screen p{font-size:16px;line-height:1.5;color:#b9b2ac;}
+  #start-screen .rules{display:flex;gap:14px;flex-wrap:wrap;margin:18px 0;}
+  #start-screen .rule{
+    flex:1;min-width:150px;
+    background:rgba(255,255,255,0.05);
+    border-radius:14px;
+    padding:14px;
+    text-align:center;
+  }
+  #start-screen .rule .emoji{font-size:26px;}
+  #start-screen .rule .label{font-weight:800;font-size:13px;margin-top:6px;color:var(--gold);}
+  #start-greeting{font-family:'Rajdhani',sans-serif;font-size:17px;color:var(--gold);margin-bottom:6px;}
+
+  input[type=text]{
+    width:100%;padding:12px 14px;border-radius:12px;border:none;
+    font-family:'Manrope',sans-serif;font-size:16px;font-weight:600;
+    background:var(--cream);color:var(--ink);
+  }
+  button{
+    font-family:'Rajdhani',sans-serif;
+    cursor:pointer;
+    border:none;
+    border-radius:14px;
+    font-weight:700;
+  }
+  .btn-primary{
+    background:linear-gradient(135deg,var(--teal),#8a4fe0);
+    color:var(--navy);
+    padding:14px 22px;
+    font-size:17px;
+    width:100%;
+    margin-top:16px;
+    box-shadow:0 6px 0 #7c3aed;
+    transition:transform .05s ease;
+  }
+  .btn-primary:active{transform:translateY(4px);box-shadow:0 2px 0 #7c3aed;}
+
+  #game-screen{display:none;}
+  .hud{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .hud .pill{
+    background:rgba(255,255,255,0.08);
+    padding:6px 14px;border-radius:999px;font-weight:800;font-size:14px;
+  }
+  .hud .timer{
+    font-size:26px;font-weight:800;color:var(--gold);
+    min-width:60px;text-align:right;
+  }
+  .timer.warn{color:var(--bad);}
+  #timer-bar-track{height:6px;border-radius:6px;background:rgba(255,255,255,0.1);overflow:hidden;margin-bottom:18px;}
+  #timer-bar{height:100%;background:linear-gradient(90deg,var(--teal),var(--gold));width:100%;}
+
+  #sum-visual{
+    background:var(--cream);
+    color:var(--ink);
+    border-radius:16px;
+    min-height:150px;
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:18px;
+    font-family:'Rajdhani',sans-serif;font-weight:700;
+    font-size:clamp(48px,14vw,76px);
+    font-variant-numeric:tabular-nums;
+    letter-spacing:.02em;
+  }
+  .streak-pill{color:var(--gold);}
+  .answers .answer-btn{font-family:'Rajdhani',sans-serif;font-size:26px;font-variant-numeric:tabular-nums;}
+  .key-hint{display:block;font-size:11px;opacity:.6;font-family:'Manrope',sans-serif;}
+
+  .prompt{text-align:center;font-size:16px;color:#b9b2ac;font-weight:700;margin-bottom:6px;line-height:1.4;}
+  .country-name{text-align:center;font-family:'Rajdhani',sans-serif;font-size:26px;color:var(--gold);margin-bottom:16px;}
+
+  .answers{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .answer-btn{
+    background:rgba(255,255,255,0.06);
+    color:var(--cream);
+    border:2px solid rgba(255,255,255,0.12);
+    padding:16px 10px;
+    font-size:15px;
+    text-align:center;
+  }
+  .answer-btn:hover{border-color:var(--teal);}
+  .answer-btn.correct{background:var(--good);color:var(--ink);border-color:var(--good);}
+  .answer-btn.wrong{background:var(--bad);color:#fff;border-color:var(--bad);}
+  .answer-btn:disabled{cursor:default;}
+
+  #feedback{text-align:center;font-weight:800;margin-top:14px;min-height:22px;font-size:15px;}
+
+  #results-screen{display:none;text-align:center;}
+  #results-screen .score-big{font-family:'Rajdhani',sans-serif;font-size:52px;color:var(--gold);margin:6px 0;}
+  #results-screen p{color:#b9b2ac;}
+  #results-message{font-family:'Rajdhani',sans-serif;font-size:17px;color:var(--cream);margin-top:2px;}
+  #category-breakdown{text-align:left;margin-top:22px;}
+  #category-breakdown h3{text-align:center;}
+  #name-form{display:flex;gap:10px;margin-top:18px;}
+  #name-form input{flex:1;}
+  #name-form button{padding:0 18px;background:var(--pink);color:#fff;}
+
+  table{width:100%;border-collapse:collapse;margin-top:16px;}
+  th,td{padding:10px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.08);}
+  th{color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:14px;}
+  td{font-weight:600;}
+  tr:first-child td{color:var(--gold);font-weight:800;}
+
+  .footer-note{font-size:12px;color:#8a857e;margin-top:24px;text-align:center;max-width:600px;}
+
+  /* ---- Site shell + Garibaldi Grid alignment (added with the shared header) ----
+     The page now uses the same header/footer as the rest of the site
+     (css/shell.css). These rules undo the old "whole body is one centred
+     column" layout and move it onto <main> instead. */
+  body{display:block;padding:0;background:var(--navy);}
+  main#main{
+    display:flex;flex-direction:column;align-items:center;
+    padding:24px 16px 60px;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(157,92,255,0.14), transparent 45%),
+      radial-gradient(circle at 85% 100%, rgba(245,185,66,0.10), transparent 45%);
+  }
+  main a{color:var(--gold);}
+  .quiz-title{width:100%;max-width:720px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+  .quiz-title .eyebrow{display:block;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#a264ff;margin-bottom:2px;}
+  .quiz-title h1{font-size:30px;line-height:1.05;color:var(--cream);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .quiz-title .back{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;text-decoration:none;color:var(--cream);
+    border:1px solid rgba(241,237,233,0.18);border-radius:999px;padding:10px 18px;min-height:44px;display:inline-flex;align-items:center;}
+  .quiz-title .back:hover{border-color:var(--gold);color:var(--gold);}
+  .forest-chip-inline{font-family:'Manrope',sans-serif;font-size:11px;font-weight:800;letter-spacing:.3px;padding:4px 10px;border-radius:999px;background:#ca0e28;color:#fff;}
+  .site-footer{margin-top:0;}
+
+  /* Buttons: pill-shaped and uppercase like the rest of the site. Solid
+     fills so the text keeps its contrast. */
+  .btn-primary{
+    background:var(--teal);color:var(--navy);border-radius:999px;
+    text-transform:uppercase;letter-spacing:.03em;min-height:48px;
+    box-shadow:0 0 0 1px rgba(157,92,255,0.4), 0 0 28px rgba(157,92,255,0.35);
+    transition:transform .15s ease, filter .15s ease;
+  }
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-primary:active{transform:scale(0.97);box-shadow:0 0 0 1px rgba(157,92,255,0.4);}
+  #name-form button{background:#ca0e28;color:#fff;border-radius:999px;min-height:44px;text-transform:uppercase;letter-spacing:.03em;}
+  input[type=text]{border-radius:999px;padding:12px 18px;min-height:44px;}
+  .card{border-radius:20px;border-color:rgba(241,237,233,0.10);}
+  .answer-btn{border-radius:12px;min-height:56px;}
+  .answer-btn.wrong{color:var(--ink);}            /* white on #FF5D5D was 3.0:1, ink is 5.4:1 */
+  .answer-btn:focus-visible,.btn-primary:focus-visible,.quiz-title .back:focus-visible{outline:2px solid var(--cream);outline-offset:3px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;scroll-behavior:auto !important;}
+    .btn-primary,.answer-btn{transition:none;}
+  }
+</style>
+</head>
+<body data-page="quiz-game">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <nav class="nav-bar" aria-label="Main">
+      <a class="logo" href="../index.html">GEORGE<span>.</span></a>
+      <ul class="nav-links">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../football.html">Football</a></li>
+        <li><a href="../games.html">Video Games</a></li>
+        <li><a href="../quiz-zone.html" aria-current="page">Quiz Zone</a></li>
+        <li><a href="../school.html">School Zone</a></li>
+        <li><a href="../about.html">About Me</a></li>
+      </ul>
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </nav>
+    <div class="mobile-nav" id="mobile-nav">
+      <a href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/></svg>Home</a>
+      <a href="../football.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/></svg>Football</a>
+      <a href="../games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="10" rx="4"/></svg>Video Games</a>
+      <a href="../quiz-zone.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>Quiz Zone</a>
+      <a href="../school.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4l9 4-9 4-9-4z"/></svg>School Zone</a>
+      <a href="../about.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>About Me</a>
+    </div>
+  </header>
+
+  <main id="main">
+  <div class="quiz-title">
+    <div>
+      <span class="eyebrow">Quiz Zone</span>
+      <h1>Times Tables Blitz</h1>
+    </div>
+    <a class="back" href="../quiz-zone.html">&larr; All games</a>
+  </div>
+
+<div class="card" id="start-screen">
+  <div id="start-greeting"></div>
+  <h2>Times tables, as fast as you can!</h2>
+  <p>Every times table from 2x up to 12x, all mixed up. Pick the right answer before the clock runs out. Getting them right quickly is how you earn that gold badge.</p>
+  <div class="rules">
+    <div class="rule"><div class="emoji">⏱️</div><div class="label">60 seconds<br>total</div></div>
+    <div class="rule"><div class="emoji">✖️</div><div class="label">2x to 12x<br>tables</div></div>
+    <div class="rule"><div class="emoji">⌨️</div><div class="label">Keys 1 to 4<br>work too</div></div>
+  </div>
+  <button class="btn-primary" id="start-btn">Start the blitz</button>
+</div>
+
+<div class="card" id="game-screen">
+  <div class="hud">
+    <span class="pill" id="score-pill">Correct: 0</span>
+    <span class="pill streak-pill" id="streak-pill" aria-live="polite">Streak: 0</span>
+    <span class="timer" id="timer-display">60</span>
+  </div>
+  <div id="timer-bar-track"><div id="timer-bar"></div></div>
+  <div id="sum-visual" aria-live="polite">7 × 8</div>
+  <div class="answers" id="answers"></div>
+  <div id="feedback" role="status"></div>
+</div>
+
+<div class="card" id="results-screen">
+  <h2>Time's up!</h2>
+  <p>Sums answered correctly:</p>
+  <div class="score-big" id="final-score">0</div>
+  <div id="results-message"></div>
+  <div id="category-breakdown">
+    <h3 style="margin-top:22px;">How you did, by times table</h3>
+    <div id="category-chart"></div>
+  </div>
+  <form id="name-form">
+    <input type="text" id="player-name" placeholder="Enter your name" maxlength="18" required>
+    <button type="submit">Save score</button>
+  </form>
+  <h3 style="margin-top:26px;">Top scores</h3>
+  <table id="leaderboard"><tbody></tbody></table>
+  <button class="btn-primary" id="play-again-btn">Play again</button>
+</div>
+
+<p class="footer-note">Top scores are shared online with everyone who plays. Badges and streaks save on this device.</p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-row">
+      <span>Built with ♥ by Dad, for George.</span>
+      <a href="../quiz-zone.html">Quiz Zone</a>
+    </div>
+  </footer>
+
+<script src="../js/main.js"></script>
+<script src="stats.js"></script>
+<script>
+const GAME_SECONDS = 60;
+const LEADERBOARD_SIZE = 10;
+const MIN_TABLE = 2;
+const MAX_TABLE = 12;
+
+/* ================= SUPABASE CONFIG =================
+   Same URL and key as the other quiz games. */
+const SUPABASE_URL = "https://hucnucpfyjltlhmvprso.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1Y251Y3BmeWpsdGxobXZwcnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgzNjEsImV4cCI6MjEwMzU4NDM2MX0.DSjLCkiUWB47wVd4wnW_2RvWFoISbH80JI9ukB1bBdg";
+const GAME_ID = "times-tables";
+/* ==================================================== */
+
+let correctCount = 0;
+let answeredCount = 0;
+let streak = 0;
+let timeLeft = GAME_SECONDS;
+let timerHandle = null;
+let answered = false;
+let gameRunning = false;
+let current = null;
+let lastPair = "";
+let categoryStats = {};
+
+const startScreen = document.getElementById("start-screen");
+const gameScreen = document.getElementById("game-screen");
+const resultsScreen = document.getElementById("results-screen");
+const startBtn = document.getElementById("start-btn");
+const scorePillEl = document.getElementById("score-pill");
+const streakPillEl = document.getElementById("streak-pill");
+const timerDisplay = document.getElementById("timer-display");
+const timerBar = document.getElementById("timer-bar");
+const sumEl = document.getElementById("sum-visual");
+const answersEl = document.getElementById("answers");
+const feedbackEl = document.getElementById("feedback");
+const finalScoreEl = document.getElementById("final-score");
+const nameForm = document.getElementById("name-form");
+const playerNameInput = document.getElementById("player-name");
+const leaderboardBody = document.querySelector("#leaderboard tbody");
+const playAgainBtn = document.getElementById("play-again-btn");
+const startGreetingEl = document.getElementById("start-greeting");
+const resultsMessageEl = document.getElementById("results-message");
+const categoryChartEl = document.getElementById("category-chart");
+
+if (startGreetingEl) startGreetingEl.textContent = `Ready, ${GZ.randomNickname()}? ✖️`;
+
+startBtn.addEventListener("click", startGame);
+playAgainBtn.addEventListener("click", () => {
+  resultsScreen.style.display = "none";
+  startScreen.style.display = "block";
+  if (startGreetingEl) startGreetingEl.textContent = `Go again, ${GZ.randomNickname()}? ✖️`;
+});
+nameForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = playerNameInput.value.trim();
+  if (!name) return;
+  await saveScore(name, correctCount);
+  await renderLeaderboard();
+  nameForm.style.display = "none";
+});
+
+/* Keys 1-4 pick an answer, so it can be played from a keyboard. */
+document.addEventListener("keydown", (e) => {
+  if (!gameRunning || e.target.tagName === "INPUT") return;
+  const n = parseInt(e.key, 10);
+  if (n >= 1 && n <= 4) {
+    const btn = answersEl.children[n - 1];
+    if (btn && !btn.disabled) btn.click();
+  }
+});
+
+function randInt(min, max) { return min + Math.floor(Math.random() * (max - min + 1)); }
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startGame() {
+  correctCount = 0;
+  answeredCount = 0;
+  streak = 0;
+  categoryStats = {};
+  gameRunning = true;
+  nameForm.style.display = "flex";
+  nameForm.reset && nameForm.reset();
+
+  startScreen.style.display = "none";
+  gameScreen.style.display = "block";
+  scorePillEl.textContent = "Correct: 0";
+  streakPillEl.textContent = "Streak: 0";
+
+  startOverallTimer();
+  loadQuestion();
+}
+
+function startOverallTimer() {
+  clearInterval(timerHandle);
+  timeLeft = GAME_SECONDS;
+  timerDisplay.textContent = timeLeft;
+  timerDisplay.classList.remove("warn");
+  timerBar.style.transition = "none";
+  timerBar.style.width = "100%";
+  requestAnimationFrame(() => {
+    timerBar.style.transition = `width ${GAME_SECONDS}s linear`;
+    timerBar.style.width = "0%";
+  });
+
+  timerHandle = setInterval(() => {
+    timeLeft--;
+    timerDisplay.textContent = Math.max(timeLeft, 0);
+    if (timeLeft <= 10) timerDisplay.classList.add("warn");
+    if (timeLeft <= 0) {
+      clearInterval(timerHandle);
+      endGame();
+    }
+  }, 1000);
+}
+
+/* Wrong answers are the classic mix-ups: one row out in either
+   direction (7x7 or 7x9 instead of 7x8), or one out on the answer. */
+function distractors(a, b) {
+  const correct = a * b;
+  const pool = shuffle([
+    a * (b + 1), a * (b - 1), (a + 1) * b, (a - 1) * b,
+    correct + 1, correct - 1, correct + 10, correct - 10,
+    (a + 1) * (b + 1), (a - 1) * (b - 1)
+  ]);
+  const picks = [];
+  for (const n of pool) {
+    if (picks.length >= 3) break;
+    if (n > 0 && n !== correct && !picks.includes(n)) picks.push(n);
+  }
+  while (picks.length < 3) {
+    const n = correct + randInt(2, 15);
+    if (!picks.includes(n)) picks.push(n);
+  }
+  return picks;
+}
+
+function loadQuestion() {
+  if (!gameRunning) return;
+  answered = false;
+  feedbackEl.textContent = "";
+
+  let a, b, pair;
+  do {
+    a = randInt(MIN_TABLE, MAX_TABLE);
+    b = randInt(MIN_TABLE, MAX_TABLE);
+    pair = `${Math.min(a, b)}x${Math.max(a, b)}`;
+  } while (pair === lastPair);
+  lastPair = pair;
+  current = { a, b, answer: a * b };
+
+  sumEl.textContent = `${a} × ${b}`;
+  sumEl.setAttribute("aria-label", `${a} times ${b}`);
+
+  const options = shuffle([current.answer, ...distractors(a, b)]);
+  answersEl.innerHTML = "";
+  options.forEach((opt, i) => {
+    const btn = document.createElement("button");
+    btn.className = "answer-btn";
+    btn.innerHTML = `${opt}<span class="key-hint" aria-hidden="true">${i + 1}</span>`;
+    btn.dataset.value = String(opt);
+    btn.addEventListener("click", () => handleAnswer(btn, opt));
+    answersEl.appendChild(btn);
+  });
+}
+
+function handleAnswer(btn, chosen) {
+  if (answered || !gameRunning) return;
+  answered = true;
+  Array.from(answersEl.children).forEach(b => b.disabled = true);
+
+  // Bucket by the bigger number, so "7 x 8" and "8 x 7" both count as the 8x table.
+  const table = `${Math.max(current.a, current.b)}x table`;
+  if (!categoryStats[table]) categoryStats[table] = { correct: 0, total: 0 };
+  categoryStats[table].total++;
+  answeredCount++;
+
+  if (chosen === current.answer) {
+    btn.classList.add("correct");
+    correctCount++;
+    streak++;
+    categoryStats[table].correct++;
+    feedbackEl.textContent = streak >= 5 ? `Correct! ${streak} in a row 🔥` : "Correct!";
+    feedbackEl.style.color = "var(--good)";
+  } else {
+    btn.classList.add("wrong");
+    streak = 0;
+    Array.from(answersEl.children).forEach(b => {
+      if (b.dataset.value === String(current.answer)) b.classList.add("correct");
+    });
+    feedbackEl.textContent = `${current.a} × ${current.b} = ${current.answer}`;
+    feedbackEl.style.color = "var(--bad)";
+  }
+  scorePillEl.textContent = `Correct: ${correctCount}`;
+  streakPillEl.textContent = `Streak: ${streak}`;
+  // Quick move-on when right (speed matters), a bit longer to read the answer when wrong.
+  setTimeout(loadQuestion, chosen === current.answer ? 450 : 1400);
+}
+
+function resultsMessageFor(nickname, score) {
+  if (score >= 30) return `Unreal, ${nickname}! ${score} correct. That's gold badge speed! 🥇`;
+  if (score >= 20) return `Brilliant, ${nickname}! ${score} correct. ⚡`;
+  if (score >= 10) return `Good going, ${nickname}! ${score} correct. Keep practising!`;
+  if (score >= 1) return `Nice one, ${nickname}! ${score} correct. Have another go!`;
+  return `That's alright, ${nickname}. Everyone starts somewhere. Try again!`;
+}
+
+function endGame() {
+  gameRunning = false;
+  gameScreen.style.display = "none";
+  resultsScreen.style.display = "block";
+  finalScoreEl.textContent = correctCount;
+  playerNameInput.value = "";
+
+  const nickname = GZ.randomNickname();
+  if (resultsMessageEl) resultsMessageEl.textContent = resultsMessageFor(nickname, correctCount);
+  if (categoryChartEl) GZ.renderCategoryChart(categoryChartEl, categoryStats);
+
+  const { newBadges } = GZ.recordResult(GAME_ID, correctCount, answeredCount);
+  GZ.announceBadges(newBadges);
+
+  renderLeaderboard();
+}
+
+async function getLeaderboard() {
+  const url = `${SUPABASE_URL}/rest/v1/leaderboard?game=eq.${GAME_ID}&select=player_name,score&order=score.desc&limit=${LEADERBOARD_SIZE}`;
+  const res = await fetch(url, {
+    headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` }
+  });
+  if (!res.ok) throw new Error("Leaderboard " + res.status);
+  const data = await res.json();
+  return data.map(r => ({ name: r.player_name, points: r.score }));
+}
+
+async function saveScore(name, points) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/leaderboard`, {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal"
+      },
+      body: JSON.stringify({ game: GAME_ID, player_name: name, score: points })
+    });
+    if (!res.ok) throw new Error("Save " + res.status);
+  } catch (e) {
+    console.error("Could not save score", e);
+    GZ.showToast("Couldn't save your score online. Try again later.");
+  }
+}
+
+async function renderLeaderboard() {
+  leaderboardBody.innerHTML = "<tr><td colspan='3'>Loading top scores...</td></tr>";
+  let board;
+  try {
+    board = await getLeaderboard();
+  } catch (e) {
+    leaderboardBody.innerHTML = "<tr><td colspan='3'>Couldn't load the top scores right now.</td></tr>";
+    return;
+  }
+  leaderboardBody.innerHTML = "";
+  if (board.length === 0) {
+    leaderboardBody.innerHTML = "<tr><td colspan='3'>No scores yet. Be the first!</td></tr>";
+    return;
+  }
+  const header = document.createElement("tr");
+  header.innerHTML = "<th>#</th><th>Name</th><th>Score</th>";
+  leaderboardBody.appendChild(header);
+  board.forEach((entry, i) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td>${i + 1}</td><td>${escapeHtml(entry.name)}</td><td>${entry.points}</td>`;
+    leaderboardBody.appendChild(row);
+  });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>

@@ -1,9 +1,9 @@
 /* ============================================================
    George's Game Zone — shared stats, badges, streaks & nicknames
-   Loaded by index.html, football-quiz.html, geography-quiz.html
-   and mountain-quiz.html. Everything is stored in this browser
-   only (localStorage) — same as the "scores save on this device
-   only" note next to the leaderboard.
+   Loaded by quiz-zone.html, football-quiz.html, geography-quiz.html,
+   mountain-quiz.html and times-tables-quiz.html. Everything is stored in this browser
+   only (localStorage). The online top scores are separate: they live in
+   the Supabase leaderboard table.
    ============================================================ */
 (function (GZ) {
   const KEY = "gamezone_stats_v1";
@@ -19,12 +19,14 @@
     { id: "three-day-streak",  emoji: "🔥", name: "On Fire",         desc: "Play on 3 days in a row" },
     { id: "all-rounder",       emoji: "🌟", name: "All-Rounder",     desc: "Play all three games at least once" },
     { id: "keepy-uppy-king",   emoji: "🤹", name: "Keepy-Uppy King", desc: "Get 25 keepy-uppies in one go" },
+    { id: "times-titan",       emoji: "✖️", name: "Times Titan",     desc: "Finish a round of Times Tables Blitz" },
+    { id: "maths-machine",     emoji: "🧮", name: "Maths Machine",   desc: "Get 25 or more right in Times Tables Blitz" },
   ];
 
   function defaultStats() {
     return {
-      gamesPlayed: { "football-frenzy": 0, "capital-quest": 0, "mountain-peaks": 0 },
-      bestScore:   { "football-frenzy": 0, "capital-quest": 0, "mountain-peaks": 0 },
+      gamesPlayed: { "football-frenzy": 0, "capital-quest": 0, "mountain-peaks": 0, "times-tables": 0 },
+      bestScore:   { "football-frenzy": 0, "capital-quest": 0, "mountain-peaks": 0, "times-tables": 0 },
       keepyUppyBest: 0,
       badges: [],
       streak: 0,
@@ -93,6 +95,8 @@
     if (gameId === "capital-quest") award("globe-trotter");
     if (gameId === "mountain-peaks") award("peak-bagger");
     if (gameId === "football-frenzy") award("forest-frenzy");
+    if (gameId === "times-tables") award("times-titan");
+    if (gameId === "times-tables" && correctCount >= 25) award("maths-machine");
     if (totalAnswered >= 5 && correctCount === totalAnswered) award("perfect-round");
     if (correctCount >= 15) award("quickfire-king");
     if ((s.streak || 0) >= 3) award("three-day-streak");
@@ -203,7 +207,8 @@
     const games = [
       { id: "football-frenzy", label: "Football Frenzy", emoji: "⚽" },
       { id: "capital-quest", label: "Capital Quest", emoji: "🌍" },
-      { id: "mountain-peaks", label: "Peak Challenge", emoji: "🏔️" }
+      { id: "mountain-peaks", label: "Peak Challenge", emoji: "🏔️" },
+      { id: "times-tables", label: "Times Tables Blitz", emoji: "✖️" }
     ];
     const scale = 30; // nominal "great score" ceiling for the bar fill
     let html = '<div class="gz-chart">';

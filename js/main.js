@@ -2,7 +2,12 @@
    GEORGE'S WEBSITE — shared behaviour for every page
    No build step, no framework — plain JS so it's easy to read
    and easy to change later.
+
+   The words and lists shown on each page come from js/content.js.
+   This file only turns that content into HTML.
    =========================================================== */
+(function () {
+'use strict';
 
 /* ---- Mobile nav toggle ------------------------------------------------ */
 function initNav() {
@@ -57,17 +62,58 @@ function initScrollReveal() {
   targets.forEach((el) => observer.observe(el));
 }
 
-/* ---- Card renderer --------------------------------------------------------
-   Every content page (football / games / school) keeps its real content
-   as a plain JS array near the bottom of the HTML file — see the
-   comment block in each page. This function turns that array into the
-   card markup, so updating the site is "edit a list", not "edit HTML".
+/* ---- "Last updated" ------------------------------------------------------
+   Any element with data-last-updated gets the date this page was last
+   published. GitHub Pages sends that date with every file, so it updates
+   itself on every push. The text already inside the element is kept as
+   a fallback if the browser can't tell. */
+function initLastUpdated() {
+  const els = document.querySelectorAll('[data-last-updated]');
+  if (!els.length) return;
+  const d = new Date(document.lastModified);
+  // Browsers report "now" when they don't know, so only trust dates in the past.
+  if (isNaN(d) || Date.now() - d.getTime() < 60 * 1000) return;
+  const text = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  els.forEach((el) => { el.textContent = text; });
+}
 
+/* ---- Small helpers ------------------------------------------------------- */
+const $ = (id) => document.getElementById(id);
+
+/* Basic HTML-escaping so anything typed into the content file (an
+   apostrophe in a player's name, for example) can't break the markup. */
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = String(str ?? '');
+  return div.innerHTML;
+}
+
+/* Same as escapeHtml, but also safe inside a double-quoted HTML attribute. */
+function escapeAttr(str) {
+  return escapeHtml(str).replace(/"/g, '&quot;');
+}
+
+function setText(id, text) {
+  const el = $(id);
+  if (el && text != null) el.textContent = text;
+}
+
+function storageGet(key) {
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+function storageSet(key, value) {
+  try {
+    if (value == null) localStorage.removeItem(key);
+    else localStorage.setItem(key, value);
+  } catch (e) { /* private mode etc. */ }
+}
+
+/* ---- Card renderer --------------------------------------------------------
    type: 'football' | 'gaming' | 'school' — controls the accent colour
    and the tag label shown on each card. */
 function renderCards(containerId, items, type) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
+  const container = $(containerId);
+  if (!container || !items) return;
 
   const tagLabel = {
     football: 'Football',
@@ -75,9 +121,6 @@ function renderCards(containerId, items, type) {
     school: 'School Zone',
   }[type] || '';
 
-  // A quiet, generic "photo coming soon" glyph — not a dashed wireframe
-  // box. Coloured by the card's own accent via CSS (.card.football svg,
-  // etc.), so one icon works for every section.
   const placeholderIcon = `
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
       <rect x="3" y="4" width="18" height="16" rx="2"/>
@@ -88,9 +131,6 @@ function renderCards(containerId, items, type) {
   container.innerHTML = items
     .map((item) => {
       const photoText = item.photoAlt || 'Photo coming soon';
-      // If the data entry has a real "photo" path, show that image instead
-      // of the "coming soon" placeholder. object-fit:contain (set in CSS)
-      // means logos/cover art of any shape show whole, never cropped.
       const photoBlock = item.photo
         ? `<div class="card-photo"><img src="${escapeAttr(item.photo)}" alt="${escapeAttr(photoText)}" loading="lazy"></div>`
         : `<div class="photo-slot" aria-hidden="true">${placeholderIcon}<span>${escapeHtml(photoText)}</span></div>`;
@@ -106,25 +146,381 @@ function renderCards(containerId, items, type) {
     })
     .join('');
 
-  // Newly-injected cards need their own reveal observer.
   initScrollReveal();
 }
 
-/* Basic HTML-escaping so anything typed into the data arrays (an
-   apostrophe in a player's name, for example) can't break the markup. */
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = String(str ?? '');
-  return div.innerHTML;
+function renderList(id, items) {
+  const el = $(id);
+  if (!el || !items) return;
+  el.innerHTML = items.map((t) => `<li>${escapeHtml(t)}</li>`).join('');
 }
 
-/* Same as escapeHtml, but also safe to drop inside a double-quoted HTML
-   attribute (escapes " too, which escapeHtml alone doesn't need to). */
-function escapeAttr(str) {
-  return escapeHtml(str).replace(/"/g, '&quot;');
+/* =====================================================================
+   PAGE: HOME
+   ===================================================================== */
+function renderHome(C) {
+  const facts = (C.home && C.home.facts) || [];
+  const textEl = $('fact-text');
+  if (!textEl || !facts.length) return;
+  let last = -1;
+  function show() {
+    let i;
+    do { i = Math.floor(Math.random() * facts.length); } while (i === last && facts.length > 1);
+    last = i;
+    textEl.textContent = facts[i];
+  }
+  show();
+  const btn = $('fact-next');
+  if (btn) {
+    if (facts.length < 2) btn.hidden = true;
+    btn.addEventListener('click', show);
+  }
 }
 
+/* =====================================================================
+   PAGE: FOOTBALL (next match + prediction tracker)
+   ===================================================================== */
+const PIN_KEY = 'gw_prediction_pin';
+
+function kickoffOf(f) {
+  // Local-time parse of the UK kick-off. Good enough for a UK family.
+  return new Date(`${f.date}T${f.time || '15:00'}:00`);
+}
+function matchKey(f) {
+  return `${f.date}-${f.opponent.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+}
+function shortName(opponent) {
+  return opponent;
+}
+function scoreLine(f, forest, opp) {
+  // Always written from Forest's side: "Forest 2-1 Palace"
+  return `Forest ${forest}-${opp} ${shortName(f.opponent)}`;
+}
+function outcome(a, b) { return a > b ? 'W' : a < b ? 'L' : 'D'; }
+function pointsFor(p) {
+  if (p.pred_forest == null || p.result_forest == null) return null;
+  if (p.pred_forest === p.result_forest && p.pred_opponent === p.result_opponent) return 3;
+  return outcome(p.pred_forest, p.pred_opponent) === outcome(p.result_forest, p.result_opponent) ? 1 : 0;
+}
+function friendlyError(err) {
+  const m = (err && err.message || '').toLowerCase();
+  if (m.includes('wrong pin')) return 'That PIN didn\'t work. Try again.';
+  if (m.includes('too late')) return 'Too late, that match has already started.';
+  if (m.includes('bad score')) return 'Scores need to be between 0 and 20.';
+  if (err && err.status === 404) return 'The prediction table isn\'t set up in Supabase yet (see supabase-setup.sql).';
+  return 'Couldn\'t save right now. Check the internet connection and try again.';
+}
+
+function renderFootball(C) {
+  const F = C.football || {};
+  setText('matchday-caption', F.matchdayCaption);
+
+  if (F.league) {
+    setText('league-line',
+      `Current league position: ${F.league.position} in the Premier League (${F.league.played} played, ${F.league.points} points)`);
+    setText('league-asof', `Table as of ${F.league.asOf}`);
+  }
+
+  renderCards('players-grid', F.players, 'football');
+
+  if (F.myTeam) {
+    setText('my-team-line', `Team: ${F.myTeam.name} · Position: ${F.myTeam.position}`);
+    setText('my-goals', F.myTeam.goals);
+    setText('my-apps', F.myTeam.appearances);
+  }
+
+  const fixtures = (F.fixtures || []).slice().sort((a, b) => kickoffOf(a) - kickoffOf(b));
+  initPredictions(fixtures);
+}
+
+async function initPredictions(fixtures) {
+  const nextEl = $('next-match');
+  const trackerEl = $('tracker');
+  if (!nextEl && !trackerEl) return;
+
+  const now = Date.now();
+  const TWO_HOURS = 2 * 60 * 60 * 1000;
+  const next = fixtures.find((f) => kickoffOf(f).getTime() + TWO_HOURS > now);
+  const past = fixtures.filter((f) => kickoffOf(f).getTime() <= now);
+
+  let preds = null; // null = couldn't load
+  try {
+    const rows = await DB.select('predictions', 'select=*&order=match_date.asc');
+    preds = {};
+    rows.forEach((r) => { preds[r.match_key] = r; });
+  } catch (e) {
+    console.warn('Could not load predictions', e);
+  }
+
+  if (nextEl) renderNextMatch(nextEl, next, preds);
+  if (trackerEl) renderTracker(trackerEl, fixtures, past, preds);
+}
+
+function venueText(f) { return f.venue === 'H' ? 'Home, City Ground' : 'Away'; }
+function teamsText(f) {
+  return f.venue === 'H' ? `Nottingham Forest v ${f.opponent}` : `${f.opponent} v Nottingham Forest`;
+}
+
+function countdownParts(kickoff) {
+  const ms = kickoff.getTime() - Date.now();
+  if (ms <= 0) return { big: 'LIVE', small: 'playing now' };
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const day = new Date(kickoff); day.setHours(0, 0, 0, 0);
+  const days = Math.round((day - today) / 86400000);
+  if (days === 0) return { big: 'Today', small: kickoff.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) };
+  if (days === 1) return { big: '1', small: 'day to go' };
+  return { big: String(days), small: 'days to go' };
+}
+
+function pinFields(prefix) {
+  const saved = storageGet(PIN_KEY) || '';
+  return `
+    <label>PIN
+      <input type="password" id="${prefix}-pin" autocomplete="off" required value="${escapeAttr(saved)}">
+    </label>
+    <label class="remember"><input type="checkbox" id="${prefix}-remember" ${saved ? 'checked' : ''}> Remember on this device</label>`;
+}
+
+function renderNextMatch(el, f, preds) {
+  if (!f) {
+    el.innerHTML = `<p class="prediction-line">No more fixtures in the list. Add next season's to js/content.js.</p>`;
+    return;
+  }
+  const ko = kickoffOf(f);
+  const cd = countdownParts(ko);
+  const dateText = ko.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  const timeText = ko.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const key = matchKey(f);
+  const p = preds && preds[key];
+  const started = ko.getTime() <= Date.now();
+
+  let predictionHtml;
+  if (preds === null) predictionHtml = 'Couldn\'t load my prediction right now.';
+  else if (p && p.pred_forest != null) predictionHtml = `My prediction: <strong>${escapeHtml(scoreLine(f, p.pred_forest, p.pred_opponent))}</strong>`;
+  else predictionHtml = started ? 'No prediction for this one.' : 'No prediction yet. Get it in before kick-off!';
+
+  const canPredict = preds !== null && !started;
+  el.innerHTML = `
+    <div>
+      <p class="match-teams">${escapeHtml(teamsText(f))}</p>
+      <p class="match-meta">${escapeHtml(dateText)} · ${escapeHtml(timeText)} · ${escapeHtml(venueText(f))}</p>
+    </div>
+    <div class="countdown" aria-label="${escapeAttr(cd.big + ' ' + cd.small)}">
+      <span class="big">${escapeHtml(cd.big)}</span><span class="small">${escapeHtml(cd.small)}</span>
+    </div>
+    <p class="prediction-line" id="prediction-line">${predictionHtml}</p>
+    ${canPredict ? `
+    <details class="predict-toggle">
+      <summary>${p && p.pred_forest != null ? 'Change my prediction' : 'Make my prediction'}</summary>
+      <form class="predict-form" id="predict-form">
+        <label>Forest
+          <input type="number" id="pf-forest" min="0" max="20" inputmode="numeric" required value="${p && p.pred_forest != null ? p.pred_forest : ''}">
+        </label>
+        <label>${escapeHtml(f.opponent)}
+          <input type="number" id="pf-opp" min="0" max="20" inputmode="numeric" required value="${p && p.pred_opponent != null ? p.pred_opponent : ''}">
+        </label>
+        ${pinFields('pf')}
+        <button class="btn btn-primary" type="submit">Save prediction</button>
+        <p class="form-status" id="pf-status" role="status"></p>
+      </form>
+    </details>` : ''}
+  `;
+
+  const form = $('predict-form');
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      submitPrediction(f, 'prediction', +$('pf-forest').value, +$('pf-opp').value, 'pf');
+    });
+  }
+}
+
+async function submitPrediction(f, kind, forest, opp, prefix) {
+  const status = $(`${prefix}-status`);
+  const pin = $(`${prefix}-pin`).value;
+  const remember = $(`${prefix}-remember`).checked;
+  status.className = 'form-status';
+  status.textContent = 'Saving...';
+  try {
+    await DB.rpc('save_prediction', {
+      p_pin: pin,
+      p_match_key: matchKey(f),
+      p_match_date: f.date,
+      p_opponent: f.opponent,
+      p_venue: f.venue,
+      p_kind: kind,
+      p_forest: forest,
+      p_opponent_goals: opp,
+    });
+    storageSet(PIN_KEY, remember ? pin : null);
+    status.className = 'form-status ok';
+    status.textContent = 'Saved!';
+    setTimeout(() => initPredictions(((window.SITE || {}).football || {}).fixtures
+      ? window.SITE.football.fixtures.slice().sort((a, b) => kickoffOf(a) - kickoffOf(b)) : []), 600);
+  } catch (err) {
+    status.className = 'form-status err';
+    status.textContent = friendlyError(err);
+  }
+}
+
+function renderTracker(el, fixtures, past, preds) {
+  if (preds === null) {
+    el.innerHTML = '<p>Couldn\'t load the prediction tracker right now. Try again later.</p>';
+    return;
+  }
+  const rows = fixtures
+    .map((f) => ({ f, p: preds[matchKey(f)] }))
+    .filter(({ f, p }) => p && (p.pred_forest != null || p.result_forest != null) && kickoffOf(f).getTime() <= Date.now());
+
+  let total = 0, scored = 0, rightResult = 0, exact = 0;
+  rows.forEach(({ p }) => {
+    const pts = pointsFor(p);
+    if (pts == null) return;
+    scored++; total += pts;
+    if (pts >= 1) rightResult++;
+    if (pts === 3) exact++;
+  });
+
+  const summary = scored
+    ? `<strong>${total} points</strong> from ${scored} match${scored === 1 ? '' : 'es'} · right result ${Math.round((rightResult / scored) * 100)}% of the time · ${exact} exact score${exact === 1 ? '' : 's'}`
+    : 'No finished matches with a prediction yet. The first points land after the next game.';
+
+  const tableRows = rows.slice().reverse().map(({ f, p }) => {
+    const pts = pointsFor(p);
+    const d = kickoffOf(f).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    return `<tr>
+      <td>${escapeHtml(d)}</td>
+      <td>${escapeHtml(f.opponent)} (${f.venue === 'H' ? 'H' : 'A'})</td>
+      <td class="mono-num">${p.pred_forest != null ? `${p.pred_forest}-${p.pred_opponent}` : '–'}</td>
+      <td class="mono-num">${p.result_forest != null ? `${p.result_forest}-${p.result_opponent}` : 'waiting'}</td>
+      <td class="mono-num ${pts == null ? '' : 'pts-' + pts}">${pts == null ? '–' : pts}</td>
+    </tr>`;
+  }).join('');
+
+  // Result entry: any finished match, newest first.
+  const options = past.slice().reverse().map((f) => {
+    const p = preds[matchKey(f)];
+    const done = p && p.result_forest != null ? ' ✓' : '';
+    const d = kickoffOf(f).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    return `<option value="${escapeAttr(matchKey(f))}">${escapeHtml(`${d} ${f.opponent} (${f.venue})${done}`)}</option>`;
+  }).join('');
+
+  el.innerHTML = `
+    <p class="tracker-summary">${summary}</p>
+    ${rows.length ? `
+    <div class="table-wrap">
+      <table>
+        <caption class="visually-hidden">George's score predictions and how many points each earned</caption>
+        <thead><tr><th scope="col">Date</th><th scope="col">Match</th><th scope="col">My guess</th><th scope="col">Result</th><th scope="col">Points</th></tr></thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>` : ''}
+    <p style="margin-top:var(--s4); font-size:0.9rem;">3 points for the exact score, 1 point for the right result (win, draw or loss).</p>
+    ${options ? `
+    <details class="predict-toggle">
+      <summary>Add a final score (for Dad)</summary>
+      <form class="predict-form" id="result-form">
+        <label>Match
+          <select id="rf-match">${options}</select>
+        </label>
+        <label>Forest
+          <input type="number" id="rf-forest" min="0" max="20" inputmode="numeric" required>
+        </label>
+        <label>Them
+          <input type="number" id="rf-opp" min="0" max="20" inputmode="numeric" required>
+        </label>
+        ${pinFields('rf')}
+        <button class="btn btn-primary" type="submit">Save result</button>
+        <p class="form-status" id="rf-status" role="status"></p>
+      </form>
+    </details>` : ''}
+  `;
+
+  const form = $('result-form');
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const f = fixtures.find((x) => matchKey(x) === $('rf-match').value);
+      if (f) submitPrediction(f, 'result', +$('rf-forest').value, +$('rf-opp').value, 'rf');
+    });
+  }
+}
+
+/* =====================================================================
+   PAGE: VIDEO GAMES
+   ===================================================================== */
+function renderGames(C) {
+  const G = C.games || {};
+  setText('currently-playing', G.currentlyPlaying);
+  renderCards('games-grid', G.topGames, 'gaming');
+  const body = $('scores-body');
+  if (body && G.topScores) {
+    body.innerHTML = G.topScores.map((r) =>
+      `<tr><td>${escapeHtml(r.game)}</td><td class="mono-num">${escapeHtml(r.best)}</td><td class="mono-num">${escapeHtml(r.date)}</td></tr>`
+    ).join('');
+  }
+  setText('trying-to-beat', G.tryingToBeat);
+}
+
+/* =====================================================================
+   PAGE: SCHOOL ZONE
+   ===================================================================== */
+function renderSchool(C) {
+  const S = C.school || {};
+  setText('fav-subject', S.favouriteSubject);
+  setText('fav-reason', S.favouriteReason);
+  renderCards('achievements-grid', S.achievements, 'school');
+
+  const g = S.termGoal;
+  if (!g) return;
+  setText('goal-title', g.title);
+  setText('goal-note', g.progressNote);
+  const track = $('goal-track');
+  if (track) {
+    const done = Math.max(0, Math.min(3, Number(g.badgesDone) || 0));
+    const steps = [['🥉', 'Bronze'], ['🥈', 'Silver'], ['🥇', 'Gold']];
+    track.innerHTML = steps.map(([emoji, name], i) => {
+      const cls = i < done ? 'done' : i === done ? 'next' : '';
+      const state = i < done ? 'got it' : i === done ? 'next up' : 'to come';
+      return `<div class="medal-step ${cls}"><span class="medal" aria-hidden="true">${emoji}</span>${name}<span class="visually-hidden">: ${state}</span></div>`;
+    }).join('');
+    const bar = $('goal-bar');
+    if (bar) {
+      bar.style.width = `${Math.round((done / 3) * 100)}%`;
+      bar.parentElement.setAttribute('aria-valuenow', String(done));
+    }
+  }
+}
+
+/* =====================================================================
+   PAGE: ABOUT
+   ===================================================================== */
+function renderAbout(C) {
+  const A = C.about || {};
+  renderList('fun-facts', A.funFacts);
+  const qf = $('quickfire');
+  if (qf && A.quickFire) {
+    qf.innerHTML = A.quickFire.map((x) =>
+      `<div class="qf-item"><dt>${escapeHtml(x.q)}</dt><dd>${escapeHtml(x.a)}</dd></div>`
+    ).join('');
+  }
+}
+
+/* ---- Boot ------------------------------------------------------------------ */
 document.addEventListener('DOMContentLoaded', () => {
   initNav();
+  initLastUpdated();
+
+  const C = window.SITE;
+  const page = document.body.dataset.page;
+  if (C) {
+    if (page === 'home') renderHome(C);
+    if (page === 'football') renderFootball(C);
+    if (page === 'games') renderGames(C);
+    if (page === 'school') renderSchool(C);
+    if (page === 'about') renderAbout(C);
+  }
+
   initScrollReveal();
 });
+})();
