@@ -424,9 +424,13 @@
     })(start);
   }
 
+  // Step away from the close-up for a moment (the goal celebration) without ending it.
+  MDSP.hide = function () { if (el) el.hidden = true; };
+
   MDSP.replay = async function () {
     if (!st || !st.lastShot) return;
     const shot = st.lastShot, L = shot.L;
+    el.hidden = false;
     el.classList.add("replaying");
     q(".sp-tag").textContent = "▶ REPLAY";
     q(".sp-ball").style.opacity = 1;

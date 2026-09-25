@@ -1188,19 +1188,80 @@
     return "goal";
   }
 
+  /* After George scores: he runs off to the corner flag and his team-mates
+     pile on, then he picks a celebration (any he's unlocked). */
   async function celebrateGeorge() {
-    const c = S.gear.cele;
+    const g = S.george;
+    if ($("stage").classList.contains("setpiece")) {
+      // Cut back from the close-up to the pitch for the celebration. The replay comes after.
+      MDSP.hide();
+      $("stage").classList.remove("setpiece");
+      S.carrier = null;
+      S.ball.x = PW + 0.8; S.ball.y = 34; S.ball.h = 0;
+    }
+    {
+      const cy = g.y < 34 ? 3 : PH - 3, side = cy < 34 ? 1 : -1;
+      holdAt(g, PW - 3, cy, true);
+      outfield("f").filter((p) => !p.george).sort((a, b) => Math.hypot(a.x - g.x, a.y - g.y) - Math.hypot(b.x - g.x, b.y - g.y)).slice(0, 5)
+        .forEach((p, i) => holdAt(p, PW - 4.5 - (i % 3) * 1.5, cy + side * (1.4 + Math.floor(i / 3) * 1.4), true));
+      await wait(reduced ? 200 : 1500);
+    }
+    const list = MDC.celebrations();
+    let c = S.gear.cele;
+    if (list.length > 1 && !reduced) c = await pickCelebration(list, c);
     const cele = $("celebration");
     $("cele-avatar").innerHTML = GK.avatar({ pose: c.pose, kit: S.gear.kit, happy: true });
     const av = $("cele-avatar").querySelector("svg");
     if (av && !reduced) av.classList.add(c.anim);
     $("cele-text").textContent = c.shout;
+    // Floating hearts, stars, crowns... for the celebrations that have them.
+    $("cele-fx").innerHTML = c.fx && !reduced ? Array.from({ length: 16 }, () =>
+      `<span style="left:${Math.round(rand() * 94)}%;animation-delay:${(rand() * 1.2).toFixed(2)}s;font-size:${Math.round(22 + rand() * 22)}px">${c.fx}</span>`).join("") : "";
     cele.hidden = false;
-    const g = GEN;
+    sfx.fanfare();
+    const gen = GEN;
     await new Promise((resolve) => {
-      const t = setTimeout(done, reduced ? 700 : 2300);
-      function done() { clearTimeout(t); cele.hidden = true; cele.removeEventListener("click", done); if (g === GEN) resolve(); }
+      const t = setTimeout(done, reduced ? 700 : 2600);
+      function done() { clearTimeout(t); cele.hidden = true; cele.removeEventListener("click", done); if (gen === GEN) resolve(); }
       cele.addEventListener("click", done);
+    });
+  }
+
+  // Like FC: pick how to celebrate. The favourite plays if you don't choose.
+  function pickCelebration(list, fav) {
+    const g = GEN;
+    return new Promise((resolve) => {
+      const panel = $("panel");
+      panel.innerHTML = `
+        <div class="md-q choose cele-pick">
+          <div class="md-q-head"><span class="md-kicker">⚽ GOAL! How does George celebrate?</span><span class="md-level">Favourite in 5s</span></div>
+          <div class="md-timer" aria-hidden="true"><span id="cp-timer"></span></div>
+          <div class="md-celes">${list.map((c, i) => `<button type="button" class="md-cele-btn${c.id === fav.id ? " fav" : ""}" data-i="${i}"><span class="e" aria-hidden="true">${MDC.celeIcon(c)}</span><span class="n">${escapeHtml(c.name)}</span>${i < 9 ? `<kbd>${i + 1}</kbd>` : ""}</button>`).join("")}</div>
+        </div>`;
+      panel.hidden = false;
+      const start = performance.now(), ms = 5000;
+      let done = false;
+      const onKey = (e) => { const n = Number(e.key); if (n >= 1 && n <= Math.min(9, list.length)) { e.preventDefault(); finish(list[n - 1]); } };
+      function finish(c) {
+        if (done) return;
+        done = true;
+        document.removeEventListener("keydown", onKey);
+        if (g !== GEN) return;
+        panel.hidden = true; panel.innerHTML = "";
+        resolve(c);
+      }
+      (function tick(now) {
+        if (done || g !== GEN) return;
+        const left = 1 - (now - start) / ms;
+        const b = $("cp-timer");
+        if (b) b.style.width = Math.max(0, left * 100) + "%";
+        if (left <= 0) return finish(fav);
+        requestAnimationFrame(tick);
+      })(start);
+      document.addEventListener("keydown", onKey);
+      panel.querySelectorAll(".md-cele-btn").forEach((b) => b.addEventListener("click", () => finish(list[Number(b.dataset.i)])));
+      const first = panel.querySelector(".md-cele-btn.fav") || panel.querySelector(".md-cele-btn");
+      if (first) first.focus({ preventScroll: true });
     });
   }
 
@@ -1357,6 +1418,7 @@
       // Close-up replay of the penalty or free kick.
       say(pick(["Let's see that again...", "Watch the replay!", "In slow motion... look at that!"]), { icon: "info" });
       const g = GEN;
+      $("stage").classList.add("setpiece");
       await MDSP.replay();
       if (g !== GEN) await never;
       endSetPiece();
@@ -2019,6 +2081,11 @@
     S.career = MDC.award({
       goals: S.george.goals, assists: S.george.assists, right: S.right, asked: S.asked, won, draw,
       motm: motm && motm.george, cleanSheet: S.score.o === 0, halfway: S.halfwayGoals > 0, rating: ratings[S.george.id],
+      // Special celebrations are earned by doing these.
+      ach: [
+        S.george.goals >= 3 && "hattrick", S.halfwayGoals > 0 && "halfway", won && S.tierN === 3 && "giant",
+        won && S.score.o === 0 && "clean", S.varWins > 0 && "var", S.oppReds > 0 && "red",
+      ].filter(Boolean),
     });
     let badges = [];
     if (window.GZ && GZ.recordMatchday) {
@@ -2147,7 +2214,7 @@
         <p class="md-small">${c.parts.map(([k, v]) => `${escapeHtml(k)} +${v}`).join(" · ")}</p>
         <div class="mdc-xp"><span style="width:${pct}%"></span></div>
         ${c.spGained ? `<p class="mdc-sp"><b>+${c.spGained}</b> skill points to spend on George's stats!</p>` : ""}
-        ${c.unlocks.length ? `<p class="md-unlocks">🔓 Unlocked: ${c.unlocks.map((u) => `<b>${escapeHtml(u.name)}</b>`).join(", ")}</p>` : ""}
+        ${c.unlocks.length ? `<p class="md-unlocks">🔓 Unlocked: ${c.unlocks.map((u) => `<b>${u.special ? "🏆 " : ""}${escapeHtml(u.name)}${u.type === "cele" ? " (celebration)" : ""}</b>`).join(", ")}</p>` : ""}
         <button type="button" class="btn-primary" id="r-career">${MDC.sp() ? "Upgrade George ⬆" : "George's card"}</button>
       </div>
     </section>`;
