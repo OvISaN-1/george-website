@@ -1,7 +1,7 @@
 /* ============================================================
    George's Game Zone — shared stats, badges, streaks & nicknames
    Loaded by quiz-zone.html, football-quiz.html, geography-quiz.html,
-   mountain-quiz.html, times-tables-quiz.html and penalty-shootout.html. Everything is stored in this browser
+   mountain-quiz.html, times-tables-quiz.html, penalty-shootout.html and free-kick.html. Everything is stored in this browser
    only (localStorage). The online top scores are separate: they live in
    the Supabase leaderboard table.
    ============================================================ */
@@ -25,12 +25,17 @@
     { id: "george-cup",        emoji: "🏆", name: "George Cup",      desc: "Win the George Cup" },
     { id: "top-bins",          emoji: "🎯", name: "Top Bins",        desc: "Score a penalty in the top corner" },
     { id: "safe-hands",        emoji: "🧤", name: "Safe Hands",      desc: "Save 2 penalties in one shootout" },
+    { id: "dead-ball",         emoji: "🎯", name: "Dead Ball King",  desc: "Score 3 free kicks in one match" },
+    { id: "banana-kick",       emoji: "🍌", name: "Banana Kick",     desc: "Curl a free kick in with loads of bend" },
+    { id: "worldie",           emoji: "🚀", name: "Worldie",         desc: "Score a free kick from 26 yards or more" },
+    { id: "derby-hero",        emoji: "🌳", name: "Derby Day Hero",  desc: "Win the Brian Clough Trophy against Derby" },
+    { id: "daily-grinder",     emoji: "📅", name: "Daily Grinder",   desc: "Do the Daily Challenge 3 days in a row" },
   ];
 
   function defaultStats() {
     return {
-      gamesPlayed: { "football-frenzy": 0, "capital-quest": 0, "mountain-peaks": 0, "times-tables": 0, "penalty-shootout": 0 },
-      bestScore:   { "football-frenzy": 0, "capital-quest": 0, "mountain-peaks": 0, "times-tables": 0, "penalty-shootout": 0 },
+      gamesPlayed: { "football-frenzy": 0, "capital-quest": 0, "mountain-peaks": 0, "times-tables": 0, "penalty-shootout": 0, "free-kick": 0 },
+      bestScore:   { "football-frenzy": 0, "capital-quest": 0, "mountain-peaks": 0, "times-tables": 0, "penalty-shootout": 0, "free-kick": 0 },
       keepyUppyBest: 0,
       badges: [],
       streak: 0,
@@ -159,6 +164,29 @@
     return { stats: s, newBadges: newlyAwarded.map(bid => BADGES.find(b => b.id === bid)).filter(Boolean) };
   }
 
+  /* Free Kick Masters: r = { score, goals, banana, worldie, derbyWon, dailyStreak } */
+  function recordFreeKick(r) {
+    const s = load();
+    const id = "free-kick";
+    s.gamesPlayed[id] = (s.gamesPlayed[id] || 0) + 1;
+    s.totalGames = (s.totalGames || 0) + 1;
+    if (r.score > (s.bestScore[id] || 0)) s.bestScore[id] = r.score;
+    updateStreak(s);
+    const newlyAwarded = [];
+    function award(bid) {
+      if (!s.badges.includes(bid)) { s.badges.push(bid); newlyAwarded.push(bid); }
+    }
+    award("first-whistle");
+    if (r.goals >= 3) award("dead-ball");
+    if (r.banana > 0) award("banana-kick");
+    if (r.worldie > 0) award("worldie");
+    if (r.derbyWon) award("derby-hero");
+    if ((r.dailyStreak || 0) >= 3) award("daily-grinder");
+    if ((s.streak || 0) >= 3) award("three-day-streak");
+    save(s);
+    return { stats: s, newBadges: newlyAwarded.map(bid => BADGES.find(b => b.id === bid)).filter(Boolean) };
+  }
+
   function randomNickname() {
     return NICKNAMES[Math.floor(Math.random() * NICKNAMES.length)];
   }
@@ -265,6 +293,7 @@
   GZ.recordResult = recordResult;
   GZ.recordKeepyUppy = recordKeepyUppy;
   GZ.recordPenalty = recordPenalty;
+  GZ.recordFreeKick = recordFreeKick;
   GZ.randomNickname = randomNickname;
   GZ.showToast = showToast;
   GZ.announceBadges = announceBadges;

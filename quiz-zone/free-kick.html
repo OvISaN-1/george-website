@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Free Kick Masters — George's Quiz Zone</title>
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ovisan-1.github.io/george-website/quiz-zone/free-kick.html">
+<meta property="og:title" content="Free Kick Masters — George's Quiz Zone">
+<meta property="og:description" content="Free Kick Masters: bend it round the wall for Nottingham Forest. Season mode, daily challenge, unlockable kits and celebrations.">
+<meta property="og:image" content="https://ovisan-1.github.io/george-website/assets/images/share/free-kick.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ovisan-1.github.io/george-website/assets/images/share/free-kick.png">
+<meta name="description" content="Free Kick Masters: bend it round the wall for Nottingham Forest. Season mode, daily challenge, unlockable kits and celebrations.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="canonical" href="https://ovisan-1.github.io/george-website/quiz-zone/free-kick.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121014'/%3E%3Ctext x='16' y='23' font-family='Arial, sans-serif' font-weight='700' font-size='19' fill='%23e1102c' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/shell.css">
+<link rel="stylesheet" href="stats.css">
+<style>
+  :root{
+    --navy:#121014;
+    --navy-light:#1c1820;
+    --cream:#f1ede9;
+    --gold:#f5b942;
+    --teal:#9d5cff;
+    --pink:#e84c61;
+    --ink:#241f29;
+    --good:#3DCC7C;
+    --bad:#FF5D5D;
+    --forest:#e1102c;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;min-height:100vh;font-family:'Manrope',sans-serif;color:var(--cream);}
+  h1,h2,h3{font-family:'Rajdhani',sans-serif;margin:0;}
+  button{font-family:'Rajdhani',sans-serif;cursor:pointer;border:none;font-weight:700;}
+  .footer-note{font-size:12px;color:#8a857e;margin-top:24px;text-align:center;max-width:600px;}
+
+  .ps-card{
+    width:100%;max-width:720px;background:var(--navy-light);border-radius:20px;
+    padding:24px;border:1px solid rgba(241,237,233,0.10);box-shadow:0 12px 30px rgba(0,0,0,0.35);
+  }
+  .ps-card[hidden]{display:none;}
+  .ps-kicker{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#ff5a6e;margin:0 0 4px;}
+  .ps-h2{font-size:clamp(26px,5vw,34px);line-height:1.05;margin-bottom:8px;}
+  .ps-h3{font-size:18px;margin-top:24px;color:var(--gold);}
+  .ps-lede{color:#b9b2ac;margin:0;line-height:1.5;}
+
+  /* Start screen */
+  .ps-intro{display:flex;gap:20px;align-items:center;flex-wrap:wrap;}
+  .ps-intro > div:last-child{flex:1 1 260px;}
+  .ps-avatar{width:150px;height:172px;flex-shrink:0;border-radius:18px;
+    background:radial-gradient(circle at 50% 30%, rgba(225,16,44,0.45), transparent 70%), #2a1a22;
+    border:1px solid rgba(241,237,233,0.12);overflow:hidden;}
+  .ps-avatar svg{width:100%;height:100%;display:block;}
+  .ps-avatar.small{width:110px;height:126px;margin:0 auto 10px;}
+  .ps-avatar.celebrate{width:170px;height:196px;}
+  .ps-how{list-style:none;margin:22px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+  .ps-how li{display:flex;gap:10px;align-items:flex-start;background:rgba(255,255,255,0.05);border-radius:14px;padding:12px;font-size:14px;line-height:1.4;color:#d9d3cd;}
+  .ps-how strong{color:var(--cream);}
+  .ps-num{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:#ca0e28;color:#fff;font-family:'Rajdhani',sans-serif;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .ps-bracket{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;}
+  .ps-chip{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,0.06);color:#b9b2ac;border:1px solid rgba(241,237,233,0.10);}
+  .ps-chip.done{background:rgba(61,204,124,0.15);color:#8ef0b8;border-color:rgba(61,204,124,0.4);}
+  .ps-chip.now{background:#ca0e28;color:#fff;border-color:#ca0e28;}
+  .ps-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:20px;}
+  .ps-go{width:auto;flex:1 1 220px;margin-top:0;font-size:19px;padding:14px 26px;}
+  .ps-sound{background:rgba(255,255,255,0.06);color:var(--cream);border:1px solid rgba(241,237,233,0.18);border-radius:999px;min-height:48px;padding:0 18px;font-size:15px;}
+
+  /* Game */
+  .ps-game{padding:16px;}
+  .ps-scoreboard{background:#0d0b10;border-radius:14px;padding:10px 14px;margin-bottom:12px;border:1px solid rgba(241,237,233,0.08);}
+  .ps-round{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);text-align:center;margin-bottom:4px;}
+  .ps-teams{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;}
+  .ps-team{display:flex;flex-direction:column;gap:4px;}
+  .ps-team.forest{align-items:flex-start;}
+  .ps-team.opp{align-items:flex-end;}
+  .ps-team-name{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;letter-spacing:.05em;}
+  .ps-team.forest .ps-team-name{color:#ff5a6e;}
+  .ps-score{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:34px;line-height:1;font-variant-numeric:tabular-nums;}
+  .ps-dash{margin:0 8px;opacity:.5;}
+  .ps-dots{display:flex;gap:4px;flex-wrap:wrap;}
+  .ps-dot{width:12px;height:12px;border-radius:50%;border:2px solid rgba(241,237,233,0.3);}
+  .ps-dot.scored{background:var(--good);border-color:var(--good);}
+  .ps-dot.missed{background:var(--bad);border-color:var(--bad);}
+
+  .ps-stage{position:relative;border-radius:14px;overflow:hidden;background:#0d0b12;touch-action:manipulation;user-select:none;-webkit-user-select:none;}
+  .ps-stage svg#pitch{display:block;width:100%;height:auto;margin:0 auto;}
+  .ps-stage.aiming{cursor:crosshair;}
+  .ps-confetti{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+  .ps-led{animation:ledScroll 16s linear infinite;}
+  @keyframes ledScroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+
+  .ps-pop{position:absolute;left:50%;top:34%;transform:translate(-50%,-50%) scale(.4);opacity:0;pointer-events:none;
+    font-family:'Rajdhani',sans-serif;font-weight:700;font-size:clamp(34px,10vw,60px);letter-spacing:.04em;white-space:nowrap;
+    color:#fff;text-shadow:0 4px 0 #7a0d20, 0 0 30px rgba(225,16,44,.8);}
+  .ps-pop.show{animation:popIn 1.3s cubic-bezier(.2,1.4,.4,1) forwards;}
+  .ps-pop.gold{color:#ffd66b;text-shadow:0 4px 0 #6b4a0a, 0 0 30px rgba(245,185,66,.8);}
+  .ps-pop.soft{color:#f1ede9;text-shadow:0 3px 0 #241f29;}
+  @keyframes popIn{
+    0%{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(-6deg);}
+    25%{opacity:1;transform:translate(-50%,-50%) scale(1.1) rotate(2deg);}
+    75%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(0);}
+    100%{opacity:0;transform:translate(-50%,-60%) scale(1);}
+  }
+
+  .ps-overlay{position:absolute;inset:0;background:rgba(13,11,16,0.78);display:flex;align-items:center;justify-content:center;padding:14px;z-index:5;}
+  .ps-overlay[hidden]{display:none;}
+  .ps-q-card{background:var(--navy-light);border:1px solid rgba(241,237,233,0.14);border-radius:18px;padding:18px;max-width:440px;width:100%;
+    box-shadow:0 20px 40px rgba(0,0,0,.5);animation:cardIn .35s cubic-bezier(.2,1.3,.4,1);}
+  @keyframes cardIn{from{transform:scale(.85);opacity:0;}to{transform:none;opacity:1;}}
+  .ps-q-title{font-size:22px;line-height:1.1;margin-bottom:8px;}
+  .ps-q-text{color:#e8e2dc;font-size:16px;line-height:1.45;margin:0 0 12px;}
+  .ps-q-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .ps-q-options button{background:rgba(255,255,255,0.07);color:var(--cream);border:2px solid rgba(255,255,255,0.14);border-radius:12px;
+    padding:12px 8px;font-size:15px;min-height:52px;line-height:1.15;}
+  .ps-q-options button:hover{border-color:var(--gold);}
+  .ps-q-options button.right{background:var(--good);border-color:var(--good);color:var(--ink);}
+  .ps-q-options button.wrong{background:var(--bad);border-color:var(--bad);color:var(--ink);}
+  .ps-q-feedback{min-height:1.4em;margin:10px 0 0;font-weight:700;text-align:center;}
+  .ps-result{text-align:center;}
+  .ps-result-actions{display:flex;flex-direction:column;gap:8px;margin-top:6px;}
+  .ps-result-actions .btn-primary{margin-top:0;}
+  .ps-ghost{background:transparent;color:var(--cream);border:1px solid rgba(241,237,233,0.25);border-radius:999px;min-height:46px;font-size:15px;padding:0 18px;}
+
+  .ps-instruction{text-align:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:19px;margin:12px 0 8px;color:var(--cream);min-height:1.3em;}
+  .ps-controls{min-height:64px;}
+  .ps-power[hidden],.ps-dive[hidden]{display:none;}
+  .ps-power{display:flex;gap:12px;align-items:center;}
+  .ps-power-track{position:relative;flex:1;height:26px;border-radius:999px;overflow:hidden;display:flex;border:2px solid rgba(241,237,233,0.2);}
+  .ps-power-zone.weak{width:14%;background:#f5b942;}
+  .ps-power-zone.good{width:74%;background:linear-gradient(90deg,#2fbf6d,#3DCC7C,#2fbf6d);}
+  .ps-power-zone.high{width:12%;background:#FF5D5D;}
+  .ps-power-needle{position:absolute;top:-2px;bottom:-2px;width:6px;margin-left:-3px;left:0;background:#fff;border-radius:3px;box-shadow:0 0 0 2px #121014, 0 0 12px #fff;}
+  .ps-shoot{width:auto;margin-top:0;padding:12px 22px;font-size:18px;flex-shrink:0;}
+  .ps-dive{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .ps-dive-btn{background:#1f9d55;color:#fff;border-radius:14px;min-height:56px;font-size:16px;padding:6px;box-shadow:0 4px 0 #13693a;}
+  .ps-dive-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #13693a;}
+  .ps-dive-btn:focus-visible{outline:2px solid var(--cream);outline-offset:3px;}
+  .ps-keys{font-size:12px;color:#8a857e;text-align:center;margin:10px 0 0;}
+
+  /* End screen */
+  .ps-trophy-wrap{display:flex;justify-content:center;align-items:flex-end;gap:6px;margin-bottom:10px;}
+  .ps-trophy{width:110px;height:auto;filter:drop-shadow(0 0 18px rgba(245,185,66,.55));animation:trophyBob 2.4s ease-in-out infinite;}
+  @keyframes trophyBob{0%,100%{transform:translateY(0) rotate(-2deg);}50%{transform:translateY(-8px) rotate(2deg);}}
+  #screen-end{text-align:center;}
+  #screen-end .ps-lede{margin:0 auto;max-width:48ch;}
+  .ps-stats{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:16px 0 4px;}
+  .ps-stat{background:rgba(255,255,255,0.05);border-radius:14px;padding:10px 16px;min-width:92px;}
+  .ps-stat b{display:block;font-family:'Rajdhani',sans-serif;font-size:30px;color:var(--gold);line-height:1;}
+  .ps-stat span{font-size:12px;color:#b9b2ac;}
+  .ps-name-form{display:flex;gap:10px;margin:16px auto 0;max-width:420px;}
+  .ps-name-form input{flex:1;min-width:0;border:none;font-family:'Manrope',sans-serif;font-size:16px;font-weight:600;background:var(--cream);color:var(--ink);}
+  .ps-name-form[hidden]{display:none;}
+  .ps-saved{min-height:1.2em;margin:8px 0 0;color:#8ef0b8;font-weight:700;}
+  table{width:100%;border-collapse:collapse;margin-top:10px;text-align:left;}
+  th,td{padding:9px;border-bottom:1px solid rgba(255,255,255,0.08);}
+  th{color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:14px;}
+  td{font-weight:600;}
+  #btn-again{margin-top:18px;}
+
+  @media (max-width:520px){
+    .ps-card{padding:16px;}
+    .ps-game{padding:10px;}
+    .ps-avatar{width:120px;height:138px;}
+    .ps-shoot{padding:12px 16px;font-size:16px;}
+    .ps-dive-btn{font-size:14px;}
+    .ps-q-options{grid-template-columns:1fr;}
+  }
+
+  /* ---- Site shell + Garibaldi Grid alignment (added with the shared header) ----
+     The page now uses the same header/footer as the rest of the site
+     (css/shell.css). These rules undo the old "whole body is one centred
+     column" layout and move it onto <main> instead. */
+  body{display:block;padding:0;background:var(--navy);}
+  main#main{
+    display:flex;flex-direction:column;align-items:center;
+    padding:24px 16px 60px;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(157,92,255,0.14), transparent 45%),
+      radial-gradient(circle at 85% 100%, rgba(245,185,66,0.10), transparent 45%);
+  }
+  main a{color:var(--gold);}
+  .quiz-title{width:100%;max-width:720px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+  .quiz-title .eyebrow{display:block;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#a264ff;margin-bottom:2px;}
+  .quiz-title h1{font-size:30px;line-height:1.05;color:var(--cream);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .quiz-title .back{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;text-decoration:none;color:var(--cream);
+    border:1px solid rgba(241,237,233,0.18);border-radius:999px;padding:10px 18px;min-height:44px;display:inline-flex;align-items:center;}
+  .quiz-title .back:hover{border-color:var(--gold);color:var(--gold);}
+  .forest-chip-inline{font-family:'Manrope',sans-serif;font-size:11px;font-weight:800;letter-spacing:.3px;padding:4px 10px;border-radius:999px;background:#ca0e28;color:#fff;}
+  .site-footer{margin-top:0;}
+
+  /* Buttons: pill-shaped and uppercase like the rest of the site. Solid
+     fills so the text keeps its contrast. */
+  .btn-primary{
+    background:var(--teal);color:var(--navy);border-radius:999px;
+    text-transform:uppercase;letter-spacing:.03em;min-height:48px;
+    box-shadow:0 0 0 1px rgba(157,92,255,0.4), 0 0 28px rgba(157,92,255,0.35);
+    transition:transform .15s ease, filter .15s ease;
+  }
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-primary:active{transform:scale(0.97);box-shadow:0 0 0 1px rgba(157,92,255,0.4);}
+  #name-form button{background:#ca0e28;color:#fff;border-radius:999px;min-height:44px;text-transform:uppercase;letter-spacing:.03em;}
+  input[type=text]{border-radius:999px;padding:12px 18px;min-height:44px;}
+  .card{border-radius:20px;border-color:rgba(241,237,233,0.10);}
+  .answer-btn{border-radius:12px;min-height:56px;}
+  .answer-btn.wrong{color:var(--ink);}            /* white on #FF5D5D was 3.0:1, ink is 5.4:1 */
+  .answer-btn:focus-visible,.btn-primary:focus-visible,.quiz-title .back:focus-visible{outline:2px solid var(--cream);outline-offset:3px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;scroll-behavior:auto !important;}
+    .btn-primary,.answer-btn{transition:none;}
+  }
+
+  /* ================= Free Kick Masters ================= */
+  .fk-hero{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center;}
+  @media (max-width:600px){.fk-hero{grid-template-columns:1fr;justify-items:center;text-align:center;}}
+  .fk-menu-btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:18px;}
+  .fk-mode{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:14px 16px;border-radius:16px;min-height:74px;
+    background:rgba(255,255,255,0.06);color:var(--cream);border:1px solid rgba(241,237,233,0.14);transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease;}
+  .fk-mode:hover,.fk-mode:focus-visible{transform:translateY(-2px);border-color:var(--gold);box-shadow:0 0 0 1px rgba(245,185,66,.35),0 0 24px rgba(245,185,66,.18);}
+  .fk-mode .t{font-size:20px;letter-spacing:.02em;}
+  .fk-mode .s{font-family:'Manrope',sans-serif;font-weight:600;font-size:13px;color:#b9b2ac;}
+  .fk-mode.primary{background:linear-gradient(135deg,#ca0e28,#7a0d20);border-color:#ca0e28;}
+  .fk-mode.primary .s{color:#ffd9de;}
+  .fk-xp{margin-top:14px;}
+  .fk-xp-track{height:10px;border-radius:999px;background:rgba(255,255,255,0.08);overflow:hidden;margin-top:6px;}
+  .fk-xp-track span{display:block;height:100%;background:linear-gradient(90deg,#ca0e28,#f5b942);border-radius:inherit;transition:width .6s ease;}
+  .fk-xp-label{font-size:13px;color:#b9b2ac;font-weight:600;}
+  .fk-toggles{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  .fk-board{margin-top:18px;background:rgba(255,255,255,0.04);border-radius:14px;padding:12px 14px;}
+  .fk-board h3{font-size:16px;color:var(--gold);margin-bottom:6px;}
+  .fk-board ol{margin:0;padding-left:1.4em;}
+  .fk-board li{display:flex;justify-content:space-between;gap:10px;padding:3px 0;}
+  .fk-board li::marker{color:#8a857e;}
+  .fk-board p{margin:0;color:#b9b2ac;font-size:14px;}
+  .fk-small{font-size:13px;color:#8a857e;margin:10px 0 0;}
+
+  /* FUT-style card */
+  .fut{position:relative;width:176px;height:276px;flex-shrink:0;color:#2a1c05;font-family:'Rajdhani',sans-serif;
+    clip-path:polygon(50% 0,100% 7%,100% 88%,50% 100%,0 88%,0 7%);padding:14px 14px 0;
+    background:linear-gradient(160deg,#fff3c4,#e6b94d 45%,#b8862a);box-shadow:0 10px 30px rgba(0,0,0,.45);}
+  .fut.bronze{background:linear-gradient(160deg,#f3d2b3,#c98a54 45%,#8a5a2b);color:#2d1a08;}
+  .fut.silver{background:linear-gradient(160deg,#ffffff,#c9ced6 45%,#8e96a3);color:#1d222b;}
+  .fut.gold{background:linear-gradient(160deg,#fff3c4,#e6b94d 45%,#b8862a);}
+  .fut.hero{background:linear-gradient(160deg,#ff8a98,#d7102b 45%,#6d0716);color:#fff3c4;}
+  .fut.icon{background:linear-gradient(160deg,#ffffff,#f1ede9 40%,#d4a52c);color:#3a0e18;}
+  .fut::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.45) 45%,transparent 60%);
+    transform:translateX(-120%);animation:futShine 4s ease-in-out infinite;pointer-events:none;}
+  @keyframes futShine{0%,60%{transform:translateX(-120%);}100%{transform:translateX(120%);}}
+  .fut-top{position:absolute;top:22px;left:16px;display:flex;flex-direction:column;align-items:center;line-height:1;z-index:2;}
+  .fut-ovr{font-size:34px;font-weight:700;}
+  .fut-pos{font-size:14px;font-weight:700;}
+  .fut-badge svg{width:20px;height:22px;margin-top:6px;}
+  .fut-face{position:absolute;top:14px;right:8px;width:112px;height:128px;}
+  .fut-face svg{width:100%;height:100%;}
+  .fut-name{position:absolute;top:146px;left:0;right:0;text-align:center;font-size:22px;font-weight:700;letter-spacing:.06em;border-top:1px solid currentColor;margin:0 18px;padding-top:2px;}
+  .fut-stats{position:absolute;top:178px;left:20px;right:20px;display:grid;grid-template-columns:1fr 1fr;gap:1px 10px;font-size:13px;font-weight:600;}
+  .fut-stats b{font-size:15px;}
+  .fut-tier{position:absolute;bottom:26px;left:0;right:0;text-align:center;font-size:10px;font-weight:700;letter-spacing:.14em;opacity:.8;}
+
+  /* Season list */
+  .fk-season{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-direction:column;gap:10px;}
+  .fk-match{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:rgba(255,255,255,0.05);
+    border:1px solid rgba(241,237,233,0.10);border-radius:16px;padding:14px;}
+  .fk-match.derby{border-color:rgba(245,185,66,.5);background:linear-gradient(135deg,rgba(245,185,66,.12),rgba(255,255,255,0.04));}
+  .fk-match.locked{opacity:.55;}
+  .fk-match-info{display:flex;flex-direction:column;gap:2px;}
+  .fk-match-num{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#ff5a6e;}
+  .fk-match strong{font-family:'Rajdhani',sans-serif;font-size:20px;}
+  .fk-match-meta{font-size:13px;color:#b9b2ac;}
+  .fk-stars{color:#f5b942;font-size:20px;letter-spacing:2px;}
+  .fk-stars .dim{color:rgba(241,237,233,0.18);}
+  .fk-play{width:auto;margin-top:0;padding:10px 22px;}
+  .fk-lock{font-size:13px;color:#b9b2ac;font-weight:700;}
+
+  /* Locker */
+  .fk-locker-top{display:flex;gap:20px;align-items:center;flex-wrap:wrap;}
+  .fk-locker-sec{margin-top:18px;}
+  .fk-locker-sec h3{font-size:18px;margin-bottom:8px;color:var(--gold);}
+  .fk-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;}
+  .fk-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;border-radius:14px;background:rgba(255,255,255,0.05);
+    border:2px solid rgba(241,237,233,0.10);color:var(--cream);min-height:120px;}
+  .fk-item.selected{border-color:var(--gold);background:rgba(245,185,66,0.12);}
+  .fk-item.locked{opacity:.5;cursor:not-allowed;}
+  .fk-item-art{width:44px;height:44px;display:flex;align-items:center;justify-content:center;}
+  .fk-item-art.kit{border-radius:10px 10px 14px 14px;font-weight:700;font-size:18px;border:1px solid rgba(0,0,0,.2);}
+  .fk-item-art.boot{width:48px;height:18px;border-radius:12px 18px 6px 6px;margin:13px 0;border:1px solid rgba(255,255,255,.2);}
+  .fk-item-art.cele{font-size:32px;}
+  .fk-item-name{font-size:15px;text-align:center;line-height:1.1;}
+  .fk-item-need{font-family:'Manrope',sans-serif;font-size:12px;color:#b9b2ac;font-weight:600;}
+
+  /* Game HUD */
+  .fk-hud{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;background:#0d0b10;border-radius:14px;padding:10px 14px;margin-bottom:12px;border:1px solid rgba(241,237,233,0.08);}
+  .fk-hud-title{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;line-height:1.1;}
+  .fk-hud-venue{font-size:12px;color:#8a857e;}
+  .fk-hud-right{text-align:right;font-family:'Rajdhani',sans-serif;font-weight:700;}
+  .fk-hud-right .pts{font-size:24px;color:var(--gold);line-height:1;}
+  .fk-hud-row{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:#d9d3cd;}
+  .fk-cond{display:flex;gap:6px;flex-wrap:wrap;}
+  .fk-cond span{background:rgba(255,255,255,0.07);border-radius:999px;padding:3px 10px;font-weight:700;}
+  .ps-stage.replaying::before,.ps-stage.replaying::after{content:"";position:absolute;left:0;right:0;height:9%;background:#000;z-index:4;}
+  .ps-stage.replaying::before{top:0;}
+  .ps-stage.replaying::after{bottom:0;}
+  .fk-replay-tag{position:absolute;top:12%;left:12px;z-index:5;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.14em;color:#fff;
+    background:#ca0e28;border-radius:6px;padding:2px 8px;font-size:13px;display:none;}
+  .ps-stage.replaying .fk-replay-tag{display:block;animation:blink 1s steps(2) infinite;}
+  @keyframes blink{50%{opacity:.4;}}
+  .fk-rain{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+  .fk-commentary{font-size:15px;color:#e8e2dc;background:rgba(255,255,255,0.05);border-left:3px solid #ca0e28;border-radius:0 10px 10px 0;padding:8px 12px;margin:10px 0 0;min-height:2.3em;}
+
+  /* Meters */
+  .fk-meter{display:flex;gap:12px;align-items:center;}
+  .fk-meter[hidden]{display:none;}
+  .fk-track{position:relative;flex:1;height:30px;border-radius:999px;overflow:hidden;border:2px solid rgba(241,237,233,0.2);background:#2a2330;}
+  .fk-track.curl{background:linear-gradient(90deg,#9d5cff,#2a2330 45%,#2a2330 55%,#9d5cff);}
+  .fk-track .lab{position:absolute;top:50%;transform:translateY(-50%);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;color:#fff;opacity:.85;pointer-events:none;}
+  .fk-track .lab.l{left:10px;}
+  .fk-track .lab.r{right:10px;}
+  .fk-track .lab.c{left:50%;transform:translate(-50%,-50%);}
+  .fk-zone{position:absolute;top:0;bottom:0;}
+  .fk-zone.ok{background:#f5b942;opacity:.55;}
+  .fk-zone.good{background:linear-gradient(90deg,#2fbf6d,#3DCC7C,#2fbf6d);}
+  .fk-needle{position:absolute;top:-2px;bottom:-2px;width:6px;margin-left:-3px;left:0;background:#fff;border-radius:3px;box-shadow:0 0 0 2px #121014,0 0 12px #fff;}
+  .fk-lock-btn{width:auto;margin-top:0;padding:12px 20px;font-size:17px;flex-shrink:0;}
+  .fk-next-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+  .fk-next-row[hidden]{display:none;}
+  .fk-next-row .btn-primary{width:auto;margin-top:0;padding:12px 24px;}
+  .fk-quit{background:transparent;color:#b9b2ac;border:1px solid rgba(241,237,233,0.2);border-radius:999px;padding:6px 14px;font-size:13px;min-height:36px;}
+
+  /* Celebration overlay */
+  .fk-cele{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 50% 55%,rgba(225,16,44,.45),rgba(13,11,16,.75) 70%);cursor:pointer;}
+  .fk-cele[hidden]{display:none;}
+  .fk-cele-avatar{height:min(62%,240px);aspect-ratio:200/230;width:auto;}
+  .fk-cele-avatar svg{width:100%;height:100%;overflow:visible;}
+  .fk-cele-text{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:clamp(30px,8vw,52px);color:#fff;text-shadow:0 4px 0 #7a0d20,0 0 26px rgba(225,16,44,.9);margin-top:6px;letter-spacing:.04em;}
+  .cele-jump{animation:celeJump .6s ease-in-out 3;}
+  @keyframes celeJump{0%,100%{transform:translateY(0);}50%{transform:translateY(-22px) scale(1.04);}}
+  .cele-slide{animation:celeSlide 1.5s cubic-bezier(.2,.8,.3,1) forwards;}
+  @keyframes celeSlide{0%{transform:translateX(-120%) rotate(-8deg);}70%{transform:translateX(8%) rotate(4deg);}100%{transform:translateX(0) rotate(0);}}
+  .cele-siuuu{animation:celeSiu 1.5s ease-in-out forwards;}
+  @keyframes celeSiu{0%{transform:translateY(0) scaleX(1);}20%{transform:translateY(-40px) scaleX(-1);}40%{transform:translateY(-50px) scaleX(1);}60%{transform:translateY(0) scaleX(1) scale(1.08);}100%{transform:scale(1);}}
+  .cele-zoom{animation:celeZoom 1.4s ease-out forwards;}
+  @keyframes celeZoom{0%{transform:scale(.5);}40%{transform:scale(1.15);}100%{transform:scale(1);}}
+  .cele-robot{animation:celeRobot 1.6s steps(8) forwards;}
+  @keyframes celeRobot{0%{transform:rotate(0) translateX(0);}25%{transform:rotate(-10deg) translateX(-10px);}50%{transform:rotate(10deg) translateX(10px);}75%{transform:rotate(-10deg) translateX(-10px);}100%{transform:rotate(0);}}
+
+  /* Result */
+  .fk-big-stars{display:flex;justify-content:center;gap:8px;margin:4px 0 8px;}
+  .fk-big-star{font-size:44px;color:rgba(241,237,233,0.15);transform:scale(.6);animation:starIn .5s cubic-bezier(.2,1.6,.4,1) forwards;}
+  .fk-big-star.on{color:#f5b942;text-shadow:0 0 18px rgba(245,185,66,.8);}
+  @keyframes starIn{to{transform:scale(1);}}
+  .fk-extra p{margin:6px 0 0;color:#e8e2dc;font-size:14px;}
+  .fk-result-card{max-height:100%;overflow:auto;}
+  .fk-save{display:flex;gap:8px;margin:12px auto 0;max-width:360px;}
+  .fk-save[hidden]{display:none;}
+  .fk-save input{flex:1;min-width:0;border:none;border-radius:999px;padding:10px 16px;font-weight:600;font-size:16px;background:var(--cream);color:var(--ink);}
+  .fk-save button{background:#ca0e28;color:#fff;border-radius:999px;padding:0 16px;min-height:44px;text-transform:uppercase;}
+
+  @media (prefers-reduced-motion: reduce){ .fut::after{display:none;} }
+</style>
+</head>
+<body data-page="quiz-game">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <nav class="nav-bar" aria-label="Main">
+      <a class="logo" href="../index.html">GEORGE<span>.</span></a>
+      <ul class="nav-links">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../football.html">Football</a></li>
+        <li><a href="../games.html">Video Games</a></li>
+        <li><a href="../quiz-zone.html" aria-current="page">Quiz Zone</a></li>
+        <li><a href="../school.html">School Zone</a></li>
+        <li><a href="../about.html">About Me</a></li>
+      </ul>
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </nav>
+    <div class="mobile-nav" id="mobile-nav">
+      <a href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/></svg>Home</a>
+      <a href="../football.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/></svg>Football</a>
+      <a href="../games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="10" rx="4"/></svg>Video Games</a>
+      <a href="../quiz-zone.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>Quiz Zone</a>
+      <a href="../school.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4l9 4-9 4-9-4z"/></svg>School Zone</a>
+      <a href="../about.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>About Me</a>
+    </div>
+  </header>
+
+  <main id="main">
+  <div class="quiz-title">
+    <div>
+      <span class="eyebrow">Quiz Zone</span>
+      <h1>Free Kick Masters <span class="forest-chip-inline">🌳 NFFC</span></h1>
+    </div>
+    <a class="back" href="../quiz-zone.html">&larr; All games</a>
+  </div>
+
+  <!-- ============ MENU ============ -->
+  <section class="ps-card" id="screen-menu">
+    <div class="fk-hero">
+      <div id="menu-card"></div>
+      <div>
+        <p class="ps-kicker">Free Kick Masters</p>
+        <h2 class="ps-h2">Bend it round the wall, George</h2>
+        <p class="ps-lede">Aim, pick your curl, hit the power. Win stars, level up your player card and unlock new kits, balls, boots and celebrations.</p>
+        <div class="fk-xp">
+          <span class="fk-xp-label" id="xp-label">Level 1</span>
+          <div class="fk-xp-track"><span id="xp-fill" style="width:0%"></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="fk-menu-btns">
+      <button class="fk-mode primary" id="btn-season" type="button"><span class="t">⚽ Season</span><span class="s" id="season-progress"></span></button>
+      <button class="fk-mode" id="btn-daily" type="button"><span class="t">📅 Daily Challenge</span><span class="s" id="daily-status"></span></button>
+      <button class="fk-mode" id="btn-practice" type="button"><span class="t">🎯 Practice</span><span class="s" id="practice-status"></span></button>
+      <button class="fk-mode" id="btn-locker" type="button"><span class="t">👕 Locker Room</span><span class="s">Kits, balls, boots, celebrations</span></button>
+    </div>
+    <div class="fk-toggles">
+      <button class="ps-sound" id="btn-sound" type="button" aria-pressed="true">🔊 Sound on</button>
+      <button class="ps-sound" id="btn-voice" type="button" aria-pressed="true">🎙️ Commentary on</button>
+    </div>
+    <p class="fk-small" id="menu-stats"></p>
+    <div class="fk-board"><h3>Top scores (best match)</h3><div id="menu-board">Loading...</div></div>
+  </section>
+
+  <!-- ============ SEASON ============ -->
+  <section class="ps-card" id="screen-season" hidden>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div><p class="ps-kicker">Season</p><h2 class="ps-h2">Road to Derby Day</h2></div>
+      <button class="ps-ghost" id="season-back" type="button">&larr; Menu</button>
+    </div>
+    <p class="ps-lede">Get at least one star to unlock the next match. 1 goal = ★, 3 goals = ★★, 4 or more = ★★★.</p>
+    <p class="fk-small" id="season-stars"></p>
+    <ul class="fk-season" id="season-list"></ul>
+  </section>
+
+  <!-- ============ LOCKER ROOM ============ -->
+  <section class="ps-card" id="screen-locker" hidden>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div><p class="ps-kicker">Locker Room</p><h2 class="ps-h2">Pick your gear</h2></div>
+      <button class="ps-ghost" id="locker-back" type="button">&larr; Menu</button>
+    </div>
+    <div class="fk-locker-top">
+      <div id="locker-card"></div>
+      <p class="ps-lede" style="flex:1 1 220px;">Win stars in the Season and level up to unlock more. Your card upgrades from Bronze to Silver, Gold, Forest Hero and ICON as you level up.</p>
+    </div>
+    <div id="locker-sections"></div>
+  </section>
+
+  <!-- ============ GAME ============ -->
+  <section class="ps-card ps-game" id="screen-game" hidden>
+    <div class="fk-hud">
+      <div><div class="fk-hud-title" id="hud-title">Match</div><div class="fk-hud-venue" id="hud-venue"></div></div>
+      <div class="fk-hud-right"><div class="pts" id="hud-points">0 pts</div><div id="hud-goals">0 goals</div></div>
+      <div class="fk-hud-row">
+        <span><span id="hud-kick">Free kick 1</span> <span class="ps-dots" id="hud-dots" style="display:inline-flex;vertical-align:middle;margin-left:6px;"></span></span>
+        <span class="fk-cond"><span id="cond-dist">20 yds</span><span id="cond-wind">No wind</span><span id="cond-weather"></span></span>
+      </div>
+    </div>
+
+    <div class="ps-stage" id="stage">
+      <svg id="pitch" viewBox="0 0 400 440" role="img" aria-labelledby="stage-desc">
+        <desc id="stage-desc">A free kick.</desc>
+        <defs>
+          <linearGradient id="g-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b7fb0"/><stop offset="1" stop-color="#b9c9de"/></linearGradient>
+          <linearGradient id="g-night" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d0b12"/><stop offset="1" stop-color="#2a1830"/></linearGradient>
+          <linearGradient id="g-pitch" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f7a3a"/><stop offset="1" stop-color="#3f9a49"/></linearGradient>
+          <linearGradient id="g-pitch-wet" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#245f33"/><stop offset="1" stop-color="#2f7a40"/></linearGradient>
+          <radialGradient id="g-light" cx="0.5" cy="0" r="0.8"><stop offset="0" stop-color="#fff6d8" stop-opacity="0.35"/><stop offset="1" stop-color="#fff6d8" stop-opacity="0"/></radialGradient>
+          <pattern id="p-net" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 0 L7 7 M7 0 L0 7" stroke="#ffffff" stroke-opacity="0.35" stroke-width="0.7"/></pattern>
+        </defs>
+        <rect id="sky" x="-120" width="640" height="160" fill="url(#g-night)"/>
+        <path d="M-120 22 L520 22 L520 38 L-120 50 Z" fill="#1b1720"/>
+        <g id="lights" fill="#fff6d8">
+          <circle cx="-80" cy="14" r="3"/><circle cx="-68" cy="14" r="3"/><circle cx="40" cy="14" r="3"/><circle cx="52" cy="14" r="3"/><circle cx="64" cy="14" r="3"/>
+          <circle cx="336" cy="14" r="3"/><circle cx="348" cy="14" r="3"/><circle cx="360" cy="14" r="3"/><circle cx="468" cy="14" r="3"/><circle cx="480" cy="14" r="3"/>
+        </g>
+        <path id="stand" d="M-120 50 L520 38 L520 138 L-120 138 Z" fill="#3a0e18"/>
+        <g id="crowd"></g>
+        <rect x="-120" y="0" width="640" height="160" fill="url(#g-light)" pointer-events="none"/>
+        <rect x="-120" y="136" width="640" height="16" fill="#0f0d12"/>
+        <svg x="-120" y="136" width="640" height="16" viewBox="0 0 640 16" overflow="hidden">
+          <g class="ps-led"><text id="led-text" x="0" y="12" font-family="Rajdhani, Arial Narrow, sans-serif" font-weight="700" font-size="11" fill="#ff4d62" letter-spacing="1.5">COME ON YOU REDS</text></g>
+        </svg>
+        <rect id="pitch-rect" x="-120" y="152" width="640" height="288" fill="url(#g-pitch)"/>
+        <g fill="#ffffff" fill-opacity="0.06">
+          <rect x="-120" y="152" width="640" height="18"/><rect x="-120" y="190" width="640" height="24"/>
+          <rect x="-120" y="240" width="640" height="32"/><rect x="-120" y="306" width="640" height="42"/><rect x="-120" y="392" width="640" height="48"/>
+        </g>
+        <g id="lines" stroke="#ffffff" stroke-opacity="0.8" stroke-width="1.6" fill="none"></g>
+        <g id="goal-g"></g>
+        <g id="keeper"></g>
+        <path id="guide" d="" fill="none" stroke="#f5b942" stroke-width="2" stroke-dasharray="3 5" stroke-linecap="round" opacity=".85"/>
+        <g id="target-ring" opacity="0">
+          <circle r="15" fill="#f5b942" fill-opacity=".18" stroke="#f5b942" stroke-width="2.5"/>
+          <circle r="9" fill="none" stroke="#f5b942" stroke-width="2"/>
+          <circle r="3.5" fill="#f5b942"/>
+        </g>
+        <g id="wall-g"></g>
+        <g id="aim" opacity="0">
+          <circle r="11" fill="none" stroke="#ffffff" stroke-width="2.5"/>
+          <circle r="3" fill="#ffffff"/>
+          <path d="M-16 0 H-8 M8 0 H16 M0 -16 V-8 M0 8 V16" stroke="#ffffff" stroke-width="2.5"/>
+        </g>
+        <path id="trail" d="" fill="none" stroke-width="5" stroke-linecap="round" opacity="0"/>
+        <ellipse id="ball-shadow" cx="200" cy="405" rx="9" ry="3" fill="#000" fill-opacity="0.35"/>
+        <g id="ball" transform="translate(200 398)"></g>
+        <g id="striker" transform="translate(160 438)"></g>
+      </svg>
+
+      <canvas class="fk-rain" id="rain" aria-hidden="true"></canvas>
+      <canvas class="ps-confetti" id="confetti" aria-hidden="true"></canvas>
+      <span class="fk-replay-tag" aria-hidden="true">▶ REPLAY</span>
+      <div class="ps-pop" id="pop" aria-hidden="true"></div>
+
+      <div class="fk-cele" id="celebration" hidden aria-live="polite">
+        <div class="fk-cele-avatar" id="cele-avatar" aria-hidden="true"></div>
+        <div class="fk-cele-text" id="cele-text">GET IN!</div>
+      </div>
+
+      <div class="ps-overlay" id="question" hidden role="dialog" aria-modal="true" aria-labelledby="q-title">
+        <div class="ps-q-card">
+          <p class="ps-kicker">Second chance!</p>
+          <h3 class="ps-q-title" id="q-title">Get this right for a retake</h3>
+          <p class="ps-q-text" id="q-text"></p>
+          <div class="ps-q-options" id="q-options"></div>
+          <p class="ps-q-feedback" id="q-feedback" role="status"></p>
+        </div>
+      </div>
+
+      <div class="ps-overlay" id="result" hidden role="dialog" aria-modal="true" aria-labelledby="r-title">
+        <div class="ps-q-card ps-result fk-result-card">
+          <div class="ps-avatar small" id="r-avatar" aria-hidden="true"></div>
+          <div class="fk-big-stars" id="r-stars"></div>
+          <h3 class="ps-q-title" id="r-title">Full time!</h3>
+          <p class="ps-q-text" id="r-text"></p>
+          <div class="ps-stats" id="r-stats"></div>
+          <div class="fk-extra" id="r-extra"></div>
+          <form class="fk-save" id="r-save">
+            <label class="visually-hidden" for="r-name">Your name</label>
+            <input type="text" id="r-name" maxlength="18" placeholder="Your name" autocomplete="off" required>
+            <button type="submit">Save</button>
+          </form>
+          <p class="ps-saved" id="r-saved" role="status"></p>
+          <div class="ps-result-actions" id="r-actions"></div>
+        </div>
+      </div>
+    </div>
+
+    <p class="fk-commentary" id="commentary" aria-live="polite">🎙️ Welcome to Free Kick Masters.</p>
+    <p class="ps-instruction" id="instruction" aria-live="polite"></p>
+    <div class="ps-controls">
+      <div class="fk-meter" id="ctl-curl" hidden>
+        <div class="fk-track curl"><span class="lab l">↶ Bend left</span><span class="lab c">straight</span><span class="lab r">Bend right ↷</span><div class="fk-needle" id="curl-needle"></div></div>
+        <button class="btn-primary fk-lock-btn" id="btn-curl" type="button">Lock curl</button>
+      </div>
+      <div class="fk-meter" id="ctl-power" hidden>
+        <div class="fk-track"><div class="fk-zone ok" id="power-ok"></div><div class="fk-zone good" id="power-good"></div><span class="lab l">soft</span><span class="lab r">blast</span><div class="fk-needle" id="power-needle"></div></div>
+        <button class="btn-primary fk-lock-btn" id="btn-shoot" type="button">⚽ Shoot!</button>
+      </div>
+      <div class="fk-next-row" id="ctl-next" hidden>
+        <button class="btn-primary" id="btn-replay" type="button">▶ Slow-mo replay</button>
+        <button class="btn-primary" id="btn-next" type="button">Next free kick ▶</button>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
+      <p class="ps-keys" style="margin:0;">Keys: arrows to aim, Enter to lock, Space for curl and shoot.</p>
+      <button class="fk-quit" id="btn-quit" type="button">Quit to menu</button>
+    </div>
+  </section>
+
+  <p class="footer-note">Top scores (best single match) are shared online with everyone who plays. Your stars, level and unlocks save on this device.</p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-row">
+      <span>Built with ♥ by Dad, for George.</span>
+      <a href="../quiz-zone.html">Quiz Zone</a>
+    </div>
+  </footer>
+
+<script src="../js/main.js"></script>
+<script src="stats.js"></script>
+<script src="george-kit.js"></script>
+<script src="forest-questions.js"></script>
+<script src="free-kick-physics.js"></script>
+<script src="free-kick-game.js"></script>
+</body>
+</html>
