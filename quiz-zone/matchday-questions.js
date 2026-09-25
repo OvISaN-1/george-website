@@ -275,6 +275,11 @@
   MOUNTAINS.forEach((x, i) => add("mountains", Object.assign({ id: "mt" + i }, x)));
   WORLD_CLASS.forEach(([subject, q, a, w], i) => add(subject, { id: "wc" + i, l: 4, q, a, w }));
 
+  // Year 6 subjects and George's favourites live in matchday-questions-y6.js.
+  const Y6 = window.MQ_Y6 || { SUBJECTS: {}, BANK: [], GENERATORS: {} };
+  Object.assign(SUBJECTS, Y6.SUBJECTS);
+  Y6.BANK.forEach((x) => BANK.push(x));
+
   /* ---------------- Times tables (made up on the spot) ----------------
      Easy: x1, x2, x5, x10.  Medium: x3, x4, x6, x11.  Hard: x7, x8, x9, x12,
      plus "missing number" sums like ? x 8 = 72. */
@@ -399,10 +404,11 @@
   function nextQuestion(level, subjects, used) {
     const subs = subjects && subjects.length ? subjects : Object.keys(SUBJECTS);
     const subject = pick(subs);
-    if (subject === "maths") {
+    const gen = subject === "maths" ? mathsQuestion : Y6.GENERATORS[subject];
+    if (gen) {
       // Try a few so the same sum doesn't come up twice in one match.
       for (let i = 0; i < 12; i++) {
-        const mq = mathsQuestion(level);
+        const mq = gen(level);
         if (!used.has(mq.id) || i === 11) {
           // The brain can make a sum harder or easier for George too.
           const eff = effectiveLevel(mq);
