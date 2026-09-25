@@ -143,6 +143,7 @@
       <path d="M${L.left} ${L.bar} L${L.left + back} ${L.bar + back * 0.8} L${L.right - back} ${L.bar + back * 0.8} L${L.right} ${L.bar} Z" fill="url(#sp-net)"/>
       <rect x="${L.left + back}" y="${L.bar + back * 0.8}" width="${L.gW - back * 2}" height="${L.gH - back * 1.2}" fill="#ffffff" fill-opacity=".06"/>
       <rect class="sp-netback" x="${L.left + back}" y="${L.bar + back * 0.8}" width="${L.gW - back * 2}" height="${L.gH - back * 1.2}" fill="url(#sp-net)"/>
+      <rect class="sp-netflash" x="${L.left + back}" y="${L.bar + back * 0.8}" width="${L.gW - back * 2}" height="${L.gH - back * 1.2}" fill="#ffffff" opacity="0"/>
       <path d="M${L.left} ${L.bar} L${L.left + back} ${L.bar + back * 0.8} L${L.left + back} ${L.gy - back * 0.4} L${L.left} ${L.gy} Z" fill="url(#sp-net)"/>
       <path d="M${L.right} ${L.bar} L${L.right - back} ${L.bar + back * 0.8} L${L.right - back} ${L.gy - back * 0.4} L${L.right} ${L.gy} Z" fill="url(#sp-net)"/>
       <path d="M${L.left} ${L.gy} L${L.left} ${L.bar} L${L.right} ${L.bar} L${L.right} ${L.gy}" stroke="#fff" stroke-width="${Math.max(2.5, 5 * k)}" stroke-linecap="round" fill="none"/>`;
@@ -166,6 +167,7 @@
     q(".sp-striker").innerHTML = GK.georgeStriker(o.kitKey, o.boots);
     setStriker(HOME.x, HOME.y, HOME.s);
     setKickLeg(0);
+    ballBehindKeeper(false);
     q(".sp-ball").style.opacity = 1;
     setBall(BX, BY, 1); setShadow(BX, BY + 7, 1);
     q(".sp-trail").setAttribute("d", ""); q(".sp-trail").style.opacity = 0;
@@ -293,9 +295,15 @@
       await sleep(dur * Math.min(0.9, wallTau + 0.12));
       if (shot.result === "wall") return;
       let dx = clamp((shot.tx - L.keeperX) / L.k, -80, 80);
-      // A beaten penalty keeper dives the wrong way.
-      if (st.kind === "penalty" && shot.result !== "saved") dx = Math.abs(dx) < 20 ? (rand() < 0.5 ? -70 : 70) : -dx * 0.8;
-      const reach = shot.result === "saved" ? 1 : 0.75;
+      const goal = shot.result === "goal" || shot.result === "post-in";
+      if (goal) {
+        // A beaten keeper must never end up on the ball: he goes the wrong way,
+        // or goes the right way at full stretch and can't reach it.
+        // Only a shot right in the far corner gets a "right way, can't reach" dive.
+        const wrongWay = st.kind === "penalty" || Math.abs(dx) < 62 || rand() < 0.5;
+        dx = wrongWay ? -(Math.sign(dx) || (rand() < 0.5 ? -1 : 1)) * (55 + rand() * 20) : dx * 0.18;
+      }
+      const reach = shot.result === "saved" ? 1 : 0.9;
       const high = shot.hEnd > 38;
       const rot = clamp(dx * 1.2, -80, 80);
       await tween(dur * 0.45, (t) => setKeeper(L.keeperX, L.gy, L.k * 1.05, dx * 0.55 * reach * t, (high ? -24 : -6) * Math.sin(t * Math.PI / 2), rot * t), util.easeOut);
@@ -327,16 +335,37 @@
     } else if (shot.result === "over" || shot.result === "wide") {
       await tween(350 / speed, (t) => { setBall(end.x + (end.x - BX) * 0.15 * t, end.y - 40 * t, end.s * (1 - 0.3 * t), 0); ball.style.opacity = 1 - t; });
     } else {
+      // GOAL: the ball carries on past the line into the back of the net, behind the keeper.
+      ballBehindKeeper(true);
+      q(".sp-shadow").setAttribute("fill-opacity", 0);
       rippleNet();
+      const back = 12 * L.k;
+      // The back of the net sits "inside" the frame: its top is lower than the bar, its bottom higher than the line.
+      const backTop = L.bar + back * 0.8, backBottom = L.gy - back * 0.4;
+      const inX = end.x + (L.gx - end.x) * 0.14;
+      const inY = clamp(end.y, backTop + 4 * L.k, backBottom - 4 * L.k);
+      await tween(300 / speed, (t) => setBall(lerp(end.x, inX, t), lerp(end.y, inY, t), end.s * (1 - 0.18 * t), 900 + t * 300), (t) => 1 - Math.pow(1 - t, 2));
+      // ...and drops down to the bottom of the net.
+      const floorY = backBottom - 3 * L.k;
+      await tween(380 / speed, (t) => setBall(inX, lerp(inY, Math.max(inY, floorY), t * t), end.s * 0.82, 1200), (t) => t);
     }
     await keeperDive;
     trailEl.style.opacity = 0;
+  }
+
+  // For goals the ball has to be drawn behind the keeper once it's in the net.
+  function ballBehindKeeper(on) {
+    const svg = q(".sp-svg"), ball = q(".sp-ball"), keeper = q(".sp-keeper"), striker = q(".sp-striker");
+    if (on) svg.insertBefore(ball, keeper);
+    else svg.insertBefore(ball, striker);
   }
 
   function rippleNet() {
     if (st.reduced) return;
     const net = q(".sp-netback");
     if (!net) return;
+    const flash = q(".sp-netflash");
+    if (flash) { flash.classList.remove("on"); void flash.getBBox(); flash.classList.add("on"); }
     const L = st.L, cx = L.gx, cy = L.gy - L.gH / 2;
     tween(500, (t) => {
       const k = Math.sin(t * Math.PI * 4) * (1 - t) * 0.06;
@@ -433,6 +462,7 @@
     el.hidden = false;
     el.classList.add("replaying");
     q(".sp-tag").textContent = "▶ REPLAY";
+    ballBehindKeeper(false);
     q(".sp-ball").style.opacity = 1;
     setBall(BX, BY, 1); setShadow(BX, BY + 7, 1);
     setKeeper(L.keeperX, L.gy, L.k * 1.05, 0, 0, 0);

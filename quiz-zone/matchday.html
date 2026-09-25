@@ -195,6 +195,8 @@
   /* Close-up penalties and free kicks */
   .sp{position:absolute;inset:0;z-index:2;background:#0d0b12;}
   .sp[hidden]{display:none;}
+  .sp-netflash.on{animation:netFlash .9s ease;}
+  @keyframes netFlash{0%,100%{opacity:0;}15%{opacity:.65;}35%{opacity:.15;}55%{opacity:.5;}}
   .sp-svg{display:block;width:100%;height:100%;touch-action:manipulation;cursor:crosshair;}
   .sp-tag{position:absolute;top:11%;left:12px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.12em;color:#fff;background:#ca0e28;border-radius:6px;padding:2px 10px;font-size:14px;display:none;}
   .sp.replaying .sp-tag{display:block;animation:blink 1s steps(2) infinite;}
