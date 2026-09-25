@@ -1,7 +1,7 @@
 /* ============================================================
    George's Game Zone — shared stats, badges, streaks & nicknames
    Loaded by quiz-zone.html, football-quiz.html, geography-quiz.html,
-   mountain-quiz.html and times-tables-quiz.html. Everything is stored in this browser
+   mountain-quiz.html, times-tables-quiz.html and penalty-shootout.html. Everything is stored in this browser
    only (localStorage). The online top scores are separate: they live in
    the Supabase leaderboard table.
    ============================================================ */
@@ -21,12 +21,16 @@
     { id: "keepy-uppy-king",   emoji: "🤹", name: "Keepy-Uppy King", desc: "Get 25 keepy-uppies in one go" },
     { id: "times-titan",       emoji: "✖️", name: "Times Titan",     desc: "Finish a round of Times Tables Blitz" },
     { id: "maths-machine",     emoji: "🧮", name: "Maths Machine",   desc: "Get 25 or more right in Times Tables Blitz" },
+    { id: "penalty-hero",      emoji: "🥅", name: "Penalty Hero",    desc: "Win a penalty shootout" },
+    { id: "george-cup",        emoji: "🏆", name: "George Cup",      desc: "Win the George Cup" },
+    { id: "top-bins",          emoji: "🎯", name: "Top Bins",        desc: "Score a penalty in the top corner" },
+    { id: "safe-hands",        emoji: "🧤", name: "Safe Hands",      desc: "Save 2 penalties in one shootout" },
   ];
 
   function defaultStats() {
     return {
-      gamesPlayed: { "football-frenzy": 0, "capital-quest": 0, "mountain-peaks": 0, "times-tables": 0 },
-      bestScore:   { "football-frenzy": 0, "capital-quest": 0, "mountain-peaks": 0, "times-tables": 0 },
+      gamesPlayed: { "football-frenzy": 0, "capital-quest": 0, "mountain-peaks": 0, "times-tables": 0, "penalty-shootout": 0 },
+      bestScore:   { "football-frenzy": 0, "capital-quest": 0, "mountain-peaks": 0, "times-tables": 0, "penalty-shootout": 0 },
       keepyUppyBest: 0,
       badges: [],
       streak: 0,
@@ -131,6 +135,28 @@
       isNewBest,
       newBadges: newlyAwarded.map(id => BADGES.find(b => b.id === id)).filter(Boolean)
     };
+  }
+
+  /* Penalty Shootout: r = { score, won, cupWon, topBins, maxSaves } */
+  function recordPenalty(r) {
+    const s = load();
+    const id = "penalty-shootout";
+    s.gamesPlayed[id] = (s.gamesPlayed[id] || 0) + 1;
+    s.totalGames = (s.totalGames || 0) + 1;
+    if (r.score > (s.bestScore[id] || 0)) s.bestScore[id] = r.score;
+    updateStreak(s);
+    const newlyAwarded = [];
+    function award(bid) {
+      if (!s.badges.includes(bid)) { s.badges.push(bid); newlyAwarded.push(bid); }
+    }
+    award("first-whistle");
+    if (r.won) award("penalty-hero");
+    if (r.cupWon) award("george-cup");
+    if (r.topBins > 0) award("top-bins");
+    if (r.maxSaves >= 2) award("safe-hands");
+    if ((s.streak || 0) >= 3) award("three-day-streak");
+    save(s);
+    return { stats: s, newBadges: newlyAwarded.map(bid => BADGES.find(b => b.id === bid)).filter(Boolean) };
   }
 
   function randomNickname() {
@@ -238,6 +264,7 @@
   GZ.load = load;
   GZ.recordResult = recordResult;
   GZ.recordKeepyUppy = recordKeepyUppy;
+  GZ.recordPenalty = recordPenalty;
   GZ.randomNickname = randomNickname;
   GZ.showToast = showToast;
   GZ.announceBadges = announceBadges;
