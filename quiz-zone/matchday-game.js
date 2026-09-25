@@ -29,9 +29,9 @@
 
   /* How hard each type of opponent is. tier 1 / 2 / 3 */
   const TIERS = {
-    1: { attacks: 6, defends: 3, defendLevels: [1, 1, 2], timer: 0, goalIfWrong: 0.5, saveIfRight: 0.05, poss: 0.6 },
-    2: { attacks: 6, defends: 4, defendLevels: [1, 2, 2], timer: 1, goalIfWrong: 0.58, saveIfRight: 0.1, poss: 0.52 },
-    3: { attacks: 5, defends: 5, defendLevels: [2, 2, 3], timer: 2, goalIfWrong: 0.66, saveIfRight: 0.14, poss: 0.44 },
+    1: { attacks: 6, defends: 3, defendLevels: [1, 1, 2], timer: 0, goalIfWrong: 0.5, saveIfRight: 0.12, poss: 0.6 },
+    2: { attacks: 5, defends: 4, defendLevels: [1, 2, 2], timer: 1, goalIfWrong: 0.58, saveIfRight: 0.22, poss: 0.52 },
+    3: { attacks: 5, defends: 5, defendLevels: [2, 2, 3], timer: 2, goalIfWrong: 0.66, saveIfRight: 0.32, poss: 0.44 },
   };
   // Seconds on the clock for each question level, before the opponent's tier knocks some off.
   const LEVEL_TIME = { 1: 15, 2: 13, 3: 11 };
@@ -1031,7 +1031,7 @@
       }
       const scorer = pickScorer(0.75, [7, 9]);
       await passTo(scorer, 360);
-      const res = await shoot(scorer, "f", rand() < saveChance * 0.5 ? "save" : "goal", { xg: 0.58, ms: 360, lift: 0.3 });
+      const res = await shoot(scorer, "f", rand() < saveChance * 0.6 ? "save" : "goal", { xg: 0.58, ms: 360, lift: 0.3 });
       if (res === "goal") return forestGoalFlow(scorer, scorer.george ? cutter : g, "tap-in");
       S.stats.f.corners += 1;
       say(`Denied! ${keeperOf("o").short} gets down to save. Corner.`, { icon: "save" });
@@ -1067,9 +1067,9 @@
       say(res === "post" ? "OFF THE POST! Inches away from a wonder goal!" : res === "save" ? `Fingertip save from ${keeperOf("o").short}!` : "It flies over the bar. Worth a go!", { icon: "info" });
       return;
     }
-    const res = await shoot(g, "f", rand() < saveChance * 0.6 ? "post" : "goal", { xg: 0.09, lift: 2.2, ms: 460, corner: rand() < 0.5 ? "left" : "right" });
+    const res = await shoot(g, "f", rand() < saveChance + 0.1 ? pick(["post", "save"]) : "goal", { xg: 0.09, lift: 2.2, ms: 460, corner: rand() < 0.5 ? "left" : "right" });
     if (res === "goal") { pop("WORLDIE!", "gold"); return forestGoalFlow(g, holder, "long shot"); }
-    say("Off the woodwork! The crowd can't believe it.", { icon: "info" });
+    say(res === "post" ? "Off the woodwork! The crowd can't believe it." : `Great strike, even better save from ${keeperOf("o").short}!`, { icon: res === "post" ? "info" : "save" });
   }
 
   async function cornerMoment() {
@@ -1084,7 +1084,7 @@
     const ok = await askQuestion(2, { kicker: "Corner", title: "Attack the ball!", powers: ["neco"], kind: "attack" });
     const scorer = rand() < 0.65 ? S.george : pick([byIdx("f", 2), byIdx("f", 3)]);
     await passTo(scorer, 520, 4);
-    const res = await shoot(scorer, "f", ok ? "goal" : pick(["miss", "save"]), { xg: 0.12, lift: 1 });
+    const res = await shoot(scorer, "f", ok && rand() < 0.7 ? "goal" : pick(["miss", "save"]), { xg: 0.12, lift: 1 });
     if (res === "goal") return forestGoalFlow(scorer, taker, "header");
     say(res === "save" ? "Headed at the keeper." : "Headed wide. So close!", { icon: "info" });
   }
@@ -1120,7 +1120,7 @@
         await wait(reduced ? 200 : 600);
       }
       // Win it back and break forward sometimes.
-      if (rand() < 0.28 && S.min < 88) { await attackMoment(true); }
+      if (rand() < 0.18 && S.min < 88) { await attackMoment(true); }
       return;
     }
     // Wrong answer: trouble.
@@ -1257,7 +1257,7 @@
     await wait(reduced ? 200 : 900);
     say("George over the ball. The wall's lined up... this is Free Kick Masters territory!", { icon: "info" });
     const ok = await askQuestion(3, { kicker: "Free kick", title: "Bend it round the wall!", powers: ["gw", "neco"], kind: "attack" });
-    const res = await shoot(g, "f", ok ? (rand() < S.tier.saveIfRight * 0.7 ? "save" : "goal") : pick(["miss", "save", "miss"]), { xg: 0.07, lift: 2.6, ms: 620, corner: spotY < 34 ? "right" : "left" });
+    const res = await shoot(g, "f", ok ? (rand() < S.tier.saveIfRight + 0.1 ? "save" : "goal") : pick(["miss", "save", "miss"]), { xg: 0.07, lift: 2.6, ms: 620, corner: spotY < 34 ? "right" : "left" });
     S.phase = "play";
     if (res === "goal") { pop("TOP BINS!", "gold"); return forestGoalFlow(g, null, "free kick"); }
     say(res === "save" ? `${gk.short} claws it away!` : "Over the wall... and over the bar.", { icon: res === "save" ? "save" : "info" });

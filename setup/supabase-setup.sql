@@ -131,6 +131,7 @@ grant execute on function public.save_prediction(text, text, date, text, text, t
 -- If you set up that table with a rule that only allows the original
 -- three game names, new scores will be refused. Run these two queries
 -- to check. If neither mentions game names, you don't need to do anything.
+-- Newer games save with game = 'free-kick' and game = 'matchday' too.
 -- =====================================================================
 -- select conname, pg_get_constraintdef(oid) from pg_constraint where conrelid = 'public.leaderboard'::regclass;
 -- select policyname, cmd, qual, with_check from pg_policies where tablename = 'leaderboard';
