@@ -15,7 +15,7 @@
 
 import { coach } from './coach.js';
 import { weatherFor, apod, iss, live } from './extras.js';
-import { squad, track, report, games, SONGS } from './more.js';
+import { squad, track, report, games, SONGS, songList } from './more.js';
 
 const API = 'https://api.football-data.org/v4';
 const CACHE_VERSION = 'v1';
@@ -38,6 +38,7 @@ export default {
       if (!env.FOOTBALL_DATA_KEY) return json({ error: 'no-key' }, 503, 0);
       return openToAll(await cached(request, ctx, 'squad', 12 * 3600, () => squad(env)));
     }
+    if (url.pathname === '/api/songs') return openToAll(json({ songs: songList() }, 200, 3600));
     if (url.pathname === '/api/track') {
       const id = url.searchParams.get('id') || '';
       if (!SONGS[id]) return json({ error: 'unknown-song' }, 404, 0);
