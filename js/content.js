@@ -24,6 +24,9 @@ window.SITE = {
       'My best Football Frenzy score keeps going up every week.',
       'I once played a whole FC 26 season as Forest without losing at home.',
       'Forest were European champions twice, in 1979 and 1980. I know every detail.',
+      'My favourite band is AC/DC.',
+      'Golden Retrievers are the best dogs in the world. Kind, chill and always happy.',
+      'If I could invent anything, it would be a ball made for halfway line goals.',
     ],
   },
 
@@ -181,6 +184,13 @@ window.SITE = {
 
   /* ---------- ABOUT ME ---------- */
   about: {
+    // "Things I love" cards. emoji + a short title + a sentence in George's words.
+    loves: [
+      { emoji: '🎸', title: 'Rock music', text: 'AC/DC are my favourite band. Turn it up!' },
+      { emoji: '🐶', title: 'Dogs', text: 'Golden Retrievers are the best breed, because they are kind, chill and always happy.' },
+      { emoji: '🇷🇴', title: 'Romanian food', text: 'Sarmale. Nothing beats them.' },
+      { emoji: '💡', title: 'My invention', text: 'If I could invent anything, it would be a ball made for scoring from the halfway line.' },
+    ],
     funFacts: [
       'I have been to the City Ground four times and we have won three of them.',
       'My favourite Forest player is Morgan Gibbs-White.',
@@ -192,6 +202,9 @@ window.SITE = {
       { q: 'One thing you\'re proud of this year?', a: 'Getting picked to play in a better position for my team.' },
       { q: 'Xbox, PlayStation, or PC?', a: 'Xbox, no contest.' },
       { q: 'Best thing about school?', a: 'PE, and seeing my mates.' },
+      { q: 'Favourite band?', a: 'AC/DC.' },
+      { q: 'Best dog breed?', a: 'Golden Retriever.' },
+      { q: 'Best Romanian food?', a: 'Sarmale.' },
     ],
   },
 };

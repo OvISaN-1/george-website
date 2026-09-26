@@ -498,6 +498,12 @@ function renderSchool(C) {
 function renderAbout(C) {
   const A = C.about || {};
   renderList('fun-facts', A.funFacts);
+  const loves = $('loves');
+  if (loves && A.loves) {
+    loves.innerHTML = A.loves.map((x) =>
+      `<article class="card love-card"><span class="love-emoji" aria-hidden="true">${escapeHtml(x.emoji)}</span><h3>${escapeHtml(x.title)}</h3><p>${escapeHtml(x.text)}</p></article>`
+    ).join('');
+  }
   const qf = $('quickfire');
   if (qf && A.quickFire) {
     qf.innerHTML = A.quickFire.map((x) =>

@@ -243,6 +243,11 @@ section + section { border-top: 1px solid var(--line); }
   border-radius: 50%; background: var(--accent);
 }
 
+.loves-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--s4); }
+.love-card { gap: var(--s2); }
+.love-card:hover, .love-card:focus-within { border-color: var(--garibaldi); box-shadow: var(--glow-garibaldi); }
+.love-emoji { font-size: 2rem; line-height: 1; }
+
 .qf-list { display: flex; flex-direction: column; gap: var(--s3); }
 .qf-item { display: flex; gap: var(--s4); padding: var(--s3) 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
 .qf-item dt { font-family: var(--font-display); font-weight: 600; color: var(--chalk); min-width: 220px; }
