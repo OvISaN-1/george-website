@@ -340,7 +340,7 @@
   <button class="btn-primary" id="play-again-btn">Play again</button>
 </div>
 
-<p class="footer-note">Song clips are 30-second previews from Deezer, played through George's website, and only from a list of family-friendly rock classics. Top scores are shared online with everyone who plays. Badges and your best score save on this device.</p>
+<p class="footer-note">Song clips are 30-second previews from Deezer or Apple Music, played through George's website, and only from a list of family-friendly rock classics. Top scores are shared online with everyone who plays. Badges and your best score save on this device.</p>
   </main>
 
   <footer class="site-footer">
@@ -425,8 +425,12 @@ showBest();
 const modeButtons = document.querySelectorAll(".mode-btn");
 modeButtons.forEach((b) => { b.disabled = true; b.addEventListener("click", () => startGame(b.dataset.mode)); });
 $("clip-status").textContent = "Tuning the guitars…";
-getTrack("thunderstruck").then((t) => {
-  if (!t) throw new Error("no clip");
+// Try a few songs, in case one of them is missing.
+(async () => {
+  for (const s of shuffle(SONGS).slice(0, 3)) { if (await getTrack(s.id)) return true; }
+  return false;
+})().then((ok) => {
+  if (!ok) throw new Error("no clip");
   modeButtons.forEach((b) => { b.disabled = false; });
   $("clip-status").textContent = "";
 }).catch(() => {
@@ -602,7 +606,7 @@ function answer(id) {
   $("feedback").innerHTML = right
     ? `🤘 Yes! <span class="points-pop">+${pts} points</span>${G.streak >= 2 ? ` · 🔥 ${G.streak} in a row` : ""}`
     : id ? "❌ Not this time!" : "⏰ Time's up!";
-  $("song-reveal").innerHTML = `It was <b>${esc(song.title)}</b> by <b>${esc(song.artist)}</b>.${G.track.link ? ` <a href="${esc(G.track.link)}" target="_blank" rel="noopener">Listen on Deezer ↗</a>` : ""}`;
+  $("song-reveal").innerHTML = `It was <b>${esc(song.title)}</b> by <b>${esc(song.artist)}</b>.${G.track.link ? ` <a href="${esc(G.track.link)}" target="_blank" rel="noopener">Listen on ${esc(G.track.source || "Deezer")} ↗</a>` : ""}`;
   if (G.track.cover) $("vinyl-label").innerHTML = `<img src="${esc(G.track.cover)}" alt="">`;
   $("prompt").textContent = right ? "Keep listening, or carry on!" : "Here's how it goes:";
   if (audio.paused) audio.play().catch(() => {});
