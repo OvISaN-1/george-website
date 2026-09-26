@@ -84,8 +84,10 @@
         <div class="contact-card">
           <div>
             <h3 style="margin-bottom:4px;">Nottingham Forest</h3>
-            <p style="margin:0;" id="league-line">Current league position: see the Premier League table.</p>
+            <p style="margin:0;" id="league-line">Loading the live table...</p>
             <p style="margin:4px 0 0; font-size:0.8rem; color:var(--chalk-faint);" id="league-asof"></p>
+            <p style="margin:12px 0 0;" id="top-scorer" hidden></p>
+            <div id="mini-table" hidden></div>
             <p style="margin:12px 0 0;" id="fan-story-wrap"><b>How I became a Forest fan:</b> <span id="fan-story"></span></p>
           </div>
           <div class="card-photo" style="width:96px; height:96px; flex-shrink:0;">
@@ -105,6 +107,17 @@
         <div class="match-card" id="next-match">
           <p class="prediction-line">Loading the next match...</p>
         </div>
+      </div>
+    </section>
+
+    <!-- Fixtures and results (live) ------------------------------------------ -->
+    <section aria-labelledby="fixtures-title">
+      <div class="wrap reveal">
+        <div class="section-head">
+          <h2 id="fixtures-title">Fixtures and results</h2>
+          <p>Straight from the Premier League, updated by itself.</p>
+        </div>
+        <div class="fx-grid" id="fixtures-results"><p>Loading fixtures...</p></div>
       </div>
     </section>
 

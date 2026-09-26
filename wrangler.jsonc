@@ -1,8 +1,13 @@
-// Cloudflare Workers settings: serves the website's files as they are (no build step).
+// Cloudflare Workers settings. The site's files are served as they are
+// (no build step). Only /api/... runs code: worker/index.js, which fetches
+// live Forest data. Its API key is a secret set in the Cloudflare dashboard.
 {
   "name": "george-website",
   "compatibility_date": "2026-09-01",
+  "main": "worker/index.js",
   "assets": {
-    "directory": "./"
+    "directory": "./",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
   }
 }

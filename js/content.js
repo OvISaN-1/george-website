@@ -37,14 +37,6 @@ window.SITE = {
     // How George became a Forest fan, in his own words.
     fanStory: 'I started supporting Forest in September 2024, when they beat Liverpool 1-0 at Anfield. Callum Hudson-Odoi scored the winner, and Liverpool went on to win the league that season. I have been Forest ever since.',
 
-    // Update this by hand once a week or so.
-    league: {
-      position: '13th',
-      played: 5,
-      points: 5,
-      asOf: '26 September 2026',
-    },
-
     // Favourite player cards. Leave "photo" out to show a plain card.
     players: [
       {
@@ -78,10 +70,9 @@ window.SITE = {
       quote: 'I\'m not always the one scoring, but I\'m always in the game.',
     },
 
-    // Premier League fixtures 2026/27. The "Next match" box and the
-    // prediction tracker both work from this list automatically.
-    // Dates and kick-off times can move for TV. If one changes, just
-    // edit it here. Time is UK time, 24-hour clock.
+    // Backup only, no need to edit. The Football page gets fixtures,
+    // results, the table and top scorers live (worker/index.js). This
+    // list is used only if the live feed can't be reached.
     // venue: 'H' = home at the City Ground, 'A' = away.
     fixtures: [
       { date: '2026-08-22', time: '15:00', opponent: 'Leeds',          venue: 'H' },
