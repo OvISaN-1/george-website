@@ -28,6 +28,21 @@
 
   /* Unlocks. need = level. */
   const ITEMS = {
+    // Rock Anthem Goals: the riff that plays when George scores. Unlock by
+    // levelling up, or sooner by getting Music & rock questions right.
+    riff: [
+      { id: "none", name: "Classic fanfare", need: 1, icon: "🎺" },
+      { id: "power", name: "Power chords", need: 1, icon: "🎸" },
+      { id: "stomp", name: "Stadium stomp", need: 2, rock: 3, icon: "👏" },
+      { id: "punk", name: "Punk rush", need: 3, rock: 6, icon: "⚡" },
+      { id: "boogie", name: "Blues boogie", need: 5, rock: 10, icon: "🕶️" },
+      { id: "anthem", name: "Stadium anthem", need: 7, rock: 15, icon: "🏟️" },
+      { id: "gallop", name: "Metal gallop", need: 9, rock: 20, icon: "🐎" },
+      { id: "drums", name: "Drum solo", need: 11, rock: 26, icon: "🥁" },
+      { id: "shred", name: "Guitar solo shred", need: 13, rock: 32, icon: "🔥" },
+      { id: "trent", name: "Trent End thunder", need: 15, rock: 40, icon: "🌳" },
+      { id: "master", name: "Riff Master", need: 18, rock: 50, icon: "🤘" },
+    ],
     kit: [
       { id: "home", name: "Home red", need: 1 },
       { id: "away", name: "Away white", need: 1 },
@@ -83,8 +98,9 @@
         kit: ["home", "away"].includes(fk.kit) ? fk.kit : "home",
         boots: fk.boots === "red" ? "red" : "black",
         cele: ["armsup", "slide", "siuuu"].includes(fk.celebration) ? fk.celebration : "armsup",
+        riff: "power",
       },
-      matches: 0, ach: {},
+      matches: 0, ach: {}, rock: 0,
     };
   }
   let C = defaults();
@@ -121,14 +137,24 @@
     };
   }
 
-  function unlocked(item) { return item.ach ? !!C.ach[item.ach] : levelOf(C.xp) >= item.need; }
+  function unlocked(item) { return item.ach ? !!C.ach[item.ach] : levelOf(C.xp) >= item.need || (item.rock != null && C.rock >= item.rock); }
   function item(type, id) { return ITEMS[type].find((x) => x.id === id) || ITEMS[type][0]; }
   function gear() {
     const g = C.gear;
     const kit = unlocked(item("kit", g.kit)) ? g.kit : "home";
     const boots = item("boots", unlocked(item("boots", g.boots)) ? g.boots : "black");
     const cele = item("cele", unlocked(item("cele", g.cele)) ? g.cele : "armsup");
-    return { kit, boots: boots.colour, bootsId: boots.id, cele };
+    const riff = item("riff", unlocked(item("riff", g.riff)) ? g.riff : "power");
+    return { kit, boots: boots.colour, bootsId: boots.id, cele, riff: riff.id };
+  }
+
+  /* A Music & rock question answered right. Returns any riffs it unlocks. */
+  function rockRight() {
+    const before = ITEMS.riff.filter(unlocked).map((x) => x.id);
+    C.rock += 1;
+    const fresh = ITEMS.riff.filter((x) => unlocked(x) && !before.includes(x.id));
+    save();
+    return fresh;
   }
 
   /* After a match. r = { goals, assists, right, asked, won, draw, motm, cleanSheet, halfway, rating } */
@@ -148,7 +174,7 @@
     C.sp += newLevels * 3;
     const unlocks = [];
     for (let l = before + 1; l <= after; l++) {
-      Object.entries(ITEMS).forEach(([type, list]) => list.filter((x) => !x.ach && x.need === l).forEach((x) => unlocks.push({ type, name: x.name })));
+      Object.entries(ITEMS).forEach(([type, list]) => list.filter((x) => !x.ach && x.need === l && !(x.rock != null && C.rock >= x.rock)).forEach((x) => unlocks.push({ type, name: x.name })));
     }
     // Special celebrations earned this match.
     (r.ach || []).forEach((key) => {
@@ -197,13 +223,14 @@
     const pct = lvl >= 30 ? 100 : Math.round(((C.xp - prev) / (next - prev)) * 100);
     const g = gear();
     const section = (type, title) => `<div class="mdc-sec"><h3>${title}</h3><div class="mdc-items">${ITEMS[type].map((x) => {
-      const on = unlocked(x), sel = (type === "kit" ? g.kit : type === "boots" ? g.bootsId : g.cele.id) === x.id;
+      const on = unlocked(x), sel = (type === "kit" ? g.kit : type === "boots" ? g.bootsId : type === "riff" ? g.riff : g.cele.id) === x.id;
       const art = type === "kit"
         ? `<span class="mdc-art kit" style="background:${GK.KITS[x.id].shirt};color:${GK.KITS[x.id].text};border-color:${GK.KITS[x.id].trim}">10</span>`
         : type === "boots" ? `<span class="mdc-art boot" style="background:${x.colour}"></span>`
+        : type === "riff" ? `<span class="mdc-art cele">${x.icon}</span>`
         : `<span class="mdc-art cele">${celeIcon(x)}</span>`;
       return `<button type="button" class="mdc-item${sel ? " selected" : ""}${on ? "" : " locked"}" data-type="${type}" data-id="${x.id}" ${on ? "" : "aria-disabled=\"true\""}>
-        ${art}<span class="mdc-item-name">${esc(x.name)}</span><span class="mdc-need">${on ? (sel ? (type === "cele" ? "✓ Favourite" : "✓ Wearing") : "Tap to use") : x.ach ? "🏆 " + esc(x.how) : "🔒 Level " + x.need}</span></button>`;
+        ${art}<span class="mdc-item-name">${esc(x.name)}</span><span class="mdc-need">${on ? (sel ? (type === "cele" ? "✓ Favourite" : type === "riff" ? "✓ Goal anthem" : "✓ Wearing") : type === "riff" && x.id !== "none" ? "Tap to play" : "Tap to use") : x.ach ? "🏆 " + esc(x.how) : x.rock != null ? `🔒 Level ${x.need} or 🎸 ${Math.min(C.rock, x.rock)}/${x.rock} rock answers` : "🔒 Level " + x.need}</span></button>`;
     }).join("")}</div></div>`;
     el.innerHTML = `
       <div class="mdc-head">
@@ -222,6 +249,7 @@
         </div>
       </div>
       ${section("kit", "Kits")}${section("boots", "Boots")}${section("cele", "Celebrations <small>(tap one to make it your favourite: you can pick any unlocked one after each goal)</small>")}
+      ${section("riff", "🎸 Rock Anthem Goals <small>(the riff that blasts out when George scores. Unlock them by levelling up, or faster by getting Music &amp; rock questions right)</small>")}
       <p class="md-small">Earn XP in every match: goals, assists, right answers, wins, Player of the Match, clean sheets. Stats cost more points as they get higher (1 point below 75, 2 below 85, 3 below 95, 4 after).</p>`;
     el.querySelectorAll(".mdc-plus").forEach((b) => b.addEventListener("click", () => { if (upgrade(b.dataset.stat)) { render(el, onChange); if (onChange) onChange("upgrade"); } }));
     el.querySelectorAll(".mdc-item").forEach((b) => b.addEventListener("click", () => {
@@ -229,6 +257,7 @@
       if (!unlocked(it)) { if (onChange) onChange("locked"); return; }
       C.gear[b.dataset.type] = it.id;
       save();
+      if (b.dataset.type === "riff" && window.MDR) MDR.preview(it.id);
       render(el, onChange);
       if (onChange) onChange("gear");
     }));
@@ -244,6 +273,7 @@
   MDC.gear = gear;
   MDC.award = award;
   MDC.celebrations = celebrations;
+  MDC.rockRight = rockRight;
   MDC.celeIcon = celeIcon;
   MDC.card = card;
   MDC.render = render;

@@ -22,6 +22,7 @@
   const SOUND = GK.createSound("gz_matchday_sound");
   const sfx = SOUND.sfx;
   const VOICE = GK.createVoice("gz_matchday_voice");
+  if (window.MDR) MDR.ctx = () => (SOUND.isOn() && SOUND.wake ? SOUND.wake() : null);
 
   /* ---------------- Extra match sounds ----------------
      Made in the browser like the others (no sound files). */
@@ -196,7 +197,7 @@
       added1: 1 + Math.floor(rand() * 3), added2: 3 + Math.floor(rand() * 3),
       score: { f: 0, o: 0 }, goals: [], events: [], mom: [],
       stats: { f: blankStats(), o: blankStats() },
-      used: new Set(), powers: { gw: true, murillo: true, neco: true },
+      used: new Set(), riffUnlocks: [], powers: { gw: true, murillo: true, neco: true },
       asked: 0, right: 0, levels: { 1: [0, 0], 2: [0, 0], 3: [0, 0], 4: [0, 0] },
       varWins: 0, penaltiesWon: 0, bigChances: 0, halfwayGoals: 0, oppReds: 0,
       rec: [], recClock: 0, recPaused: false, replay: null, goalRec: null,
@@ -1100,6 +1101,13 @@
           MQ.record(q, correct);
           S.asked += 1; S.levels[level][1] += 1;
           if (correct) { S.right += 1; S.levels[level][0] += 1; }
+          // Music & rock answers unlock new goal anthems.
+          if (correct && q.subject === "music") {
+            MDC.rockRight().forEach((r) => {
+              S.riffUnlocks.push({ type: "riff", name: r.name });
+              fb.textContent += ` 🎸 New goal anthem unlocked: ${r.name}!`;
+            });
+          }
         }
         setTimeout(async () => {
           if (g !== GEN) return;
@@ -1249,11 +1257,13 @@
     $("cele-fx").innerHTML = c.fx && !reduced ? Array.from({ length: 16 }, () =>
       `<span style="left:${Math.round(rand() * 94)}%;animation-delay:${(rand() * 1.2).toFixed(2)}s;font-size:${Math.round(22 + rand() * 22)}px">${c.fx}</span>`).join("") : "";
     cele.hidden = false;
-    sfx.fanfare();
+    // Rock Anthem Goals: George's riff, or the classic fanfare.
+    const riff = S.gear.riff && S.gear.riff !== "none" && window.MDR ? MDR.play(MDR.ctx(), S.gear.riff) : null;
+    if (riff && riff.duration) crowd.swell(0.1, riff.duration); else sfx.fanfare();
     const gen = GEN;
     await new Promise((resolve) => {
-      const t = setTimeout(done, reduced ? 700 : 2600);
-      function done() { clearTimeout(t); cele.hidden = true; cele.removeEventListener("click", done); if (gen === GEN) resolve(); }
+      const t = setTimeout(done, reduced ? 700 : riff && riff.duration ? Math.min(4200, Math.max(2600, riff.duration * 1000 + 300)) : 2600);
+      function done() { clearTimeout(t); if (riff) riff.stop(); cele.hidden = true; cele.removeEventListener("click", done); if (gen === GEN) resolve(); }
       cele.addEventListener("click", done);
     });
   }
@@ -2118,6 +2128,7 @@
         won && S.score.o === 0 && "clean", S.varWins > 0 && "var", S.oppReds > 0 && "red",
       ].filter(Boolean),
     });
+    S.career.unlocks = S.riffUnlocks.concat(S.career.unlocks);
     let badges = [];
     if (window.GZ && GZ.recordMatchday) {
       const r = GZ.recordMatchday({ score: pts.total, won, georgeGoals: S.george.goals, cleanSheet: S.score.o === 0, giantKiller: won && S.tierN === 3, varWin: S.varWins > 0, halfway: S.halfwayGoals > 0, oppReds: S.oppReds });
@@ -2245,7 +2256,7 @@
         <p class="md-small">${c.parts.map(([k, v]) => `${escapeHtml(k)} +${v}`).join(" · ")}</p>
         <div class="mdc-xp"><span style="width:${pct}%"></span></div>
         ${c.spGained ? `<p class="mdc-sp"><b>+${c.spGained}</b> skill points to spend on George's stats!</p>` : ""}
-        ${c.unlocks.length ? `<p class="md-unlocks">🔓 Unlocked: ${c.unlocks.map((u) => `<b>${u.special ? "🏆 " : ""}${escapeHtml(u.name)}${u.type === "cele" ? " (celebration)" : ""}</b>`).join(", ")}</p>` : ""}
+        ${c.unlocks.length ? `<p class="md-unlocks">🔓 Unlocked: ${c.unlocks.map((u) => `<b>${u.special ? "🏆 " : ""}${escapeHtml(u.name)}${u.type === "cele" ? " (celebration)" : u.type === "riff" ? " (goal anthem 🎸)" : ""}</b>`).join(", ")}</p>` : ""}
         <button type="button" class="btn-primary" id="r-career">${MDC.sp() ? "Upgrade George ⬆" : "George's card"}</button>
       </div>
     </section>`;

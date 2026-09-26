@@ -364,6 +364,20 @@
   function adjust(level) { return Math.max(1, Math.min(4, level + stretch())); }
   function formPct() { return form.length ? Math.round((form.reduce((a, b) => a + b, 0) / form.length) * 100) : null; }
 
+  // Answers per day and subject, for the scouting report (last 120 days).
+  const DAYS_KEY = "gz_matchday_days_v1";
+  function logDay(subject, correct) {
+    try {
+      const days = JSON.parse(localStorage.getItem(DAYS_KEY)) || {};
+      const d = new Date(), key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const day = days[key] || (days[key] = {});
+      const t = day[subject] || (day[subject] = [0, 0]);
+      t[0] += 1; if (correct) t[1] += 1;
+      Object.keys(days).sort().slice(0, -120).forEach((k) => delete days[k]);
+      localStorage.setItem(DAYS_KEY, JSON.stringify(days));
+    } catch (e) {}
+  }
+
   function record(q, correct) {
     const s = brain[q.id] || { seen: 0, right: 0, last: 0, wrongStreak: 0, text: "" };
     s.seen += 1;
@@ -371,8 +385,11 @@
     s.last = Date.now();
     s.text = q.q.length > 60 ? q.q.slice(0, 57) + "..." : q.q;
     s.lastResult = correct ? 1 : 0;
+    // For the grown-ups' scouting report.
+    s.subject = q.subject; s.a = q.a; s.full = q.q; s.l = q.src ? q.src.l : q.level;
     brain[q.id] = s;
     saveBrain();
+    logDay(q.subject, correct);
     form.push(correct ? 1 : 0);
     if (form.length > 24) form = form.slice(-24);
     try { localStorage.setItem(FORM_KEY, JSON.stringify(form)); } catch (e) {}
