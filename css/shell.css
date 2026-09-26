@@ -156,3 +156,76 @@ body[data-page="quiz-zone"], body[data-page="quiz-game"]{
 
 
 [hidden] { display: none !important; }
+
+/* =====================================================================
+   MOTION (every page)
+   Everything here is progressive: browsers that don't support a feature
+   simply show the site as before, and "reduce motion" turns it all off.
+   ===================================================================== */
+
+/* 1. Page transitions (View Transitions API). Pages glide into each other;
+   the header stays put; named elements (game titles) fly between pages. */
+@view-transition { navigation: auto; }
+.site-header { view-transition-name: site-header; }
+::view-transition-old(root) { animation: vt-out 0.18s ease both; }
+::view-transition-new(root) { animation: vt-in 0.34s cubic-bezier(.2,.8,.2,1) both; }
+::view-transition-group(*) { animation-duration: 0.38s; animation-timing-function: cubic-bezier(.2,.8,.2,1); }
+@keyframes vt-out { to { opacity: 0; transform: translateY(-10px); } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(16px); } }
+
+/* 2. Holographic cards (js/holo.js adds the shine layers and the tilt). */
+[data-holo]{
+  position: relative; display: block; border-radius: inherit;
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(.2,.8,.2,1); will-change: transform;
+}
+[data-holo].holo-live { transition: transform 0.08s linear; }
+.holo-shine, .holo-glare { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 5; }
+.holo-shine{
+  mix-blend-mode: color-dodge; opacity: 0.5;
+  background: repeating-linear-gradient(115deg,
+    hsla(0,100%,70%,0) 0%, hsla(330,100%,70%,.45) 7%, hsla(50,100%,65%,.45) 14%,
+    hsla(160,100%,60%,.45) 21%, hsla(210,100%,65%,.45) 28%, hsla(280,100%,70%,.45) 35%, hsla(0,100%,70%,0) 42%);
+  background-size: 260% 260%;
+  background-position: var(--mx, 50%) var(--my, 50%);
+  animation: holo-idle 7s ease-in-out infinite alternate;
+}
+[data-holo].holo-live .holo-shine { animation: none; }
+.holo-glare{
+  mix-blend-mode: overlay; opacity: 0;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.75), rgba(255,255,255,0) 50%);
+  transition: opacity 0.3s ease;
+}
+[data-holo].holo-live .holo-glare { opacity: 1; }
+@keyframes holo-idle { from { background-position: 0% 30%; } to { background-position: 100% 70%; } }
+
+/* 3. Slowly moving light behind the page headers. */
+@property --aurora { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.page-banner::after, .hero::after{
+  content: ''; position: absolute; inset: -40%; pointer-events: none; z-index: 0;
+  background: conic-gradient(from var(--aurora) at 30% 45%,
+    rgba(225,16,44,0.20), rgba(245,185,66,0.10), transparent 30%, rgba(157,92,255,0.10), transparent 60%, rgba(225,16,44,0.20));
+  filter: blur(70px); opacity: 0.8;
+  animation: aurora 30s linear infinite;
+}
+.hero { position: relative; overflow: hidden; }
+.hero > .wrap, .page-banner > .wrap { position: relative; z-index: 1; }
+@keyframes aurora { to { --aurora: 360deg; } }
+
+/* 4. A glowing border that travels round the next Forest match. */
+@property --edge { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.match-card{
+  border: 2px solid transparent !important;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    conic-gradient(from var(--edge), rgba(225,16,44,0.9), rgba(245,185,66,0.7), rgba(241,237,233,0.12) 35%, rgba(241,237,233,0.12) 65%, rgba(225,16,44,0.9)) border-box !important;
+  animation: edge 6s linear infinite;
+}
+@keyframes edge { to { --edge: 360deg; } }
+
+@media (prefers-reduced-motion: reduce){
+  @view-transition { navigation: none; }
+  [data-holo] { transform: none !important; transition: none; }
+  .holo-shine { animation: none; }
+  .page-banner::after, .hero::after, .match-card { animation: none; }
+}

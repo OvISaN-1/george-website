@@ -392,15 +392,15 @@ details.predict-toggle[open] summary{ margin-bottom: var(--s3); }
 /* Football: "My own football" with George's player card beside the text */
 .my-football { align-items: center; gap: var(--s5); }
 .player-card { margin: 0; flex: 0 0 200px; }
-.player-card img { width: 100%; height: auto; display: block; border-radius: var(--r-md); box-shadow: 0 10px 28px rgba(0,0,0,0.45); transform: rotate(-2deg); transition: transform 0.25s ease; }
-.player-card:hover img { transform: rotate(0deg) scale(1.03); }
+.player-card .holo-card { border-radius: var(--r-md); box-shadow: 0 14px 34px rgba(0,0,0,0.5); overflow: hidden; }
+.player-card img { width: 100%; height: auto; display: block; border-radius: var(--r-md); }
 .player-card figcaption { font-size: 0.8rem; color: var(--chalk-faint); text-align: center; margin-top: var(--s3); }
 .my-football-text { flex: 1; min-width: 0; }
 @media (max-width: 600px){
   .my-football { flex-direction: column; align-items: stretch; text-align: left; }
   .player-card { flex: none; width: 70%; max-width: 240px; align-self: center; }
 }
-@media (prefers-reduced-motion: reduce){ .player-card img { transform: none; transition: none; } }
+
 
 /* Football: live table, fixtures and results */
 .muted { color: var(--chalk-faint); }
@@ -427,3 +427,34 @@ details.predict-toggle[open] summary{ margin-bottom: var(--s3); }
 /* School Zone: links into SATs practice */
 .sats-link { text-decoration: none; color: var(--chalk); }
 .sats-link-emoji { font-size: 2rem; line-height: 1; }
+
+/* =====================================================================
+   SCROLL-DRIVEN ANIMATIONS
+   Tied to the scroll position itself (no JavaScript), so they stay smooth
+   on older phones. Browsers without support use the fade-in above.
+   ===================================================================== */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Sections rise in as they scroll into view. */
+    html.js .reveal {
+      opacity: 1; transform: none; transition: none;
+      animation: sd-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 60%;
+    }
+    /* The hero photo drifts slower than the page: a bit of depth. */
+    .hero-photo img { animation: sd-parallax linear both; animation-timeline: scroll(root); animation-range: 0 90vh; }
+    /* Photo gallery fans out. */
+    .gallery-item { animation: sd-fan-left linear both; animation-timeline: view(); animation-range: entry 0% cover 35%; }
+    .gallery-item:nth-child(2) { animation-name: sd-fan-up; }
+    .gallery-item:nth-child(3) { animation-name: sd-fan-right; }
+    /* Forest badge spins in; cards tilt up into place. */
+    .contact-card .card-photo img { animation: sd-spin linear both; animation-timeline: view(); animation-range: entry 10% cover 40%; }
+    .grid-3 > .card, .loves-grid > .card, .sats-grid > .sats-topic { animation: sd-card linear both; animation-timeline: view(); animation-range: entry 0% entry 70%; }
+  }
+}
+@keyframes sd-rise { from { opacity: 0; transform: translateY(40px) scale(0.97); } }
+@keyframes sd-parallax { to { transform: translateY(-50px) scale(1.04); } }
+@keyframes sd-fan-left { from { opacity: 0; transform: translate(40px, 30px) rotate(-8deg); } }
+@keyframes sd-fan-up { from { opacity: 0; transform: translateY(50px) scale(0.9); } }
+@keyframes sd-fan-right { from { opacity: 0; transform: translate(-40px, 30px) rotate(8deg); } }
+@keyframes sd-spin { from { opacity: 0; transform: rotate(-200deg) scale(0.4); } }
+@keyframes sd-card { from { opacity: 0; transform: perspective(800px) rotateX(18deg) translateY(30px); } }

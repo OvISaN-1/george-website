@@ -200,7 +200,7 @@
   function card(opts) {
     const o = opts || {};
     const s = C.stats, rating = ovr(), t = tier(rating), g = gear();
-    return `<div class="mdc-card ${t.id}${o.small ? " small" : ""}">
+    return `<div class="mdc-card ${t.id}${o.small ? " small" : ""}" data-holo>
       <div class="mdc-top"><span class="mdc-ovr">${rating}</span><span class="mdc-pos">ST</span>
         <span class="mdc-badge" aria-hidden="true"><svg viewBox="0 0 20 22"><path d="M10 1 L19 5 V12 C19 17 14 20 10 21 C6 20 1 17 1 12 V5 Z" fill="#d7102b" stroke="#fff" stroke-width="1.2"/><g fill="#fff"><circle cx="10" cy="8" r="2.6"/><circle cx="7.6" cy="10.4" r="2.2"/><circle cx="12.4" cy="10.4" r="2.2"/><rect x="9.3" y="11" width="1.4" height="4"/></g></svg></span>
       </div>

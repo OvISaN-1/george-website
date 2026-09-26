@@ -187,6 +187,7 @@
         <div class="sats-end-actions">
           <button type="button" class="btn btn-primary" id="sats-again">Try again</button>
           <button type="button" class="btn btn-ghost" id="sats-home-btn">Pick another topic</button>
+          ${navigator.share || navigator.clipboard ? '<button type="button" class="btn btn-ghost" id="sats-share">📤 Share</button>' : ''}
         </div>
       </div>
       ${Q.wrong.length ? `<h2 class="sats-h2">The ones to learn</h2>
@@ -198,6 +199,10 @@
       </li>`).join('')}</ol>` : ''}`;
     $('sats-again').addEventListener('click', () => start(Q.topicId));
     $('sats-home-btn').addEventListener('click', home);
+    if ($('sats-share')) $('sats-share').addEventListener('click', async () => {
+      const how = await window.GZShare(`📝 I scored ${Q.right}/${n} in SATs practice: ${title().name}!`);
+      if (how === 'copied') $('sats-share').textContent = '✓ Copied';
+    });
     $('sats-quiz').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   function home() {

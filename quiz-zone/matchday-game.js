@@ -2135,6 +2135,7 @@
       badges = r.newBadges || [];
       GZ.announceBadges(badges);
     }
+    if (window.GZWake) GZWake.off();
     renderResult(ratings, motm, pts, won, draw);
     show("screen-result");
   }
@@ -2329,8 +2330,14 @@
         ${S.fixture && nextUnplayed() ? `<button type="button" class="btn-primary" id="r-next">Next fixture ▶</button>` : ""}
         <button type="button" class="btn-primary" id="r-again">Play again</button>
         <button type="button" class="ps-ghost" id="r-menu">Menu</button>
+        ${navigator.share || navigator.clipboard ? `<button type="button" class="ps-ghost" id="r-share">📤 Share</button>` : ""}
       </div>`;
     $("r-name").value = "George";
+    if ($("r-share")) $("r-share").onclick = async () => {
+      const g = S.george.goals;
+      const how = await window.GZShare(`⚽ Matchday: Forest ${S.score.f}–${S.score.o} ${S.opp.name}${g ? `, and George scored ${g === 1 ? "one" : g}` : ""}! ${pts.total} points. Can you beat it?`);
+      if (how === "copied") $("r-share").textContent = "✓ Copied";
+    };
     if ($("r-table")) MDL.render($("r-table"), leagueResults(), SAVE.sims, { around: true });
     if ($("r-career")) $("r-career").onclick = () => { renderCareer(); show("screen-career"); };
     if (S.career && S.career.newLevels) setTimeout(() => { sfx.unlock(); GK.confetti($("confetti-page"), 160, ["#f5b942", "#ffffff", "#e1102c"]); }, 600);
@@ -2461,6 +2468,7 @@
     $("stage").classList.remove("setpiece", "replaying");
     show("screen-match");
     SOUND.wake && SOUND.wake();
+    if (window.GZWake) GZWake.on(); // keep the screen on during the match
     buildStage();
     setTab("stats");
     playMatch().catch((e) => { console.error(e); });
@@ -2527,6 +2535,7 @@
     if (!S) return;
     if (!confirm("Leave this match? It won't count.")) return;
     S.quit = true; S.over = true;
+    if (window.GZWake) GZWake.off();
     GEN += 1;
     MDSP.close();
     $("stage").classList.remove("setpiece", "replaying");
