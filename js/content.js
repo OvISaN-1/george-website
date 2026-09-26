@@ -72,7 +72,7 @@ window.SITE = {
     ],
 
     myTeam: {
-      name: 'Riverside Rangers U11s',
+      name: 'Thamesmead Rangers U11 FC',
       position: 'Striker (and goalie when I play with my dad)',
       // George's own words. Shown instead of goal numbers.
       quote: 'I\'m not always the one scoring, but I\'m always in the game.',
@@ -203,6 +203,7 @@ window.SITE = {
       { q: 'Favourite band?', a: 'AC/DC.' },
       { q: 'Best dog breed?', a: 'Golden Retriever.' },
       { q: 'Best Romanian food?', a: 'Sarmale.' },
+      { q: 'Club and country?', a: 'Nottingham Forest and England. It\'s coming home!' },
     ],
   },
 };
