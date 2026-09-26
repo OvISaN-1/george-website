@@ -12,5 +12,8 @@
     "binding": "ASSETS",
     "run_worker_first": ["/api/*"]
   },
-  "ai": { "binding": "AI" }
+  "ai": { "binding": "AI" },
+  // Keep variables added in the Cloudflare dashboard when a new version is
+  // published (otherwise a plain-text variable would be wiped on each deploy).
+  "keep_vars": true
 }
