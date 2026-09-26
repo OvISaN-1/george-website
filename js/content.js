@@ -176,7 +176,8 @@ window.SITE = {
     // "Things I love" cards. emoji + a short title + a sentence in George's words.
     loves: [
       { emoji: '🎸', title: 'Rock music', text: 'AC/DC are my favourite band. Turn it up!' },
-      { emoji: '🐶', title: 'Dogs', text: 'Golden Retrievers are the best breed, because they are kind, chill and always happy.' },
+      // dogPhoto: shows a new Golden Retriever photo (dog.ceo) on every visit.
+      { emoji: '🐶', title: 'Dogs', text: 'Golden Retrievers are the best breed, because they are kind, chill and always happy.', dogPhoto: true },
       { emoji: '🇷🇴', title: 'Romanian food', text: 'Sarmale. Nothing beats them.' },
       { emoji: '💡', title: 'My invention', text: 'If I could invent anything, it would be a ball made for scoring from the halfway line.' },
     ],

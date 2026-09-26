@@ -135,6 +135,13 @@
     .map((f, i) => Object.assign({ index: i }, f))
     .filter((f) => MD.OPPONENTS[f.opponent]);
   function kickoffOf(f) { return new Date(`${f.date}T${f.time || "15:00"}:00`); }
+  /* Real matchday weather: the Football page's live data includes an Open-Meteo
+     forecast for each of Forest's next few matches. If this fixture has one,
+     the game uses it: rain at the real ground means rain in the game. */
+  let LIVE_DATA = null;
+  try { LIVE_DATA = JSON.parse(localStorage.getItem("gz_forest_live_v1")); } catch (e) { LIVE_DATA = null; }
+  if (window.loadLive) window.loadLive().then((d) => { if (d) LIVE_DATA = d; }).catch(() => {});
+  function realWeather(f) { return (LIVE_DATA && LIVE_DATA.weather && LIVE_DATA.weather[f.date]) || null; }
   function nextFixture() {
     const now = Date.now();
     return FIXTURES.find((f) => kickoffOf(f).getTime() + 2 * 3600 * 1000 > now) || FIXTURES[FIXTURES.length - 1];
@@ -180,8 +187,10 @@
     const night = parseInt(kickoffTime, 10) >= 17;
     const month = fixture ? kickoffOf(fixture).getMonth() : new Date().getMonth();
     const winter = month === 11 || month <= 1;
-    const snow = winter && rand() < 0.35;
-    const rain = !snow && rand() < 0.25;
+    // The real forecast for this fixture, if we have one (see realWeather).
+    const real = fixture ? realWeather(fixture) : null;
+    const snow = real ? real.code >= 71 && real.code <= 86 && !(real.code >= 80 && real.code <= 82) : winter && rand() < 0.35;
+    const rain = real ? !snow && ((real.code >= 51 && real.code <= 67) || (real.code >= 80 && real.code <= 82) || real.code >= 95 || (real.rain != null && real.rain >= 60)) : !snow && rand() < 0.25;
     const refs = shuffle(MD.REFEREES);
     const tier = TIERS[opp.tier];
 
@@ -189,7 +198,8 @@
       opp, oppKey, home, fixture, venue,
       ground: home ? MD.FOREST.ground : opp.ground,
       forestKit, oppKit, georgeKit, gear,
-      night, rain, snow, temp: snow ? Math.floor(rand() * 3) : winter ? 2 + Math.floor(rand() * 7) : 8 + Math.floor(rand() * 12),
+      night, rain, snow, realWeather: real,
+      temp: real ? real.temp : snow ? Math.floor(rand() * 3) : winter ? 2 + Math.floor(rand() * 7) : 8 + Math.floor(rand() * 12),
       ref: refs[0], varRef: refs[1], fourth: refs[2],
       attendance: home ? 30000 + Math.floor(rand() * 400) : 20000 + Math.floor(rand() * 40000),
       tier, tierN: opp.tier,
@@ -2448,7 +2458,7 @@
         <h2 class="ps-h2">${escapeHtml(homeName)} v ${escapeHtml(awayName)}</h2>
         <div class="md-facts">
           <span>🏟️ ${escapeHtml(S.ground)}</span><span>🧑‍⚖️ Referee: ${escapeHtml(S.ref)}</span><span>📺 VAR: ${escapeHtml(S.varRef)}</span>
-          <span>${S.night ? "🌙 Floodlights" : "☀️ Daytime"} · ${S.snow ? "❄️ Snow" : S.rain ? "🌧️ Rain" : "Dry"} · ${S.temp}°C</span><span>👥 ${S.attendance.toLocaleString("en-GB")}</span>
+          <span>${S.night ? "🌙 Floodlights" : "☀️ Daytime"} · ${S.snow ? "❄️ Snow" : S.rain ? "🌧️ Rain" : "Dry"} · ${S.temp}°C${S.realWeather ? ` · <b title="From the real forecast for ${escapeHtml(S.realWeather.ground)}">real forecast ${S.realWeather.emoji}</b>` : ""}</span><span>👥 ${S.attendance.toLocaleString("en-GB")}</span>
           <span>Difficulty ${"★".repeat(o.tier)}${"☆".repeat(3 - o.tier)}</span>
         </div>
       </div>

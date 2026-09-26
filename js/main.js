@@ -158,7 +158,39 @@ function renderList(id, items) {
 /* =====================================================================
    PAGE: HOME
    ===================================================================== */
+// Home: "Right now" tiles (next Forest match with its forecast, and the ISS).
+async function renderNow() {
+  const fx = $('now-forest'), sp = $('now-space');
+  if (!fx && !sp) return;
+  const tile = (el, main, sub) => { el.querySelector('.now-main').innerHTML = main; el.querySelector('.now-sub').innerHTML = sub; };
+  loadLive().then((live) => {
+    if (!fx) return;
+    LIVE = live;
+    const all = ((live && live.matches) || (window.SITE.football || {}).fixtures || []).slice().sort((a, b) => kickoffOf(a) - kickoffOf(b));
+    const next = all.find((f) => f.status !== 'FINISHED' && kickoffOf(f).getTime() + 2 * 3600000 > Date.now());
+    if (!next) return tile(fx, 'No more fixtures this season', '');
+    const when = kickoffOf(next).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    const w = weatherOf(next);
+    tile(fx, isLive(next) ? `🔴 LIVE: ${escapeHtml(scoreLine(next, next.forest ?? 0, next.opp ?? 0))}` : `${escapeHtml(next.opponent)} <small>(${next.venue === 'H' ? 'home' : 'away'})</small>`,
+      `${escapeHtml(when)} · ${escapeHtml(next.time)}${w ? ` · ${w.emoji} ${w.temp}°C` : ''}${live ? ` · we're ${ordinal(live.league.position)}` : ''}`);
+  });
+  if (sp) {
+    try {
+      const res = await fetch(apiUrl('iss'), { cache: 'no-store' });
+      const s = await res.json();
+      if (!res.ok || s.error) throw new Error('iss');
+      let name = s.country;
+      try { if (name) name = new Intl.DisplayNames(['en-GB'], { type: 'region' }).of(name); } catch (e) { /* keep the code */ }
+      const flag = s.country ? s.country.replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0))) + ' ' : '🌊 ';
+      tile(sp, `Over ${flag}${escapeHtml(name || 'the ocean')}`, `${s.altitude} km up · ${s.speed.toLocaleString('en-GB')} km/h · see the map and NASA's picture of the day`);
+    } catch (e) {
+      tile(sp, 'Somewhere up there 🛰️', 'See NASA\'s picture of the day');
+    }
+  }
+}
+
 function renderHome(C) {
+  renderNow();
   const facts = (C.home && C.home.facts) || [];
   const textEl = $('fact-text');
   if (!textEl || !facts.length) return;
@@ -234,20 +266,33 @@ function renderFootball(C) {
   // Live data from worker/index.js. If it can't be reached, the fixture
   // list in content.js keeps the next match and predictions working.
   loadLive().then((live) => {
+    LIVE = live;
     renderLeague(live);
     renderFixtures(live);
     FIXTURES = ((live && live.matches) || F.fixtures || []).slice().sort((a, b) => kickoffOf(a) - kickoffOf(b));
     initPredictions(FIXTURES);
+    initMatchCentre();
   });
 }
 
 /* ---- Live Forest data (league, fixtures, results, top scorers) ------------ */
 let FIXTURES = [];
+let LIVE = null;
+
+// Matchday forecast for a fixture (from worker/extras.js, Open-Meteo).
+function weatherOf(f) { return LIVE && LIVE.weather && LIVE.weather[f.date] || null; }
+function weatherLine(w) {
+  if (!w) return '';
+  return `${w.emoji} ${w.text} · ${w.temp}°C${w.rain != null ? ` · ${w.rain}% chance of rain` : ''} · wind ${w.wind} km/h`;
+}
 
 // On georgeneagu.win (or the workers.dev test address) the data is at
 // /api/forest. Anywhere else (the old github.io copy, a computer at home)
 // it is fetched from georgeneagu.win.
-const LIVE_URL = /(^|\.)georgeneagu\.win$|\.workers\.dev$/.test(location.hostname) ? '/api/forest' : 'https://georgeneagu.win/api/forest';
+function apiUrl(name) {
+  return (/(^|\.)georgeneagu\.win$|\.workers\.dev$/.test(location.hostname) ? '' : 'https://georgeneagu.win') + `/api/${name}`;
+}
+const LIVE_URL = apiUrl('forest');
 const LIVE_SAVE = 'gz_forest_live_v1';
 
 async function fetchLive() {
@@ -342,7 +387,7 @@ function renderFixtures(live) {
       ${next.length ? `<ul class="fx-list">${next.map((f) => `<li>
         <span class="fx-date">${escapeHtml(when(f))}</span>
         <span class="fx-team">${escapeHtml(f.opponent)} <small>(${f.venue})</small></span>
-        <span class="fx-right">${isLive(f) ? `<b class="fx-live">LIVE ${f.forest ?? 0}-${f.opp ?? 0}</b>` : escapeHtml(f.time)}</span>
+        <span class="fx-right">${!isLive(f) && live.weather && live.weather[f.date] ? `<span class="fx-wx" title="${escapeAttr(weatherLine(live.weather[f.date]))}">${live.weather[f.date].emoji} ${live.weather[f.date].temp}°</span>` : ''}${isLive(f) ? `<b class="fx-live">LIVE ${f.forest ?? 0}-${f.opp ?? 0}</b>` : escapeHtml(f.time)}</span>
       </li>`).join('')}</ul>` : '<p>No more fixtures this season.</p>'}
     </div>
     <div class="fx-col">
@@ -353,6 +398,61 @@ function renderFixtures(live) {
         <span class="fx-right"><span class="fx-score">${f.forest}-${f.opp}</span><span class="fx-chip ${res(f)}" aria-label="${res(f) === 'W' ? 'Won' : res(f) === 'L' ? 'Lost' : 'Drew'}">${res(f)}</span></span>
       </li>`).join('')}</ul>` : '<p>No results yet this season.</p>'}
     </div>`;
+}
+
+/* ---- Match centre (API-Football via worker/extras.js) ----------------------
+   Only on a Forest matchday, from an hour before kick-off until midnight,
+   so the free plan's 100 requests a day are plenty. Refreshes every minute
+   while the match is on. */
+const LIVE_STATUSES = ['1H', 'HT', '2H', 'ET', 'BT', 'P', 'LIVE', 'INT', 'SUSP'];
+let centreTimer = null;
+function ukToday() { return new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' }); }
+function initMatchCentre() {
+  const el = $('match-centre');
+  if (!el) return;
+  const today = ukToday();
+  const f = FIXTURES.find((x) => x.date === today);
+  if (!f || Date.now() < kickoffOf(f).getTime() - 60 * 60 * 1000) return;
+  refreshMatchCentre(f);
+}
+async function refreshMatchCentre(f) {
+  const el = $('match-centre');
+  clearTimeout(centreTimer);
+  let data = null;
+  try {
+    const res = await fetch(`${apiUrl('live')}?date=${ukToday()}`, { cache: 'no-cache' });
+    data = res.ok ? await res.json() : null;
+  } catch (e) { data = null; }
+  const m = data && data.match;
+  if (!m) { if (data && data.error) console.info('Match centre not available:', data.error, data.detail || ''); return; }
+  renderMatchCentre(el, m);
+  el.closest('section').hidden = false;
+  if (LIVE_STATUSES.includes(m.status) || m.status === 'NS') centreTimer = setTimeout(() => refreshMatchCentre(f), 60000);
+}
+function renderMatchCentre(el, m) {
+  const icon = { goal: '⚽', pen: '⚽', own: '⚽', miss: '❌', yellow: '🟨', red: '🟥', sub: '🔁', var: '📺' };
+  const label = (e) => ({
+    goal: `${e.player}${e.other ? ` <small>(assist ${escapeHtml(e.other)})</small>` : ''}`,
+    pen: `${e.player} <small>(penalty)</small>`,
+    own: `${e.player} <small>(own goal)</small>`,
+    miss: `${e.player} <small>(missed penalty)</small>`,
+    yellow: e.player, red: e.player,
+    sub: `${e.player} <small>⇄ ${escapeHtml(e.other || '')} (substitution)</small>`,
+    var: `VAR: ${escapeHtml(e.detail || '')}`,
+  }[e.type]);
+  const live = LIVE_STATUSES.includes(m.status);
+  const state = live ? `<span class="mc-live">🔴 LIVE ${m.status === 'HT' ? 'Half-time' : `${m.elapsed}'`}</span>` : m.status === 'NS' ? `<span class="mc-soon">Kick-off ${new Date(m.kickoff).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' })}</span>` : `<span class="mc-ft">${escapeHtml(m.statusText || 'Full time')}</span>`;
+  const us = `<span class="mc-team us">Forest</span>`, them = `<span class="mc-team">${escapeHtml(m.opponent)}</span>`;
+  const score = m.forest == null ? 'v' : m.home ? `${m.forest} – ${m.opp}` : `${m.opp} – ${m.forest}`;
+  const events = (m.events || []).slice().reverse();
+  el.innerHTML = `
+    <div class="mc-head">${state}${m.venue ? `<span class="mc-venue">🏟️ ${escapeHtml(m.venue)}</span>` : ''}</div>
+    <p class="mc-score">${m.home ? us : them}<b>${score}</b>${m.home ? them : us}</p>
+    ${events.length ? `<ol class="mc-events">${events.map((e) => `<li class="${e.team === 'f' ? 'f' : 'o'} ${e.type}"><span class="mc-min">${escapeHtml(e.min)}'</span><span aria-hidden="true">${icon[e.type] || '•'}</span><span>${e.type === 'var' ? label(e) : `${escapeHtml(e.player || '')}${label(e).slice((e.player || '').length)}`}</span></li>`).join('')}</ol>` : `<p class="mc-quiet">${m.status === 'NS' ? 'Line-ups come out about an hour before kick-off.' : 'Nothing yet. Come on Forest! 🌳'}</p>`}
+    ${m.lineup ? `<details class="mc-lineup"><summary>Forest line-up (${escapeHtml(m.lineup.formation || '')})</summary>
+      <ol>${m.lineup.xi.map((p) => `<li><b>${p.number ?? ''}</b> ${escapeHtml(p.name)}</li>`).join('')}</ol>
+      ${m.lineup.subs.length ? `<p class="mc-subs">Subs: ${m.lineup.subs.map((p) => escapeHtml(p.name)).join(', ')}</p>` : ''}</details>` : ''}
+    <p class="mc-note">${live ? 'Updates every minute.' : ''}</p>`;
 }
 
 // A saved prediction for this match. Older rows may use a slightly different
@@ -439,6 +539,7 @@ function renderNextMatch(el, f, preds) {
       <p class="match-teams">${escapeHtml(teamsText(f))}</p>
       <p class="match-meta">${escapeHtml(dateText)} · ${escapeHtml(timeText)} · ${escapeHtml(venueText(f))}</p>
       ${isLive(f) ? `<p class="match-live">🔴 LIVE: <strong>${escapeHtml(scoreLine(f, f.forest ?? 0, f.opp ?? 0))}</strong></p>` : ''}
+      ${weatherOf(f) ? `<p class="match-weather" title="Forecast for kick-off at ${escapeAttr(weatherOf(f).ground)}">${escapeHtml(weatherLine(weatherOf(f)))} <span>at ${escapeHtml(weatherOf(f).ground)}</span></p>` : ''}
     </div>
     <div class="countdown" aria-label="${escapeAttr(cd.big + ' ' + cd.small)}">
       <span class="big">${escapeHtml(cd.big)}</span><span class="small">${escapeHtml(cd.small)}</span>
@@ -600,8 +701,9 @@ function renderAbout(C) {
   const loves = $('loves');
   if (loves && A.loves) {
     loves.innerHTML = A.loves.map((x) =>
-      `<article class="card love-card"><span class="love-emoji" aria-hidden="true">${escapeHtml(x.emoji)}</span><h3>${escapeHtml(x.title)}</h3><p>${escapeHtml(x.text)}</p></article>`
+      `<article class="card love-card${x.dogPhoto ? ' dog-card' : ''}">${x.dogPhoto ? `<figure class="dog-photo" id="dog-photo"><span class="love-emoji" aria-hidden="true">${escapeHtml(x.emoji)}</span></figure>` : `<span class="love-emoji" aria-hidden="true">${escapeHtml(x.emoji)}</span>`}<h3>${escapeHtml(x.title)}</h3><p>${escapeHtml(x.text)}</p>${x.dogPhoto ? '<button type="button" class="link-btn dog-next" id="dog-next">Another one! 🐶</button>' : ''}</article>`
     ).join('');
+    if ($('dog-photo')) initDogPhoto();
   }
   const qf = $('quickfire');
   if (qf && A.quickFire) {
@@ -609,6 +711,29 @@ function renderAbout(C) {
       `<div class="qf-item"><dt>${escapeHtml(x.q)}</dt><dd>${escapeHtml(x.a)}</dd></div>`
     ).join('');
   }
+}
+
+/* ---- Golden Retriever of the visit (dog.ceo, free, no key) -------------- */
+function initDogPhoto() {
+  const fig = $('dog-photo'), btn = $('dog-next');
+  async function load() {
+    btn.disabled = true;
+    try {
+      const res = await fetch('https://dog.ceo/api/breed/retriever/golden/images/random');
+      const data = await res.json();
+      if (data.status !== 'success' || !/^https:\/\/images\.dog\.ceo\//.test(data.message)) throw new Error('no dog');
+      const img = new Image();
+      img.alt = 'A Golden Retriever';
+      img.decoding = 'async';
+      img.onload = () => { fig.replaceChildren(img); fig.classList.add('has-photo'); btn.disabled = false; };
+      img.onerror = () => { btn.disabled = false; };
+      img.src = data.message;
+    } catch (e) {
+      btn.hidden = true; // offline or blocked: the 🐶 stays
+    }
+  }
+  btn.addEventListener('click', load);
+  load();
 }
 
 /* ---- Boot ------------------------------------------------------------------ */
@@ -628,6 +753,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initScrollReveal();
 });
+
+// Shared with other scripts: js/space.js and the Matchday game.
+window.apiUrl = apiUrl;
+window.loadLive = loadLive;
 })();
 
 /* ---- Share and keep-awake (used by the games and SATs practice) ----------

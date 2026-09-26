@@ -14,6 +14,7 @@
    =========================================================== */
 
 import { coach } from './coach.js';
+import { weatherFor, apod, iss, live } from './extras.js';
 
 const API = 'https://api.football-data.org/v4';
 const CACHE_VERSION = 'v1';
@@ -29,10 +30,55 @@ export default {
       return open;
     }
     if (url.pathname === '/api/coach') return coach(request, env, json);
+    if (url.pathname === '/api/apod') return openToAll(await cached(request, ctx, 'apod', 3 * 3600, () => apod(env)));
+    if (url.pathname === '/api/iss') return openToAll(await cached(request, ctx, 'iss', 5, () => iss()));
+    if (url.pathname === '/api/live') return liveMatch(request, env, ctx, url);
     if (url.pathname.startsWith('/api/')) return json({ error: 'not-found' }, 404, 0);
     return env.ASSETS.fetch(request);
   },
 };
+
+// Answer from Cloudflare's cache when fresh; otherwise build it and keep it for `secs`.
+async function cached(request, ctx, name, secs, make) {
+  const cache = typeof caches !== 'undefined' ? caches.default : null;
+  const key = new Request(new URL(`/api/${name}?${CACHE_VERSION}`, request.url).toString());
+  if (cache) { const hit = await cache.match(key); if (hit) return hit; }
+  let data;
+  try { data = await make(); } catch (err) { return json({ error: 'upstream', detail: String(err && err.message || err).slice(0, 120) }, 502, 0); }
+  const res = json(data, 200, secs);
+  if (cache) ctx.waitUntil(cache.put(key, res.clone()));
+  return res;
+}
+function openToAll(res) {
+  const r = new Response(res.body, res);
+  r.headers.set('access-control-allow-origin', '*');
+  return r;
+}
+
+// The live match centre. Only for today (or yesterday, just after midnight),
+// cached for 2 minutes while playing, so the free 100-a-day plan is enough.
+async function liveMatch(request, env, ctx, url) {
+  if (!env.API_FOOTBALL_KEY) return json({ error: 'no-key' }, 503, 0);
+  const date = url.searchParams.get('date') || '';
+  const today = new Date(), days = [0, 1].map((d) => new Date(today.getTime() - d * 86400000).toLocaleDateString('en-CA', { timeZone: 'Europe/London' }));
+  if (!days.includes(date)) return json({ error: 'bad-date' }, 400, 0);
+  const cache = typeof caches !== 'undefined' ? caches.default : null;
+  const key = new Request(new URL(`/api/live?${CACHE_VERSION}&date=${date}`, request.url).toString());
+  if (cache) { const hit = await cache.match(key); if (hit) return hit; }
+  let data, secs;
+  try {
+    data = await live(env, date, cache, url.origin);
+    const st = data.match && data.match.status;
+    secs = !st ? 6 * 3600 : ['FT', 'AET', 'PEN', 'PST', 'CANC', 'ABD', 'AWD', 'WO'].includes(st) ? 6 * 3600 : st === 'NS' || st === 'TBD' ? 600 : 120;
+  } catch (err) {
+    data = { error: err.plan ? 'plan' : 'upstream', detail: String(err.message).slice(0, 160) };
+    secs = err.plan ? 6 * 3600 : 300; // don't keep asking if the plan doesn't allow it
+  }
+  // 200 even for 'plan' so Cloudflare keeps the answer and we stop asking.
+  const res = json(data, 200, secs);
+  if (cache) ctx.waitUntil(cache.put(key, res.clone()));
+  return res;
+}
 
 async function forest(request, env, ctx) {
   if (!env.FOOTBALL_DATA_KEY) return json({ error: 'no-key' }, 503, 0);
@@ -95,6 +141,9 @@ export async function build(key) {
     };
   }).sort((a, b) => a.utc.localeCompare(b.utc));
 
+  // Matchday forecasts for the next few matches (Open-Meteo).
+  const weather = await weatherFor(matches.filter((m) => m.status !== 'FINISHED')).catch(() => ({}));
+
   const ourScorers = (scorers.scorers || [])
     .filter((s) => s.team && s.team.id === forestId)
     .map((s) => ({ name: s.player.name, goals: s.goals || 0, assists: s.assists || 0 }))
@@ -121,6 +170,7 @@ export async function build(key) {
       })),
     },
     matches,
+    weather,
     scorers: ourScorers.slice(0, 5),
   };
 }

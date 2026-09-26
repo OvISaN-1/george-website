@@ -458,3 +458,82 @@ details.predict-toggle[open] summary{ margin-bottom: var(--s3); }
 @keyframes sd-fan-right { from { opacity: 0; transform: translate(-40px, 30px) rotate(8deg); } }
 @keyframes sd-spin { from { opacity: 0; transform: rotate(-200deg) scale(0.4); } }
 @keyframes sd-card { from { opacity: 0; transform: perspective(800px) rotateX(18deg) translateY(30px); } }
+
+/* Football: matchday weather and the live match centre */
+.match-weather { margin: 6px 0 0; color: var(--chalk-dim); font-size: 0.92rem; }
+.match-weather span { color: var(--chalk-faint); }
+.fx-wx { font-size: 0.8rem; color: var(--chalk-dim); margin-right: 6px; }
+.match-centre { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-lg); padding: var(--s5); }
+.mc-head { display: flex; justify-content: space-between; gap: var(--s3); flex-wrap: wrap; font-size: 0.9rem; }
+.mc-live { color: #FF5D5D; font-weight: 700; animation: mc-pulse 1.6s ease-in-out infinite; }
+@keyframes mc-pulse { 50% { opacity: 0.55; } }
+.mc-soon, .mc-ft { color: var(--gold); font-weight: 700; }
+.mc-venue { color: var(--chalk-faint); }
+.mc-score { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--s4); margin: var(--s4) 0; font-family: var(--font-display); }
+.mc-score b { font-size: clamp(2rem, 7vw, 3rem); color: var(--chalk); font-variant-numeric: tabular-nums; }
+.mc-team { font-size: clamp(1.1rem, 3.5vw, 1.5rem); font-weight: 700; color: var(--chalk-dim); }
+.mc-team:first-child { text-align: right; }
+.mc-team.us { color: var(--garibaldi-text); }
+.mc-events { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.mc-events li { display: grid; grid-template-columns: 3.2em 1.6em 1fr; align-items: center; padding: 6px 10px; border-radius: var(--r-sm); background: rgba(255,255,255,0.03); }
+.mc-events li.f.goal, .mc-events li.f.pen { background: rgba(225,16,44,0.16); }
+.mc-events li.o { color: var(--chalk-dim); }
+.mc-events small { color: var(--chalk-faint); }
+.mc-min { font-variant-numeric: tabular-nums; color: var(--chalk-faint); font-size: 0.85rem; }
+.mc-quiet, .mc-note { color: var(--chalk-faint); font-size: 0.85rem; margin: var(--s2) 0 0; }
+.mc-lineup { margin-top: var(--s4); }
+.mc-lineup summary { cursor: pointer; font-weight: 700; color: var(--chalk); }
+.mc-lineup ol { list-style: none; padding: 0; margin: var(--s3) 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 4px 12px; }
+.mc-lineup b { display: inline-block; width: 2em; color: var(--garibaldi-text); }
+.mc-subs { font-size: 0.85rem; color: var(--chalk-faint); }
+@media (prefers-reduced-motion: reduce) { .mc-live { animation: none; } }
+
+/* About: Golden Retriever photo in the Dogs card */
+.dog-photo { margin: 0; aspect-ratio: 4 / 3; border-radius: var(--r-md); overflow: hidden; display: grid; place-items: center;
+  background: radial-gradient(circle at 50% 40%, rgba(245,185,66,0.18), transparent 70%), var(--surface-raised); }
+.dog-photo img { width: 100%; height: 100%; object-fit: cover; display: block; animation: dog-in 0.4s ease both; }
+@keyframes dog-in { from { opacity: 0; transform: scale(1.04); } }
+.dog-next { align-self: flex-start; margin-top: 4px; }
+@media (prefers-reduced-motion: reduce) { .dog-photo img { animation: none; } }
+
+/* School Zone: Space corner */
+.space-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--s4); }
+.space-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s4); display: flex; flex-direction: column; gap: 6px; }
+.space-card h3 { font-size: 1.15rem; margin: 0; }
+.space-kicker { margin: 0; font: 700 0.78rem var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
+.space-credit, .space-off { margin: 0; font-size: 0.8rem; color: var(--chalk-faint); }
+.apod-img { position: relative; display: block; aspect-ratio: 16 / 10; border-radius: var(--r-md); overflow: hidden; background: #05030a; margin-bottom: 6px; order: -1; }
+.apod-img img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s ease; }
+.apod-img:hover img { transform: scale(1.04); }
+.apod-none { display: grid; place-items: center; height: 100%; font-size: 3rem; }
+.apod-play { position: absolute; inset: 0; display: grid; place-items: center; font-size: 2.4rem; color: #fff; text-shadow: 0 2px 12px rgba(0,0,0,0.7); }
+.apod-more summary { cursor: pointer; color: var(--chalk); font-weight: 600; }
+.apod-more p { color: var(--chalk-dim); font-size: 0.9rem; line-height: 1.6; }
+.iss-map { aspect-ratio: 2 / 1; border-radius: var(--r-md); overflow: hidden; background: #070b16; border: 1px solid var(--line); }
+.iss-map:not(.ready)::after { content: 'Loading the map…'; display: grid; place-items: center; height: 100%; color: var(--chalk-faint); font-size: 0.85rem; }
+.iss-map.failed::after { content: 'Map unavailable'; }
+.iss-map svg { width: 100%; height: 100%; display: block; }
+.iss-sea { fill: #0b1426; }
+.iss-grid { fill: none; stroke: rgba(160,190,255,0.08); stroke-width: 0.6; }
+.iss-land { fill: #1f3350; stroke: #2c4668; stroke-width: 0.5; }
+.iss-home { fill: var(--garibaldi); }
+.iss-home-label { fill: var(--chalk-dim); font: 600 11px var(--font-body); }
+.iss-trail { fill: none; stroke: var(--gold); stroke-width: 2; stroke-dasharray: 4 4; opacity: 0.8; }
+.iss-dot circle { fill: var(--gold); }
+.iss-dot .iss-ring { fill: rgba(245,185,66,0.25); animation: iss-ping 2s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+.iss-dot text { font-size: 16px; }
+@keyframes iss-ping { from { transform: scale(0.5); opacity: 1; } to { transform: scale(1.8); opacity: 0; } }
+.iss-text { margin: 4px 0 0; color: var(--chalk); }
+.iss-text span { font-size: 0.82rem; color: var(--chalk-faint); }
+@media (prefers-reduced-motion: reduce) { .iss-dot .iss-ring { animation: none; } .apod-img img { transition: none; } }
+
+/* Home: "Right now" tiles */
+.now-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--s4); }
+.now-tile { display: flex; flex-direction: column; gap: 4px; padding: var(--s4) var(--s5); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); color: var(--chalk); text-decoration: none; transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+.now-tile:hover, .now-tile:focus-visible { transform: translateY(-3px); }
+.now-tile.football:hover, .now-tile.football:focus-visible { border-color: var(--garibaldi); box-shadow: var(--glow-garibaldi); }
+.now-tile.space:hover, .now-tile.space:focus-visible { border-color: var(--volt); box-shadow: var(--glow-volt); }
+.now-kicker { font: 700 0.78rem var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--chalk-faint); }
+.now-main { font: 700 1.35rem var(--font-display); line-height: 1.2; }
+.now-main small { font-size: 0.9rem; color: var(--chalk-faint); font-weight: 600; }
+.now-sub { font-size: 0.88rem; color: var(--chalk-dim); }
