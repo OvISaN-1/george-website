@@ -42,7 +42,7 @@ window.SITE = {
       position: '13th',
       played: 5,
       points: 5,
-      asOf: '20 September 2026',
+      asOf: '26 September 2026',
     },
 
     // Favourite player cards. Leave "photo" out to show a plain card.
