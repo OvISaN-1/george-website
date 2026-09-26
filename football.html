@@ -95,38 +95,36 @@
       </div>
     </section>
 
-    <!-- Match centre: only shows on a Forest matchday ---------------------- -->
-    <section aria-labelledby="mc-title" hidden>
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="mc-title">Match centre</h2>
-          <p>Goals, cards and subs as they happen.</p>
-        </div>
-        <div class="match-centre" id="match-centre" aria-live="polite"></div>
-      </div>
-    </section>
-
-    <!-- Next match + prediction ------------------------------------------ -->
-    <section aria-labelledby="next-match-title">
+    <!-- Matchday: live match centre, next match, fixtures, results and George's
+         prediction tracker, all in one place (tabs). ----------------------- -->
+    <section aria-labelledby="matchday-title">
       <div class="wrap reveal">
         <div class="section-head">
-          <h2 id="next-match-title">Next match</h2>
-          <p>Moves on to the next game by itself after every match.</p>
+          <h2 id="matchday-title">Matchday</h2>
+          <p>The next match, fixtures and results. Everything here updates by itself.</p>
         </div>
-        <div class="match-card" id="next-match">
-          <p class="prediction-line">Loading the next match...</p>
+        <div class="md-tabs" role="tablist" aria-label="Matchday">
+          <button type="button" role="tab" id="tab-next" aria-controls="panel-next" aria-selected="true">Next match</button>
+          <button type="button" role="tab" id="tab-fixtures" aria-controls="panel-fixtures" aria-selected="false" tabindex="-1">Fixtures</button>
+          <button type="button" role="tab" id="tab-results" aria-controls="panel-results" aria-selected="false" tabindex="-1">Results</button>
         </div>
-      </div>
-    </section>
-
-    <!-- Fixtures and results (live) ------------------------------------------ -->
-    <section aria-labelledby="fixtures-title">
-      <div class="wrap reveal">
-        <div class="section-head">
-          <h2 id="fixtures-title">Fixtures and results</h2>
-          <p>Straight from the Premier League, updated by itself.</p>
+        <div role="tabpanel" id="panel-next" aria-labelledby="tab-next">
+          <!-- Match centre: only on a Forest matchday -->
+          <div id="mc-wrap" hidden>
+            <p class="md-panel-kicker">🔴 Match centre · goals, cards and subs as they happen</p>
+            <div class="match-centre" id="match-centre" aria-live="polite"></div>
+          </div>
+          <div class="match-card" id="next-match">
+            <p class="prediction-line">Loading the next match...</p>
+          </div>
+          <details class="tracker-box" id="tracker-box">
+            <summary>🔮 My prediction tracker <span class="tracker-pts" id="tracker-pts"></span></summary>
+            <p class="tracker-intro">Every guess I make, saved online, and how many points it got me.</p>
+            <div id="tracker"><p>Loading predictions...</p></div>
+          </details>
         </div>
-        <div class="fx-grid" id="fixtures-results"><p>Loading fixtures...</p></div>
+        <div role="tabpanel" id="panel-fixtures" aria-labelledby="tab-fixtures" hidden><div id="fx-next"><p>Loading fixtures...</p></div></div>
+        <div role="tabpanel" id="panel-results" aria-labelledby="tab-results" hidden><div id="fx-results"><p>Loading results...</p></div></div>
       </div>
     </section>
 
@@ -138,17 +136,6 @@
           <p>The three I rate most right now. Updates as the season goes on.</p>
         </div>
         <div class="grid-3" id="players-grid"></div>
-      </div>
-    </section>
-
-    <!-- Prediction tracker ------------------------------------------------- -->
-    <section aria-labelledby="tracker-title">
-      <div class="wrap reveal">
-        <div class="section-head">
-          <h2 id="tracker-title">My prediction tracker</h2>
-          <p>Every guess I make, saved online, and how many points it got me.</p>
-        </div>
-        <div id="tracker"><p>Loading predictions...</p></div>
       </div>
     </section>
 
@@ -179,7 +166,7 @@
   <footer class="site-footer">
     <div class="footer-row">
       <span>Last updated: <span data-last-updated>September 2026</span> · Stats checked by me, George.</span>
-      <a href="index.html">Home</a>
+      <a href="index.html">Home</a> <a class="footer-progress" href="progress.html">💾 Move my progress</a>
     </div>
   </footer>
 

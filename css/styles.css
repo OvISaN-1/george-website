@@ -537,3 +537,35 @@ details.predict-toggle[open] summary{ margin-bottom: var(--s3); }
 .now-main { font: 700 1.35rem var(--font-display); line-height: 1.2; }
 .now-main small { font-size: 0.9rem; color: var(--chalk-faint); font-weight: 600; }
 .now-sub { font-size: 0.88rem; color: var(--chalk-dim); }
+
+/* Football: Matchday block with tabs */
+.md-tabs { display: flex; gap: var(--s2); flex-wrap: wrap; margin-bottom: var(--s4); }
+.md-tabs [role="tab"] { font-family: var(--font-display); font-weight: 700; font-size: 1rem; min-height: 44px; padding: 8px 18px; border-radius: var(--r-pill);
+  background: var(--surface); color: var(--chalk-dim); border: 1px solid var(--line-strong); cursor: pointer; }
+.md-tabs [role="tab"][aria-selected="true"] { background: var(--garibaldi-solid); color: var(--chalk); border-color: var(--garibaldi); }
+.md-tabs [role="tab"]:focus-visible { outline: 2px solid var(--chalk); outline-offset: 3px; }
+[role="tabpanel"] > #fx-next, [role="tabpanel"] > #fx-results { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s3) var(--s5); }
+.md-panel-kicker { margin: 0 0 var(--s2); font-size: 0.85rem; color: #FF7a7a; font-weight: 700; }
+#mc-wrap { margin-bottom: var(--s4); }
+.tracker-box { margin-top: var(--s4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s3) var(--s5); }
+.tracker-box > summary { cursor: pointer; font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; color: var(--chalk); padding: 6px 0; }
+.tracker-pts { color: var(--gold); }
+.tracker-intro { color: var(--chalk-dim); font-size: 0.9rem; margin: var(--s2) 0; }
+.fx-off { color: var(--chalk-dim); margin: var(--s2) 0; }
+
+/* About: fun facts and quick-fire answers side by side */
+.quick-facts { display: grid; grid-template-columns: 1fr 1.3fr; gap: var(--s6); align-items: start; }
+@media (max-width: 760px) { .quick-facts { grid-template-columns: 1fr; gap: var(--s5); } }
+
+/* School Zone: "Me at school" row */
+.school-row { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: var(--s4); align-items: stretch; }
+@media (max-width: 900px) { .school-row { grid-template-columns: 1fr 1fr; } .school-goal { grid-column: 1 / -1; } }
+@media (max-width: 600px) { .school-row { grid-template-columns: 1fr; } }
+.school-cell { margin: 0; }
+.school-cell > .note-label { display: block; margin-bottom: var(--s2); }
+.achievements-stack { display: grid; gap: var(--s3); }
+.achievements-stack .card { padding: var(--s4); }
+.achievements-stack .photo-slot, .achievements-stack .card-photo { height: 90px; }
+.school-row > .school-cell { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s4) var(--s5); border-left: 1px solid var(--line); }
+.school-row .note-label, .school-cell > .note-label { font-family: var(--font-display); font-weight: 700; font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
+.school-row .achievements-stack .card { background: var(--surface-raised); }

@@ -250,6 +250,7 @@ function renderFootball(C) {
   else if ($('fan-story-wrap')) $('fan-story-wrap').hidden = true;
 
   setText('league-line', 'Loading the live table...');
+  initMatchdayTabs();
 
   renderCards('players-grid', F.players, 'football');
 
@@ -372,32 +373,51 @@ function renderLeague(live) {
 }
 
 function renderFixtures(live) {
-  const el = $('fixtures-results');
-  if (!el) return;
-  const section = el.closest('section');
-  if (!live) { if (section) section.hidden = true; return; }
+  const nextEl = $('fx-next'), doneEl = $('fx-results');
+  if (!nextEl || !doneEl) return;
+  if (!live) {
+    const msg = '<p class="fx-off">Live fixtures and results aren\'t available right now. The next match is still shown in the first tab.</p>';
+    nextEl.innerHTML = msg; doneEl.innerHTML = msg;
+    return;
+  }
   const all = live.matches || [];
-  const done = all.filter(isFinished).slice(-5).reverse();
-  const next = all.filter((f) => !isFinished(f)).slice(0, 5);
+  const done = all.filter(isFinished).reverse();
+  const next = all.filter((f) => !isFinished(f));
   const when = (f) => kickoffOf(f).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
   const res = (f) => outcome(f.forest, f.opp);
-  el.innerHTML = `
-    <div class="fx-col">
-      <h3>Coming up</h3>
-      ${next.length ? `<ul class="fx-list">${next.map((f) => `<li>
-        <span class="fx-date">${escapeHtml(when(f))}</span>
-        <span class="fx-team">${escapeHtml(f.opponent)} <small>(${f.venue})</small></span>
-        <span class="fx-right">${!isLive(f) && live.weather && live.weather[f.date] ? `<span class="fx-wx" title="${escapeAttr(weatherLine(live.weather[f.date]))}">${live.weather[f.date].emoji} ${live.weather[f.date].temp}°</span>` : ''}${isLive(f) ? `<b class="fx-live">LIVE ${f.forest ?? 0}-${f.opp ?? 0}</b>` : escapeHtml(f.time)}</span>
-      </li>`).join('')}</ul>` : '<p>No more fixtures this season.</p>'}
-    </div>
-    <div class="fx-col">
-      <h3>Recent results</h3>
-      ${done.length ? `<ul class="fx-list">${done.map((f) => `<li>
-        <span class="fx-date">${escapeHtml(when(f))}</span>
-        <span class="fx-team">${escapeHtml(f.opponent)} <small>(${f.venue})</small></span>
-        <span class="fx-right"><span class="fx-score">${f.forest}-${f.opp}</span><span class="fx-chip ${res(f)}" aria-label="${res(f) === 'W' ? 'Won' : res(f) === 'L' ? 'Lost' : 'Drew'}">${res(f)}</span></span>
-      </li>`).join('')}</ul>` : '<p>No results yet this season.</p>'}
-    </div>`;
+  const wx = (f) => (!isLive(f) && live.weather && live.weather[f.date] ? `<span class="fx-wx" title="${escapeAttr(weatherLine(live.weather[f.date]))}">${live.weather[f.date].emoji} ${live.weather[f.date].temp}°</span>` : '');
+  nextEl.innerHTML = next.length ? `<ul class="fx-list">${next.map((f) => `<li>
+      <span class="fx-date">${escapeHtml(when(f))}</span>
+      <span class="fx-team">${escapeHtml(f.opponent)} <small>(${f.venue})</small></span>
+      <span class="fx-right">${wx(f)}${isLive(f) ? `<b class="fx-live">LIVE ${f.forest ?? 0}-${f.opp ?? 0}</b>` : escapeHtml(f.time)}</span>
+    </li>`).join('')}</ul>` : '<p class="fx-off">No more fixtures this season.</p>';
+  doneEl.innerHTML = done.length ? `<ul class="fx-list">${done.map((f) => `<li>
+      <span class="fx-date">${escapeHtml(when(f))}</span>
+      <span class="fx-team">${escapeHtml(f.opponent)} <small>(${f.venue})</small></span>
+      <span class="fx-right"><span class="fx-score">${f.forest}-${f.opp}</span><span class="fx-chip ${res(f)}" aria-label="${res(f) === 'W' ? 'Won' : res(f) === 'L' ? 'Lost' : 'Drew'}">${res(f)}</span></span>
+    </li>`).join('')}</ul>` : '<p class="fx-off">No results yet this season.</p>';
+}
+
+// Matchday tabs (Next match · Fixtures · Results), with arrow-key support.
+function initMatchdayTabs() {
+  const tabs = [...document.querySelectorAll('.md-tabs [role="tab"]')];
+  if (!tabs.length) return;
+  const select = (t) => tabs.forEach((x) => {
+    const on = x === t;
+    x.setAttribute('aria-selected', String(on));
+    x.tabIndex = on ? 0 : -1;
+    $(x.getAttribute('aria-controls')).hidden = !on;
+  });
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => select(t));
+    t.addEventListener('keydown', (e) => {
+      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!d) return;
+      e.preventDefault();
+      const n = tabs[(i + d + tabs.length) % tabs.length];
+      select(n); n.focus();
+    });
+  });
 }
 
 /* ---- Match centre (API-Football via worker/extras.js) ----------------------
@@ -426,7 +446,7 @@ async function refreshMatchCentre(f) {
   const m = data && data.match;
   if (!m) { if (data && data.error) console.info('Match centre not available:', data.error, data.detail || ''); return; }
   renderMatchCentre(el, m);
-  el.closest('section').hidden = false;
+  $('mc-wrap').hidden = false;
   if (LIVE_STATUSES.includes(m.status) || m.status === 'NS') centreTimer = setTimeout(() => refreshMatchCentre(f), 60000);
 }
 function renderMatchCentre(el, m) {
@@ -616,6 +636,7 @@ function renderTracker(el, fixtures, past, preds) {
     if (pts === 3) exact++;
   });
 
+  if ($('tracker-pts')) $('tracker-pts').textContent = scored ? `· ${total} point${total === 1 ? '' : 's'}` : '';
   const summary = scored
     ? `<strong>${total} points</strong> from ${scored} match${scored === 1 ? '' : 'es'} · right result ${Math.round((rightResult / scored) * 100)}% of the time · ${exact} exact score${exact === 1 ? '' : 's'}`
     : 'No finished matches with a prediction yet. The first points land after the next game.';
