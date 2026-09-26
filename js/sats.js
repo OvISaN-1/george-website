@@ -164,11 +164,63 @@
     $('sats-feedback').innerHTML = `
       <p class="sats-verdict ${ok ? 'ok' : 'no'}">${ok ? `✅ ${['Correct!', 'Spot on!', 'Nailed it!', 'Brilliant!', 'Top bins! ⚽'][Math.floor(Math.random() * 5)]}` : `❌ Not quite. The answer is <b>${esc(shown)}</b>.`}</p>
       <p class="sats-explain"><b>How to work it out:</b> ${qHtml(q.explain)}</p>
+      ${ok ? '' : coachButton()}
       <button type="button" class="btn btn-primary" id="sats-next">${last ? 'See my score' : 'Next question →'}</button>`;
     $('sats-next').addEventListener('click', next);
+    if ($('coach-btn')) $('coach-btn').addEventListener('click', () => askCoach(q, given, shown));
     $('sats-next').focus({ preventScroll: true });
     $('sats-feedback').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
+  /* ---------------- Ask the Coach (AI help after a wrong answer) ----------------
+     Sends only this question to worker/coach.js: never a name or anything
+     personal, and there's no text box, so it can't be used for chatting.
+     20 a day on this device. */
+  const COACH_PER_DAY = 20;
+  function coachLeft() {
+    const today = new Date().toISOString().slice(0, 10);
+    if (!SAVE.coach || SAVE.coach.day !== today) SAVE.coach = { day: today, used: 0 };
+    return Math.max(0, COACH_PER_DAY - SAVE.coach.used);
+  }
+  function coachButton() {
+    const left = coachLeft();
+    return `<div class="coach" id="coach">
+      <button type="button" class="btn btn-ghost coach-btn" id="coach-btn" ${left ? '' : 'disabled'}>🤖 Still stuck? Ask the Coach</button>
+      <span class="coach-left">${left ? `${left} left today` : 'The Coach has helped lots today. Back tomorrow!'}</span>
+    </div>`;
+  }
+  async function askCoach(q, given, shown) {
+    const box = $('coach');
+    if (!box || !coachLeft()) return;
+    box.innerHTML = '<p class="coach-thinking">🤖 The Coach is thinking…</p>';
+    // Underlined words can't be sent as underlining, so they go in [square brackets].
+    const plain = (s) => (/<u>/.test(s) ? String(s).replace(/<u>(.*?)<\/u>/g, '[$1]') + ' (The underlined word is shown in [square brackets].)' : String(s));
+    let text = '', problem = '';
+    try {
+      const res = await fetch('/api/coach', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          topic: title().name,
+          question: plain(q.q),
+          passage: q.passage ? q.passage.text : '',
+          choices: q.type === 'choice' ? q.options : [],
+          answer: shown,
+          given,
+          explain: q.explain,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.text) text = data.text;
+      else problem = data.error === 'daily-limit' ? 'The Coach has helped lots of people today. Try again tomorrow!' : data.error === 'slow-down' ? 'Whoa, lots of questions! Wait a minute and try again.' : 'The Coach isn\'t available right now. The explanation above shows how to do it.';
+    } catch (e) {
+      problem = 'The Coach isn\'t available right now (are you online?).';
+    }
+    if (text) { SAVE.coach.used += 1; persist(); }
+    box.innerHTML = text
+      ? `<div class="coach-answer"><p class="coach-title">🤖 Coach says:</p>${esc(text).split(/\n+/).map((l) => `<p>${l}</p>`).join('')}<p class="coach-note">The Coach is an AI helper and can sometimes get things wrong. If it doesn't make sense, ask a grown-up. ${coachLeft()} left today.</p></div>`
+      : `<p class="coach-note">${esc(problem)}</p>`;
+  }
+
   function next() {
     Q.answered = false;
     Q.i += 1;

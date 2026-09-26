@@ -1,6 +1,8 @@
 // Cloudflare Workers settings. The site's files are served as they are
 // (no build step). Only /api/... runs code: worker/index.js, which fetches
-// live Forest data. Its API key is a secret set in the Cloudflare dashboard.
+// live Forest data (its API key is a secret set in the Cloudflare dashboard)
+// and the SATs "Ask the Coach" helper (worker/coach.js), which uses
+// Cloudflare's built-in AI through the "AI" binding below.
 {
   "name": "george-website",
   "compatibility_date": "2026-09-01",
@@ -9,5 +11,6 @@
     "directory": "./",
     "binding": "ASSETS",
     "run_worker_first": ["/api/*"]
-  }
+  },
+  "ai": { "binding": "AI" }
 }

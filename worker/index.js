@@ -13,6 +13,8 @@
    (10 requests a minute) is never close.
    =========================================================== */
 
+import { coach } from './coach.js';
+
 const API = 'https://api.football-data.org/v4';
 const CACHE_VERSION = 'v1';
 
@@ -20,6 +22,7 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname === '/api/forest') return forest(request, env, ctx);
+    if (url.pathname === '/api/coach') return coach(request, env, json);
     if (url.pathname.startsWith('/api/')) return json({ error: 'not-found' }, 404, 0);
     return env.ASSETS.fetch(request);
   },
