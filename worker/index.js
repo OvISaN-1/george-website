@@ -48,7 +48,7 @@ export default {
     if (url.pathname === '/api/report') return matchReport(request, env);
     if (url.pathname === '/api/games') {
       if (!env.RAWG_KEY) return json({ error: 'no-key' }, 503, 0);
-      return openToAll(await cached(request, ctx, 'games', 12 * 3600, async () => games(env, await gameTitles(env, request))));
+      return openToAll(await cached(request, ctx, 'games-2', 12 * 3600, async () => games(env, await gameTitles(env, request))));
     }
     if (url.pathname.startsWith('/api/')) return json({ error: 'not-found' }, 404, 0);
     return env.ASSETS.fetch(request);

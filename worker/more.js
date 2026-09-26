@@ -270,15 +270,19 @@ export async function games(env, titles) {
   const key = env.RAWG_KEY;
   if (!key) return { error: 'no-key' };
   const get = async (path) => {
-    const res = await fetch(`https://api.rawg.io/api${path}${path.includes('?') ? '&' : '?'}key=${encodeURIComponent(key)}`);
+    // RAWG asks every app to say who it is (User-Agent), or it may refuse.
+    const res = await fetch(`https://api.rawg.io/api${path}${path.includes('?') ? '&' : '?'}key=${encodeURIComponent(key)}`, { headers: HEADERS });
     if (!res.ok) throw new Error(`rawg ${res.status}`);
     return res.json();
   };
   const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!titles.length) throw new Error('no game titles found in js/content.js');
+  let lastError = null;
   const found = await Promise.all(titles.slice(0, 6).map(async (t) => {
     try {
       const j = await get(`/games?search=${encodeURIComponent(t)}&search_precise=true&page_size=5`);
-      const g = (j.results || []).find((x) => norm(x.name) === norm(t)) || (j.results || [])[0];
+      // Only the same game (never "Forza Horizon 5" for "Forza Horizon 6").
+      const g = (j.results || []).find((x) => norm(x.name) === norm(t)) || (j.results || []).find((x) => norm(x.name).startsWith(norm(t)));
       if (!g) return null;
       return {
         title: t, name: g.name, slug: g.slug, released: g.released || null, tba: !!g.tba,
@@ -287,8 +291,11 @@ export async function games(env, titles) {
         genres: (g.genres || []).map((x) => x.name).slice(0, 3),
         esrb: g.esrb_rating && g.esrb_rating.name || null,
       };
-    } catch (e) { return null; }
+    } catch (e) { lastError = e; return null; }
   }));
+  // Nothing at all usually means RAWG refused us: say why, and don't keep
+  // the empty answer (errors aren't cached, so it tries again next time).
+  if (!found.some(Boolean)) throw new Error(lastError ? lastError.message : 'no games matched');
   // Coming soon: unreleased games in the same series (by the first two words).
   const today = new Date().toISOString().slice(0, 10);
   const nextYear = new Date(Date.now() + 400 * 86400000).toISOString().slice(0, 10);
