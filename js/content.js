@@ -34,6 +34,9 @@ window.SITE = {
   football: {
     matchdayCaption: 'Matchday with Forest.',
 
+    // How George became a Forest fan, in his own words.
+    fanStory: 'I started supporting Forest two years ago, when they beat Liverpool. Liverpool were the Premier League champions, and we still beat them. I have been Forest ever since.',
+
     // Update this by hand once a week or so.
     league: {
       position: '13th',

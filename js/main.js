@@ -214,6 +214,8 @@ function friendlyError(err) {
 function renderFootball(C) {
   const F = C.football || {};
   setText('matchday-caption', F.matchdayCaption);
+  if (F.fanStory) setText('fan-story', F.fanStory);
+  else if ($('fan-story-wrap')) $('fan-story-wrap').hidden = true;
 
   if (F.league) {
     setText('league-line',
