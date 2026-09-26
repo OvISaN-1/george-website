@@ -484,7 +484,7 @@ function renderSchool(C) {
   const track = $('goal-track');
   if (track) {
     const done = Math.max(0, Math.min(3, Number(g.badgesDone) || 0));
-    const steps = [['🥉', 'Bronze'], ['🥈', 'Silver'], ['🥇', 'Gold']];
+    const steps = g.steps || [['🥉', 'Bronze'], ['🥈', 'Silver'], ['🥇', 'Gold']];
     track.innerHTML = steps.map(([emoji, name], i) => {
       const cls = i < done ? 'done' : i === done ? 'next' : '';
       const state = i < done ? 'got it' : i === done ? 'next up' : 'to come';

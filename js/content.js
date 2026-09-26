@@ -35,7 +35,7 @@ window.SITE = {
     matchdayCaption: 'Matchday with Forest.',
 
     // How George became a Forest fan, in his own words.
-    fanStory: 'I started supporting Forest two years ago, when they beat Liverpool. Liverpool were the Premier League champions, and we still beat them. I have been Forest ever since.',
+    fanStory: 'I started supporting Forest in September 2024, when they beat Liverpool 1-0 at Anfield. Callum Hudson-Odoi scored the winner, and Liverpool went on to win the league that season. I have been Forest ever since.',
 
     // Update this by hand once a week or so.
     league: {
@@ -73,7 +73,7 @@ window.SITE = {
 
     myTeam: {
       name: 'Riverside Rangers U11s',
-      position: 'Striker',
+      position: 'Striker (and goalie when I play with my dad)',
       // George's own words. Shown instead of goal numbers.
       quote: 'I\'m not always the one scoring, but I\'m always in the game.',
     },
@@ -164,24 +164,19 @@ window.SITE = {
     favouriteReason: 'we play football every week and I am usually one of the fastest.',
     achievements: [
       {
-        title: 'Times Tables Rockstars: Silver Certificate',
-        meta: 'Autumn term',
-        description: 'Photo of the certificate or work sample goes here.',
-        photoAlt: 'Certificate photo',
-      },
-      {
         title: 'Star of the Week',
-        meta: 'Autumn term',
-        description: 'Photo of the certificate or work sample goes here.',
-        photoAlt: 'Certificate photo',
+        meta: 'At school',
+        description: 'Picked as Star of the Week in class.',
+        photoAlt: '⭐ Star of the Week',
       },
     ],
     termGoal: {
-      title: 'Get my times tables gold badge (up to 12x)',
-      // Change this to 0, 1, 2 or 3 as he gets each badge.
-      // 0 = none yet, 1 = bronze, 2 = silver, 3 = gold (goal done!)
-      badgesDone: 2,
-      progressNote: 'Already got bronze and silver, just need one more go under 3 minutes.',
+      title: 'Do well in Year 6 and pass my SATs',
+      // The three steps along the progress bar.
+      steps: [['📚', 'Autumn term'], ['✏️', 'Spring term'], ['🎓', 'SATs in May']],
+      // How many steps are finished: 0, 1, 2 or 3 (3 = goal done!)
+      badgesDone: 0,
+      progressNote: 'Year 6 has just started. I get lots of questions right, and when I get some wrong I learn from them.',
     },
   },
 
