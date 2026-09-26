@@ -1,7 +1,7 @@
 /* ============================================================
    George's Game Zone — shared stats, badges, streaks & nicknames
    Loaded by quiz-zone.html, football-quiz.html, geography-quiz.html,
-   mountain-quiz.html, times-tables-quiz.html, penalty-shootout.html, free-kick.html and matchday.html. Everything is stored in this browser
+   mountain-quiz.html, name-that-riff.html, times-tables-quiz.html, penalty-shootout.html, free-kick.html and matchday.html. Everything is stored in this browser
    only (localStorage). The online top scores are separate: they live in
    the Supabase leaderboard table.
    ============================================================ */
@@ -13,6 +13,7 @@
     { id: "first-whistle",     emoji: "🎮", name: "First Whistle",   desc: "Play your very first quiz" },
     { id: "globe-trotter",     emoji: "🌍", name: "Globe Trotter",   desc: "Finish a round of Capital Quest" },
     { id: "peak-bagger",       emoji: "🏔️", name: "Peak Bagger",     desc: "Finish a round of Peak Challenge" },
+    { id: "riff-master",       emoji: "🎸", name: "Riff Master",     desc: "Finish a round of Name That Riff" },
     { id: "forest-frenzy",     emoji: "🌳", name: "Tricky Trees",    desc: "Finish a round of Football Frenzy" },
     { id: "perfect-round",     emoji: "💯", name: "Perfect Round",   desc: "Get every question right in one round" },
     { id: "quickfire-king",    emoji: "⚡", name: "Quickfire King",  desc: "Score 15 or more correct in one round" },
@@ -41,8 +42,8 @@
 
   function defaultStats() {
     return {
-      gamesPlayed: { "football-frenzy": 0, "capital-quest": 0, "mountain-peaks": 0, "times-tables": 0, "penalty-shootout": 0, "free-kick": 0, "matchday": 0 },
-      bestScore:   { "football-frenzy": 0, "capital-quest": 0, "mountain-peaks": 0, "times-tables": 0, "penalty-shootout": 0, "free-kick": 0, "matchday": 0 },
+      gamesPlayed: { "football-frenzy": 0, "capital-quest": 0, "mountain-peaks": 0, "times-tables": 0, "penalty-shootout": 0, "free-kick": 0, "matchday": 0, "name-that-riff": 0 },
+      bestScore:   { "football-frenzy": 0, "capital-quest": 0, "mountain-peaks": 0, "times-tables": 0, "penalty-shootout": 0, "free-kick": 0, "matchday": 0, "name-that-riff": 0 },
       keepyUppyBest: 0,
       badges: [],
       streak: 0,
@@ -110,6 +111,7 @@
     award("first-whistle");
     if (gameId === "capital-quest") award("globe-trotter");
     if (gameId === "mountain-peaks") award("peak-bagger");
+    if (gameId === "name-that-riff") award("riff-master");
     if (gameId === "football-frenzy") award("forest-frenzy");
     if (gameId === "times-tables") award("times-titan");
     if (gameId === "times-tables" && correctCount >= 25) award("maths-machine");
@@ -294,6 +296,7 @@
       { id: "football-frenzy", label: "Football Frenzy", emoji: "⚽" },
       { id: "capital-quest", label: "Capital Quest", emoji: "🌍" },
       { id: "mountain-peaks", label: "Peak Challenge", emoji: "🏔️" },
+      { id: "name-that-riff", label: "Name That Riff (songs right)", emoji: "🎸" },
       { id: "times-tables", label: "Times Tables Blitz", emoji: "✖️" }
     ];
     const scale = 30; // nominal "great score" ceiling for the bar fill

@@ -48,6 +48,34 @@ export const SONGS = {
   sevennation: ['The White Stripes', 'Seven Nation Army'],
   wonderwall: ['Oasis', 'Wonderwall'],
   rockinall: ['Status Quo', "Rockin' All Over The World"],
+  // More for the Name That Riff game (quiz-zone/name-that-riff.html).
+  breakfree: ['Queen', 'I Want To Break Free'],
+  radiogaga: ['Queen', 'Radio Ga Ga'],
+  mylife: ['Bon Jovi', "It's My Life"],
+  believin: ['Journey', "Don't Stop Believin'"],
+  rocknroll: ['KISS', 'Rock And Roll All Nite'],
+  nottake: ['Twisted Sister', "We're Not Gonna Take It"],
+  learnfly: ['Foo Fighters', 'Learn To Fly'],
+  pretender: ['Foo Fighters', 'The Pretender'],
+  reallygot: ['The Kinks', 'You Really Got Me'],
+  immigrant: ['Led Zeppelin', 'Immigrant Song'],
+  ironman: ['Black Sabbath', 'Iron Man'],
+  uprising: ['Muse', 'Uprising'],
+  song2: ['Blur', 'Song 2'],
+  lookback: ['Oasis', "Don't Look Back In Anger"],
+  thingcalled: ['The Darkness', 'I Believe In A Thing Called Love'],
+  paradise: ["Guns N' Roses", 'Paradise City'],
+  jump: ['Van Halen', 'Jump'],
+  sharp: ['ZZ Top', 'Sharp Dressed Man'],
+  summer69: ['Bryan Adams', 'Summer Of 69'],
+  takemeout: ['Franz Ferdinand', 'Take Me Out'],
+  miles500: ['The Proclaimers', "I'm Gonna Be (500 Miles)"],
+  babaoriley: ['The Who', "Baba O'Riley"],
+  believer: ['Imagine Dragons', 'Believer'],
+  thunder: ['Imagine Dragons', 'Thunder'],
+  ruby: ['Kaiser Chiefs', 'Ruby'],
+  dreamon: ['Aerosmith', 'Dream On'],
+  mrblue: ['Electric Light Orchestra', 'Mr. Blue Sky'],
 };
 
 export async function track(id) {
@@ -61,7 +89,9 @@ export async function track(id) {
   const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const hits = (j.data || []).filter((t) => t.preview && norm(t.artist && t.artist.name) === norm(artist));
   // Prefer the exact title (not a live or remix version), then the most popular.
-  const best = hits.find((t) => norm(t.title) === norm(title)) || hits.find((t) => norm(t.title).startsWith(norm(title))) || hits[0];
+  const short = (s) => norm(String(s || '').replace(/\s*[([-].*$/, ''));
+  const best = hits.find((t) => norm(t.title) === norm(title)) || hits.find((t) => norm(t.title).startsWith(norm(title))) ||
+    hits.find((t) => short(t.title) === short(title)) || hits[0];
   if (!best) return { error: 'not-found' };
   return {
     id, artist, title,

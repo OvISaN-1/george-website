@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Name That Riff — Rock Music Quiz</title>
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://georgeneagu.win/quiz-zone/name-that-riff.html">
+<meta property="og:title" content="Name That Riff — George's Game Zone">
+<meta property="og:description" content="Hear a famous rock riff and name the song. 10 songs, faster answers score more.">
+<meta property="og:image" content="https://georgeneagu.win/assets/images/share/name-that-riff.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://georgeneagu.win/assets/images/share/name-that-riff.png">
+<meta name="description" content="Hear a famous rock riff and name the song. 10 songs, faster answers score more.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="canonical" href="https://georgeneagu.win/quiz-zone/name-that-riff.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121014'/%3E%3Ctext x='16' y='23' font-family='Arial, sans-serif' font-weight='700' font-size='19' fill='%23e1102c' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../css/fonts.css">
+<link rel="stylesheet" href="../css/shell.css">
+<link rel="stylesheet" href="stats.css">
+<style>
+  :root{
+    --navy:#121014;
+    --navy-light:#1c1820;
+    --cream:#f1ede9;
+    --gold:#f5b942;
+    --teal:#9d5cff;
+    --pink:#e84c61;
+    --ink:#241f29;
+    --good:#3DCC7C;
+    --bad:#FF5D5D;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(157,92,255,0.18), transparent 40%),
+      radial-gradient(circle at 85% 85%, rgba(245,185,66,0.15), transparent 40%),
+      var(--navy);
+    font-family:'Manrope',sans-serif;
+    color:var(--cream);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:24px 16px 60px;
+  }
+  h1,h2,h3{font-family:'Rajdhani',sans-serif;margin:0;}
+
+  .card{
+    width:100%;max-width:720px;
+    background:var(--navy-light);
+    border-radius:20px;
+    padding:24px;
+    box-shadow:0 12px 30px rgba(0,0,0,0.35);
+    border:1px solid rgba(255,255,255,0.06);
+  }
+
+  #start-screen p{font-size:16px;line-height:1.5;color:#b9b2ac;}
+  #start-screen .rules{display:flex;gap:14px;flex-wrap:wrap;margin:18px 0;}
+  #start-screen .rule{
+    flex:1;min-width:150px;
+    background:rgba(255,255,255,0.05);
+    border-radius:14px;
+    padding:14px;
+    text-align:center;
+  }
+  #start-screen .rule .emoji{font-size:26px;}
+  #start-screen .rule .label{font-weight:800;font-size:13px;margin-top:6px;color:var(--gold);}
+  #start-greeting{font-family:'Rajdhani',sans-serif;font-size:17px;color:var(--gold);margin-bottom:6px;}
+
+  input[type=text]{
+    width:100%;padding:12px 14px;border-radius:12px;border:none;
+    font-family:'Manrope',sans-serif;font-size:16px;font-weight:600;
+    background:var(--cream);color:var(--ink);
+  }
+  button{
+    font-family:'Rajdhani',sans-serif;
+    cursor:pointer;
+    border:none;
+    border-radius:14px;
+    font-weight:700;
+  }
+  .btn-primary{
+    background:linear-gradient(135deg,var(--teal),#8a4fe0);
+    color:var(--navy);
+    padding:14px 22px;
+    font-size:17px;
+    width:100%;
+    margin-top:16px;
+    box-shadow:0 6px 0 #7c3aed;
+    transition:transform .05s ease;
+  }
+  .btn-primary:active{transform:translateY(4px);box-shadow:0 2px 0 #7c3aed;}
+
+  #game-screen{display:none;}
+  .hud{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .hud .pill{
+    background:rgba(255,255,255,0.08);
+    padding:6px 14px;border-radius:999px;font-weight:800;font-size:14px;
+  }
+  .hud .timer{
+    font-size:26px;font-weight:800;color:var(--gold);
+    min-width:60px;text-align:right;
+  }
+  .timer.warn{color:var(--bad);}
+  #timer-bar-track{height:6px;border-radius:6px;background:rgba(255,255,255,0.1);overflow:hidden;margin-bottom:18px;}
+  #timer-bar{height:100%;background:linear-gradient(90deg,var(--teal),var(--gold));width:100%;}
+
+  #peak-visual{
+    background:var(--cream);
+    border-radius:16px;
+    height:150px;
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:18px;
+    font-size:64px;
+  }
+
+  .prompt{text-align:center;font-size:16px;color:#b9b2ac;font-weight:700;margin-bottom:6px;line-height:1.4;}
+  .country-name{text-align:center;font-family:'Rajdhani',sans-serif;font-size:26px;color:var(--gold);margin-bottom:16px;}
+
+  .answers{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .answer-btn{
+    background:rgba(255,255,255,0.06);
+    color:var(--cream);
+    border:2px solid rgba(255,255,255,0.12);
+    padding:16px 10px;
+    font-size:15px;
+    text-align:center;
+  }
+  .answer-btn:hover{border-color:var(--teal);}
+  .answer-btn.correct{background:var(--good);color:var(--ink);border-color:var(--good);}
+  .answer-btn.wrong{background:var(--bad);color:#fff;border-color:var(--bad);}
+  .answer-btn:disabled{cursor:default;}
+
+  #feedback{text-align:center;font-weight:800;margin-top:14px;min-height:22px;font-size:15px;}
+
+  #results-screen{display:none;text-align:center;}
+  #results-screen .score-big{font-family:'Rajdhani',sans-serif;font-size:52px;color:var(--gold);margin:6px 0;}
+  #results-screen p{color:#b9b2ac;}
+  #results-message{font-family:'Rajdhani',sans-serif;font-size:17px;color:var(--cream);margin-top:2px;}
+  #category-breakdown{text-align:left;margin-top:22px;}
+  #category-breakdown h3{text-align:center;}
+  #name-form{display:flex;gap:10px;margin-top:18px;}
+  #name-form input{flex:1;}
+  #name-form button{padding:0 18px;background:var(--pink);color:#fff;}
+
+  table{width:100%;border-collapse:collapse;margin-top:16px;}
+  th,td{padding:10px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.08);}
+  th{color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:14px;}
+  td{font-weight:600;}
+  tr:first-child td{color:var(--gold);font-weight:800;}
+
+  .footer-note{font-size:12px;color:#8a857e;margin-top:24px;text-align:center;max-width:600px;}
+
+  /* ---- Site shell + Garibaldi Grid alignment (added with the shared header) ----
+     The page now uses the same header/footer as the rest of the site
+     (css/shell.css). These rules undo the old "whole body is one centred
+     column" layout and move it onto <main> instead. */
+  body{display:block;padding:0;background:var(--navy);}
+  main#main{
+    display:flex;flex-direction:column;align-items:center;
+    padding:24px 16px 60px;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(157,92,255,0.14), transparent 45%),
+      radial-gradient(circle at 85% 100%, rgba(245,185,66,0.10), transparent 45%);
+  }
+  main a{color:var(--gold);}
+  .quiz-title{width:100%;max-width:720px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+  .quiz-title .eyebrow{display:block;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#a264ff;margin-bottom:2px;}
+  .quiz-title h1{font-size:30px;line-height:1.05;color:var(--cream);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .quiz-title .back{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;text-decoration:none;color:var(--cream);
+    border:1px solid rgba(241,237,233,0.18);border-radius:999px;padding:10px 18px;min-height:44px;display:inline-flex;align-items:center;}
+  .quiz-title .back:hover{border-color:var(--gold);color:var(--gold);}
+  .forest-chip-inline{font-family:'Manrope',sans-serif;font-size:11px;font-weight:800;letter-spacing:.3px;padding:4px 10px;border-radius:999px;background:#ca0e28;color:#fff;}
+  .site-footer{margin-top:0;}
+
+  /* Buttons: pill-shaped and uppercase like the rest of the site. Solid
+     fills so the text keeps its contrast. */
+  .btn-primary{
+    background:var(--teal);color:var(--navy);border-radius:999px;
+    text-transform:uppercase;letter-spacing:.03em;min-height:48px;
+    box-shadow:0 0 0 1px rgba(157,92,255,0.4), 0 0 28px rgba(157,92,255,0.35);
+    transition:transform .15s ease, filter .15s ease;
+  }
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-primary:active{transform:scale(0.97);box-shadow:0 0 0 1px rgba(157,92,255,0.4);}
+  #name-form button{background:#ca0e28;color:#fff;border-radius:999px;min-height:44px;text-transform:uppercase;letter-spacing:.03em;}
+  input[type=text]{border-radius:999px;padding:12px 18px;min-height:44px;}
+  .card{border-radius:20px;border-color:rgba(241,237,233,0.10);}
+  .answer-btn{border-radius:12px;min-height:56px;}
+  .answer-btn.wrong{color:var(--ink);}            /* white on #FF5D5D was 3.0:1, ink is 5.4:1 */
+  .answer-btn:focus-visible,.btn-primary:focus-visible,.quiz-title .back:focus-visible{outline:2px solid var(--cream);outline-offset:3px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;scroll-behavior:auto !important;}
+    .btn-primary,.answer-btn{transition:none;}
+  }
+
+  /* ---------------- Name That Riff ---------------- */
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px;}
+  .mode-btn{background:rgba(255,255,255,0.06);color:var(--cream);border:2px solid rgba(255,255,255,0.12);border-radius:16px;padding:16px 12px;text-align:center;min-height:96px;transition:border-color .15s, transform .15s;}
+  .mode-btn b{display:block;font-size:20px;margin-bottom:4px;}
+  .mode-btn span{display:block;font-family:'Manrope',sans-serif;font-weight:600;font-size:13px;color:#b9b2ac;line-height:1.35;}
+  .mode-btn:hover,.mode-btn:focus-visible{border-color:var(--gold);transform:translateY(-2px);outline:none;}
+  .mode-btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+  #best-line{text-align:center;font-weight:700;color:var(--gold);margin-top:14px;min-height:20px;font-size:14px;}
+  #clip-status{text-align:center;color:#b9b2ac;font-size:14px;margin-top:10px;min-height:20px;}
+
+  .stage{display:flex;align-items:center;justify-content:center;gap:22px;margin:4px 0 16px;flex-wrap:wrap;}
+  .vinyl{position:relative;width:170px;height:170px;border-radius:50%;flex:0 0 auto;
+    background:
+      radial-gradient(circle, transparent 0 30%, rgba(255,255,255,.05) 30.5% 31%, transparent 31.5% 38%, rgba(255,255,255,.05) 38.5% 39%, transparent 39.5% 46%, rgba(255,255,255,.05) 46.5% 47%, transparent 47.5%),
+      conic-gradient(from 0deg, #151217, #2a2430 12%, #151217 25%, #2a2430 37%, #151217 50%, #2a2430 62%, #151217 75%, #2a2430 87%, #151217);
+    box-shadow:0 10px 30px rgba(0,0,0,.5), inset 0 0 0 3px #0c0a0e;}
+  .vinyl .label{position:absolute;inset:32%;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 35% 30%, #ff5a6e, #ca0e28);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:30px;color:#fff;}
+  .vinyl .label img{width:100%;height:100%;object-fit:cover;}
+  .vinyl .label::after{content:"";position:absolute;width:10px;height:10px;border-radius:50%;background:#0c0a0e;left:50%;top:50%;transform:translate(-50%,-50%);}
+  .vinyl.spin{animation:spin 1.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .eq{display:flex;align-items:flex-end;gap:5px;height:70px;}
+  .eq i{display:block;width:9px;height:12%;border-radius:4px;background:linear-gradient(0deg,var(--teal),var(--gold));}
+  .eq.on i{animation:eq .9s ease-in-out infinite alternate;}
+  .eq i:nth-child(2){animation-delay:-.2s}.eq i:nth-child(3){animation-delay:-.5s}.eq i:nth-child(4){animation-delay:-.1s}.eq i:nth-child(5){animation-delay:-.7s}.eq i:nth-child(6){animation-delay:-.35s}
+  @keyframes eq{0%{height:12%}35%{height:85%}65%{height:40%}100%{height:100%}}
+  .riff-controls{display:flex;justify-content:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+  .ghost-btn{background:transparent;color:var(--cream);border:1px solid rgba(241,237,233,0.25);border-radius:999px;padding:8px 16px;min-height:44px;font-size:15px;}
+  .ghost-btn:hover{border-color:var(--gold);color:var(--gold);}
+  .ghost-btn:disabled{opacity:.5;cursor:default;}
+  #song-reveal{text-align:center;margin-top:12px;min-height:22px;color:#b9b2ac;font-size:14px;}
+  #song-reveal b{color:var(--cream);}
+  #next-btn{display:none;}
+  .points-pop{color:var(--gold);}
+
+  .recap{list-style:none;padding:0;margin:18px 0 0;text-align:left;display:grid;gap:8px;}
+  .recap li{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.04);border-radius:12px;padding:8px 12px;}
+  .recap img,.recap .noimg{width:40px;height:40px;border-radius:8px;flex:0 0 auto;object-fit:cover;background:#2a2430;}
+  .recap .t{flex:1;min-width:0;}
+  .recap .t b{display:block;font-size:14px;}
+  .recap .t small{color:#b9b2ac;}
+  .recap .p{font-weight:800;}
+  #save-note{min-height:20px;font-size:14px;color:#b9b2ac;margin-top:8px;}
+  #share-btn{margin-top:12px;}
+  .deezer-note{font-size:12px;color:#8a857e;text-align:center;margin-top:12px;}
+  @media (prefers-reduced-motion: reduce){ .vinyl.spin,.eq.on i{animation:none;} }
+</style>
+</head>
+<body data-page="quiz-game">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <nav class="nav-bar" aria-label="Main">
+      <a class="logo" href="../index.html">GEORGE<span>.</span></a>
+      <ul class="nav-links">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../football.html">Football</a></li>
+        <li><a href="../games.html">Video Games</a></li>
+        <li><a href="../quiz-zone.html" aria-current="page">Game Zone</a></li>
+        <li><a href="../school.html">School Zone</a></li>
+        <li><a href="../about.html">About Me</a></li>
+      </ul>
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </nav>
+    <div class="mobile-nav" id="mobile-nav">
+      <a href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/></svg>Home</a>
+      <a href="../football.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/></svg>Football</a>
+      <a href="../games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="10" rx="4"/></svg>Video Games</a>
+      <a href="../quiz-zone.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>Game Zone</a>
+      <a href="../school.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4l9 4-9 4-9-4z"/></svg>School Zone</a>
+      <a href="../about.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>About Me</a>
+    </div>
+  </header>
+
+  <main id="main">
+  <div class="quiz-title">
+    <div>
+      <span class="eyebrow">Game Zone</span>
+      <h1 style="view-transition-name:t-riff">Name That Riff</h1>
+    </div>
+    <a class="back" href="../quiz-zone.html">&larr; All games</a>
+  </div>
+
+<div class="card" id="start-screen">
+  <div id="start-greeting"></div>
+  <h2>Hear the riff. Name the song. 🎸</h2>
+  <p>A famous rock song starts playing. Pick the right song before the timer runs out. The faster you answer, the more points you get, and a run of right answers earns a bonus.</p>
+  <div class="rules">
+    <div class="rule"><div class="emoji">🎧</div><div class="label">10 songs<br>a game</div></div>
+    <div class="rule"><div class="emoji">⚡</div><div class="label">Faster answer<br>= more points</div></div>
+    <div class="rule"><div class="emoji">🔥</div><div class="label">Streak<br>bonus</div></div>
+  </div>
+  <div class="modes">
+    <button type="button" class="mode-btn" data-mode="rookie"><b>🎸 Rookie</b><span>20 seconds a song. Every answer is by a different band.</span></button>
+    <button type="button" class="mode-btn" data-mode="star"><b>🤘 Rock Star</b><span>15 seconds. Trickier answers, and 1.5× points.</span></button>
+  </div>
+  <div id="best-line"></div>
+  <div id="clip-status" aria-live="polite"></div>
+</div>
+
+<div class="card" id="game-screen">
+  <div class="hud">
+    <span class="pill" id="round-pill">Song 1 of 10</span>
+    <span class="pill" id="score-pill">0 pts</span>
+    <span class="timer" id="timer-display">20</span>
+  </div>
+  <div id="timer-bar-track"><div id="timer-bar"></div></div>
+  <div class="stage">
+    <div class="vinyl" id="vinyl" aria-hidden="true"><div class="label" id="vinyl-label">?</div></div>
+    <div class="eq" id="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+  <div class="riff-controls">
+    <button type="button" class="ghost-btn" id="replay-btn">🔁 Play it again</button>
+  </div>
+  <div class="prompt" id="prompt">Loading the song…</div>
+  <div class="answers" id="answers"></div>
+  <div id="feedback" aria-live="polite"></div>
+  <div id="song-reveal"></div>
+  <button class="btn-primary" id="next-btn" type="button">Next song →</button>
+</div>
+
+<div class="card" id="results-screen">
+  <h2 id="results-title">Encore!</h2>
+  <p id="results-sub">Your score:</p>
+  <div class="score-big" id="final-score">0</div>
+  <div id="results-message"></div>
+  <ul class="recap" id="recap"></ul>
+  <form id="name-form">
+    <input type="text" id="player-name" placeholder="Enter your name" maxlength="18" required>
+    <button type="submit">Save score</button>
+  </form>
+  <div id="save-note" aria-live="polite"></div>
+  <h3 style="margin-top:26px;">Top scores</h3>
+  <table id="leaderboard"><tbody></tbody></table>
+  <button class="ghost-btn" id="share-btn" type="button" hidden>📤 Share my score</button>
+  <button class="btn-primary" id="play-again-btn">Play again</button>
+</div>
+
+<p class="footer-note">Song clips are 30-second previews from Deezer, played through George's website, and only from a list of family-friendly rock classics. Top scores are shared online with everyone who plays. Badges and your best score save on this device.</p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-row">
+      <span>Built with ♥ by Dad, for George.</span>
+      <a href="../quiz-zone.html">Game Zone</a>
+    </div>
+  </footer>
+
+<script src="../js/main.js"></script>
+<script src="stats.js"></script>
+<script>
+/* ================================================================
+   NAME THAT RIFF
+   Song clips come from /api/track (worker/more.js), which only plays
+   songs on its own list. The ids here must match that list.
+   ================================================================ */
+const SONGS = [
+  ["thunderstruck", "Thunderstruck", "AC/DC"], ["backinblack", "Back In Black", "AC/DC"],
+  ["highway", "Highway to Hell", "AC/DC"], ["tnt", "T.N.T.", "AC/DC"],
+  ["rockyou", "We Will Rock You", "Queen"], ["champions", "We Are The Champions", "Queen"],
+  ["dontstop", "Don't Stop Me Now", "Queen"], ["bitesdust", "Another One Bites The Dust", "Queen"],
+  ["breakfree", "I Want To Break Free", "Queen"], ["radiogaga", "Radio Ga Ga", "Queen"],
+  ["smoke", "Smoke on the Water", "Deep Purple"], ["tiger", "Eye of the Tiger", "Survivor"],
+  ["countdown", "The Final Countdown", "Europe"], ["prayer", "Livin' On A Prayer", "Bon Jovi"],
+  ["mylife", "It's My Life", "Bon Jovi"], ["sweetchild", "Sweet Child O' Mine", "Guns N' Roses"],
+  ["paradise", "Paradise City", "Guns N' Roses"], ["sevennation", "Seven Nation Army", "The White Stripes"],
+  ["wonderwall", "Wonderwall", "Oasis"], ["lookback", "Don't Look Back In Anger", "Oasis"],
+  ["rockinall", "Rockin' All Over The World", "Status Quo"], ["believin", "Don't Stop Believin'", "Journey"],
+  ["rocknroll", "Rock And Roll All Nite", "KISS"], ["nottake", "We're Not Gonna Take It", "Twisted Sister"],
+  ["learnfly", "Learn To Fly", "Foo Fighters"], ["pretender", "The Pretender", "Foo Fighters"],
+  ["reallygot", "You Really Got Me", "The Kinks"], ["immigrant", "Immigrant Song", "Led Zeppelin"],
+  ["ironman", "Iron Man", "Black Sabbath"], ["uprising", "Uprising", "Muse"],
+  ["song2", "Song 2", "Blur"], ["thingcalled", "I Believe In A Thing Called Love", "The Darkness"],
+  ["jump", "Jump", "Van Halen"], ["sharp", "Sharp Dressed Man", "ZZ Top"],
+  ["summer69", "Summer Of '69", "Bryan Adams"], ["takemeout", "Take Me Out", "Franz Ferdinand"],
+  ["miles500", "I'm Gonna Be (500 Miles)", "The Proclaimers"], ["babaoriley", "Baba O'Riley", "The Who"],
+  ["believer", "Believer", "Imagine Dragons"], ["thunder", "Thunder", "Imagine Dragons"],
+  ["ruby", "Ruby", "Kaiser Chiefs"], ["dreamon", "Dream On", "Aerosmith"],
+  ["mrblue", "Mr. Blue Sky", "Electric Light Orchestra"],
+].map(([id, title, artist]) => ({ id, title, artist }));
+
+/* ================= SUPABASE CONFIG (same as the other games) ================= */
+const SUPABASE_URL = "https://hucnucpfyjltlhmvprso.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1Y251Y3BmeWpsdGxobXZwcnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgzNjEsImV4cCI6MjEwMzU4NDM2MX0.DSjLCkiUWB47wVd4wnW_2RvWFoISbH80JI9ukB1bBdg";
+const GAME_ID = "name-that-riff";
+const LEADERBOARD_SIZE = 10;
+/* ============================================================================ */
+
+const ROUNDS = 10;
+const MODES = {
+  rookie: { secs: 20, mult: 1, name: "Rookie" },
+  star: { secs: 15, mult: 1.5, name: "Rock Star" },
+};
+const SAVE_KEY = "gz_riff_v1";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => { const d = document.createElement("div"); d.textContent = String(s == null ? "" : s); return d.innerHTML; };
+const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const label = (s) => `${s.title} (${s.artist})`;
+const api = (id) => `${window.apiUrl ? window.apiUrl("track") : "/api/track"}?id=${encodeURIComponent(id)}`;
+const readSave = () => { try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch (e) { return {}; } };
+const writeSave = (v) => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(v)); } catch (e) { /* private mode */ } };
+
+const audio = new Audio();
+audio.preload = "auto";
+let G = null;           // the current game
+const trackCache = {};  // song id -> promise of its clip details
+let tick = null;
+
+/* ---------- Start screen ---------- */
+$("start-greeting").textContent = `Ready to rock, ${GZ.randomNickname()}? 🤘`;
+function showBest() {
+  const s = readSave();
+  const parts = [];
+  if (s.rookie) parts.push(`🎸 Rookie best: ${s.rookie}`);
+  if (s.star) parts.push(`🤘 Rock Star best: ${s.star}`);
+  $("best-line").textContent = parts.join(" · ");
+}
+showBest();
+
+// Check the song clips work before letting George start.
+const modeButtons = document.querySelectorAll(".mode-btn");
+modeButtons.forEach((b) => { b.disabled = true; b.addEventListener("click", () => startGame(b.dataset.mode)); });
+$("clip-status").textContent = "Tuning the guitars…";
+getTrack("thunderstruck").then((t) => {
+  if (!t) throw new Error("no clip");
+  modeButtons.forEach((b) => { b.disabled = false; });
+  $("clip-status").textContent = "";
+}).catch(() => {
+  $("clip-status").textContent = "The song clips aren't working right now. Please try again later. 🎸";
+});
+
+/* ---------- Song clips ---------- */
+function getTrack(id) {
+  if (!trackCache[id]) {
+    trackCache[id] = fetch(api(id)).then((r) => r.json()).then((t) => (t && t.preview ? t : null)).catch(() => null);
+    trackCache[id].then((t) => { if (!t) delete trackCache[id]; });
+  }
+  return trackCache[id];
+}
+
+// Phones only let a page play sound after a tap, so the first tap plays a
+// tiny silent sound on the same player; after that the songs can play.
+const SILENT = "data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA";
+function unlockAudio() {
+  if (unlockAudio.done) return;
+  unlockAudio.done = true;
+  try { audio.src = SILENT; audio.play().catch(() => {}); } catch (e) { /* fine */ }
+}
+
+// Play a clip, starting a few seconds in (where the famous bit usually is).
+// Resolves "playing", or "blocked" if the browser wants another tap first.
+function playClip(t) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const done = (how) => {
+      if (settled) return;
+      settled = true; clearTimeout(timer); audio.onplaying = audio.onerror = audio.oncanplay = null;
+      how ? resolve(how) : reject(new Error("clip"));
+    };
+    const timer = setTimeout(() => done(null), 9000);
+    audio.onplaying = () => done("playing");
+    audio.onerror = () => done(null);
+    audio.src = t.preview;
+    audio.addEventListener("loadedmetadata", () => { try { audio.currentTime = Math.min(3, (audio.duration || 30) / 6); } catch (e) { /* fine */ } }, { once: true });
+    audio.play().catch((e) => {
+      if (e && e.name === "NotAllowedError") { audio.oncanplay = () => done("blocked"); if (audio.readyState >= 3) done("blocked"); }
+      else if (e && e.name === "AbortError") { /* a newer clip took over */ }
+      else done(null);
+    });
+  });
+}
+function setSpinning(on) {
+  $("vinyl").classList.toggle("spin", on);
+  $("eq").classList.toggle("on", on);
+}
+audio.addEventListener("pause", () => setSpinning(false));
+audio.addEventListener("ended", () => setSpinning(false));
+audio.addEventListener("playing", () => setSpinning(true));
+
+/* ---------- The game ---------- */
+function startGame(mode) {
+  unlockAudio();
+  G = { mode, cfg: MODES[mode], queue: shuffle(SONGS), round: 0, score: 0, right: 0, streak: 0, best: 0, recap: [] };
+  $("start-screen").style.display = "none";
+  $("results-screen").style.display = "none";
+  $("game-screen").style.display = "block";
+  $("name-form").style.display = "flex";
+  $("save-note").textContent = "";
+  if (window.GZWake) GZWake.on();
+  nextSong();
+}
+
+function wrongAnswers(song) {
+  const others = shuffle(SONGS.filter((s) => s.artist !== song.artist));
+  const picks = [];
+  if (G.mode === "star") {
+    // Rock Star: one more song by the same band, if there is one.
+    const same = shuffle(SONGS.filter((s) => s.artist === song.artist && s.id !== song.id));
+    if (same.length) picks.push(same[0]);
+  }
+  for (const s of others) {
+    if (picks.length >= 3) break;
+    if (!picks.some((p) => p.artist === s.artist)) picks.push(s);
+  }
+  return picks;
+}
+
+async function nextSong() {
+  clearInterval(tick);
+  audio.pause();
+  if (G.round >= ROUNDS) return endGame();
+  $("round-pill").textContent = `Song ${G.round + 1} of ${ROUNDS}`;
+  $("score-pill").textContent = `${G.score} pts`;
+  $("answers").innerHTML = "";
+  $("feedback").textContent = "";
+  $("song-reveal").textContent = "";
+  $("next-btn").style.display = "none";
+  $("vinyl-label").textContent = "?";
+  $("timer-display").textContent = G.cfg.secs;
+  $("timer-bar").style.width = "100%";
+  $("replay-btn").disabled = true;
+  $("replay-btn").textContent = "🔁 Play it again";
+  $("prompt").textContent = "Loading the song…";
+
+  // Find the next song whose clip works (skip any that won't load).
+  let song = null, track = null, how = null;
+  while (G.queue.length) {
+    const s = G.queue.shift();
+    const t = await getTrack(s.id);
+    if (!t) continue;
+    try { how = await playClip(t); song = s; track = t; break; } catch (e) { /* try another */ }
+  }
+  if (!song) { // ran out of working songs
+    if (G.round === 0) { quitToStart("The song clips aren't working right now. Please try again later. 🎸"); return; }
+    return endGame();
+  }
+  G.song = song; G.track = track; G.answered = false;
+  G.round += 1;
+  // Warm up the next one so there's no wait.
+  if (G.queue[0]) getTrack(G.queue[0].id);
+
+  $("replay-btn").disabled = false;
+  const options = shuffle([song].concat(wrongAnswers(song)));
+  $("answers").innerHTML = options.map((s) => `<button type="button" class="answer-btn" data-id="${s.id}">${esc(label(s))}</button>`).join("");
+  $("answers").querySelectorAll(".answer-btn").forEach((b) => b.addEventListener("click", () => answer(b.dataset.id)));
+  G.left = G.cfg.secs * 1000;
+  $("prompt").textContent = "Which song is this?";
+  if (how === "playing") return startTimer();
+  // The browser wants a tap first: the clock waits until the song plays.
+  $("prompt").textContent = "Tap ▶ to hear the song!";
+  $("replay-btn").textContent = "▶ Play the song";
+  $("answers").querySelectorAll(".answer-btn").forEach((b) => { b.disabled = true; });
+  audio.addEventListener("playing", () => {
+    if (!G || G.answered) return;
+    $("replay-btn").textContent = "🔁 Play it again";
+    $("prompt").textContent = "Which song is this?";
+    $("answers").querySelectorAll(".answer-btn").forEach((b) => { b.disabled = false; });
+    startTimer();
+  }, { once: true });
+}
+
+function startTimer() {
+  let last = performance.now();
+  tick = setInterval(() => {
+    const now = performance.now();
+    if (!document.hidden) G.left -= now - last;   // the clock stops if George switches away
+    last = now;
+    const secs = Math.max(0, Math.ceil(G.left / 1000));
+    $("timer-display").textContent = secs;
+    $("timer-display").classList.toggle("warn", secs <= 5);
+    $("timer-bar").style.width = `${Math.max(0, (G.left / (G.cfg.secs * 1000)) * 100)}%`;
+    if (G.left <= 0) answer(null);
+  }, 100);
+}
+
+function answer(id) {
+  if (!G || G.answered) return;
+  G.answered = true;
+  clearInterval(tick);
+  const song = G.song, right = id === song.id;
+  let pts = 0;
+  if (right) {
+    G.streak += 1; G.right += 1; G.best = Math.max(G.best, G.streak);
+    const speed = Math.round(50 * Math.max(0, G.left) / (G.cfg.secs * 1000));
+    const bonus = Math.min(40, (G.streak - 1) * 10);
+    pts = Math.round((50 + speed + bonus) * G.cfg.mult);
+    G.score += pts;
+  } else {
+    G.streak = 0;
+  }
+  G.recap.push({ song, right, pts, cover: G.track.cover });
+  $("answers").querySelectorAll(".answer-btn").forEach((b) => {
+    b.disabled = true;
+    if (b.dataset.id === song.id) b.classList.add("correct");
+    else if (b.dataset.id === id) b.classList.add("wrong");
+  });
+  $("score-pill").textContent = `${G.score} pts`;
+  $("feedback").innerHTML = right
+    ? `🤘 Yes! <span class="points-pop">+${pts} points</span>${G.streak >= 2 ? ` · 🔥 ${G.streak} in a row` : ""}`
+    : id ? "❌ Not this time!" : "⏰ Time's up!";
+  $("song-reveal").innerHTML = `It was <b>${esc(song.title)}</b> by <b>${esc(song.artist)}</b>.${G.track.link ? ` <a href="${esc(G.track.link)}" target="_blank" rel="noopener">Listen on Deezer ↗</a>` : ""}`;
+  if (G.track.cover) $("vinyl-label").innerHTML = `<img src="${esc(G.track.cover)}" alt="">`;
+  $("prompt").textContent = right ? "Keep listening, or carry on!" : "Here's how it goes:";
+  if (audio.paused) audio.play().catch(() => {});
+  const next = $("next-btn");
+  next.textContent = G.round >= ROUNDS ? "See my score →" : "Next song →";
+  next.style.display = "block";
+  next.focus({ preventScroll: true });
+}
+
+$("next-btn").addEventListener("click", () => nextSong());
+$("replay-btn").addEventListener("click", () => {
+  if (!G || !G.track) return;
+  try { audio.currentTime = Math.min(3, (audio.duration || 30) / 6); } catch (e) { /* fine */ }
+  audio.play().catch(() => {});
+});
+// Keys 1-4 pick an answer, Enter goes to the next song.
+document.addEventListener("keydown", (e) => {
+  if (!G || $("game-screen").style.display !== "block" || e.target.tagName === "INPUT") return;
+  const btns = $("answers").querySelectorAll(".answer-btn");
+  const n = parseInt(e.key, 10);
+  if (!G.answered && n >= 1 && n <= btns.length) btns[n - 1].click();
+});
+// Pause the song when George switches away, and carry on when he's back.
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) audio.pause();
+  else if (G && G.track && !G.answered && $("game-screen").style.display === "block") audio.play().catch(() => {});
+});
+
+function quitToStart(msg) {
+  clearInterval(tick);
+  audio.pause();
+  if (window.GZWake) GZWake.off();
+  $("game-screen").style.display = "none";
+  $("start-screen").style.display = "block";
+  $("clip-status").textContent = msg || "";
+}
+
+/* ---------- The end ---------- */
+function endGame() {
+  clearInterval(tick);
+  audio.pause();
+  if (window.GZWake) GZWake.off();
+  $("game-screen").style.display = "none";
+  $("results-screen").style.display = "block";
+  $("final-score").textContent = G.score;
+  $("results-sub").textContent = `${MODES[G.mode].name} · ${G.right} of ${G.recap.length} songs right${G.best >= 3 ? ` · best run ${G.best} 🔥` : ""}`;
+  const s = readSave();
+  const newBest = G.score > (s[G.mode] || 0);
+  if (newBest) { s[G.mode] = G.score; writeSave(s); }
+  const nick = GZ.randomNickname();
+  $("results-message").textContent =
+    G.right === G.recap.length ? `A perfect set, ${nick}! You're a proper rock legend! 🎸🏆`
+    : G.right >= 7 ? `Brilliant ears, ${nick}! ${newBest ? "That's a new best! " : ""}🤘`
+    : G.right >= 4 ? `Nice one, ${nick}! ${newBest ? "New best score! " : ""}Have another go.`
+    : `Keep listening, ${nick}! These riffs get stuck in your head. 🎧`;
+  $("recap").innerHTML = G.recap.map((r) => `<li>
+      ${r.cover ? `<img src="${esc(r.cover)}" alt="" loading="lazy">` : '<span class="noimg"></span>'}
+      <span class="t"><b>${esc(r.song.title)}</b><small>${esc(r.song.artist)}</small></span>
+      <span class="p">${r.right ? `✅ +${r.pts}` : "❌"}</span></li>`).join("");
+  $("player-name").value = "";
+  const { newBadges } = GZ.recordResult(GAME_ID, G.right, G.recap.length);
+  GZ.announceBadges(newBadges);
+  $("share-btn").hidden = !(window.GZShare && (navigator.share || navigator.clipboard));
+  renderLeaderboard();
+}
+
+$("play-again-btn").addEventListener("click", () => {
+  $("results-screen").style.display = "none";
+  $("start-screen").style.display = "block";
+  $("start-greeting").textContent = `Go again, ${GZ.randomNickname()}? 🤘`;
+  showBest();
+});
+$("share-btn").addEventListener("click", async () => {
+  const how = await window.GZShare(`🎸 I scored ${G.score} on Name That Riff (${G.right} of ${G.recap.length} songs right)! Can you beat it?`);
+  if (how === "copied") $("share-btn").textContent = "✅ Copied!";
+});
+$("name-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = $("player-name").value.trim();
+  if (!name) return;
+  $("save-note").textContent = "Saving…";
+  const ok = await saveScore(name, G.score);
+  $("save-note").textContent = ok ? "✅ Score saved!" : "Couldn't save the score this time. Your best is still saved on this device.";
+  if (ok) $("name-form").style.display = "none";
+  renderLeaderboard();
+});
+
+/* ---------- Online top scores (Supabase) ---------- */
+async function getLeaderboard() {
+  try {
+    const url = `${SUPABASE_URL}/rest/v1/leaderboard?game=eq.${GAME_ID}&select=player_name,score&order=score.desc&limit=${LEADERBOARD_SIZE}`;
+    const res = await fetch(url, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } });
+    if (!res.ok) return null;
+    return (await res.json()).map((r) => ({ name: r.player_name, points: r.score }));
+  } catch (e) { return null; }
+}
+async function saveScore(name, points) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/leaderboard`, {
+      method: "POST",
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ game: GAME_ID, player_name: name, score: points }),
+    });
+    return res.ok;
+  } catch (e) { return false; }
+}
+async function renderLeaderboard() {
+  const body = document.querySelector("#leaderboard tbody");
+  body.innerHTML = "<tr><td colspan='3'>Loading top scores...</td></tr>";
+  const board = await getLeaderboard();
+  if (!board) { body.innerHTML = "<tr><td colspan='3'>Couldn't load the top scores right now.</td></tr>"; return; }
+  if (!board.length) { body.innerHTML = "<tr><td colspan='3'>No scores yet. Be the first!</td></tr>"; return; }
+  body.innerHTML = "<tr><th>#</th><th>Name</th><th>Score</th></tr>" +
+    board.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.name)}</td><td>${r.points}</td></tr>`).join("");
+}
+</script>
+</body>
+</html>
