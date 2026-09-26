@@ -11,6 +11,9 @@
 --      published on GitHub with the rest of the site.
 --   4. Click Run. It is safe to run again later (for example to change
 --      the PIN), nothing gets deleted.
+--
+-- To change ONLY the PIN later, run just this one line (with your new PIN):
+--   update public.site_secrets set pin_hash = extensions.crypt('your-new-pin', extensions.gen_salt('bf')) where name = 'predictions';
 -- =====================================================================
 
 -- Needed for crypt() / gen_salt(). Supabase keeps it in the "extensions" schema.
@@ -55,7 +58,7 @@ alter table public.site_secrets enable row level security;
 -- No policies at all = the website can never read this table.
 
 insert into public.site_secrets (name, pin_hash)
-values ('predictions', extensions.crypt('999999', extensions.gen_salt('bf')))
+values ('predictions', extensions.crypt('CHANGE-ME-TO-A-SECRET', extensions.gen_salt('bf')))
 on conflict (name) do update set pin_hash = excluded.pin_hash;
 
 -- ---------------------------------------------------------------------
