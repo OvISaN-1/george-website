@@ -17,7 +17,8 @@
     try { sessionStorage.setItem(OPEN_KEY, "1"); } catch (e) {}
     $("gate").hidden = true;
     $("report").hidden = false;
-    render();
+    // Wait until the rest of this file has loaded (the gate can open straight away).
+    setTimeout(render, 0);
   }
   (function gate() {
     let ok = false;
@@ -185,6 +186,28 @@
     return out;
   }
 
+  // Results from the SATs practice page (sats.html).
+  function satsSection() {
+    const saved = read('gz_sats_v1', {}).topics || {};
+    const M = window.SATS_MATHS, E = window.SATS_ENGLISH;
+    if (!M || !E) return '';
+    const groups = [['Maths', M.topics], ['Grammar, punctuation & spelling', E.gps], ['Reading', E.reading]];
+    const tried = Object.keys(saved).length;
+    const rows = groups.map(([label, topics]) => {
+      const list = topics.map((t) => Object.assign({ s: saved[t.id] }, t)).sort((a, b) => (a.s ? a.s.right / a.s.total : 2) - (b.s ? b.s.right / b.s.total : 2));
+      return `<h3 style="font-size:17px;margin:16px 0 4px">${esc(label)}</h3><div class="rows">${list.map((t) => {
+        if (!t.s) return `<div class="row"><div class="name">${t.emoji} ${esc(t.name)}<small>Not tried yet</small></div><div class="viz"></div><span class="chip none">… Not tried</span></div>`;
+        const p = pct(t.s.right, t.s.total), st = status(t.s.total, p);
+        return `<div class="row"><div class="name">${t.emoji} ${esc(t.name)}<small>${t.s.total} answers · ${t.s.plays} round${t.s.plays === 1 ? '' : 's'} · best ${t.s.best}/${t.s.bestOf}</small></div><div class="viz"><div class="bar" title="${t.s.right} of ${t.s.total} right"><i style="width:${p}%"></i><b>${p}%</b></div></div><span class="chip ${st.cls}">${st.text}</span></div>`;
+      }).join('')}</div>`;
+    }).join('');
+    return `<section class="card">
+        <h2>SATs practice</h2>
+        <p class="lede">From the SATs practice page in the School Zone. ${tried ? `${tried} topic${tried === 1 ? '' : 's'} tried so far; the ones to work on come first.` : 'Nothing tried yet: it\'s in School Zone → SATs practice.'}</p>
+        ${rows}
+      </section>`;
+  }
+
   function render() {
     const A = analyse();
     const el = $("report");
@@ -265,10 +288,11 @@
         <div class="scale"><span>Fewer right</span><i style="background:${heat(20, 9)}"></i><i style="background:${heat(50, 9)}"></i><i style="background:${heat(80, 9)}"></i><i style="background:${heat(100, 9)}"></i><span>More right</span><span style="margin-left:auto">– = fewer than 3 goes</span></div>
       </section>
       <section class="card">
-        <h2>SATs maths topics</h2>
+        <h2>SATs maths in Matchday</h2>
         <p class="lede">Year 6 arithmetic from the SATs maths subject, split by topic.</p>
         ${satsRows ? `<div class="rows">${satsRows}</div>` : `<p class="empty">No SATs maths answers yet. Make sure "SATs maths" is ticked on the Matchday menu.</p>`}
       </section>
+      ${satsSection()}
       <section class="card">
         <h2>The last two weeks</h2>
         <p class="lede">Answers each day. Hover or tap a day for the numbers.</p>

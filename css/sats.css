@@ -1,0 +1,85 @@
+/* SATs practice page (sats.html). Uses the site's tokens from shell.css. */
+.crumb { color: inherit; text-decoration: none; }
+.crumb:hover { text-decoration: underline; }
+
+.sats-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s3); margin-bottom: var(--s5); }
+.sats-summary div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--s3) var(--s4); }
+.sats-summary b { display: block; font-family: var(--font-display); font-size: 1.7rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.sats-summary span { font-size: 0.8rem; color: var(--chalk-dim); }
+@media (max-width: 640px) { .sats-summary { grid-template-columns: repeat(2, 1fr); } }
+
+.sats-tabs { display: flex; gap: var(--s2); flex-wrap: wrap; margin-bottom: var(--s5); }
+.sats-tab { font-family: var(--font-display); font-weight: 700; font-size: 1rem; min-height: 44px; padding: 8px 16px; border-radius: var(--r-pill);
+  background: var(--surface); color: var(--chalk-dim); border: 1px solid var(--line-strong); cursor: pointer; }
+.sats-tab[aria-selected="true"] { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+.sats-tab:focus-visible { outline: 2px solid var(--chalk); outline-offset: 3px; }
+
+.sats-mixed { display: flex; justify-content: space-between; align-items: center; gap: var(--s4); flex-wrap: wrap;
+  background: linear-gradient(135deg, rgba(245,185,66,0.14), rgba(245,185,66,0.03)); border: 1px solid rgba(245,185,66,0.35);
+  border-radius: var(--r-lg); padding: var(--s4) var(--s5); margin-bottom: var(--s5); }
+.sats-mixed h2 { font-size: 1.3rem; margin: 0; }
+.sats-mixed p, .sats-intro { margin: 4px 0 0; color: var(--chalk-dim); }
+.sats-intro { margin: 0 0 var(--s5); }
+.sats-h2 { font-size: 1.2rem; margin: 0 0 var(--s3); }
+
+.sats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--s3); }
+@media (max-width: 480px) { .sats-grid { grid-template-columns: 1fr 1fr; } .sats-topic { padding: var(--s3); } .sats-name { font-size: 1rem; } }
+#sats-quiz, .sats-feedback { scroll-margin-top: 90px; }
+.sats-topic { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; cursor: pointer;
+  background: var(--surface); color: var(--chalk); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s4);
+  font-family: var(--font-body); transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
+.sats-topic:hover, .sats-topic:focus-visible { border-color: var(--gold); box-shadow: var(--glow-gold); transform: translateY(-2px); outline: none; }
+.sats-emoji { font-size: 1.8rem; line-height: 1; }
+.sats-name { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; }
+.sats-sub { font-size: 0.8rem; color: var(--chalk-faint); }
+.sats-best { font-size: 0.85rem; color: var(--gold); margin-top: 4px; }
+
+.sats-q-head { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin-bottom: var(--s3); }
+.sats-back { background: none; border: 1px solid var(--line-strong); color: var(--chalk); border-radius: var(--r-pill); min-height: 40px; padding: 0 14px; cursor: pointer; font-family: var(--font-display); font-weight: 700; }
+.sats-back:hover, .sats-back:focus-visible { border-color: var(--gold); color: var(--gold); }
+.sats-q-topic { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; margin: 0; }
+.sats-q-count { margin-left: auto; font-size: 0.85rem; color: var(--chalk-dim); font-variant-numeric: tabular-nums; }
+.sats-bar { height: 6px; background: var(--surface-raised); border-radius: 3px; overflow: hidden; margin-bottom: var(--s4); }
+.sats-bar span { display: block; height: 100%; background: var(--gold); transition: width .3s ease; }
+
+.sats-passage { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s3) var(--s4); margin-bottom: var(--s4); }
+.sats-passage summary { cursor: pointer; font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; }
+.sats-passage summary small { font-family: var(--font-body); font-weight: 500; color: var(--chalk-faint); font-size: 0.8rem; }
+.sats-passage p { margin: var(--s3) 0 0; line-height: 1.7; color: var(--chalk); }
+
+.sats-card { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-lg); padding: var(--s5); }
+.sats-question { font-size: 1.2rem; font-weight: 600; line-height: 1.45; margin: 0 0 var(--s4); color: var(--chalk); }
+.sats-question u { text-decoration-thickness: 2px; text-underline-offset: 3px; text-decoration-color: var(--gold); }
+
+.sats-answer { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
+.sats-answer input { font: 700 1.4rem var(--font-display); width: 11ch; min-height: 50px; padding: 0 12px; border-radius: var(--r-md);
+  background: var(--ink); color: var(--chalk); border: 2px solid var(--line-strong); }
+.sats-answer input:focus { outline: none; border-color: var(--gold); }
+.sats-unit { font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; color: var(--chalk-dim); }
+
+.sats-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--s2); }
+.sats-opt { display: flex; align-items: center; gap: 10px; text-align: left; min-height: 52px; padding: 10px 14px; border-radius: var(--r-md); cursor: pointer;
+  background: var(--surface-raised); color: var(--chalk); border: 2px solid var(--line-strong); font: 600 1rem var(--font-body); }
+.sats-opt:hover:not(:disabled), .sats-opt:focus-visible { border-color: var(--gold); outline: none; }
+.sats-opt kbd { font: 700 0.8rem var(--font-display); background: var(--ink); border: 1px solid var(--line-strong); border-radius: 6px; padding: 2px 7px; color: var(--chalk-dim); }
+.sats-opt.right { border-color: #3DCC7C; background: rgba(61,204,124,0.15); }
+.sats-opt.wrong { border-color: #FF5D5D; background: rgba(255,93,93,0.15); }
+.sats-opt:disabled { cursor: default; }
+
+.sats-feedback:empty { display: none; }
+.sats-feedback { margin-top: var(--s4); padding-top: var(--s4); border-top: 1px solid var(--line); }
+.sats-verdict { font-weight: 700; margin: 0 0 var(--s2); }
+.sats-verdict.ok { color: #3DCC7C; }
+.sats-verdict.no { color: #FF7a7a; }
+.sats-explain { color: var(--chalk-dim); line-height: 1.6; margin: 0 0 var(--s4); }
+
+.sats-end { text-align: center; margin-bottom: var(--s5); }
+.sats-score { font-family: var(--font-display); font-size: 1.6rem; margin: var(--s2) 0; color: var(--chalk-dim); }
+.sats-score b { font-size: 3.6rem; color: var(--gold); }
+.sats-end-actions { display: flex; gap: var(--s3); justify-content: center; flex-wrap: wrap; margin-top: var(--s4); }
+.sats-review { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--s3); }
+.sats-review li { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s4); }
+.sats-review .sats-question { font-size: 1rem; margin-bottom: var(--s2); }
+.sats-yours { margin: 0 0 4px; color: #FF7a7a; }
+.sats-review .sats-explain { margin: 0; }
+@media (prefers-reduced-motion: reduce) { .sats-topic, .sats-bar span { transition: none; } }

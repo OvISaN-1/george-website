@@ -423,3 +423,7 @@ details.predict-toggle[open] summary{ margin-bottom: var(--s3); }
 .fx-chip.W { background: #3DCC7C; } .fx-chip.D { background: #c9c3bd; } .fx-chip.L { background: #FF5D5D; }
 .fx-live { color: #FF5D5D; }
 .match-live { margin: 6px 0 0; color: #FF5D5D; }
+
+/* School Zone: links into SATs practice */
+.sats-link { text-decoration: none; color: var(--chalk); }
+.sats-link-emoji { font-size: 2rem; line-height: 1; }
