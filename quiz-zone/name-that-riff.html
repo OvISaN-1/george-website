@@ -290,7 +290,7 @@
   <h2>Hear the riff. Name the song. 🎸</h2>
   <p>A famous rock song starts playing. Pick the right song before the timer runs out. The faster you answer, the more points you get, and a run of right answers earns a bonus.</p>
   <div class="rules">
-    <div class="rule"><div class="emoji">🎧</div><div class="label">10 songs<br>a game</div></div>
+    <div class="rule"><div class="emoji">🎧</div><div class="label">10 songs a game,<br>from over 200</div></div>
     <div class="rule"><div class="emoji">⚡</div><div class="label">Faster answer<br>= more points</div></div>
     <div class="rule"><div class="emoji">🔥</div><div class="label">Streak<br>bonus</div></div>
   </div>
@@ -358,30 +358,9 @@
    Song clips come from /api/track (worker/more.js), which only plays
    songs on its own list. The ids here must match that list.
    ================================================================ */
-const SONGS = [
-  ["thunderstruck", "Thunderstruck", "AC/DC"], ["backinblack", "Back In Black", "AC/DC"],
-  ["highway", "Highway to Hell", "AC/DC"], ["tnt", "T.N.T.", "AC/DC"],
-  ["rockyou", "We Will Rock You", "Queen"], ["champions", "We Are The Champions", "Queen"],
-  ["dontstop", "Don't Stop Me Now", "Queen"], ["bitesdust", "Another One Bites The Dust", "Queen"],
-  ["breakfree", "I Want To Break Free", "Queen"], ["radiogaga", "Radio Ga Ga", "Queen"],
-  ["smoke", "Smoke on the Water", "Deep Purple"], ["tiger", "Eye of the Tiger", "Survivor"],
-  ["countdown", "The Final Countdown", "Europe"], ["prayer", "Livin' On A Prayer", "Bon Jovi"],
-  ["mylife", "It's My Life", "Bon Jovi"], ["sweetchild", "Sweet Child O' Mine", "Guns N' Roses"],
-  ["paradise", "Paradise City", "Guns N' Roses"], ["sevennation", "Seven Nation Army", "The White Stripes"],
-  ["wonderwall", "Wonderwall", "Oasis"], ["lookback", "Don't Look Back In Anger", "Oasis"],
-  ["rockinall", "Rockin' All Over The World", "Status Quo"], ["believin", "Don't Stop Believin'", "Journey"],
-  ["rocknroll", "Rock And Roll All Nite", "KISS"], ["nottake", "We're Not Gonna Take It", "Twisted Sister"],
-  ["learnfly", "Learn To Fly", "Foo Fighters"], ["pretender", "The Pretender", "Foo Fighters"],
-  ["reallygot", "You Really Got Me", "The Kinks"], ["immigrant", "Immigrant Song", "Led Zeppelin"],
-  ["ironman", "Iron Man", "Black Sabbath"], ["uprising", "Uprising", "Muse"],
-  ["song2", "Song 2", "Blur"], ["thingcalled", "I Believe In A Thing Called Love", "The Darkness"],
-  ["jump", "Jump", "Van Halen"], ["sharp", "Sharp Dressed Man", "ZZ Top"],
-  ["summer69", "Summer Of '69", "Bryan Adams"], ["takemeout", "Take Me Out", "Franz Ferdinand"],
-  ["miles500", "I'm Gonna Be (500 Miles)", "The Proclaimers"], ["babaoriley", "Baba O'Riley", "The Who"],
-  ["believer", "Believer", "Imagine Dragons"], ["thunder", "Thunder", "Imagine Dragons"],
-  ["ruby", "Ruby", "Kaiser Chiefs"], ["dreamon", "Dream On", "Aerosmith"],
-  ["mrblue", "Mr. Blue Sky", "Electric Light Orchestra"],
-].map(([id, title, artist]) => ({ id, title, artist }));
+// The songs come from the site's Worker (worker/more.js, /api/songs), so
+// there's only one list to keep up to date.
+let SONGS = [];
 
 /* ================= SUPABASE CONFIG (same as the other games) ================= */
 const SUPABASE_URL = "https://hucnucpfyjltlhmvprso.supabase.co";
@@ -425,8 +404,12 @@ showBest();
 const modeButtons = document.querySelectorAll(".mode-btn");
 modeButtons.forEach((b) => { b.disabled = true; b.addEventListener("click", () => startGame(b.dataset.mode)); });
 $("clip-status").textContent = "Tuning the guitars…";
-// Try a few songs, in case one of them is missing.
+// Get the song list, then try a few songs, in case one of them is missing.
 (async () => {
+  const res = await fetch(window.apiUrl ? window.apiUrl("songs") : "/api/songs");
+  const data = await res.json();
+  SONGS = (data && data.songs || []).filter((s) => s.id && s.title && s.artist);
+  if (SONGS.length < 20) return false;
   for (const s of shuffle(SONGS).slice(0, 3)) { if (await getTrack(s.id)) return true; }
   return false;
 })().then((ok) => {
