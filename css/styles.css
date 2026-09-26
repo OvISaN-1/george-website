@@ -401,3 +401,25 @@ details.predict-toggle[open] summary{ margin-bottom: var(--s3); }
   .player-card { flex: none; width: 70%; max-width: 240px; align-self: center; }
 }
 @media (prefers-reduced-motion: reduce){ .player-card img { transform: none; transition: none; } }
+
+/* Football: live table, fixtures and results */
+.muted { color: var(--chalk-faint); }
+.mini-table { width: 100%; margin-top: var(--s4); border-collapse: collapse; font-size: 0.9rem; }
+.mini-table th, .mini-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--line); }
+.mini-table th { font-size: 0.75rem; color: var(--chalk-faint); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+.mini-table td:nth-child(n+3), .mini-table th:nth-child(n+3) { text-align: right; font-variant-numeric: tabular-nums; }
+.mini-table tr.us td { background: rgba(225,16,44,0.14); color: var(--chalk); font-weight: 700; }
+.fx-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--s4); }
+.fx-col { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s4) var(--s5); }
+.fx-col h3 { font-size: 1rem; margin-bottom: var(--s3); }
+.fx-list { list-style: none; margin: 0; padding: 0; }
+.fx-list li { display: grid; grid-template-columns: 5.8em 1fr auto; gap: var(--s3); align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.fx-list li:last-child { border-bottom: none; }
+.fx-date { font-size: 0.8rem; color: var(--chalk-faint); }
+.fx-team small { color: var(--chalk-faint); }
+.fx-right { display: inline-flex; gap: 8px; align-items: center; font-variant-numeric: tabular-nums; }
+.fx-score { font-weight: 700; }
+.fx-chip { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; color: #121014; }
+.fx-chip.W { background: #3DCC7C; } .fx-chip.D { background: #c9c3bd; } .fx-chip.L { background: #FF5D5D; }
+.fx-live { color: #FF5D5D; }
+.match-live { margin: 6px 0 0; color: #FF5D5D; }

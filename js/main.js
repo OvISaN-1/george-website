@@ -217,11 +217,7 @@ function renderFootball(C) {
   if (F.fanStory) setText('fan-story', F.fanStory);
   else if ($('fan-story-wrap')) $('fan-story-wrap').hidden = true;
 
-  if (F.league) {
-    setText('league-line',
-      `Current league position: ${F.league.position} in the Premier League (${F.league.played} played, ${F.league.points} points)`);
-    setText('league-asof', `Table as of ${F.league.asOf}`);
-  }
+  setText('league-line', 'Loading the live table...');
 
   renderCards('players-grid', F.players, 'football');
 
@@ -235,8 +231,119 @@ function renderFootball(C) {
     if (strip && F.myTeam.goals == null && F.myTeam.appearances == null) strip.hidden = true;
   }
 
-  const fixtures = (F.fixtures || []).slice().sort((a, b) => kickoffOf(a) - kickoffOf(b));
-  initPredictions(fixtures);
+  // Live data from worker/index.js. If it can't be reached, the fixture
+  // list in content.js keeps the next match and predictions working.
+  loadLive().then((live) => {
+    renderLeague(live);
+    renderFixtures(live);
+    FIXTURES = ((live && live.matches) || F.fixtures || []).slice().sort((a, b) => kickoffOf(a) - kickoffOf(b));
+    initPredictions(FIXTURES);
+  });
+}
+
+/* ---- Live Forest data (league, fixtures, results, top scorers) ------------ */
+let FIXTURES = [];
+
+async function loadLive() {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const res = await fetch('/api/forest', { signal: ctrl.signal });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data && data.league ? data : null;
+  } catch (e) {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function ordinal(n) {
+  const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+const isLive = (f) => f.status === 'IN_PLAY' || f.status === 'PAUSED';
+const isFinished = (f) => f.status === 'FINISHED';
+
+function renderLeague(live) {
+  const scorerEl = $('top-scorer');
+  const tableEl = $('mini-table');
+  if (!live) {
+    setText('league-line', 'The live Premier League table isn\'t available right now. Try again later.');
+    setText('league-asof', '');
+    if (scorerEl) scorerEl.hidden = true;
+    if (tableEl) tableEl.hidden = true;
+    return;
+  }
+  const L = live.league;
+  setText('league-line', `${ordinal(L.position)} in the Premier League · ${L.played} played · ${L.points} point${L.points === 1 ? '' : 's'}`);
+  const t = new Date(live.updated);
+  setText('league-asof', `Live table · updated ${t.toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}`);
+
+  if (scorerEl) {
+    const top = live.scorers && live.scorers[0];
+    scorerEl.hidden = !top;
+    if (top) {
+      scorerEl.innerHTML = `<b>Top scorer:</b> ${escapeHtml(top.name)}, ${top.goals} goal${top.goals === 1 ? '' : 's'}` +
+        (live.scorers.length > 1 ? ` <span class="muted">(then ${live.scorers.slice(1, 3).map((s) => `${escapeHtml(s.name)} ${s.goals}`).join(', ')})</span>` : '');
+    }
+  }
+
+  if (tableEl && L.table && L.table.length) {
+    const i = L.table.findIndex((r) => r.forest);
+    const from = Math.max(0, Math.min(i - 2, L.table.length - 5));
+    const rows = L.table.slice(from, from + 5);
+    tableEl.hidden = false;
+    tableEl.innerHTML = `
+      <table class="mini-table">
+        <caption class="visually-hidden">Premier League table around Forest</caption>
+        <thead><tr><th scope="col">Pos</th><th scope="col">Team</th><th scope="col">P</th><th scope="col">GD</th><th scope="col">Pts</th></tr></thead>
+        <tbody>${rows.map((r) => `<tr${r.forest ? ' class="us"' : ''}><td>${r.position}</td><td>${escapeHtml(r.forest ? 'Nottingham Forest' : r.team)}</td><td>${r.played}</td><td>${r.goalDifference > 0 ? '+' : ''}${r.goalDifference}</td><td><b>${r.points}</b></td></tr>`).join('')}</tbody>
+      </table>`;
+  }
+}
+
+function renderFixtures(live) {
+  const el = $('fixtures-results');
+  if (!el) return;
+  const section = el.closest('section');
+  if (!live) { if (section) section.hidden = true; return; }
+  const all = live.matches || [];
+  const done = all.filter(isFinished).slice(-5).reverse();
+  const next = all.filter((f) => !isFinished(f)).slice(0, 5);
+  const when = (f) => kickoffOf(f).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+  const res = (f) => outcome(f.forest, f.opp);
+  el.innerHTML = `
+    <div class="fx-col">
+      <h3>Coming up</h3>
+      ${next.length ? `<ul class="fx-list">${next.map((f) => `<li>
+        <span class="fx-date">${escapeHtml(when(f))}</span>
+        <span class="fx-team">${escapeHtml(f.opponent)} <small>(${f.venue})</small></span>
+        <span class="fx-right">${isLive(f) ? `<b class="fx-live">LIVE ${f.forest ?? 0}-${f.opp ?? 0}</b>` : escapeHtml(f.time)}</span>
+      </li>`).join('')}</ul>` : '<p>No more fixtures this season.</p>'}
+    </div>
+    <div class="fx-col">
+      <h3>Recent results</h3>
+      ${done.length ? `<ul class="fx-list">${done.map((f) => `<li>
+        <span class="fx-date">${escapeHtml(when(f))}</span>
+        <span class="fx-team">${escapeHtml(f.opponent)} <small>(${f.venue})</small></span>
+        <span class="fx-right"><span class="fx-score">${f.forest}-${f.opp}</span><span class="fx-chip ${res(f)}" aria-label="${res(f) === 'W' ? 'Won' : res(f) === 'L' ? 'Lost' : 'Drew'}">${res(f)}</span></span>
+      </li>`).join('')}</ul>` : '<p>No results yet this season.</p>'}
+    </div>`;
+}
+
+// A saved prediction for this match. Older rows may use a slightly different
+// club name in their key, so fall back to the match date.
+function predFor(preds, f) {
+  if (!preds) return undefined;
+  return preds[matchKey(f)] || Object.values(preds).find((p) => p.match_date === f.date);
+}
+// The final score: the live feed first, a score saved by hand as a backup.
+function withResult(p, f) {
+  if (!p) return p;
+  if (isFinished(f) && f.forest != null) return Object.assign({}, p, { result_forest: f.forest, result_opponent: f.opp });
+  return p;
 }
 
 async function initPredictions(fixtures) {
@@ -289,15 +396,14 @@ function pinFields(prefix) {
 
 function renderNextMatch(el, f, preds) {
   if (!f) {
-    el.innerHTML = `<p class="prediction-line">No more fixtures in the list. Add next season's to js/content.js.</p>`;
+    el.innerHTML = `<p class="prediction-line">No more Forest fixtures this season. See you in August!</p>`;
     return;
   }
   const ko = kickoffOf(f);
   const cd = countdownParts(ko);
   const dateText = ko.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
   const timeText = ko.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-  const key = matchKey(f);
-  const p = preds && preds[key];
+  const p = predFor(preds, f);
   const started = ko.getTime() <= Date.now();
 
   let predictionHtml;
@@ -310,6 +416,7 @@ function renderNextMatch(el, f, preds) {
     <div>
       <p class="match-teams">${escapeHtml(teamsText(f))}</p>
       <p class="match-meta">${escapeHtml(dateText)} · ${escapeHtml(timeText)} · ${escapeHtml(venueText(f))}</p>
+      ${isLive(f) ? `<p class="match-live">🔴 LIVE: <strong>${escapeHtml(scoreLine(f, f.forest ?? 0, f.opp ?? 0))}</strong></p>` : ''}
     </div>
     <div class="countdown" aria-label="${escapeAttr(cd.big + ' ' + cd.small)}">
       <span class="big">${escapeHtml(cd.big)}</span><span class="small">${escapeHtml(cd.small)}</span>
@@ -361,8 +468,7 @@ async function submitPrediction(f, kind, forest, opp, prefix) {
     storageSet(PIN_KEY, remember ? pin : null);
     status.className = 'form-status ok';
     status.textContent = 'Saved!';
-    setTimeout(() => initPredictions(((window.SITE || {}).football || {}).fixtures
-      ? window.SITE.football.fixtures.slice().sort((a, b) => kickoffOf(a) - kickoffOf(b)) : []), 600);
+    setTimeout(() => initPredictions(FIXTURES), 600);
   } catch (err) {
     status.className = 'form-status err';
     status.textContent = friendlyError(err);
@@ -375,8 +481,8 @@ function renderTracker(el, fixtures, past, preds) {
     return;
   }
   const rows = fixtures
-    .map((f) => ({ f, p: preds[matchKey(f)] }))
-    .filter(({ f, p }) => p && (p.pred_forest != null || p.result_forest != null) && kickoffOf(f).getTime() <= Date.now());
+    .map((f) => ({ f, p: withResult(predFor(preds, f), f) }))
+    .filter(({ f, p }) => p && p.pred_forest != null && kickoffOf(f).getTime() <= Date.now());
 
   let total = 0, scored = 0, rightResult = 0, exact = 0;
   rows.forEach(({ p }) => {
@@ -398,17 +504,9 @@ function renderTracker(el, fixtures, past, preds) {
       <td>${escapeHtml(d)}</td>
       <td>${escapeHtml(f.opponent)} (${f.venue === 'H' ? 'H' : 'A'})</td>
       <td class="mono-num">${p.pred_forest != null ? `${p.pred_forest}-${p.pred_opponent}` : '–'}</td>
-      <td class="mono-num">${p.result_forest != null ? `${p.result_forest}-${p.result_opponent}` : 'waiting'}</td>
+      <td class="mono-num">${p.result_forest != null ? `${p.result_forest}-${p.result_opponent}` : (isLive(f) ? 'playing' : 'waiting')}</td>
       <td class="mono-num ${pts == null ? '' : 'pts-' + pts}">${pts == null ? '–' : pts}</td>
     </tr>`;
-  }).join('');
-
-  // Result entry: any finished match, newest first.
-  const options = past.slice().reverse().map((f) => {
-    const p = preds[matchKey(f)];
-    const done = p && p.result_forest != null ? ' ✓' : '';
-    const d = kickoffOf(f).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-    return `<option value="${escapeAttr(matchKey(f))}">${escapeHtml(`${d} ${f.opponent} (${f.venue})${done}`)}</option>`;
   }).join('');
 
   el.innerHTML = `
@@ -421,35 +519,8 @@ function renderTracker(el, fixtures, past, preds) {
         <tbody>${tableRows}</tbody>
       </table>
     </div>` : ''}
-    <p style="margin-top:var(--s4); font-size:0.9rem;">3 points for the exact score, 1 point for the right result (win, draw or loss).</p>
-    ${options ? `
-    <details class="predict-toggle">
-      <summary>Add a final score (for Dad)</summary>
-      <form class="predict-form" id="result-form">
-        <label>Match
-          <select id="rf-match">${options}</select>
-        </label>
-        <label>Forest
-          <input type="number" id="rf-forest" min="0" max="20" inputmode="numeric" required>
-        </label>
-        <label>Them
-          <input type="number" id="rf-opp" min="0" max="20" inputmode="numeric" required>
-        </label>
-        ${pinFields('rf')}
-        <button class="btn btn-primary" type="submit">Save result</button>
-        <p class="form-status" id="rf-status" role="status"></p>
-      </form>
-    </details>` : ''}
+    <p style="margin-top:var(--s4); font-size:0.9rem;">3 points for the exact score, 1 point for the right result (win, draw or loss). Final scores fill in by themselves.</p>
   `;
-
-  const form = $('result-form');
-  if (form) {
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const f = fixtures.find((x) => matchKey(x) === $('rf-match').value);
-      if (f) submitPrediction(f, 'result', +$('rf-forest').value, +$('rf-opp').value, 'rf');
-    });
-  }
 }
 
 /* =====================================================================
