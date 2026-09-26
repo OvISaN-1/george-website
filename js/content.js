@@ -24,6 +24,9 @@ window.SITE = {
       'My best Football Frenzy score keeps going up every week.',
       'I once played a whole FC 26 season as Forest without losing at home.',
       'Forest were European champions twice, in 1979 and 1980. I know every detail.',
+      'My favourite band is AC/DC.',
+      'Golden Retrievers are the best dogs in the world. Kind, chill and always happy.',
+      'If I could invent anything, it would be a ball made for halfway line goals.',
     ],
   },
 
@@ -31,12 +34,15 @@ window.SITE = {
   football: {
     matchdayCaption: 'Matchday with Forest.',
 
+    // How George became a Forest fan, in his own words.
+    fanStory: 'I started supporting Forest in September 2024, when they beat Liverpool 1-0 at Anfield. Callum Hudson-Odoi scored the winner, and Liverpool went on to win the league that season. I have been Forest ever since.',
+
     // Update this by hand once a week or so.
     league: {
       position: '13th',
       played: 5,
       points: 5,
-      asOf: '20 September 2026',
+      asOf: '26 September 2026',
     },
 
     // Favourite player cards. Leave "photo" out to show a plain card.
@@ -66,10 +72,10 @@ window.SITE = {
     ],
 
     myTeam: {
-      name: 'Riverside Rangers U11s',
-      position: 'Striker',
-      goals: 6,
-      appearances: 5,
+      name: 'Thamesmead Rangers U11 FC',
+      position: 'Striker (and goalie when I play with my dad)',
+      // George's own words. Shown instead of goal numbers.
+      quote: 'I\'m not always the one scoring, but I\'m always in the game.',
     },
 
     // Premier League fixtures 2026/27. The "Next match" box and the
@@ -158,29 +164,31 @@ window.SITE = {
     favouriteReason: 'we play football every week and I am usually one of the fastest.',
     achievements: [
       {
-        title: 'Times Tables Rockstars: Silver Certificate',
-        meta: 'Autumn term',
-        description: 'Photo of the certificate or work sample goes here.',
-        photoAlt: 'Certificate photo',
-      },
-      {
         title: 'Star of the Week',
-        meta: 'Autumn term',
-        description: 'Photo of the certificate or work sample goes here.',
-        photoAlt: 'Certificate photo',
+        meta: 'At school',
+        description: 'Picked as Star of the Week in class.',
+        photoAlt: '⭐ Star of the Week',
       },
     ],
     termGoal: {
-      title: 'Get my times tables gold badge (up to 12x)',
-      // Change this to 0, 1, 2 or 3 as he gets each badge.
-      // 0 = none yet, 1 = bronze, 2 = silver, 3 = gold (goal done!)
-      badgesDone: 2,
-      progressNote: 'Already got bronze and silver, just need one more go under 3 minutes.',
+      title: 'Do well in Year 6 and pass my SATs',
+      // The three steps along the progress bar.
+      steps: [['📚', 'Autumn term'], ['✏️', 'Spring term'], ['🎓', 'SATs in May']],
+      // How many steps are finished: 0, 1, 2 or 3 (3 = goal done!)
+      badgesDone: 0,
+      progressNote: 'Year 6 has just started. I get lots of questions right, and when I get some wrong I learn from them.',
     },
   },
 
   /* ---------- ABOUT ME ---------- */
   about: {
+    // "Things I love" cards. emoji + a short title + a sentence in George's words.
+    loves: [
+      { emoji: '🎸', title: 'Rock music', text: 'AC/DC are my favourite band. Turn it up!' },
+      { emoji: '🐶', title: 'Dogs', text: 'Golden Retrievers are the best breed, because they are kind, chill and always happy.' },
+      { emoji: '🇷🇴', title: 'Romanian food', text: 'Sarmale. Nothing beats them.' },
+      { emoji: '💡', title: 'My invention', text: 'If I could invent anything, it would be a ball made for scoring from the halfway line.' },
+    ],
     funFacts: [
       'I have been to the City Ground four times and we have won three of them.',
       'My favourite Forest player is Morgan Gibbs-White.',
@@ -192,6 +200,10 @@ window.SITE = {
       { q: 'One thing you\'re proud of this year?', a: 'Getting picked to play in a better position for my team.' },
       { q: 'Xbox, PlayStation, or PC?', a: 'Xbox, no contest.' },
       { q: 'Best thing about school?', a: 'PE, and seeing my mates.' },
+      { q: 'Favourite band?', a: 'AC/DC.' },
+      { q: 'Best dog breed?', a: 'Golden Retriever.' },
+      { q: 'Best Romanian food?', a: 'Sarmale.' },
+      { q: 'Club and country?', a: 'Nottingham Forest and England. It\'s coming home!' },
     ],
   },
 };

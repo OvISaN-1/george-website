@@ -75,6 +75,15 @@
       </div>
     </section>
 
+    <!-- Things I love ---------------------------------------------------------- -->
+    <section aria-label="Things I love">
+      <div class="wrap reveal">
+        <div class="section-head"><h2>Things I love</h2></div>
+        <!-- Cards come from js/content.js (about.loves). -->
+        <div class="loves-grid" id="loves"></div>
+      </div>
+    </section>
+
     <!-- Quick-fire Qs ------------------------------------------------------------ -->
     <section aria-label="Quick-fire questions">
       <div class="wrap reveal">
@@ -88,11 +97,10 @@
       <div class="wrap reveal">
         <div class="section-head"><h2>Photos</h2></div>
         <div class="gallery-grid">
-          <!-- EDIT ME: replace each photo-slot div with a real <img> once photos are approved.
-               Example: <img src="assets/images/gallery/photo-1.jpg" alt="[Caption]"> -->
-          <figure class="gallery-item"><div class="photo-slot" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M3 16l5-4.5 4 3.2 3.5-3.7L21 15"/></svg><span>Photo coming soon</span></div><figcaption>[Caption]</figcaption></figure>
-          <figure class="gallery-item"><div class="photo-slot" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M3 16l5-4.5 4 3.2 3.5-3.7L21 15"/></svg><span>Photo coming soon</span></div><figcaption>[Caption]</figcaption></figure>
-          <figure class="gallery-item"><div class="photo-slot" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M3 16l5-4.5 4 3.2 3.5-3.7L21 15"/></svg><span>Photo coming soon</span></div><figcaption>[Caption]</figcaption></figure>
+          <!-- To add a photo: copy a <figure> below and change the image, alt text and caption. -->
+          <figure class="gallery-item"><img src="assets/images/gallery/goalkeeper-gloves.webp" width="1200" height="900" alt="A pair of well-used white and black goalkeeper gloves" loading="lazy"><figcaption>My goalkeeper gloves. Well used!</figcaption></figure>
+          <figure class="gallery-item"><img src="assets/images/gallery/football-boots.webp" width="1200" height="900" alt="A pair of black football boots with white stripes" loading="lazy"><figcaption>My football boots.</figcaption></figure>
+          <figure class="gallery-item"><img src="assets/images/gallery/england-bear.webp" width="1200" height="900" alt="A red England teddy bear with the Three Lions badge" loading="lazy"><figcaption>My England bear. It's coming home! 🦁</figcaption></figure>
         </div>
       </div>
     </section>
@@ -118,18 +126,6 @@
       </div>
     </section>
 
-    <!-- Contact (no data collected) ------------------------------------------------------ -->
-    <section aria-label="Get in touch">
-      <div class="wrap reveal">
-        <div class="section-head"><h2>Say hello</h2>
-          <p>There's no message form on this site on purpose — it's a personal page, not a business, and this way nobody's details get collected or stored anywhere. If you want to get in touch, email instead.</p>
-        </div>
-        <div class="contact-card">
-          <!-- EDIT ME: point this at whichever email address should receive messages. -->
-          <a class="btn btn-ghost" href="mailto:hello@example.com">Email us</a>
-        </div>
-      </div>
-    </section>
   </main>
 
   <footer class="site-footer">

@@ -214,6 +214,8 @@ function friendlyError(err) {
 function renderFootball(C) {
   const F = C.football || {};
   setText('matchday-caption', F.matchdayCaption);
+  if (F.fanStory) setText('fan-story', F.fanStory);
+  else if ($('fan-story-wrap')) $('fan-story-wrap').hidden = true;
 
   if (F.league) {
     setText('league-line',
@@ -227,6 +229,10 @@ function renderFootball(C) {
     setText('my-team-line', `Team: ${F.myTeam.name} · Position: ${F.myTeam.position}`);
     setText('my-goals', F.myTeam.goals);
     setText('my-apps', F.myTeam.appearances);
+    if (F.myTeam.quote) setText('my-team-quote', `“${F.myTeam.quote}”`);
+    // No numbers yet: hide the goals / appearances boxes instead of showing dashes.
+    const strip = document.querySelector('.stat-strip');
+    if (strip && F.myTeam.goals == null && F.myTeam.appearances == null) strip.hidden = true;
   }
 
   const fixtures = (F.fixtures || []).slice().sort((a, b) => kickoffOf(a) - kickoffOf(b));
@@ -478,7 +484,7 @@ function renderSchool(C) {
   const track = $('goal-track');
   if (track) {
     const done = Math.max(0, Math.min(3, Number(g.badgesDone) || 0));
-    const steps = [['🥉', 'Bronze'], ['🥈', 'Silver'], ['🥇', 'Gold']];
+    const steps = g.steps || [['🥉', 'Bronze'], ['🥈', 'Silver'], ['🥇', 'Gold']];
     track.innerHTML = steps.map(([emoji, name], i) => {
       const cls = i < done ? 'done' : i === done ? 'next' : '';
       const state = i < done ? 'got it' : i === done ? 'next up' : 'to come';
@@ -498,6 +504,12 @@ function renderSchool(C) {
 function renderAbout(C) {
   const A = C.about || {};
   renderList('fun-facts', A.funFacts);
+  const loves = $('loves');
+  if (loves && A.loves) {
+    loves.innerHTML = A.loves.map((x) =>
+      `<article class="card love-card"><span class="love-emoji" aria-hidden="true">${escapeHtml(x.emoji)}</span><h3>${escapeHtml(x.title)}</h3><p>${escapeHtml(x.text)}</p></article>`
+    ).join('');
+  }
   const qf = $('quickfire');
   if (qf && A.quickFire) {
     qf.innerHTML = A.quickFire.map((x) =>
