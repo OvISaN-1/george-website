@@ -229,6 +229,10 @@ function renderFootball(C) {
     setText('my-team-line', `Team: ${F.myTeam.name} · Position: ${F.myTeam.position}`);
     setText('my-goals', F.myTeam.goals);
     setText('my-apps', F.myTeam.appearances);
+    if (F.myTeam.quote) setText('my-team-quote', `“${F.myTeam.quote}”`);
+    // No numbers yet: hide the goals / appearances boxes instead of showing dashes.
+    const strip = document.querySelector('.stat-strip');
+    if (strip && F.myTeam.goals == null && F.myTeam.appearances == null) strip.hidden = true;
   }
 
   const fixtures = (F.fixtures || []).slice().sort((a, b) => kickoffOf(a) - kickoffOf(b));

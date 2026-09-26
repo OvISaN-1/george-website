@@ -74,8 +74,8 @@ window.SITE = {
     myTeam: {
       name: 'Riverside Rangers U11s',
       position: 'Striker',
-      goals: 6,
-      appearances: 5,
+      // George's own words. Shown instead of goal numbers.
+      quote: 'I\'m not always the one scoring, but I\'m always in the game.',
     },
 
     // Premier League fixtures 2026/27. The "Next match" box and the
