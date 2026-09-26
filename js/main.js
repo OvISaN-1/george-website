@@ -607,3 +607,30 @@ document.addEventListener('DOMContentLoaded', () => {
   initScrollReveal();
 });
 })();
+
+/* ---- Share and keep-awake (used by the games and SATs practice) ----------
+   GZShare(text): opens the phone's own share menu (WhatsApp, Messages...).
+   On a computer it copies the text instead. Resolves to 'shared',
+   'copied' or 'cancelled'.
+   GZWake.on() / GZWake.off(): stops the screen dimming during a match. */
+window.GZShare = async function (text, url) {
+  const link = url || location.origin + location.pathname;
+  try {
+    if (navigator.share) { await navigator.share({ title: document.title, text, url: link }); return 'shared'; }
+  } catch (e) {
+    if (e && e.name === 'AbortError') return 'cancelled';
+  }
+  try { await navigator.clipboard.writeText(`${text} ${link}`); return 'copied'; } catch (e) { return 'cancelled'; }
+};
+window.GZWake = (function () {
+  let lock = null, wanted = false;
+  async function grab() {
+    try { if (wanted && 'wakeLock' in navigator && !lock) { lock = await navigator.wakeLock.request('screen'); lock.addEventListener('release', () => { lock = null; }); } } catch (e) { lock = null; }
+  }
+  // The browser drops the lock when the tab is hidden; take it back on return.
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') grab(); });
+  return {
+    on() { wanted = true; grab(); },
+    off() { wanted = false; if (lock) { lock.release().catch(() => {}); lock = null; } },
+  };
+})();

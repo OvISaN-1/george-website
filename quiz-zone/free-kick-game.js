@@ -338,6 +338,8 @@
   const SCREENS = ["screen-menu", "screen-season", "screen-locker", "screen-game"];
   function show(id) {
     SCREENS.forEach((s) => { $(s).hidden = s !== id; });
+    // Keep the screen on while taking free kicks.
+    if (window.GZWake) { if (id === "screen-game") GZWake.on(); else GZWake.off(); }
     if (id !== "screen-game") { startRain(false); if (VOICE.supported) speechSynthesis.cancel(); }
     window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
   }

@@ -83,3 +83,14 @@
 .sats-yours { margin: 0 0 4px; color: #FF7a7a; }
 .sats-review .sats-explain { margin: 0; }
 @media (prefers-reduced-motion: reduce) { .sats-topic, .sats-bar span { transition: none; } }
+
+/* Ask the Coach */
+.coach { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin: 0 0 var(--s4); }
+.coach-left { font-size: 0.8rem; color: var(--chalk-faint); }
+.coach-thinking { margin: 0 0 var(--s4); color: var(--gold); animation: coach-pulse 1.2s ease-in-out infinite; }
+@keyframes coach-pulse { 50% { opacity: 0.45; } }
+.coach-answer { width: 100%; background: rgba(157,92,255,0.10); border: 1px solid rgba(157,92,255,0.35); border-radius: var(--r-md); padding: var(--s3) var(--s4); margin: 0 0 var(--s4); }
+.coach-answer p { margin: 0 0 6px; line-height: 1.55; color: var(--chalk); }
+.coach-title { font-family: var(--font-display); font-weight: 700; color: var(--volt-text) !important; }
+.coach-note { font-size: 0.78rem; color: var(--chalk-faint) !important; margin: var(--s2) 0 0 !important; }
+@media (prefers-reduced-motion: reduce) { .coach-thinking { animation: none; } }

@@ -73,3 +73,15 @@
 @media (max-width: 480px) {
   .gz-chart-label { width: 86px; font-size: 11px; }
 }
+
+/* Earned badges catch the light now and then. */
+.gz-badge.earned { position: relative; overflow: hidden; }
+.gz-badge.earned::after {
+  content: ''; position: absolute; inset: -50% auto -50% -60%; width: 40%; pointer-events: none;
+  background: linear-gradient(100deg, transparent, rgba(255, 220, 150, 0.45), transparent);
+  transform: skewX(-18deg); animation: badge-shine 5s ease-in-out infinite;
+}
+.gz-badge.earned:nth-child(3n+2)::after { animation-delay: 1.6s; }
+.gz-badge.earned:nth-child(3n)::after { animation-delay: 3.2s; }
+@keyframes badge-shine { 0%, 70% { left: -60%; } 100% { left: 140%; } }
+@media (prefers-reduced-motion: reduce) { .gz-badge.earned::after { display: none; } }

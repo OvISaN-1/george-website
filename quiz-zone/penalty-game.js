@@ -488,6 +488,7 @@
   }
 
   function startRound() {
+    if (window.GZWake) GZWake.on(); // keep the screen on during the cup
     S.forest = []; S.opp = []; S.retakeUsed = false; S.matchSaves = 0;
     S.roundStart = { goals: S.cup.goals, saves: S.cup.saves, retakes: S.cup.retakes, topBins: S.cup.topBins, maxSaves: S.cup.maxSaves, roundsWon: S.cup.roundsWon };
     const r = ROUNDS[S.round];
@@ -551,6 +552,7 @@
   /* ---------------- Cup end + leaderboard ---------------- */
   function finishCup() {
     S.phase = "idle";
+    if (window.GZWake) GZWake.off();
     const c = S.cup;
     const score = c.goals + c.saves;
     $("screen-game").hidden = true;
