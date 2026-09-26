@@ -94,3 +94,10 @@
 .coach-title { font-family: var(--font-display); font-weight: 700; color: var(--volt-text) !important; }
 .coach-note { font-size: 0.78rem; color: var(--chalk-faint) !important; margin: var(--s2) 0 0 !important; }
 @media (prefers-reduced-motion: reduce) { .coach-thinking { animation: none; } }
+
+/* Hear it / what it means */
+.word-tools { display: flex; gap: var(--s2); flex-wrap: wrap; align-items: center; margin: 0 0 var(--s4); }
+.word-btn { min-height: 40px; font-size: 0.95rem; padding: 0 14px; }
+.word-def { width: 100%; font-size: 0.92rem; color: var(--chalk-dim); line-height: 1.5; }
+.word-def:empty { display: none; }
+.word-def small { color: var(--chalk-faint); }

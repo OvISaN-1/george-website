@@ -511,6 +511,15 @@
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;scroll-behavior:auto !important;}
   }
+  /* Name that riff + match report + squad note */
+  .md-riff{margin:6px 0 10px;display:flex;align-items:center;gap:10px;}
+  .md-riff small{color:#8a857e;font-size:11px;}
+  .md-riff-btn{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;min-height:44px;padding:8px 18px;border-radius:999px;border:0;cursor:pointer;
+    background:linear-gradient(135deg,#ff8a1f,#e1102c);color:#fff;box-shadow:0 0 18px rgba(225,16,44,.35);}
+  .md-riff-btn:disabled{opacity:.5;cursor:default;}
+  .md-report-head{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:22px;line-height:1.1;letter-spacing:.02em;color:#f5b942;margin:4px 0 8px;}
+  .md-report p{line-height:1.55;}
+  .md-squad-note{margin:0 0 8px;}
 </style>
 </head>
 <body data-page="quiz-game">
@@ -708,6 +717,7 @@
 <script src="matchday-riffs.js"></script>
 <script src="matchday-career.js"></script>
 <script src="matchday-league.js"></script>
+<script src="matchday-live.js"></script>
 <script src="matchday-game.js"></script>
 <script src="../js/holo.js"></script>
 </body>

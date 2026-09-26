@@ -143,6 +143,7 @@
   .answer-btn:disabled{cursor:default;}
 
   #feedback{text-align:center;font-weight:800;margin-top:14px;min-height:22px;font-size:15px;}
+  #country-facts{text-align:center;margin-top:6px;min-height:20px;font-size:13px;color:#b9b2ac;}
 
   /* results */
   #results-screen{display:none;text-align:center;}
@@ -268,6 +269,7 @@
   <div id="map-box"><svg id="map-svg" viewBox="0 0 300 230"></svg></div>
   <div class="answers" id="answers"></div>
   <div id="feedback"></div>
+  <div id="country-facts" aria-live="polite"></div>
 </div>
 
 <div class="card" id="results-screen">
@@ -636,6 +638,7 @@ function loadQuestion() {
   if (!gameRunning) return;
   answered = false;
   feedbackEl.textContent = "";
+  factsEl.textContent = "";
 
   if (queuePos >= questionQueue.length) {
     questionQueue = shuffle([...quizPool]); // recycle if someone is very fast
@@ -643,6 +646,8 @@ function loadQuestion() {
   }
   const q = questionQueue[queuePos];
   countryNameEl.textContent = q.name;
+  currentCountry = q.name;
+  lookUpCountry(q.name);
   currentRegion = q.region || "World";
   drawCountryShape(q);
 
@@ -656,6 +661,34 @@ function loadQuestion() {
     btn.addEventListener("click", () => handleAnswer(btn, opt, q.capital));
     answersEl.appendChild(btn);
   });
+}
+
+/* ---------- Country facts (REST Countries, free, no key) ----------
+   Looked up while the question is on screen, then shown with the answer:
+   flag, population and money. Adds nothing to the timer or the score. */
+const factsEl = document.getElementById("country-facts");
+const COUNTRY_FACTS = (() => { try { return JSON.parse(localStorage.getItem("gz_country_facts_v1")) || {}; } catch (e) { return {}; } })();
+let currentCountry = null;
+async function lookUpCountry(name) {
+  if (COUNTRY_FACTS[name] !== undefined) return;
+  COUNTRY_FACTS[name] = null; // don't ask twice
+  const fields = "fields=name,flag,population,currencies";
+  const tryUrl = async (url) => { const r = await fetch(url); if (!r.ok) return null; const j = await r.json(); return Array.isArray(j) ? j : null; };
+  try {
+    const list = (await tryUrl(`https://restcountries.com/v3.1/name/${encodeURIComponent(name)}?fullText=true&${fields}`)) ||
+      (await tryUrl(`https://restcountries.com/v3.1/name/${encodeURIComponent(name)}?${fields}`));
+    const c = list && (list.find((x) => x.name && x.name.common.toLowerCase() === name.toLowerCase()) || list[0]);
+    if (!c) return;
+    const money = c.currencies ? Object.values(c.currencies)[0] : null;
+    COUNTRY_FACTS[name] = { flag: c.flag || "", people: c.population || 0, money: money ? money.name : "" };
+    try { localStorage.setItem("gz_country_facts_v1", JSON.stringify(COUNTRY_FACTS)); } catch (e) { /* full */ }
+  } catch (e) { /* offline: just no facts */ }
+}
+function showCountryFacts() {
+  const f = currentCountry && COUNTRY_FACTS[currentCountry];
+  if (!f) { factsEl.textContent = ""; return; }
+  const people = f.people >= 1e6 ? `${(f.people / 1e6).toFixed(f.people >= 1e7 ? 0 : 1)} million people` : `${f.people.toLocaleString("en-GB")} people`;
+  factsEl.textContent = `${f.flag} ${currentCountry} · ${people}${f.money ? ` · ${f.money}` : ""}`;
 }
 
 function handleAnswer(btn, chosen, correct) {
@@ -682,6 +715,7 @@ function handleAnswer(btn, chosen, correct) {
     feedbackEl.style.color = "var(--bad)";
   }
   scorePillEl.textContent = `Correct: ${correctCount}`;
+  showCountryFacts();
   queuePos++;
   setTimeout(loadQuestion, 1500);
 }

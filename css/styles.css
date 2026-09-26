@@ -569,3 +569,21 @@ details.predict-toggle[open] summary{ margin-bottom: var(--s3); }
 .school-row > .school-cell { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s4) var(--s5); border-left: 1px solid var(--line); }
 .school-row .note-label, .school-cell > .note-label { font-family: var(--font-display); font-weight: 700; font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
 .school-row .achievements-stack .card { background: var(--surface-raised); }
+
+/* About: rock jukebox in the Rock music card */
+.jukebox { margin-top: 6px; display: flex; flex-direction: column; gap: 8px; }
+.jukebox-btn { align-self: flex-start; font-family: var(--font-display); font-weight: 700; font-size: 1rem; min-height: 42px; padding: 6px 16px; border-radius: 999px; border: 0; cursor: pointer; color: #fff;
+  background: linear-gradient(135deg, #ff8a1f, #e1102c); box-shadow: 0 0 16px rgba(225,16,44,0.3); }
+.jukebox-now { margin: 0; display: flex; gap: 10px; align-items: center; font-size: 0.85rem; color: var(--chalk-dim); }
+.jukebox-now img { border-radius: 6px; flex-shrink: 0; }
+.jukebox-now small { color: var(--chalk-faint); }
+
+/* Video Games: RAWG details */
+.game-meta { margin: 4px 0 0; font-size: 0.8rem; color: var(--chalk-faint); }
+.coming-soon { margin-top: var(--s5); }
+.coming-soon h3 { font-size: 1.05rem; margin-bottom: var(--s3); }
+.coming-soon ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--s3); }
+.coming-soon li { display: flex; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 8px; }
+.coming-soon img { width: 64px; height: 40px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+.coming-soon b { display: block; font-size: 0.9rem; }
+.coming-soon small, .small-print { font-size: 0.75rem; color: var(--chalk-faint); }

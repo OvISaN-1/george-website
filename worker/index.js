@@ -15,6 +15,7 @@
 
 import { coach } from './coach.js';
 import { weatherFor, apod, iss, live } from './extras.js';
+import { squad, track, report, games, SONGS } from './more.js';
 
 const API = 'https://api.football-data.org/v4';
 const CACHE_VERSION = 'v1';
@@ -33,6 +34,21 @@ export default {
     if (url.pathname === '/api/apod') return openToAll(await cached(request, ctx, 'apod', 3 * 3600, () => apod(env)));
     if (url.pathname === '/api/iss') return openToAll(await cached(request, ctx, 'iss', 5, () => iss()));
     if (url.pathname === '/api/live') return liveMatch(request, env, ctx, url);
+    if (url.pathname === '/api/squad') {
+      if (!env.FOOTBALL_DATA_KEY) return json({ error: 'no-key' }, 503, 0);
+      return openToAll(await cached(request, ctx, 'squad', 12 * 3600, () => squad(env)));
+    }
+    if (url.pathname === '/api/track') {
+      const id = url.searchParams.get('id') || '';
+      if (!SONGS[id]) return json({ error: 'unknown-song' }, 404, 0);
+      // Preview links expire, so only keep them for 10 minutes.
+      return openToAll(await cached(request, ctx, `track-${id}`, 600, () => track(id)));
+    }
+    if (url.pathname === '/api/report') return matchReport(request, env);
+    if (url.pathname === '/api/games') {
+      if (!env.RAWG_KEY) return json({ error: 'no-key' }, 503, 0);
+      return openToAll(await cached(request, ctx, 'games', 12 * 3600, async () => games(env, await gameTitles(env, request))));
+    }
     if (url.pathname.startsWith('/api/')) return json({ error: 'not-found' }, 404, 0);
     return env.ASSETS.fetch(request);
   },
@@ -53,6 +69,28 @@ function openToAll(res) {
   const r = new Response(res.body, res);
   r.headers.set('access-control-allow-origin', '*');
   return r;
+}
+
+// George's top games, read from the site's own js/content.js (so nobody can
+// use this to search for anything else).
+async function gameTitles(env, request) {
+  const res = await env.ASSETS.fetch(new Request(new URL('/js/content.js', request.url)));
+  const src = await res.text();
+  const block = (src.split('topGames:')[1] || '').split(']')[0];
+  return [...block.matchAll(/title:\s*'((?:[^'\\]|\\.)*)'/g)].map((m) => m[1].replace(/\\'/g, "'")).slice(0, 6);
+}
+
+// Matchday report: POST from the game, 8 a minute at most.
+const reportMinute = { t: 0, n: 0 };
+async function matchReport(request, env) {
+  if (request.method !== 'POST') return json({ error: 'post-only' }, 405, 0);
+  const now = Date.now();
+  if (now - reportMinute.t > 60000) { reportMinute.t = now; reportMinute.n = 0; }
+  if (++reportMinute.n > 8) return json({ error: 'slow-down' }, 429, 0);
+  let body;
+  try { body = await request.json(); } catch (e) { return json({ error: 'bad-request' }, 400, 0); }
+  const out = await report(env, body);
+  return json(out, out.error ? 503 : 200, 0);
 }
 
 // The live match centre. Only for today (or yesterday, just after midnight),

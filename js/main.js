@@ -674,6 +674,7 @@ function renderGames(C) {
   const G = C.games || {};
   setText('currently-playing', G.currentlyPlaying);
   renderCards('games-grid', G.topGames, 'gaming');
+  addGameDetails(G.topGames || []);
   const body = $('scores-body');
   if (body && G.topScores) {
     body.innerHTML = G.topScores.map((r) =>
@@ -722,9 +723,10 @@ function renderAbout(C) {
   const loves = $('loves');
   if (loves && A.loves) {
     loves.innerHTML = A.loves.map((x) =>
-      `<article class="card love-card${x.dogPhoto ? ' dog-card' : ''}">${x.dogPhoto ? `<figure class="dog-photo" id="dog-photo"><span class="love-emoji" aria-hidden="true">${escapeHtml(x.emoji)}</span></figure>` : `<span class="love-emoji" aria-hidden="true">${escapeHtml(x.emoji)}</span>`}<h3>${escapeHtml(x.title)}</h3><p>${escapeHtml(x.text)}</p>${x.dogPhoto ? '<button type="button" class="link-btn dog-next" id="dog-next">Another one! 🐶</button>' : ''}</article>`
+      `<article class="card love-card${x.dogPhoto ? ' dog-card' : ''}">${x.dogPhoto ? `<figure class="dog-photo" id="dog-photo"><span class="love-emoji" aria-hidden="true">${escapeHtml(x.emoji)}</span></figure>` : `<span class="love-emoji" aria-hidden="true">${escapeHtml(x.emoji)}</span>`}<h3>${escapeHtml(x.title)}</h3><p>${escapeHtml(x.text)}</p>${x.dogPhoto ? '<button type="button" class="link-btn dog-next" id="dog-next">Another one! 🐶</button>' : ''}${x.jukebox ? '<div class="jukebox" id="jukebox"><button type="button" class="jukebox-btn" id="jukebox-btn">▶ Play some AC/DC</button><p class="jukebox-now" id="jukebox-now" aria-live="polite"></p></div>' : ''}</article>`
     ).join('');
     if ($('dog-photo')) initDogPhoto();
+    if ($('jukebox')) initJukebox();
   }
   const qf = $('quickfire');
   if (qf && A.quickFire) {
@@ -732,6 +734,74 @@ function renderAbout(C) {
       `<div class="qf-item"><dt>${escapeHtml(x.q)}</dt><dd>${escapeHtml(x.a)}</dd></div>`
     ).join('');
   }
+}
+
+/* ---- Video games: details from RAWG (through the Worker) ----------------- */
+async function addGameDetails(top) {
+  const grid = $('games-grid');
+  if (!grid || !top.length) return;
+  let data;
+  try {
+    const res = await fetch(apiUrl('games'));
+    data = await res.json();
+    if (!res.ok || data.error) return;
+  } catch (e) { return; }
+  const cards = grid.querySelectorAll('.card');
+  const date = (d) => (d ? new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
+  top.forEach((t, i) => {
+    const g = (data.games || []).find((x) => x.title === t.title);
+    if (!g || !cards[i]) return;
+    const bits = [
+      g.released ? `📅 ${date(g.released)}` : (g.tba ? '📅 Coming soon' : ''),
+      g.metacritic ? `⭐ Metacritic ${g.metacritic}` : (g.rating ? `⭐ ${g.rating.toFixed(1)}/5` : ''),
+      g.platforms.length ? `🎮 ${g.platforms.join(', ')}` : '',
+    ].filter(Boolean);
+    if (!bits.length) return;
+    const p = document.createElement('p');
+    p.className = 'game-meta';
+    p.textContent = bits.join(' · ');
+    cards[i].appendChild(p);
+  });
+  if (data.soon && data.soon.length) {
+    const wrap = document.createElement('div');
+    wrap.className = 'coming-soon';
+    wrap.innerHTML = `<h3>🔜 Coming soon</h3><ul>${data.soon.map((g) => `<li>${g.image ? `<img src="${escapeAttr(g.image)}" alt="" loading="lazy">` : ''}<span><b>${escapeHtml(g.name)}</b><small>${g.released ? escapeHtml(date(g.released)) : 'Date to be announced'}</small></span></li>`).join('')}</ul><p class="small-print">Game details from RAWG.</p>`;
+    grid.after(wrap);
+  }
+}
+
+/* ---- Rock jukebox: 30-second clips through the Worker (Deezer) ----------
+   The ids match SONGS in worker/more.js; AC/DC first, then other classics. */
+const JUKEBOX = [
+  ['thunderstruck', 'Thunderstruck', 'AC/DC'], ['backinblack', 'Back In Black', 'AC/DC'], ['tnt', 'T.N.T.', 'AC/DC'], ['highway', 'Highway to Hell', 'AC/DC'],
+  ['rockyou', 'We Will Rock You', 'Queen'], ['dontstop', "Don't Stop Me Now", 'Queen'], ['tiger', 'Eye of the Tiger', 'Survivor'],
+  ['sevennation', 'Seven Nation Army', 'The White Stripes'], ['countdown', 'The Final Countdown', 'Europe'], ['smoke', 'Smoke on the Water', 'Deep Purple'],
+];
+function initJukebox() {
+  const btn = $('jukebox-btn'), now = $('jukebox-now');
+  let i = 0, audio = null;
+  const stop = () => { if (audio) { audio.pause(); audio = null; } };
+  async function play() {
+    const [id, title, artist] = JUKEBOX[i % JUKEBOX.length];
+    stop();
+    btn.textContent = '⏳ Loading…';
+    try {
+      const t = await (await fetch(`${apiUrl('track')}?id=${id}`)).json();
+      if (!t.preview) throw new Error('no clip');
+      audio = new Audio(t.preview);
+      audio.addEventListener('ended', () => { i++; btn.textContent = '▶ Next song'; now.innerHTML = ''; audio = null; });
+      await audio.play();
+      btn.textContent = '⏸ Stop';
+      now.innerHTML = `${t.cover ? `<img src="${escapeAttr(t.cover)}" alt="" width="36" height="36">` : ''}<span>Now playing: <b>${escapeHtml(title)}</b> · ${escapeHtml(artist)}<br><small>30-second clip from Deezer</small></span>`;
+    } catch (e) {
+      btn.textContent = '▶ Play some AC/DC';
+      now.textContent = 'The jukebox isn\'t available right now.';
+    }
+  }
+  btn.addEventListener('click', () => {
+    if (audio) { stop(); i++; btn.textContent = '▶ Next song'; now.innerHTML = ''; return; }
+    play();
+  });
 }
 
 /* ---- Golden Retriever of the visit (dog.ceo, free, no key) -------------- */
