@@ -1,0 +1,8 @@
+// Cloudflare Workers settings: serves the website's files as they are (no build step).
+{
+  "name": "george-website",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./"
+  }
+}
