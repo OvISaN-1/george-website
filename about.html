@@ -64,15 +64,6 @@
       </div>
     </section>
 
-    <!-- Fun facts ------------------------------------------------------------ -->
-    <section aria-label="Fun facts">
-      <div class="wrap reveal">
-        <div class="section-head"><h2>Fun facts</h2></div>
-        <!-- Fun facts and quick-fire answers come from js/content.js (the "about" part). -->
-        <ul class="fact-list" id="fun-facts"></ul>
-      </div>
-    </section>
-
     <!-- Things I love ---------------------------------------------------------- -->
     <section aria-label="Things I love">
       <div class="wrap reveal">
@@ -82,11 +73,15 @@
       </div>
     </section>
 
-    <!-- Quick-fire Qs ------------------------------------------------------------ -->
-    <section aria-label="Quick-fire questions">
+    <!-- Quick facts: fun facts and quick-fire answers together ------------- -->
+    <section aria-labelledby="facts-title">
       <div class="wrap reveal">
-        <div class="section-head"><h2>Quick-fire Qs</h2></div>
-        <dl class="qf-list" id="quickfire"></dl>
+        <div class="section-head"><h2 id="facts-title">Quick facts</h2></div>
+        <!-- Both lists come from js/content.js (about.funFacts and about.quickFire). -->
+        <div class="quick-facts">
+          <ul class="fact-list" id="fun-facts"></ul>
+          <dl class="qf-list" id="quickfire"></dl>
+        </div>
       </div>
     </section>
 
@@ -103,33 +98,12 @@
       </div>
     </section>
 
-    <!-- About this site FAQ ------------------------------------------------------------ -->
-    <section aria-label="About this site">
-      <div class="wrap reveal">
-        <div class="section-head"><h2>About this site</h2></div>
-        <div class="faq-list">
-          <details class="faq-item">
-            <summary>Who made this site?</summary>
-            <p>I did, with a bit of help from my dad.</p>
-          </details>
-          <details class="faq-item">
-            <summary>Is everything on here real?</summary>
-            <p>Yes — scores, certificates and all.</p>
-          </details>
-          <details class="faq-item">
-            <summary>Does it get updated?</summary>
-            <p>Whenever there's something new to add.</p>
-          </details>
-        </div>
-      </div>
-    </section>
-
   </main>
 
   <footer class="site-footer">
     <div class="footer-row">
-      <span>Last updated: <span data-last-updated>September 2026</span></span>
-      <a href="index.html">Home</a>
+      <span>Made by me, George, with a bit of help from my dad. Everything on here is real, and it gets updated whenever there's something new.</span>
+      <a href="index.html">Home</a> <a class="footer-progress" href="progress.html">💾 Move my progress</a>
     </div>
   </footer>
 

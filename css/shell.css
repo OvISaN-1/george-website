@@ -229,3 +229,4 @@ body[data-page="quiz-zone"], body[data-page="quiz-game"]{
   .holo-shine { animation: none; }
   .page-banner::after, .hero::after, .match-card { animation: none; }
 }
+.footer-row .footer-progress { margin-left: var(--s4); }

@@ -65,36 +65,27 @@
       </div>
     </section>
 
-    <!-- Favourite subject ---------------------------------------------------- -->
-    <section aria-label="Favourite subject">
+    <!-- Me at school: favourite subject, achievements and this term's goal ---- -->
+    <section aria-labelledby="me-school-title">
       <div class="wrap reveal">
-        <div class="note-block">
-          <span class="note-label">My favourite subject</span>
-          <p><strong style="color:var(--chalk);" id="fav-subject">PE</strong>, because <span id="fav-reason"></span></p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Wall of achievements --------------------------------------------------- -->
-    <section aria-label="Wall of achievements">
-      <div class="wrap">
-        <div class="section-head reveal">
-          <h2>Wall of achievements</h2>
-        </div>
-        <div class="grid-3" id="achievements-grid"></div>
-      </div>
-    </section>
-
-    <!-- This term's goal ---------------------------------------------------------- -->
-    <section aria-label="This term's goal">
-      <div class="wrap reveal">
-        <div class="note-block">
-          <span class="note-label">This term's goal</span>
-          <p><strong style="color:var(--chalk);" id="goal-title"></strong></p>
-          <div class="medal-track" id="goal-track"></div>
-          <div class="medal-bar" role="progressbar" aria-label="Goal progress" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0"><span id="goal-bar" style="width:0%"></span></div>
-          <p style="margin-top:var(--s3); font-size:0.95rem;">Progress so far: <span id="goal-note"></span></p>
-          <p style="margin-top:var(--s3); display:flex; gap:var(--s3); flex-wrap:wrap;"><a class="btn btn-primary" href="sats.html">SATs practice</a> <a class="btn btn-ghost" href="quiz-zone/matchday.html">SATs maths in Matchday</a></p>
+        <div class="section-head"><h2 id="me-school-title">Me at school</h2></div>
+        <div class="school-row">
+          <div class="note-block school-cell">
+            <span class="note-label">My favourite subject</span>
+            <p><strong style="color:var(--chalk);" id="fav-subject">PE</strong>, because <span id="fav-reason"></span></p>
+          </div>
+          <div class="school-cell">
+            <span class="note-label">Wall of achievements</span>
+            <div class="achievements-stack" id="achievements-grid"></div>
+          </div>
+          <div class="note-block school-cell school-goal">
+            <span class="note-label">This term's goal</span>
+            <p><strong style="color:var(--chalk);" id="goal-title"></strong></p>
+            <div class="medal-track" id="goal-track"></div>
+            <div class="medal-bar" role="progressbar" aria-label="Goal progress" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0"><span id="goal-bar" style="width:0%"></span></div>
+            <p style="margin-top:var(--s3); font-size:0.95rem;">Progress so far: <span id="goal-note"></span></p>
+            <p style="margin-top:var(--s3); display:flex; gap:var(--s3); flex-wrap:wrap;"><a class="btn btn-primary" href="sats.html">SATs practice</a> <a class="btn btn-ghost" href="quiz-zone/matchday.html">SATs maths in Matchday</a></p>
+          </div>
         </div>
       </div>
     </section>
@@ -137,7 +128,7 @@
   <footer class="site-footer">
     <div class="footer-row">
       <span>Last updated: <span data-last-updated>September 2026</span> · Every certificate here is 100% real.</span>
-      <a href="index.html">Home</a>
+      <a href="index.html">Home</a> <a class="footer-progress" href="progress.html">💾 Move my progress</a>
     </div>
   </footer>
 

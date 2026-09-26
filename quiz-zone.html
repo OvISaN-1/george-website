@@ -152,7 +152,13 @@
     position:absolute;top:14px;right:14px;font-family:var(--font-display);font-weight:700;font-size:0.75rem;
     padding:4px 10px;border-radius:var(--r-pill);background:var(--gold-ink);color:var(--gold);
   }
-  .game-card.coming{opacity:0.55;}
+  .gz-progress-link{margin:var(--s4) 0 0;color:var(--chalk-dim);font-size:.95rem;}
+  .gz-tabs{display:flex;gap:var(--s2);flex-wrap:wrap;margin:var(--s6) 0 0;}
+  .gz-tabs [role="tab"]{font-family:var(--font-display);font-weight:700;font-size:1rem;min-height:44px;padding:8px 16px;border-radius:999px;
+    background:var(--surface);color:var(--chalk-dim);border:1px solid var(--line-strong);cursor:pointer;}
+  .gz-tabs [role="tab"][aria-selected="true"]{background:var(--gold);color:var(--ink);border-color:var(--gold);}
+  .gz-tabs [role="tab"]:focus-visible{outline:2px solid var(--chalk);outline-offset:3px;}
+  .gz-tabs + .zone, .gz-tabs ~ .zone{margin-top:var(--s4);}
   .fan-chip{
     position:absolute;top:14px;right:14px;
     background:var(--garibaldi-solid);color:#fff;font-size:0.72rem;font-weight:800;
@@ -374,19 +380,18 @@
           <h2 style="view-transition-name:t-tt">Times Tables Blitz</h2>
           <p>2x to 12x, as fast as you can. Gold badge practice.</p>
         </a>
-        <a class="game-card" href="progress.html">
-          <div class="emoji-badge" aria-hidden="true">💾</div>
-          <h2 style="view-transition-name:t-progress">Move my progress</h2>
-          <p>Playing on another device or at georgeneagu.win? Save your progress here and load it there.</p>
-        </a>
-        <div class="game-card coming">
-          <div class="emoji-badge" aria-hidden="true">➕</div>
-          <h2>More coming soon</h2>
-          <p>New games get added here.</p>
-        </div>
+      </div>
+      <p class="gz-progress-link">💾 Playing on another device? <a href="progress.html">Move my progress →</a></p>
+
+      <!-- Extras: Keepy-Uppy, trophies, top scores and facts, in tabs -->
+      <div class="gz-tabs" role="tablist" aria-label="Game Zone extras">
+        <button type="button" role="tab" id="gzt-keepy" aria-controls="gzp-keepy" aria-selected="true">⚽ Keepy-Uppy</button>
+        <button type="button" role="tab" id="gzt-trophies" aria-controls="gzp-trophies" aria-selected="false" tabindex="-1">🏅 My trophies</button>
+        <button type="button" role="tab" id="gzt-scores" aria-controls="gzp-scores" aria-selected="false" tabindex="-1">📊 Top scores</button>
+        <button type="button" role="tab" id="gzt-facts" aria-controls="gzp-facts" aria-selected="false" tabindex="-1">🤓 Did you know?</button>
       </div>
 
-      <div class="zone">
+      <div class="zone" role="tabpanel" id="gzp-keepy" aria-labelledby="gzt-keepy">
         <div class="keepy-header">
           <h2>⚽ Keepy-Uppy Break</h2>
           <div class="keepy-tools">
@@ -414,7 +419,7 @@
         <div class="keepy-top" id="keepy-top"></div>
       </div>
 
-      <div class="zone">
+      <div class="zone" role="tabpanel" id="gzp-facts" aria-labelledby="gzt-facts" hidden>
         <h2>🤓 Did You Know?</h2>
         <p class="zone-sub">Random facts about football, the world and mountains.</p>
         <div class="fact-card" id="fact-card" aria-live="polite">
@@ -427,14 +432,14 @@
         <button class="btn btn-primary" id="fact-btn" type="button">🎲 Another fact!</button>
       </div>
 
-      <div class="zone">
+      <div class="zone" role="tabpanel" id="gzp-trophies" aria-labelledby="gzt-trophies" hidden>
         <h2>🏅 My Trophy Cabinet</h2>
         <p class="zone-sub">Badges and streaks update every time you finish a game. They save on this device.</p>
         <div class="gz-streak-banner" id="streak-banner">Play today to start a streak! 🔥</div>
         <div class="gz-badges-grid" id="badges-grid"></div>
       </div>
 
-      <div class="zone">
+      <div class="zone" role="tabpanel" id="gzp-scores" aria-labelledby="gzt-scores" hidden>
         <h2>📊 Top Scores</h2>
         <p class="zone-sub">The current champion of each game, shared online with everyone who plays.</p>
         <div id="best-scores-chart">Loading top scores...</div>
@@ -445,7 +450,7 @@
   <footer class="site-footer">
     <div class="footer-row">
       <span>Built with <span class="heart" aria-label="love">&hearts;</span> by Dad, for George.</span>
-      <a href="index.html">Home</a>
+      <a href="index.html">Home</a> <a class="footer-progress" href="progress.html">💾 Move my progress</a>
     </div>
   </footer>
 
@@ -453,6 +458,23 @@
   <script src="js/db.js"></script>
   <script src="quiz-zone/stats.js"></script>
 <script>
+  // Extras tabs (Keepy-Uppy, trophies, top scores, facts), arrow keys too.
+  (function () {
+    const tabs = [...document.querySelectorAll('.gz-tabs [role="tab"]')];
+    const select = (t) => tabs.forEach((x) => {
+      const on = x === t;
+      x.setAttribute("aria-selected", String(on)); x.tabIndex = on ? 0 : -1;
+      document.getElementById(x.getAttribute("aria-controls")).hidden = !on;
+    });
+    tabs.forEach((t, i) => {
+      t.addEventListener("click", () => select(t));
+      t.addEventListener("keydown", (e) => {
+        const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+        if (!d) return; e.preventDefault();
+        const n = tabs[(i + d + tabs.length) % tabs.length]; select(n); n.focus();
+      });
+    });
+  })();
   GZ.renderStreak(document.getElementById("streak-banner"));
   GZ.renderBadgesGrid(document.getElementById("badges-grid"));
   // Little stats strip in the hero: games played and badges earned on this device.
