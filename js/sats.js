@@ -164,13 +164,61 @@
     $('sats-feedback').innerHTML = `
       <p class="sats-verdict ${ok ? 'ok' : 'no'}">${ok ? `✅ ${['Correct!', 'Spot on!', 'Nailed it!', 'Brilliant!', 'Top bins! ⚽'][Math.floor(Math.random() * 5)]}` : `❌ Not quite. The answer is <b>${esc(shown)}</b>.`}</p>
       <p class="sats-explain"><b>How to work it out:</b> ${qHtml(q.explain)}</p>
+      ${wordTools(q)}
       ${ok ? '' : coachButton()}
       <button type="button" class="btn btn-primary" id="sats-next">${last ? 'See my score' : 'Next question →'}</button>`;
     $('sats-next').addEventListener('click', next);
     if ($('coach-btn')) $('coach-btn').addEventListener('click', () => askCoach(q, given, shown));
+    if ($('word-say')) wireWordTools(q);
     $('sats-next').focus({ preventScroll: true });
     $('sats-feedback').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
+  /* ---------------- Hear it + what it means (spelling and word meanings) ----
+     🔊 uses the device's own British voice; 📖 looks the word up in the free
+     Dictionary API (dictionaryapi.dev). Only for real words, not prefixes. */
+  const WORD_TOPICS = ['spelling', 'words'];
+  function theWord(q) {
+    if (!WORD_TOPICS.includes(q.topic)) return null;
+    const w = String(q.a).trim();
+    return /^[a-z]{3,}$/i.test(w) ? w.toLowerCase() : null;
+  }
+  function wordTools(q) {
+    const w = theWord(q);
+    if (!w) return '';
+    return `<div class="word-tools">
+      <button type="button" class="btn btn-ghost word-btn" id="word-say">🔊 Hear "${esc(w)}"</button>
+      <button type="button" class="btn btn-ghost word-btn" id="word-mean">📖 What does it mean?</button>
+      <div class="word-def" id="word-def" aria-live="polite"></div>
+    </div>`;
+  }
+  function wireWordTools(q) {
+    const w = theWord(q);
+    $('word-say').addEventListener('click', () => {
+      if (!('speechSynthesis' in window)) return;
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(w);
+      const gb = speechSynthesis.getVoices().find((v) => /en-GB/i.test(v.lang));
+      if (gb) u.voice = gb;
+      u.lang = 'en-GB'; u.rate = 0.85;
+      speechSynthesis.speak(u);
+    });
+    $('word-mean').addEventListener('click', async () => {
+      const box = $('word-def');
+      box.textContent = 'Looking it up…';
+      try {
+        const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(w)}`);
+        const data = await res.json();
+        const m = Array.isArray(data) && data[0] && data[0].meanings && data[0].meanings[0];
+        const d = m && m.definitions && m.definitions[0];
+        if (!d) throw new Error('none');
+        const def = d.definition.length > 180 ? d.definition.slice(0, 177) + '…' : d.definition;
+        box.innerHTML = `<b>${esc(w)}</b> <i>(${esc(m.partOfSpeech || 'word')})</i>: ${esc(def)}${d.example ? `<br><small>For example: "${esc(d.example)}"</small>` : ''}`;
+      } catch (e) {
+        box.textContent = 'Couldn\'t find a meaning right now.';
+      }
+    });
+  }
+
   /* ---------------- Ask the Coach (AI help after a wrong answer) ----------------
      Sends only this question to worker/coach.js: never a name or anything
      personal, and there's no text box, so it can't be used for chatting.

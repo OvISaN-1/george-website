@@ -434,9 +434,11 @@
         }
       }
     }
-    let pool = BANK.filter((q) => q.subject === subject && !used.has(q.id));
-    if (!pool.length) pool = BANK.filter((q) => subs.includes(q.subject) && !used.has(q.id));
-    if (!pool.length) pool = BANK.slice();
+    // Song-clip questions only when clips can play (matchday-live.js checks).
+    const can = (q) => !q.audio || window.MQ_AUDIO === true;
+    let pool = BANK.filter((q) => q.subject === subject && !used.has(q.id) && can(q));
+    if (!pool.length) pool = BANK.filter((q) => subs.includes(q.subject) && !used.has(q.id) && can(q));
+    if (!pool.length) pool = BANK.filter(can);
     // Closest level first: exact match, then one away, then anything.
     for (const gap of [0, 1, 2, 3]) {
       const fit = pool.filter((q) => Math.abs(effectiveLevel(q) - level) === gap);

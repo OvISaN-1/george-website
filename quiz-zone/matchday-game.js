@@ -1053,7 +1053,9 @@
       const q = MQ.nextQuestion(level, SAVE.subjects, S.used);
       S.used.add(q.id);
       S.currentQ = q;
-      const secs = Math.max(5, LEVEL_TIME[level] - S.tier.timer + (o.timerAdjust || 0));
+      const riff = q.src && q.src.audio;
+      // Song-clip questions get 10 more seconds to listen.
+      const secs = Math.max(5, LEVEL_TIME[level] - S.tier.timer + (o.timerAdjust || 0)) + (riff ? 10 : 0);
       const panel = $("panel");
       const powers = (o.powers || []).filter((k) => S.powers[k]);
       const POWER = {
@@ -1070,6 +1072,7 @@
           </div>
           <h3 class="md-q-title">${escapeHtml(o.title || "")}</h3>
           <p class="md-q-text" id="q-text">${escapeHtml(q.q)}</p>
+          ${riff ? `<p class="md-riff"><button type="button" class="md-riff-btn" id="q-riff">▶ Play the clip</button> <small>Clip from Deezer</small></p>` : ""}
           <div class="md-timer" aria-hidden="true"><span id="q-timer"></span></div>
           <div class="md-options n${q.options.length}" id="q-options">
             ${q.options.map((opt, i) => `<button type="button" class="md-opt" data-i="${i}"><kbd>${i + 1}</kbd> ${escapeHtml(opt)}</button>`).join("")}
@@ -1081,6 +1084,28 @@
       revealPanel();
       const first = panel.querySelector(".md-opt");
       if (first) first.focus({ preventScroll: true });
+      if (riff) {
+        // "Name that riff": fetch a fresh preview link and play it.
+        const btn = $("q-riff");
+        btn.addEventListener("click", async () => {
+          if (S.riffAudio) { S.riffAudio.pause(); S.riffAudio = null; btn.textContent = "▶ Play the clip"; return; }
+          btn.textContent = "⏳ Loading…";
+          try {
+            const t = await (await fetch(`${window.apiUrl("track")}?id=${encodeURIComponent(riff)}`)).json();
+            if (done || !t.preview) throw new Error("no clip");
+            const a = new Audio(t.preview);
+            a.volume = SOUND.isOn() ? 0.9 : 0;
+            S.riffAudio = a;
+            // Start a little way in, where the famous riff usually is.
+            a.addEventListener("loadedmetadata", () => { try { a.currentTime = Math.min(4, (a.duration || 30) / 4); } catch (e) { /* fine */ } }, { once: true });
+            await a.play();
+            btn.textContent = "⏸ Stop";
+          } catch (e) {
+            btn.textContent = "Clip unavailable";
+            btn.disabled = true;
+          }
+        });
+      }
       let left = secs * 1000, last = performance.now(), done = false;
       const bar = $("q-timer");
       function tick(now) {
@@ -1095,6 +1120,7 @@
       function finish(i, how) {
         if (done) return;
         done = true;
+        if (S.riffAudio) { S.riffAudio.pause(); S.riffAudio = null; }
         document.removeEventListener("keydown", answerKeyHandler);
         const buttons = panel.querySelectorAll(".md-opt");
         buttons.forEach((b) => { b.disabled = true; });
@@ -2273,6 +2299,39 @@
     </section>`;
   }
 
+  /* 📰 A short newspaper-style match report, written by Cloudflare's AI
+     (worker/more.js) from the match facts only. 15 a day on this device. */
+  async function writeReport(motm) {
+    const box = $("r-report"), out = $("r-report-text");
+    if (!box || !window.apiUrl) return;
+    const today = new Date().toISOString().slice(0, 10);
+    let used = {};
+    try { used = JSON.parse(localStorage.getItem("gz_md_reports_v1")) || {}; } catch (e) { used = {}; }
+    if (used.day !== today) used = { day: today, n: 0 };
+    if (used.n >= 15) return;
+    const facts = {
+      home: S.home, opponent: S.opp.name, ground: S.ground, forest: S.score.f, opp: S.score.o,
+      scorers: S.goals.filter((g) => !g.disallowed).map((g) => ({ name: g.who, min: parseInt(g.minLabel, 10) || 0, team: g.team, pen: g.kind === "penalty" })),
+      motm: motm ? (motm.george ? "George" : motm.name) : "",
+      reds: S.oppReds ? `${S.opp.name} had ${S.oppReds} sent off` : "",
+      weather: `${S.snow ? "snow" : S.rain ? "rain" : "dry"}, ${S.temp}°C`,
+    };
+    box.hidden = false;
+    const g = GEN;
+    try {
+      const res = await fetch(window.apiUrl("report"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(facts) });
+      const data = await res.json();
+      if (g !== GEN) return;
+      if (!res.ok || !data.text) throw new Error(data.error || "no report");
+      used.n += 1;
+      try { localStorage.setItem("gz_md_reports_v1", JSON.stringify(used)); } catch (e) { /* fine */ }
+      const [headline, ...rest] = data.text.split(/\n+/);
+      out.innerHTML = `<p class="md-report-head">${escapeHtml(headline.replace(/^[#*\s]+|[*]+$/g, ""))}</p>${rest.map((l) => `<p>${escapeHtml(l.replace(/\*\*/g, ""))}</p>`).join("")}<p class="md-small">Written by an AI reporter from the match facts.</p>`;
+    } catch (e) {
+      box.hidden = true; // no report today; nothing else changes
+    }
+  }
+
   function renderResult(ratings, motm, pts, won, draw) {
     const res = won ? "WIN" : draw ? "DRAW" : "DEFEAT";
     const fScorers = S.goals.filter((g) => g.team === "f" && !g.disallowed).map((g) => `${escapeHtml(g.who)} ${g.minLabel}'${g.kind === "penalty" ? " (pen)" : ""}`).join(", ");
@@ -2318,6 +2377,10 @@
           <ul class="md-ratings">${forestRated.map((p) => `<li class="${p.george ? "g" : ""}"><span>${p.num}</span><span>${escapeHtml(p.george ? "GEORGE" : p.short)}${p.subbedOff ? ` <small>(for ${escapeHtml(p.subbedOff.short)})</small>` : ""}</span><b class="r${Math.floor(ratings[p.id])}">${ratings[p.id].toFixed(1)}</b></li>`).join("")}</ul>
         </section>
       </div>
+      <section class="md-brain md-report" id="r-report" hidden>
+        <h4>📰 Match report</h4>
+        <div id="r-report-text"><p class="md-small">The reporter is writing…</p></div>
+      </section>
       ${careerBlock()}
       ${S.fixture ? `<section class="md-brain"><h4>🏆 Premier League table</h4><div id="r-table"></div><p class="md-small">Forest are ${ordinal(MDL.forestPosition(leagueResults(), SAVE.sims))}. The other teams played their matches this week too.</p></section>` : ""}
       <section class="md-brain">
@@ -2343,6 +2406,7 @@
         ${navigator.share || navigator.clipboard ? `<button type="button" class="ps-ghost" id="r-share">📤 Share</button>` : ""}
       </div>`;
     $("r-name").value = "George";
+    writeReport(motm);
     if ($("r-share")) $("r-share").onclick = async () => {
       const g = S.george.goals;
       const how = await window.GZShare(`⚽ Matchday: Forest ${S.score.f}–${S.score.o} ${S.opp.name}${g ? `, and George scored ${g === 1 ? "one" : g}` : ""}! ${pts.total} points. Can you beat it?`);
@@ -2456,10 +2520,13 @@
       <div class="md-sheet-head">
         <p class="md-kicker">${fixture ? "Premier League · " + fmtDate(fixture) + " · " + fixture.time : "Friendly"}</p>
         <h2 class="ps-h2">${escapeHtml(homeName)} v ${escapeHtml(awayName)}</h2>
+        ${MD.FOREST.liveSquad ? `<p class="md-small md-squad-note">${MD.FOREST.liveSquad.changes.in.length || MD.FOREST.liveSquad.changes.out.length
+          ? `🔄 Forest squad updated from the real one. New: ${escapeHtml(MD.FOREST.liveSquad.changes.in.join(", ") || "none")}. Gone: ${escapeHtml(MD.FOREST.liveSquad.changes.out.join(", ") || "none")}.`
+          : "✅ This is Forest's real, up-to-date squad."}</p>` : ""}
         <div class="md-facts">
           <span>🏟️ ${escapeHtml(S.ground)}</span><span>🧑‍⚖️ Referee: ${escapeHtml(S.ref)}</span><span>📺 VAR: ${escapeHtml(S.varRef)}</span>
           <span>${S.night ? "🌙 Floodlights" : "☀️ Daytime"} · ${S.snow ? "❄️ Snow" : S.rain ? "🌧️ Rain" : "Dry"} · ${S.temp}°C${S.realWeather ? ` · <b title="From the real forecast for ${escapeHtml(S.realWeather.ground)}">real forecast ${S.realWeather.emoji}</b>` : ""}</span><span>👥 ${S.attendance.toLocaleString("en-GB")}</span>
-          <span>Difficulty ${"★".repeat(o.tier)}${"☆".repeat(3 - o.tier)}</span>
+          <span>Difficulty ${"★".repeat(o.tier)}${"☆".repeat(3 - o.tier)}${o.tablePos ? ` · ${ordinal(o.tablePos)} in the real table` : ""}</span>
         </div>
       </div>
       <div class="md-xis">
@@ -2546,6 +2613,7 @@
     if (!confirm("Leave this match? It won't count.")) return;
     S.quit = true; S.over = true;
     if (window.GZWake) GZWake.off();
+    if (S.riffAudio) { S.riffAudio.pause(); S.riffAudio = null; }
     GEN += 1;
     MDSP.close();
     $("stage").classList.remove("setpiece", "replaying");

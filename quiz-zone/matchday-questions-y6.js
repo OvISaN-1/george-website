@@ -480,4 +480,24 @@
   Y6.SUBJECTS = SUBJECTS;
   Y6.BANK = BANK;
   Y6.GENERATORS = { sats };
+
+  /* "Name that riff": play a 30-second clip (Deezer, through the site's
+     Worker) and name the song. Only asked when clips can play (see
+     matchday-live.js), so they never appear offline. The ids match
+     SONGS in worker/more.js. */
+  const RIFFS = [
+    ['thunderstruck', 'Thunderstruck', 'AC/DC', 2], ['backinblack', 'Back In Black', 'AC/DC', 2], ['highway', 'Highway to Hell', 'AC/DC', 3], ['tnt', 'T.N.T.', 'AC/DC', 3],
+    ['rockyou', 'We Will Rock You', 'Queen', 1], ['champions', 'We Are The Champions', 'Queen', 1], ['dontstop', "Don't Stop Me Now", 'Queen', 2], ['bitesdust', 'Another One Bites The Dust', 'Queen', 2],
+    ['smoke', 'Smoke on the Water', 'Deep Purple', 3], ['tiger', 'Eye of the Tiger', 'Survivor', 1], ['countdown', 'The Final Countdown', 'Europe', 2], ['prayer', "Livin' On A Prayer", 'Bon Jovi', 3],
+    ['sweetchild', "Sweet Child O' Mine", "Guns N' Roses", 3], ['sevennation', 'Seven Nation Army', 'The White Stripes', 1], ['wonderwall', 'Wonderwall', 'Oasis', 2], ['rockinall', "Rockin' All Over The World", 'Status Quo', 3],
+  ];
+  RIFFS.forEach(([id, title, artist, l]) => {
+    const label = (t, a) => `${t} (${a})`;
+    // Trickiest wrong answer first: one more song by the same band, then
+    // other famous rock songs (never four songs by one band: too hard).
+    const same = RIFFS.filter((r) => r[2] === artist && r[0] !== id).sort(() => Math.random() - 0.5).slice(0, 1);
+    const others = RIFFS.filter((r) => r[2] !== artist).sort(() => Math.random() - 0.5);
+    const w = same.concat(others).slice(0, 4).map((r) => label(r[1], r[2]));
+    BANK.push({ id: `riff-${id}`, subject: 'music', l, audio: id, q: '🎧 Name that riff! Press play, then pick the song.', a: label(title, artist), w });
+  });
 })(window.MQ_Y6 = window.MQ_Y6 || {});
