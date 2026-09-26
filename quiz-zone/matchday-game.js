@@ -1072,7 +1072,7 @@
           </div>
           <h3 class="md-q-title">${escapeHtml(o.title || "")}</h3>
           <p class="md-q-text" id="q-text">${escapeHtml(q.q)}</p>
-          ${riff ? `<p class="md-riff"><button type="button" class="md-riff-btn" id="q-riff">▶ Play the clip</button> <small>Clip from Deezer</small></p>` : ""}
+          ${riff ? `<p class="md-riff"><button type="button" class="md-riff-btn" id="q-riff">▶ Play the clip</button> <small>30-second song clip</small></p>` : ""}
           <div class="md-timer" aria-hidden="true"><span id="q-timer"></span></div>
           <div class="md-options n${q.options.length}" id="q-options">
             ${q.options.map((opt, i) => `<button type="button" class="md-opt" data-i="${i}"><kbd>${i + 1}</kbd> ${escapeHtml(opt)}</button>`).join("")}

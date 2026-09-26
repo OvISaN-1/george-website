@@ -792,7 +792,7 @@ function initJukebox() {
       audio.addEventListener('ended', () => { i++; btn.textContent = '▶ Next song'; now.innerHTML = ''; audio = null; });
       await audio.play();
       btn.textContent = '⏸ Stop';
-      now.innerHTML = `${t.cover ? `<img src="${escapeAttr(t.cover)}" alt="" width="36" height="36">` : ''}<span>Now playing: <b>${escapeHtml(title)}</b> · ${escapeHtml(artist)}<br><small>30-second clip from Deezer</small></span>`;
+      now.innerHTML = `${t.cover ? `<img src="${escapeAttr(t.cover)}" alt="" width="36" height="36">` : ''}<span>Now playing: <b>${escapeHtml(title)}</b> · ${escapeHtml(artist)}<br><small>30-second clip from ${escapeHtml(t.source || 'Deezer')}</small></span>`;
     } catch (e) {
       btn.textContent = '▶ Play some AC/DC';
       now.textContent = 'The jukebox isn\'t available right now.';

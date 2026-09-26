@@ -2,7 +2,8 @@
    GEORGE'S WEBSITE: EVEN MORE LIVE DATA
    -----------------------------------------------------------
    - squad():  Forest's current squad (football-data.org, same key)
-   - track():  a 30-second preview of a rock song (Deezer, no key).
+   - track():  a 30-second preview of a rock song (Deezer, or Apple's
+               iTunes previews as a backup; no keys).
                Only songs on the SONGS list below can be asked for.
    - report(): a short newspaper-style Matchday report (Workers AI)
    - games():  George's video games from RAWG (key RAWG_KEY)
@@ -78,27 +79,51 @@ export const SONGS = {
   mrblue: ['Electric Light Orchestra', 'Mr. Blue Sky'],
 };
 
+// Some music services turn away requests that don't say who they are.
+const HEADERS = { 'User-Agent': 'GeorgesWebsite/1.0 (+https://georgeneagu.win)', Accept: 'application/json' };
+const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const short = (s) => norm(String(s || '').replace(/\s*[([-].*$/, ''));
+// Prefer the exact title (not a live or remix version), then the closest.
+const bestOf = (hits, title) => hits.find((t) => norm(t.title) === norm(title)) || hits.find((t) => norm(t.title).startsWith(norm(title))) ||
+  hits.find((t) => short(t.title) === short(title)) || hits[0];
+
+async function fromDeezer(artist, title) {
+  for (const q of [`artist:"${artist}" track:"${title}"`, `${artist} ${title}`]) {
+    const res = await fetch(`https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=15`, { headers: HEADERS });
+    if (!res.ok) throw new Error(`deezer ${res.status}`);
+    const j = await res.json();
+    if (j.error) throw new Error(`deezer ${j.error.message || j.error.type || 'error'}`);
+    const hits = (j.data || []).filter((t) => t.preview && norm(t.artist && t.artist.name) === norm(artist));
+    const best = bestOf(hits, title);
+    if (best) return { preview: best.preview, cover: best.album && best.album.cover_medium || null, link: best.link || null, source: 'Deezer' };
+  }
+  return null;
+}
+
+async function fromItunes(artist, title) {
+  const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(`${artist} ${title}`)}&media=music&entity=song&country=GB&limit=15`, { headers: HEADERS });
+  if (!res.ok) throw new Error(`itunes ${res.status}`);
+  const j = await res.json();
+  const hits = (j.results || []).filter((t) => t.previewUrl && norm(t.artistName) === norm(artist)).map((t) => ({ ...t, title: t.trackName }));
+  const best = bestOf(hits, title);
+  if (!best) return null;
+  return { preview: best.previewUrl, cover: best.artworkUrl100 ? best.artworkUrl100.replace('100x100bb', '250x250bb') : null, link: best.trackViewUrl || null, source: 'Apple Music' };
+}
+
 export async function track(id) {
   const song = SONGS[id];
   if (!song) return { error: 'unknown-song' };
   const [artist, title] = song;
-  const q = encodeURIComponent(`artist:"${artist}" track:"${title}"`);
-  const res = await fetch(`https://api.deezer.com/search?q=${q}&limit=10`);
-  if (!res.ok) throw new Error(`deezer ${res.status}`);
-  const j = await res.json();
-  const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const hits = (j.data || []).filter((t) => t.preview && norm(t.artist && t.artist.name) === norm(artist));
-  // Prefer the exact title (not a live or remix version), then the most popular.
-  const short = (s) => norm(String(s || '').replace(/\s*[([-].*$/, ''));
-  const best = hits.find((t) => norm(t.title) === norm(title)) || hits.find((t) => norm(t.title).startsWith(norm(title))) ||
-    hits.find((t) => short(t.title) === short(title)) || hits[0];
-  if (!best) return { error: 'not-found' };
-  return {
-    id, artist, title,
-    preview: best.preview,
-    cover: best.album && best.album.cover_medium || null,
-    link: best.link || null,
-  };
+  const problems = [];
+  // Deezer first, then Apple's iTunes previews if Deezer can't help.
+  for (const find of [fromDeezer, fromItunes]) {
+    try {
+      const hit = await find(artist, title);
+      if (hit) return { id, artist, title, ...hit };
+      problems.push(`${find.name}: not found`);
+    } catch (e) { problems.push(`${find.name}: ${e.message}`); }
+  }
+  throw new Error(problems.join('; '));
 }
 
 /* ---------------- Matchday report (Workers AI) ----------------
