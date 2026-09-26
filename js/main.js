@@ -244,11 +244,17 @@ function renderFootball(C) {
 /* ---- Live Forest data (league, fixtures, results, top scorers) ------------ */
 let FIXTURES = [];
 
-async function loadLive() {
+// On georgeneagu.win (or the workers.dev test address) the data is at
+// /api/forest. Anywhere else (the old github.io copy, a computer at home)
+// it is fetched from georgeneagu.win.
+const LIVE_URL = /(^|\.)georgeneagu\.win$|\.workers\.dev$/.test(location.hostname) ? '/api/forest' : 'https://georgeneagu.win/api/forest';
+const LIVE_SAVE = 'gz_forest_live_v1';
+
+async function fetchLive() {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 8000);
   try {
-    const res = await fetch('/api/forest', { signal: ctrl.signal });
+    const res = await fetch(LIVE_URL, { signal: ctrl.signal, cache: 'no-cache' });
     if (!res.ok) return null;
     const data = await res.json();
     return data && data.league ? data : null;
@@ -257,6 +263,20 @@ async function loadLive() {
   } finally {
     clearTimeout(timer);
   }
+}
+async function loadLive() {
+  let data = await fetchLive();
+  if (!data) { await new Promise((r) => setTimeout(r, 1500)); data = await fetchLive(); } // one more go
+  if (data) {
+    storageSet(LIVE_SAVE, JSON.stringify(data));
+    return data;
+  }
+  // Couldn't reach it: show the last table this device saw (up to a week old).
+  try {
+    const saved = JSON.parse(storageGet(LIVE_SAVE));
+    if (saved && saved.league && Date.now() - new Date(saved.updated).getTime() < 7 * 86400000) return Object.assign(saved, { stale: true });
+  } catch (e) { /* nothing saved */ }
+  return null;
 }
 
 function ordinal(n) {
@@ -279,7 +299,9 @@ function renderLeague(live) {
   const L = live.league;
   setText('league-line', `${ordinal(L.position)} in the Premier League · ${L.played} played · ${L.points} point${L.points === 1 ? '' : 's'}`);
   const t = new Date(live.updated);
-  setText('league-asof', `Live table · updated ${t.toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}`);
+  setText('league-asof', live.stale
+    ? `Couldn't refresh just now, so this is the table from ${t.toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`
+    : `Live table · updated ${t.toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}`);
 
   if (scorerEl) {
     const top = live.scorers && live.scorers[0];

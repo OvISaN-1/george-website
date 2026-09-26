@@ -21,7 +21,13 @@ const CACHE_VERSION = 'v1';
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    if (url.pathname === '/api/forest') return forest(request, env, ctx);
+    if (url.pathname === '/api/forest') {
+      // Public football data: the old github.io copy of the site may read it too.
+      const res = await forest(request, env, ctx);
+      const open = new Response(res.body, res);
+      open.headers.set('access-control-allow-origin', '*');
+      return open;
+    }
     if (url.pathname === '/api/coach') return coach(request, env, json);
     if (url.pathname.startsWith('/api/')) return json({ error: 'not-found' }, 404, 0);
     return env.ASSETS.fetch(request);
