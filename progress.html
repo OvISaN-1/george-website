@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>document.documentElement.classList.add('js');</script>
+  <title>Move my progress — George's Game Zone</title>
+  <meta name="description" content="Save George's game progress to a file and load it on another device or the new web address.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="https://georgeneagu.win/progress.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="css/shell.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121014'/%3E%3Ctext x='16' y='23' font-family='Arial, sans-serif' font-weight='700' font-size='19' fill='%23e1102c' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E">
+  <style>
+    :root{--navy:#121014;--navy-light:#1c1820;--cream:#f1ede9;--muted:#b9b2ac;--faint:#8a857e;--gold:#f5b942;--accent:#9d5cff;--good:#3DCC7C;--bad:#FF5D5D;--line:rgba(241,237,233,0.10);}
+    *{box-sizing:border-box;}
+    body{margin:0;min-height:100vh;font-family:'Manrope',sans-serif;color:var(--cream);background:var(--navy);}
+    h1,h2{font-family:'Rajdhani',sans-serif;margin:0;}
+    button{font-family:'Rajdhani',sans-serif;cursor:pointer;border:none;font-weight:700;}
+    button:focus-visible,textarea:focus-visible,label.file:focus-within{outline:2px solid var(--cream);outline-offset:3px;}
+    main#main{display:flex;flex-direction:column;align-items:center;padding:24px 16px 60px;
+      background:radial-gradient(circle at 15% 0%, rgba(157,92,255,0.12), transparent 45%);}
+    .wrap{width:100%;max-width:760px;}
+    .eyebrow{display:block;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#a264ff;margin:0 0 2px;}
+    .title h1{font-size:32px;line-height:1.05;margin-bottom:8px;}
+    .title p{color:var(--muted);line-height:1.5;margin:0 0 18px;}
+    .card{background:var(--navy-light);border-radius:20px;padding:22px;border:1px solid var(--line);margin-bottom:16px;}
+    .card h2{font-size:24px;margin-bottom:6px;}
+    .card p{color:var(--muted);line-height:1.5;margin:0 0 14px;font-size:15px;}
+    .steps{margin:0 0 14px;padding-left:20px;color:var(--muted);line-height:1.6;}
+    .btn{background:var(--accent);color:var(--navy);border-radius:999px;min-height:48px;padding:0 22px;font-size:17px;text-transform:uppercase;letter-spacing:.03em;}
+    .btn.alt{background:transparent;color:var(--cream);border:1px solid rgba(241,237,233,0.25);text-transform:none;letter-spacing:0;font-size:15px;}
+    .btn:disabled{opacity:.5;cursor:not-allowed;}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    label.file{display:inline-flex;align-items:center;min-height:48px;padding:0 22px;border-radius:999px;background:var(--accent);color:var(--navy);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:17px;text-transform:uppercase;letter-spacing:.03em;cursor:pointer;}
+    label.file input{position:absolute;opacity:0;width:1px;height:1px;}
+    textarea{width:100%;min-height:90px;margin-top:12px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--cream);padding:10px;font:12px/1.4 ui-monospace,Menlo,monospace;resize:vertical;}
+    .summary{list-style:none;margin:12px 0;padding:0;display:grid;gap:6px;}
+    .summary li{background:rgba(255,255,255,0.04);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:14px;}
+    .msg{margin-top:12px;font-weight:700;min-height:1.4em;}
+    .msg.good{color:var(--good);} .msg.bad{color:var(--bad);}
+    .small{font-size:12px;color:var(--faint);line-height:1.45;}
+    [hidden]{display:none!important;}
+  </style>
+</head>
+<body data-page="quiz-game">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <nav class="nav-bar" aria-label="Main">
+      <a class="logo" href="index.html">GEORGE<span>.</span></a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="football.html">Football</a></li>
+        <li><a href="games.html">Video Games</a></li>
+        <li><a href="quiz-zone.html" aria-current="page">Game Zone</a></li>
+        <li><a href="school.html">School Zone</a></li>
+        <li><a href="about.html">About Me</a></li>
+      </ul>
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </nav>
+    <div class="mobile-nav" id="mobile-nav">
+      <a href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/></svg>Home</a>
+      <a href="football.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/></svg>Football</a>
+      <a href="games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="10" rx="4"/></svg>Video Games</a>
+      <a href="quiz-zone.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>Game Zone</a>
+      <a href="school.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4l9 4-9 4-9-4z"/></svg>School Zone</a>
+      <a href="about.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>About Me</a>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="wrap">
+      <div class="title">
+        <span class="eyebrow">Game Zone</span>
+        <h1>💾 Move my progress</h1>
+        <p>Your games save on this device only. To play somewhere else, like another tablet or the new web address <b>georgeneagu.win</b>, save your progress here, then load it there. It covers Matchday (career, season, unlocks, what the game has learned), Free Kick Masters, badges and settings.</p>
+      </div>
+
+      <section class="card">
+        <h2>1. Save progress</h2>
+        <p>On the device where George has been playing.</p>
+        <div class="row">
+          <button type="button" class="btn" id="save-file">⬇️ Save to a file</button>
+          <button type="button" class="btn alt" id="save-code">📋 Copy as a code</button>
+        </div>
+        <ul class="summary" id="here"></ul>
+        <div class="msg" id="save-msg" role="status"></div>
+        <p class="small">The file is called something like <i>george-progress-2026-09-26.json</i>. Email it to yourself, or put it in iCloud / Google Drive, to open on the other device. The code does the same job: paste it into a message to yourself.</p>
+      </section>
+
+      <section class="card">
+        <h2>2. Load progress</h2>
+        <p>On the new device or web address. This replaces the progress saved there.</p>
+        <div class="row">
+          <label class="file">📂 Load a file<input type="file" id="load-file" accept=".json,application/json,text/plain"></label>
+          <button type="button" class="btn alt" id="show-paste">Paste a code instead</button>
+        </div>
+        <div id="paste" hidden>
+          <textarea id="code" placeholder="Paste the code here" aria-label="Progress code"></textarea>
+          <div class="row" style="margin-top:10px"><button type="button" class="btn alt" id="use-code">Check the code</button></div>
+        </div>
+        <div id="confirm" hidden>
+          <p style="margin:14px 0 0">This file has:</p>
+          <ul class="summary" id="there"></ul>
+          <button type="button" class="btn" id="load-go">✅ Load it</button>
+        </div>
+        <div class="msg" id="load-msg" role="status"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-row">
+      <span>Built with ♥ by Dad, for George.</span>
+      <a href="quiz-zone.html">Game Zone</a>
+    </div>
+  </footer>
+
+  <script src="js/content.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/progress.js"></script>
+</body>
+</html>
