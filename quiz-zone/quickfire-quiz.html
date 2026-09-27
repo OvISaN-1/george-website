@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quickfire Quiz — General Knowledge</title>
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://georgeneagu.win/quiz-zone/quickfire-quiz.html">
+<meta property="og:title" content="Quickfire Quiz — George's Game Zone">
+<meta property="og:description" content="Fresh trivia questions every time you play — science, sport, geography, animals and general knowledge. 60 seconds on the clock.">
+<meta property="og:image" content="https://georgeneagu.win/assets/images/share/quickfire-quiz.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://georgeneagu.win/assets/images/share/quickfire-quiz.png">
+<meta name="description" content="Fresh trivia questions every time you play — science, sport, geography, animals and general knowledge. 60 seconds on the clock.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="canonical" href="https://georgeneagu.win/quiz-zone/quickfire-quiz.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121014'/%3E%3Ctext x='16' y='23' font-family='Arial, sans-serif' font-weight='700' font-size='19' fill='%23e1102c' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../css/fonts.css">
+<link rel="stylesheet" href="../css/shell.css">
+<link rel="stylesheet" href="stats.css">
+<style>
+  :root{
+    --navy:#121014;
+    --navy-light:#1c1820;
+    --cream:#f1ede9;
+    --gold:#f5b942;
+    --teal:#9d5cff;
+    --pink:#e84c61;
+    --ink:#241f29;
+    --good:#3DCC7C;
+    --bad:#FF5D5D;
+  }
+  *{box-sizing:border-box;}
+  body{ display:block; padding:0; background:var(--navy); margin:0; min-height:100vh; font-family:'Manrope',sans-serif; color:var(--cream); }
+  h1,h2,h3{font-family:'Rajdhani',sans-serif;margin:0;}
+  main a{color:var(--gold);}
+  main#main{
+    display:flex;flex-direction:column;align-items:center;
+    padding:24px 16px 60px;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(157,92,255,0.14), transparent 45%),
+      radial-gradient(circle at 85% 100%, rgba(245,185,66,0.10), transparent 45%);
+  }
+  .quiz-title{width:100%;max-width:720px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+  .quiz-title .eyebrow{display:block;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#a264ff;margin-bottom:2px;}
+  .quiz-title h1{font-size:30px;line-height:1.05;color:var(--cream);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .quiz-title .back{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;text-decoration:none;color:var(--cream);
+    border:1px solid rgba(241,237,233,0.18);border-radius:999px;padding:10px 18px;min-height:44px;display:inline-flex;align-items:center;}
+  .quiz-title .back:hover{border-color:var(--gold);color:var(--gold);}
+  .forest-chip-inline{font-family:'Manrope',sans-serif;font-size:11px;font-weight:800;letter-spacing:.3px;padding:4px 10px;border-radius:999px;background:#ca0e28;color:#fff;}
+  .site-footer{margin-top:0;}
+
+  .card{ width:100%;max-width:720px;background:var(--navy-light);border-radius:20px;padding:24px;box-shadow:0 12px 30px rgba(0,0,0,0.35);border:1px solid rgba(241,237,233,0.10); }
+  #start-screen p{font-size:16px;line-height:1.5;color:#b9b2ac;}
+  #start-greeting{font-family:'Rajdhani',sans-serif;font-size:17px;color:var(--gold);margin-bottom:6px;}
+
+  /* Category chips */
+  .cat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:16px 0;}
+  .cat-btn{background:rgba(255,255,255,0.05);color:var(--cream);border:2px solid rgba(255,255,255,0.12);border-radius:14px;padding:14px 10px;text-align:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;min-height:64px;transition:border-color .15s, transform .15s;}
+  .cat-btn .emoji{display:block;font-size:22px;margin-bottom:4px;}
+  .cat-btn:hover,.cat-btn:focus-visible{border-color:var(--teal);transform:translateY(-2px);outline:none;}
+  .cat-btn[aria-pressed="true"]{border-color:var(--gold);background:rgba(245,185,66,0.12);}
+  #clip-status{text-align:center;color:#b9b2ac;font-size:14px;margin-top:6px;min-height:20px;}
+
+  button{ font-family:'Rajdhani',sans-serif; cursor:pointer; border:none; border-radius:14px; font-weight:700; }
+  .btn-primary{ background:var(--teal);color:var(--navy);border-radius:999px;text-transform:uppercase;letter-spacing:.03em;min-height:48px;
+    box-shadow:0 0 0 1px rgba(157,92,255,0.4), 0 0 28px rgba(157,92,255,0.35); font-size:17px; width:100%; margin-top:16px; transition:transform .15s ease, filter .15s ease; }
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-primary:active{transform:scale(0.97);box-shadow:0 0 0 1px rgba(157,92,255,0.4);}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed;filter:none;}
+
+  #game-screen{display:none;}
+  .hud{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .hud .pill{background:rgba(255,255,255,0.08);padding:6px 14px;border-radius:999px;font-weight:800;font-size:14px;}
+  .hud .timer{font-size:26px;font-weight:800;color:var(--gold);min-width:60px;text-align:right;}
+  .timer.warn{color:var(--bad);}
+  #timer-bar-track{height:6px;border-radius:6px;background:rgba(255,255,255,0.1);overflow:hidden;margin-bottom:18px;}
+  #timer-bar{height:100%;background:linear-gradient(90deg,var(--teal),var(--gold));width:100%;}
+  .q-cat{text-align:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#a264ff;margin-bottom:6px;}
+  .prompt{text-align:center;font-size:19px;color:var(--cream);font-weight:700;margin-bottom:16px;line-height:1.4;}
+
+  .answers{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .answer-btn{background:rgba(255,255,255,0.06);color:var(--cream);border:2px solid rgba(255,255,255,0.12);border-radius:12px;min-height:56px;padding:12px 10px;font-family:'Manrope',sans-serif;font-weight:600;font-size:15px;text-align:center;}
+  .answer-btn:hover{border-color:var(--teal);}
+  .answer-btn.correct{background:var(--good);color:var(--ink);border-color:var(--good);}
+  .answer-btn.wrong{background:var(--bad);color:var(--ink);border-color:var(--bad);}
+  .answer-btn:disabled{cursor:default;}
+  #feedback{text-align:center;font-weight:800;margin-top:14px;min-height:22px;font-size:15px;}
+
+  #results-screen{display:none;text-align:center;}
+  #results-screen .score-big{font-family:'Rajdhani',sans-serif;font-size:52px;color:var(--gold);margin:6px 0;}
+  #results-screen p{color:#b9b2ac;}
+  #results-message{font-family:'Rajdhani',sans-serif;font-size:17px;color:var(--cream);margin-top:2px;}
+  #category-breakdown{text-align:left;margin-top:22px;}
+  #category-breakdown h3{text-align:center;}
+  #name-form{display:flex;gap:10px;margin-top:18px;}
+  #name-form input{flex:1;min-width:0;border:none;border-radius:999px;padding:12px 18px;min-height:44px;font-family:'Manrope',sans-serif;font-size:16px;font-weight:600;background:var(--cream);color:var(--ink);}
+  #name-form button{padding:0 18px;background:#ca0e28;color:#fff;border-radius:999px;min-height:44px;text-transform:uppercase;letter-spacing:.03em;}
+
+  table{width:100%;border-collapse:collapse;margin-top:16px;}
+  th,td{padding:10px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.08);}
+  th{color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:14px;}
+  td{font-weight:600;}
+  tr:first-child td{color:var(--gold);font-weight:800;}
+
+  .footer-note{font-size:12px;color:#8a857e;margin-top:24px;text-align:center;max-width:600px;}
+  .answer-btn:focus-visible,.btn-primary:focus-visible,.quiz-title .back:focus-visible{outline:2px solid var(--cream);outline-offset:3px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;scroll-behavior:auto !important;}
+    .btn-primary,.answer-btn,.cat-btn{transition:none;}
+  }
+</style>
+</head>
+<body data-page="quiz-game">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <nav class="nav-bar" aria-label="Main">
+      <a class="logo" href="../index.html">GEORGE<span>.</span></a>
+      <ul class="nav-links">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../football.html">Football</a></li>
+        <li><a href="../games.html">Video Games</a></li>
+        <li><a href="../quiz-zone.html" aria-current="page">Game Zone</a></li>
+        <li><a href="../school.html">School Zone</a></li>
+        <li><a href="../about.html">About Me</a></li>
+      </ul>
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </nav>
+    <div class="mobile-nav" id="mobile-nav">
+      <a href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/></svg>Home</a>
+      <a href="../football.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/></svg>Football</a>
+      <a href="../games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="10" rx="4"/></svg>Video Games</a>
+      <a href="../quiz-zone.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>Game Zone</a>
+      <a href="../school.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4l9 4-9 4-9-4z"/></svg>School Zone</a>
+      <a href="../about.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>About Me</a>
+    </div>
+  </header>
+
+  <main id="main">
+  <div class="quiz-title">
+    <div>
+      <span class="eyebrow">Game Zone</span>
+      <h1 style="view-transition-name:t-quickfire">Quickfire Quiz</h1>
+    </div>
+    <a class="back" href="../quiz-zone.html">&larr; All games</a>
+  </div>
+
+<div class="card" id="start-screen">
+  <div id="start-greeting"></div>
+  <h2>Fresh questions every time! 🧠</h2>
+  <p>A brand new set of general knowledge questions, pulled live from a huge online quiz database. Pick a subject (or mix them all) and answer as many as you can before the clock runs out.</p>
+  <div class="cat-grid" id="cat-grid" role="group" aria-label="Choose a subject"></div>
+  <button class="btn-primary" id="start-btn" disabled>Loading questions…</button>
+  <div id="clip-status">Fetching fresh questions…</div>
+</div>
+
+<div class="card" id="game-screen">
+  <div class="hud">
+    <span class="pill" id="score-pill">Correct: 0</span>
+    <span class="timer" id="timer-display">60</span>
+  </div>
+  <div id="timer-bar-track"><div id="timer-bar"></div></div>
+  <div class="q-cat" id="question-cat">General Knowledge</div>
+  <div class="prompt" id="question-prompt">Loading…</div>
+  <div class="answers" id="answers"></div>
+  <div id="feedback"></div>
+</div>
+
+<div class="card" id="results-screen">
+  <h2>Time's up!</h2>
+  <p>Questions answered correctly:</p>
+  <div class="score-big" id="final-score">0</div>
+  <div id="results-message"></div>
+  <div id="category-breakdown">
+    <h3 style="margin-top:22px;">How you did, by subject</h3>
+    <div id="category-chart"></div>
+  </div>
+  <form id="name-form">
+    <input type="text" id="player-name" placeholder="Enter your name" maxlength="18" required>
+    <button type="submit">Save score</button>
+  </form>
+  <h3 style="margin-top:26px;">Top scores</h3>
+  <table id="leaderboard"><tbody></tbody></table>
+  <button class="btn-primary" id="play-again-btn">Play again</button>
+</div>
+
+<p class="footer-note">Questions come live from the free Open Trivia Database (opentdb.com) — easy-difficulty general knowledge, science, sport, geography and animals, family-friendly categories only. A new set loads every game, so no two rounds are quite the same. Top scores are shared online with everyone who plays. Badges and streaks save on this device.</p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-row">
+      <span>Built with ♥ by Dad, for George.</span>
+      <a href="../quiz-zone.html">Game Zone</a>
+    </div>
+  </footer>
+
+<script src="../js/main.js"></script>
+<script src="stats.js"></script>
+<script>
+/* ================================================================
+   QUICKFIRE QUIZ
+   Questions come live from the Open Trivia Database (opentdb.com,
+   free, no key). Only "easy" difficulty and five family-friendly
+   categories are used, so nothing unsuitable can show up.
+   ================================================================ */
+const CATEGORIES = [
+  { id: 0, name: "Mixed", emoji: "🎲" },
+  { id: 9, name: "General Knowledge", emoji: "🧠" },
+  { id: 17, name: "Science", emoji: "🔬" },
+  { id: 21, name: "Sport", emoji: "🏅" },
+  { id: 22, name: "Geography", emoji: "🌍" },
+  { id: 27, name: "Animals", emoji: "🐾" },
+];
+const GAME_SECONDS = 60;
+const TOKEN_KEY = "gz_trivia_token_v1";
+
+/* ================= SUPABASE CONFIG (same as the other games) ================= */
+const SUPABASE_URL = "https://hucnucpfyjltlhmvprso.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1Y251Y3BmeWpsdGxobXZwcnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgzNjEsImV4cCI6MjEwMzU4NDM2MX0.DSjLCkiUWB47wVd4wnW_2RvWFoISbH80JI9ukB1bBdg";
+const GAME_ID = "quickfire-quiz";
+const LEADERBOARD_SIZE = 10;
+/* ============================================================================ */
+
+let questionQueue = [];
+let queuePos = 0;
+let correctCount = 0;
+let answeredCount = 0;
+let timeLeft = GAME_SECONDS;
+let timerHandle = null;
+let answered = false;
+let gameRunning = false;
+let currentCategory = "";
+let categoryStats = {};
+let chosenCat = 0;
+let ready = false;
+
+const startScreen = document.getElementById("start-screen");
+const gameScreen = document.getElementById("game-screen");
+const resultsScreen = document.getElementById("results-screen");
+const startBtn = document.getElementById("start-btn");
+const clipStatus = document.getElementById("clip-status");
+const catGrid = document.getElementById("cat-grid");
+const scorePillEl = document.getElementById("score-pill");
+const timerDisplay = document.getElementById("timer-display");
+const timerBar = document.getElementById("timer-bar");
+const catEl = document.getElementById("question-cat");
+const promptEl = document.getElementById("question-prompt");
+const answersEl = document.getElementById("answers");
+const feedbackEl = document.getElementById("feedback");
+const finalScoreEl = document.getElementById("final-score");
+const nameForm = document.getElementById("name-form");
+const playerNameInput = document.getElementById("player-name");
+const leaderboardBody = document.querySelector("#leaderboard tbody");
+const playAgainBtn = document.getElementById("play-again-btn");
+const startGreetingEl = document.getElementById("start-greeting");
+const resultsMessageEl = document.getElementById("results-message");
+const categoryChartEl = document.getElementById("category-chart");
+
+if (startGreetingEl) startGreetingEl.textContent = `Ready, ${GZ.randomNickname()}? 🧠`;
+
+catGrid.innerHTML = CATEGORIES.map((c) =>
+  `<button type="button" class="cat-btn" data-id="${c.id}" aria-pressed="${c.id === 0}"><span class="emoji" aria-hidden="true">${c.emoji}</span>${c.name}</button>`
+).join("");
+catGrid.querySelectorAll(".cat-btn").forEach((b) => b.addEventListener("click", () => {
+  chosenCat = +b.dataset.id;
+  catGrid.querySelectorAll(".cat-btn").forEach((x) => x.setAttribute("aria-pressed", x === b));
+}));
+
+/* ---------- Decoding the HTML entities Open Trivia DB sends back ---------- */
+function decodeEntities(str) {
+  const t = document.createElement("textarea");
+  t.innerHTML = str;
+  return t.value;
+}
+
+/* ---------- Session token, so the same question doesn't repeat too soon ---------- */
+function readToken() { try { return localStorage.getItem(TOKEN_KEY) || ""; } catch (e) { return ""; } }
+function writeToken(t) { try { localStorage.setItem(TOKEN_KEY, t); } catch (e) { /* private mode */ } }
+async function getToken() {
+  const have = readToken();
+  if (have) return have;
+  try {
+    const res = await fetch("https://opentdb.com/api_token.php?command=request");
+    const data = await res.json();
+    if (data && data.token) { writeToken(data.token); return data.token; }
+  } catch (e) { /* fine without one */ }
+  return "";
+}
+
+/* ---------- Fetching a fresh set of questions ---------- */
+async function fetchQuestions(catId) {
+  const token = await getToken();
+  const catParam = catId ? `&category=${catId}` : "";
+  const tokenParam = token ? `&token=${encodeURIComponent(token)}` : "";
+  const url = `https://opentdb.com/api.php?amount=20&difficulty=easy&type=multiple${catParam}${tokenParam}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  // 4 = "all questions used up" for this token: reset it and try once more.
+  if (data.response_code === 4 && token) {
+    await fetch(`https://opentdb.com/api_token.php?command=reset&token=${encodeURIComponent(token)}`);
+    const res2 = await fetch(url);
+    const data2 = await res2.json();
+    if (data2.response_code !== 0 || !data2.results.length) throw new Error("no questions");
+    return data2.results;
+  }
+  if (data.response_code !== 0 || !data.results.length) throw new Error("no questions");
+  return data.results;
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildQueue(results) {
+  return results.map((r) => ({
+    category: decodeEntities(r.category).replace(/^(Entertainment|Science): ?/, ""),
+    question: decodeEntities(r.question),
+    correct: decodeEntities(r.correct_answer),
+    options: shuffle([r.correct_answer, ...r.incorrect_answers].map(decodeEntities)),
+  }));
+}
+
+/* ---------- Checking the clips work before letting George start (mirrors the other live games) ---------- */
+(async () => {
+  try {
+    const results = await fetchQuestions(0);
+    questionQueue = buildQueue(results);
+    ready = true;
+    startBtn.disabled = false;
+    startBtn.textContent = "Start the quiz";
+    clipStatus.textContent = "";
+  } catch (e) {
+    clipStatus.textContent = "Couldn't fetch questions right now. Please try again later. 🧠";
+  }
+})();
+
+startBtn.addEventListener("click", startGame);
+playAgainBtn.addEventListener("click", () => {
+  resultsScreen.style.display = "none";
+  startScreen.style.display = "block";
+  if (startGreetingEl) startGreetingEl.textContent = `Go again, ${GZ.randomNickname()}? 🧠`;
+});
+nameForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = playerNameInput.value.trim();
+  if (!name) return;
+  await saveScore(name, correctCount);
+  await renderLeaderboard();
+  nameForm.style.display = "none";
+});
+
+async function startGame() {
+  queuePos = 0;
+  correctCount = 0;
+  answeredCount = 0;
+  categoryStats = {};
+  gameRunning = true;
+  nameForm.style.display = "flex";
+  nameForm.reset && nameForm.reset();
+
+  startScreen.style.display = "none";
+  gameScreen.style.display = "block";
+  scorePillEl.textContent = "Correct: 0";
+
+  // If George picked a specific subject, fetch a batch for just that one.
+  // (The Mixed batch fetched while he was reading the rules is used as-is.)
+  if (chosenCat !== 0) {
+    promptEl.textContent = "Loading…";
+    try { questionQueue = buildQueue(await fetchQuestions(chosenCat)); }
+    catch (e) { /* fall back to the Mixed batch already loaded */ }
+  }
+
+  startOverallTimer();
+  loadQuestion();
+}
+
+function startOverallTimer() {
+  timeLeft = GAME_SECONDS;
+  timerDisplay.textContent = timeLeft;
+  timerBar.style.width = "100%";
+  clearInterval(timerHandle);
+  timerHandle = setInterval(() => {
+    timeLeft--;
+    timerDisplay.textContent = timeLeft;
+    timerBar.style.width = `${(timeLeft / GAME_SECONDS) * 100}%`;
+    timerDisplay.classList.toggle("warn", timeLeft <= 10);
+    if (timeLeft <= 0) {
+      clearInterval(timerHandle);
+      endGame();
+    }
+  }, 1000);
+}
+
+async function loadQuestion() {
+  if (!gameRunning) return;
+  answered = false;
+  feedbackEl.textContent = "";
+
+  if (queuePos >= questionQueue.length) {
+    // Ran out mid-game (rare): grab another Mixed batch and carry on.
+    try { questionQueue = questionQueue.concat(buildQueue(await fetchQuestions(0))); }
+    catch (e) { if (queuePos >= questionQueue.length) return endGame(); }
+  }
+  const q = questionQueue[queuePos];
+  if (!q) return endGame();
+  currentCategory = q.category || "General Knowledge";
+  catEl.textContent = currentCategory;
+  promptEl.textContent = q.question;
+
+  answersEl.innerHTML = "";
+  q.options.forEach((opt) => {
+    const btn = document.createElement("button");
+    btn.className = "answer-btn";
+    btn.textContent = opt;
+    btn.addEventListener("click", () => handleAnswer(btn, opt, q.correct));
+    answersEl.appendChild(btn);
+  });
+}
+
+function handleAnswer(btn, chosen, correct) {
+  if (answered || !gameRunning) return;
+  answered = true;
+  Array.from(answersEl.children).forEach((b) => (b.disabled = true));
+
+  if (!categoryStats[currentCategory]) categoryStats[currentCategory] = { correct: 0, total: 0 };
+  categoryStats[currentCategory].total++;
+  answeredCount++;
+
+  if (chosen === correct) {
+    btn.classList.add("correct");
+    correctCount++;
+    categoryStats[currentCategory].correct++;
+    feedbackEl.textContent = "Correct!";
+    feedbackEl.style.color = "var(--good)";
+  } else {
+    btn.classList.add("wrong");
+    Array.from(answersEl.children).forEach((b) => { if (b.textContent === correct) b.classList.add("correct"); });
+    feedbackEl.textContent = `The answer was ${correct}.`;
+    feedbackEl.style.color = "var(--bad)";
+  }
+  scorePillEl.textContent = `Correct: ${correctCount}`;
+  queuePos++;
+  setTimeout(loadQuestion, 1500);
+}
+
+function resultsMessageFor(nickname, score) {
+  if (score >= 20) return `Incredible, ${nickname}! ${score} correct — quiz champion! 🧠🏆`;
+  if (score >= 10) return `Brainy stuff, ${nickname}! ${score} correct. 🔥`;
+  if (score >= 1) return `Nice one, ${nickname}! ${score} correct. Have another go!`;
+  return `That's alright, ${nickname} — everyone misses now and then. Try again!`;
+}
+
+function endGame() {
+  gameRunning = false;
+  clearInterval(timerHandle);
+  gameScreen.style.display = "none";
+  resultsScreen.style.display = "block";
+  finalScoreEl.textContent = correctCount;
+  playerNameInput.value = "";
+
+  const nickname = GZ.randomNickname();
+  if (resultsMessageEl) resultsMessageEl.textContent = resultsMessageFor(nickname, correctCount);
+  if (categoryChartEl) GZ.renderCategoryChart(categoryChartEl, categoryStats);
+
+  const { newBadges } = GZ.recordResult(GAME_ID, correctCount, answeredCount);
+  GZ.announceBadges(newBadges);
+
+  renderLeaderboard();
+}
+
+async function getLeaderboard() {
+  try {
+    const url = `${SUPABASE_URL}/rest/v1/leaderboard?game=eq.${GAME_ID}&select=player_name,score&order=score.desc&limit=${LEADERBOARD_SIZE}`;
+    const res = await fetch(url, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.map((r) => ({ name: r.player_name, points: r.score }));
+  } catch (e) {
+    console.error("Could not load leaderboard", e);
+    return [];
+  }
+}
+
+async function saveScore(name, points) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/leaderboard`, {
+      method: "POST",
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ game: GAME_ID, player_name: name, score: points }),
+    });
+  } catch (e) {
+    console.error("Could not save score", e);
+  }
+}
+
+async function renderLeaderboard() {
+  leaderboardBody.innerHTML = "<tr><td colspan='3'>Loading top scores...</td></tr>";
+  const board = await getLeaderboard();
+  leaderboardBody.innerHTML = "";
+  if (board.length === 0) {
+    leaderboardBody.innerHTML = "<tr><td colspan='3'>No scores yet. Be the first!</td></tr>";
+    return;
+  }
+  const header = document.createElement("tr");
+  header.innerHTML = "<th>#</th><th>Name</th><th>Score</th>";
+  leaderboardBody.appendChild(header);
+  board.forEach((entry, i) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td>${i + 1}</td><td>${escapeHtml(entry.name)}</td><td>${entry.points}</td>`;
+    leaderboardBody.appendChild(row);
+  });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>

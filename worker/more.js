@@ -262,6 +262,53 @@ export async function report(env, body) {
   return { error: 'ai-failed' };
 }
 
+/* ---------------- Guess the Player (TheSportsDB) ----------------
+   TheSportsDB's shared "3" key is their own public test key, free for
+   small hobby sites like this one (no account or secret needed).
+   PLAYERS: id -> the name to search for. Famous, currently-active
+   footballers a football-mad 10-year-old would recognise, plus a few
+   from Forest's own squad. Nationality and club can go out of date
+   when someone transfers — check back here occasionally. */
+export const PLAYERS = {
+  messi: 'Lionel Messi', ronaldo: 'Cristiano Ronaldo', haaland: 'Erling Haaland',
+  mbappe: 'Kylian Mbappe', bellingham: 'Jude Bellingham', salah: 'Mohamed Salah',
+  saka: 'Bukayo Saka', kane: 'Harry Kane', debruyne: 'Kevin De Bruyne',
+  vinicius: 'Vinicius Junior', foden: 'Phil Foden', rice: 'Declan Rice',
+  rashford: 'Marcus Rashford', trent: 'Trent Alexander-Arnold', vandijk: 'Virgil van Dijk',
+  rodri: 'Rodri', odegaard: 'Martin Odegaard', alisson: 'Alisson Becker',
+  courtois: 'Thibaut Courtois', lewandowski: 'Robert Lewandowski', griezmann: 'Antoine Griezmann',
+  neymar: 'Neymar', modric: 'Luka Modric', son: 'Son Heung-Min',
+  bruno: 'Bruno Fernandes', casemiro: 'Casemiro', palmer: 'Cole Palmer',
+  musiala: 'Jamal Musiala', valverde: 'Federico Valverde', pedri: 'Pedri',
+  wirtz: 'Florian Wirtz', yamal: 'Lamine Yamal', kvara: 'Khvicha Kvaratskhelia',
+  osimhen: 'Victor Osimhen', ramos: 'Sergio Ramos', kimmich: 'Joshua Kimmich',
+  sels: 'Matz Sels', gibbswhite: 'Morgan Gibbs-White', murillo: 'Murillo',
+  woods: 'Chris Wood',
+};
+
+async function findPlayer(name) {
+  const res = await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=${encodeURIComponent(name)}`, { headers: HEADERS });
+  if (!res.ok) throw new Error(`sportsdb ${res.status}`);
+  const j = await res.json();
+  const list = (j.player || []).filter((x) => x.strSport === 'Soccer');
+  return list.find((x) => x.strPlayer === name) || list[0] || null;
+}
+
+export async function player(id) {
+  const name = PLAYERS[id];
+  if (!name) return { error: 'unknown-player' };
+  const p = await findPlayer(name);
+  if (!p) return { error: 'not-found' };
+  const photo = p.strCutout || p.strRender || p.strThumb;
+  if (!photo) return { error: 'no-photo' };
+  return {
+    id, name: p.strPlayer, photo,
+    nationality: p.strNationality || '',
+    team: p.strTeam || '',
+    position: p.strPosition || '',
+  };
+}
+
 /* ---------------- Video games (RAWG) ----------------
    titles: George's top games from js/content.js. For each: cover art,
    release date, rating and platforms; plus new games coming soon in

@@ -160,8 +160,8 @@ function renderList(id, items) {
    ===================================================================== */
 // Home: "Right now" tiles (next Forest match with its forecast, and the ISS).
 async function renderNow() {
-  const fx = $('now-forest'), sp = $('now-space');
-  if (!fx && !sp) return;
+  const fx = $('now-forest'), sp = $('now-space'), ad = $('now-advice');
+  if (!fx && !sp && !ad) return;
   const tile = (el, main, sub) => { el.querySelector('.now-main').innerHTML = main; el.querySelector('.now-sub').innerHTML = sub; };
   loadLive().then((live) => {
     if (!fx) return;
@@ -186,6 +186,17 @@ async function renderNow() {
     } catch (e) {
       tile(sp, 'Somewhere up there 🛰️', 'See NASA\'s picture of the day');
     }
+  }
+  if (ad) {
+    try {
+      // Busts the API's own response cache so it's not the same line all day.
+      const res = await fetch(`https://api.adviceslip.com/advice?t=${Date.now()}`);
+      const data = await res.json();
+      const line = data && data.slip && data.slip.advice;
+      if (!line) throw new Error('advice');
+      $('advice-text').textContent = `"${line}"`;
+      ad.hidden = false;
+    } catch (e) { /* leave it hidden: nothing broken-looking on the page */ }
   }
 }
 
