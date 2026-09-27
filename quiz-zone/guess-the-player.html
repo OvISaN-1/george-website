@@ -157,7 +157,7 @@
 <div class="card" id="start-screen">
   <div id="start-greeting"></div>
   <h2>Photo, nationality, club. Who is it? 📸</h2>
-  <p>A footballer's photo, their nationality and the club they currently play for. Pick the right name from four before the clock runs out.</p>
+  <p>A footballer's photo, their nationality, age and the club they currently play for. Pick the right name from four before the clock runs out.</p>
   <div class="rules">
     <div class="rule"><div class="emoji">⏱️</div><div class="label">60 seconds<br>total</div></div>
     <div class="rule"><div class="emoji">⚽</div><div class="label">World stars &<br>Forest players</div></div>
@@ -179,6 +179,7 @@
     <div class="player-facts">
       <span class="fact-chip">🌍 Nationality: <b id="fact-nat">—</b></span>
       <span class="fact-chip">⚽ Plays for: <b id="fact-team">—</b></span>
+      <span class="fact-chip" id="fact-age-chip" hidden>🎂 Age: <b id="fact-age">—</b></span>
     </div>
   </div>
   <div class="answers" id="answers"></div>
@@ -382,6 +383,9 @@ function loadQuestion() {
   $("player-img").alt = "";
   $("fact-nat").textContent = p.nationality || "Unknown";
   $("fact-team").textContent = p.team || "Unknown";
+  // Not every player has a birth date on file, so the age chip only shows when we have one.
+  $("fact-age-chip").hidden = p.age == null;
+  if (p.age != null) $("fact-age").textContent = p.age;
 
   const options = shuffle([p].concat(pickDistractors(p, 3)));
   answersEl.innerHTML = "";
