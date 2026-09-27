@@ -533,9 +533,12 @@ details.predict-toggle[open] summary{ margin-bottom: var(--s3); }
 .now-tile:hover, .now-tile:focus-visible { transform: translateY(-3px); }
 .now-tile.football:hover, .now-tile.football:focus-visible { border-color: var(--garibaldi); box-shadow: var(--glow-garibaldi); }
 .now-tile.space:hover, .now-tile.space:focus-visible { border-color: var(--volt); box-shadow: var(--glow-volt); }
+.now-tile.advice { cursor: default; }
+.now-tile.advice:hover, .now-tile.advice:focus-visible { border-color: var(--gold); box-shadow: var(--glow-gold); }
 .now-kicker { font: 700 0.78rem var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--chalk-faint); }
 .now-main { font: 700 1.35rem var(--font-display); line-height: 1.2; }
 .now-main small { font-size: 0.9rem; color: var(--chalk-faint); font-weight: 600; }
+.now-tile.advice .now-main { font: 600 1.05rem/1.4 var(--font-body, inherit); font-style: italic; }
 .now-sub { font-size: 0.88rem; color: var(--chalk-dim); }
 
 /* Football: Matchday block with tabs */
