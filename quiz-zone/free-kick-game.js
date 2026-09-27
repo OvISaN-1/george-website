@@ -197,6 +197,16 @@
   }
   window.addEventListener("resize", fitView);
 
+  // Two hand-held fan banners in the crowd — always Forest and George, home or away.
+  function fanBanners() {
+    const banner = (x, y, w, rot, bg, fg, text) => `
+      <g transform="translate(${x} ${y}) rotate(${rot})" class="fan-banner">
+        <rect x="${-w / 2}" y="-6.5" width="${w}" height="13" rx="1.5" fill="${bg}" stroke="#00000030" stroke-width="0.6"/>
+        <text x="0" y="3.6" text-anchor="middle" font-family="Rajdhani, Arial Narrow, sans-serif" font-weight="800" font-size="7.5" fill="${fg}">${text}</text>
+      </g>`;
+    return banner(-52, 108, 86, -2, "#f4efe9", "#c40d24", "🌳 NOTTINGHAM") + banner(340, 114, 74, 2, "#c40d24", "#ffffff", "GEORGE 10 ★");
+  }
+
   function drawCrowd(match) {
     const cols = match.home ? ["#e1102c", "#e1102c", "#e1102c", "#f4efe9", "#7a0d20", "#f5b942"] : (match.crowd || ["#1b458f", "#ffffff"]).concat(match.crowd || []);
     let html = "";
@@ -208,6 +218,7 @@
         html += `<circle cx="${x.toFixed(1)}" cy="${(y + (rand() - 0.5) * 3).toFixed(1)}" r="3.1" fill="${col}" class="fan"/>`;
       }
     }
+    html += fanBanners();
     $("crowd").innerHTML = html;
     $("stand").setAttribute("fill", match.home ? "#3a0e18" : "#1d2233");
     $("sky").setAttribute("fill", match.night ? "url(#g-night)" : "url(#g-sky)");
@@ -529,9 +540,11 @@
     S.phase = "power";
     controls("power");
     const ideal = FKP.idealPower(S.kick.dist);
-    // Green zone: ideal ± 10. Yellow: ± 18.
-    $("power-ok").style.left = (ideal - 18) + "%"; $("power-ok").style.width = "36%";
-    $("power-good").style.left = (ideal - 10) + "%"; $("power-good").style.width = "20%";
+    // Green zone: ideal ± 10. Yellow: ± 18. Both shrink the further out George is —
+    // timing a 30-yarder right is genuinely harder than a tap-in.
+    const zf = FKP.zoneFactor(S.kick.dist), okW = 36 * zf, goodW = 20 * zf;
+    $("power-ok").style.left = (ideal - okW / 2) + "%"; $("power-ok").style.width = okW + "%";
+    $("power-good").style.left = (ideal - goodW / 2) + "%"; $("power-good").style.width = goodW + "%";
     say("Power: tap SHOOT in the green!");
     const start = performance.now();
     const period = S.match.rain ? 1150 : 1300;

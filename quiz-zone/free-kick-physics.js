@@ -49,6 +49,10 @@
 
   // Green zone for the power bar, depends on distance.
   function idealPower(dist) { return clamp(38 + (dist - 18) * 2, 38, 68); }
+  // How much the power zone shrinks the further out the shot is: 1 close in,
+  // down to a bit over half its width from 30+ yards. Timing a 30-yarder
+  // right is genuinely harder than a tap-in.
+  function zoneFactor(dist) { return clamp(1 - (dist - 16) / 46, 0.55, 1); }
 
   /* Work out what happens.
      aim:   {x, y} tapped on the goal plane (screen coords)
@@ -91,19 +95,22 @@
     if (!inside) return Object.assign(out, { result: "wide" });
     if (hEnd > GOAL_H_WORLD) return Object.assign(out, { result: "over" });
 
-    // Keeper
+    // Keeper: how far he has to move matters more than a hard cut-off, so
+    // this is a smooth fall-off rather than "in reach or not" — even a shot
+    // right in the corner has some small chance of a diving save.
     const dxW = Math.abs(tx - L.keeperX) / L.k;
     const dyW = Math.max(0, hEnd - 35);
     const d = Math.sqrt(dxW * dxW + dyW * dyW * 0.6);
-    const R = 58 + kick.keeperSkill * 22;
+    const keeperReach = 62 + kick.keeperSkill * 30;   // world units he covers well
+    let saveP = kick.keeperSkill * Math.exp(-Math.pow(d / keeperReach, 1.6));
+    if (d < 20) saveP = Math.max(saveP, 0.6 + kick.keeperSkill * 0.35);   // right at the keeper: great chance
     const cornerGap = Math.min(tx - postL, postR - tx) / L.k;
-    const topBins = hEnd > 48 && cornerGap < 24;
-    let saveP = d > R ? 0 : kick.keeperSkill * Math.pow(1 - d / R, 0.6);
-    if (d < 22) saveP = Math.max(saveP, 0.55 + kick.keeperSkill * 0.35);   // right at the keeper
-    if (Math.abs(curl) > 0.55) saveP *= 0.8;          // bending shots are harder to read
+    const topBins = hEnd > 48 && cornerGap < 16;      // right in the postage stamp
+    if (Math.abs(curl) > 0.55) saveP *= 0.85;          // bending shots are harder to read
     if (!hitsWall && hW < wallTop + 25) saveP *= 0.85; // ball came out of the wall late
-    if (power < ideal - 14) saveP = Math.min(0.95, saveP + 0.35);   // soft shot
-    if (topBins) saveP *= 0.3;
+    if (power < ideal - 14) saveP = Math.min(0.95, saveP + 0.3);   // soft shot
+    if (topBins) saveP *= 0.55;                        // still hard to stop, but not automatic
+    saveP = clamp(saveP, 0.03, 0.95);                  // never a sure thing either way
     const saved = rng() < saveP;
     return Object.assign(out, { result: saved ? "saved" : "goal", topBins, saveP });
   }
@@ -121,5 +128,5 @@
   }
 
   FK.BX = BX; FK.BY = BY; FK.GOAL_H_WORLD = GOAL_H_WORLD; FK.WALL_H = WALL_H; FK.WALL_JUMP = WALL_JUMP;
-  FK.persp = persp; FK.layout = layout; FK.idealPower = idealPower; FK.shoot = shoot; FK.flightPoint = flightPoint;
+  FK.persp = persp; FK.layout = layout; FK.idealPower = idealPower; FK.zoneFactor = zoneFactor; FK.shoot = shoot; FK.flightPoint = flightPoint;
 })(typeof window !== "undefined" ? (window.FKP = window.FKP || {}) : (module.exports = {}));
