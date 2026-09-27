@@ -122,6 +122,21 @@
     svg.setAttribute("viewBox", `${(200 - vw / 2).toFixed(1)} ${vy} ${vw.toFixed(1)} ${vh}`);
   }
 
+  // Two hand-held fan banners in the crowd — always Forest and George, home or away.
+  // The close-up view crops in tight above the goal (see fitView), so these
+  // sit low in the stand, just above the crossbar, where they stay in shot.
+  function fanBanners() {
+    const banner = (x, y, w, rot, bg, fg, text) => `
+      <g transform="translate(${x} ${y}) rotate(${rot})">
+        <rect x="${-w / 2}" y="-5.5" width="${w}" height="11" rx="1.3" fill="${bg}" stroke="#00000030" stroke-width="0.6"/>
+        <text x="0" y="3.1" text-anchor="middle" font-family="Rajdhani, Arial Narrow, sans-serif" font-weight="800" font-size="6.4" fill="${fg}">${text}</text>
+      </g>`;
+    // Kept close to the middle: fitView() crops tight around the goal, and the
+    // crop's width changes with the screen, so anything further out can end
+    // up off-screen.
+    return banner(66, 122, 82, -2, "#f4efe9", "#c40d24", "🌳 NOTTINGHAM") + banner(334, 127, 70, 2, "#c40d24", "#ffffff", "GEORGE 10 ★");
+  }
+
   function drawScene(o) {
     const K = st.kick, L = FKP.layout(K);
     st.L = L;
@@ -136,6 +151,7 @@
         crowd += `<circle cx="${x.toFixed(1)}" cy="${(y + (rand() - 0.5) * 3).toFixed(1)}" r="3.1" fill="${col}"/>`;
       }
     }
+    crowd += fanBanners();
     q(".sp-crowd").innerHTML = crowd;
     q(".sp-led").textContent = ("COME ON YOU REDS ★ GEORGE 10 ★ " + (o.ground || "").toUpperCase() + " ★ ").repeat(6);
     const k = L.k, back = 12 * k;
@@ -233,10 +249,12 @@
     controls("power");
     const ideal = FKP.idealPower(st.kick.dist);
     // Right answer: big green zone. Wrong answer: a smaller one, and the needle is quicker.
-    // George's shooting stat makes the green zone a bit bigger.
+    // George's shooting stat makes the green zone a bit bigger. Distance shrinks the
+    // base zone too — timing a shot from 30 yards is genuinely harder than up close.
     const bonus = Math.min(6, st.zoneBonus || 0);
     const extra = st.kind === "shot" ? 5 : 0;   // George's own shots are a bit more forgiving
-    const g = (st.advantage ? 12 : 6) + bonus + extra, ok = (st.advantage ? 21 : 14) + bonus + extra;
+    const zf = FKP.zoneFactor(st.kick.dist);
+    const g = (st.advantage ? 12 : 6) * zf + bonus + extra, ok = (st.advantage ? 21 : 14) * zf + bonus + extra;
     const z = (id, a, w) => { const e = st.panel.querySelector(id); e.style.left = clamp(a, 0, 100) + "%"; e.style.width = w + "%"; };
     z("#sp-ok", ideal - ok, ok * 2);
     z("#sp-good", ideal - g, g * 2);
@@ -262,10 +280,13 @@
     q(".sp-guide").setAttribute("d", "");
     instr("");
     const shot = FKP.shoot(st.kick, st.aim, st.curl, st.power);
-    // Penalties: the keeper guesses. Right answer = he usually guesses wrong.
-    if (st.kind === "penalty" && shot.result === "saved" && st.advantage && rand() < 0.5) shot.result = "goal";
-    // George's own shots: some "saves" squeeze under the keeper, and near misses clip the post and go in.
-    if (st.kind === "shot" && shot.result === "saved" && rand() < 0.4) { shot.result = "goal"; st.squeezed = true; }
+    // Penalties: the keeper guesses, and a right answer means he's a little more
+    // likely to guess wrong — but a good penalty save should still feel possible.
+    if (st.kind === "penalty" && shot.result === "saved" && st.advantage && rand() < 0.2) shot.result = "goal";
+    // George's own shots: occasionally a "save" squeezes under the keeper, and a
+    // near miss clips the post and goes in — but the keeper's save has to count
+    // most of the time, or blocking anything stops feeling possible.
+    if (st.kind === "shot" && shot.result === "saved" && rand() < 0.12) { shot.result = "goal"; st.squeezed = true; }
     if (st.kind === "shot" && shot.result === "post" && rand() < 0.5) shot.result = "post-in";
     st.lastShot = shot;
     await runUp();
