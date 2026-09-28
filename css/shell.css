@@ -129,6 +129,41 @@ body[data-page="quiz-zone"], body[data-page="quiz-game"]{
   .nav-toggle { display: inline-flex; }
   body.nav-open .mobile-nav { display: flex; }
 }
+
+/* 9b. Bottom tab bar (phones only) ------------------------------------------
+   Injected by js/main.js (initBottomTabs) on the main pages, so the
+   thumb-reachable nav an app would have doesn't mean editing every
+   page's HTML by hand. Sits above iOS/Android's own home-indicator
+   safe area. */
+.bottom-tabbar{
+  display: none;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 900;
+  gap: 2px; padding: 6px max(6px, env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-right));
+  background: rgba(28,24,32,0.88);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border-top: 1px solid var(--line-strong);
+  box-shadow: 0 -8px 30px rgba(0,0,0,0.35);
+}
+.bottom-tabbar a{
+  flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; padding: 6px 2px; min-height: 52px; border-radius: var(--r-sm);
+  color: var(--chalk-faint); font-family: var(--font-display); font-weight: 600; font-size: 0.62rem;
+  letter-spacing: 0.01em; text-transform: uppercase; transition: color 0.15s ease;
+}
+.bottom-tabbar a svg{ width: 22px; height: 22px; transition: transform 0.15s ease; }
+.bottom-tabbar a[aria-current="page"]{ color: var(--accent-text); }
+.bottom-tabbar a[aria-current="page"] svg{ transform: translateY(-1px) scale(1.08); }
+.bottom-tabbar a:active svg{ transform: scale(0.9); }
+@media (max-width: 760px){
+  .bottom-tabbar{ display: flex; }
+  body.has-bottom-tabbar{ padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
+  body.has-bottom-tabbar .site-footer{ margin-bottom: 0; }
+}
+@media (prefers-reduced-motion: reduce){
+  .bottom-tabbar a, .bottom-tabbar a svg{ transition: none; }
+}
+
 /* 10. Footer --------------------------------------------------------------- */
 .site-footer{
   border-top: 1px solid var(--line); padding-block: var(--s6);

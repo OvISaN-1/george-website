@@ -215,6 +215,77 @@ section + section { border-top: 1px solid var(--line); }
 .card.school .card-arrow{ color: var(--gold); }
 .card.quiz .card-arrow{ color: var(--volt-text); }
 
+/* 8b. Home hub tiles: a bento grid, not a uniform 2x2 of identical boxes.
+   Game Zone gets the bigger tile (it's where most of the content lives),
+   each tile carries a bold gradient icon badge instead of a thin outline
+   glyph, and the whole thing tilts slightly on hover/pointer move for a
+   touch of depth. Additive — doesn't touch the shared .card rules other
+   pages still use. */
+.hub-grid{
+  display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: minmax(150px, auto); gap: var(--s4);
+}
+.hub-tile{
+  position: relative; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
+  padding: var(--s5); display: flex; flex-direction: column; gap: var(--s3); color: inherit;
+  transition: transform 0.25s cubic-bezier(.2,.8,.2,1), box-shadow 0.25s ease, border-color 0.25s ease;
+  will-change: transform;
+}
+.hub-tile::before{
+  content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.3s ease; pointer-events: none;
+  background: radial-gradient(140% 100% at 100% 0%, var(--tile-glow, rgba(157,92,255,0.14)), transparent 60%);
+}
+.hub-tile:hover, .hub-tile:focus-within { transform: translateY(-6px) scale(1.012); }
+.hub-tile:hover::before, .hub-tile:focus-within::before { opacity: 1; }
+/* The bento asymmetry: Game Zone is the tall feature column on the
+   right, School is a wide bar underneath Football and Video Games. */
+.hub-tile.football{ --tile-glow: rgba(225,16,44,0.16); grid-column: 1; grid-row: 1; }
+.hub-tile.gaming{ --tile-glow: rgba(157,92,255,0.16); grid-column: 2; grid-row: 1; }
+.hub-tile.quiz{ --tile-glow: rgba(157,92,255,0.18); grid-column: 3; grid-row: 1 / span 2; justify-content: center; }
+.hub-tile.school{ --tile-glow: rgba(245,185,66,0.16); grid-column: 1 / span 2; grid-row: 2; flex-direction: row; align-items: center; }
+.hub-tile.school .hub-icon{ margin-bottom: 0; }
+.hub-tile.school .hub-text{ display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+.hub-tile.school .card-arrow{ margin-top: 0; margin-left: auto; flex-shrink: 0; white-space: nowrap; }
+.hub-tile.football:hover, .hub-tile.football:focus-within{ border-color: var(--garibaldi); box-shadow: var(--glow-garibaldi); }
+.hub-tile.gaming:hover, .hub-tile.gaming:focus-within{ border-color: var(--volt); box-shadow: var(--glow-volt); }
+.hub-tile.quiz:hover, .hub-tile.quiz:focus-within{ border-color: var(--volt); box-shadow: var(--glow-volt), 0 0 46px rgba(245,185,66,0.16); }
+.hub-tile.school:hover, .hub-tile.school:focus-within{ border-color: var(--gold); box-shadow: var(--glow-gold); }
+
+.hub-icon{
+  width: 52px; height: 52px; border-radius: 16px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 6px 18px rgba(0,0,0,0.35);
+}
+.hub-icon svg{ width: 26px; height: 26px; color: #fff; }
+.hub-tile.football .hub-icon{ background: linear-gradient(145deg, #ff4d62, var(--garibaldi-solid)); }
+.hub-tile.gaming .hub-icon{ background: linear-gradient(145deg, #b98bff, #6a2fc0); }
+.hub-tile.quiz .hub-icon{ background: linear-gradient(145deg, #ffd27a, #b98bff); }
+.hub-tile.school .hub-icon{ background: linear-gradient(145deg, #ffd27a, var(--gold)); }
+.hub-tile h2{ font-size: 1.3rem; }
+.hub-tile.quiz h2{ font-size: 1.7rem; }
+.hub-tile p{ margin: 0; color: var(--chalk-dim); font-size: 0.94rem; max-width: 34ch; }
+.hub-tile .card-arrow{ position: relative; }
+
+/* Game Zone's featured tile gets a scattering of faint emoji in the
+   background — a hint of what's inside without needing real screenshots. */
+.hub-tile.quiz .hub-deco{
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+  font-size: 2.6rem; opacity: 0.10; filter: grayscale(0.2);
+}
+.hub-tile.quiz .hub-deco span{ position: absolute; }
+
+@media (max-width: 800px){
+  .hub-grid{ grid-template-columns: 1fr; }
+  .hub-tile, .hub-tile.football, .hub-tile.gaming, .hub-tile.quiz, .hub-tile.school{
+    grid-column: 1; grid-row: auto;
+  }
+  .hub-tile.school{ flex-direction: column; align-items: flex-start; }
+  .hub-tile.school .card-arrow{ margin-left: 0; margin-top: auto; }
+}
+@media (prefers-reduced-motion: reduce){
+  .hub-tile{ transition: none; }
+}
+
 /* 9. Section blocks: stats, live badge, quick-fire, gallery -------------- */
 .section-head { margin-bottom: var(--s5); }
 .section-head p { margin-top: var(--s2); }
@@ -509,6 +580,9 @@ details.predict-toggle[open] summary{ margin-bottom: var(--s3); }
 .apod-play { position: absolute; inset: 0; display: grid; place-items: center; font-size: 2.4rem; color: #fff; text-shadow: 0 2px 12px rgba(0,0,0,0.7); }
 .apod-more summary { cursor: pointer; color: var(--chalk); font-weight: 600; }
 .apod-more p { color: var(--chalk-dim); font-size: 0.9rem; line-height: 1.6; }
+.apod-open { margin: 0; font-size: 0.85rem; }
+.apod-open a { display: inline-flex; align-items: center; gap: 4px; color: var(--gold); font-weight: 600; }
+.apod-open a:hover, .apod-open a:focus-visible { text-decoration: underline; }
 .iss-map { aspect-ratio: 2 / 1; border-radius: var(--r-md); overflow: hidden; background: #070b16; border: 1px solid var(--line); }
 .iss-map:not(.ready)::after { content: 'Loading the map…'; display: grid; place-items: center; height: 100%; color: var(--chalk-faint); font-size: 0.85rem; }
 .iss-map.failed::after { content: 'Map unavailable'; }

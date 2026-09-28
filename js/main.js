@@ -29,6 +29,32 @@ function initNav() {
   });
 }
 
+/* ---- Bottom tab bar (phones): an app-style nav within thumb's reach -------
+   Injected here instead of in every page's HTML, so all six pages stay
+   in sync automatically. Skipped on the game pages themselves — they
+   already use the bottom of the screen for controls. */
+const TABS = [
+  ['index.html', 'home', 'Home', '<path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/>'],
+  ['football.html', 'football', 'Football', '<circle cx="12" cy="12" r="9"/>'],
+  ['games.html', 'games', 'Games', '<rect x="3" y="7" width="18" height="10" rx="4"/>'],
+  ['quiz-zone.html', 'quiz-zone', 'Game Zone', '<path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>'],
+  ['school.html', 'school', 'School', '<path d="M12 4l9 4-9 4-9-4z"/><path d="M6 10.5V16c0 1.4 2.7 3 6 3s6-1.6 6-3v-5.5"/>'],
+];
+function initBottomTabs() {
+  const page = document.body.dataset.page;
+  if (!page || page === 'quiz-game') return; // the games need their own bottom space
+  const inSubfolder = location.pathname.includes('/quiz-zone/');
+  const base = inSubfolder ? '../' : '';
+  const bar = document.createElement('nav');
+  bar.className = 'bottom-tabbar';
+  bar.setAttribute('aria-label', 'Quick navigation');
+  bar.innerHTML = TABS.map(([href, key, label, path]) =>
+    `<a href="${base}${href}"${key === page ? ' aria-current="page"' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">${path}</svg>${label}</a>`
+  ).join('');
+  document.body.appendChild(bar);
+  document.body.classList.add('has-bottom-tabbar');
+}
+
 /* ---- Scroll reveal ------------------------------------------------------
    Fades sections in as they enter the viewport. Skipped entirely for
    anyone with "reduce motion" turned on (handled in CSS too, but this
@@ -842,6 +868,7 @@ function initDogPhoto() {
 document.addEventListener('DOMContentLoaded', () => {
   initNav();
   initLastUpdated();
+  initBottomTabs();
 
   const C = window.SITE;
   const page = document.body.dataset.page;

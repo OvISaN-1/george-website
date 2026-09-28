@@ -25,14 +25,21 @@
       const day = new Date(a.date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
       el.innerHTML = `
         <a class="apod-img" href="${esc(a.hd || page)}" target="_blank" rel="noopener">
-          ${a.image ? `<img src="${esc(a.image)}" alt="${esc(a.title)}" loading="lazy" decoding="async">` : '<span class="apod-none" aria-hidden="true">🌌</span>'}
+          ${a.image ? `<img id="apod-photo" src="${esc(a.image)}" alt="${esc(a.title)}" loading="lazy" decoding="async">` : '<span class="apod-none" aria-hidden="true">🌌</span>'}
           ${a.video ? '<span class="apod-play" aria-hidden="true">▶</span>' : ''}
         </a>
         <p class="space-kicker">NASA picture of the day · ${esc(day)}</p>
         <h3>${esc(a.title)}</h3>
         <p class="space-credit">${a.video ? 'Video' : 'Image'}: ${esc(a.credit)}</p>
-        <details class="apod-more"><summary>What am I looking at?</summary><p>${esc(a.explanation)}</p>
-          <p><a href="${esc(page)}" target="_blank" rel="noopener">See it on NASA's website ↗</a></p></details>`;
+        <p class="apod-open"><a href="${esc(page)}" target="_blank" rel="noopener">Open today's picture on NASA's website ↗</a></p>
+        <details class="apod-more"><summary>What am I looking at?</summary><p>${esc(a.explanation)}</p></details>`;
+      // NASA's own image link occasionally 404s (their site moved in 2025) —
+      // if the photo genuinely won't load, swap in the same "no picture"
+      // look rather than leaving a broken image icon.
+      const img = document.getElementById('apod-photo');
+      if (img) img.addEventListener('error', () => {
+        img.closest('.apod-img').innerHTML = '<span class="apod-none" aria-hidden="true">🌌</span>';
+      }, { once: true });
     } catch (e) {
       el.innerHTML = '<p class="space-kicker">NASA picture of the day</p><p class="space-off">Couldn\'t reach NASA right now. Try again later! 🌌</p>';
     }
