@@ -1,7 +1,7 @@
 /* ============================================================
    George's Game Zone — shared stats, badges, streaks & nicknames
    Loaded by quiz-zone.html, football-quiz.html, geography-quiz.html,
-   mountain-quiz.html, name-that-riff.html, quickfire-quiz.html, guess-the-player.html, times-tables-quiz.html, penalty-shootout.html, free-kick.html and matchday.html. Everything is stored in this browser
+   mountain-quiz.html, name-that-riff.html, quickfire-quiz.html, guess-the-player.html, pack-opener.html, times-tables-quiz.html, penalty-shootout.html, free-kick.html and matchday.html. Everything is stored in this browser
    only (localStorage). The online top scores are separate: they live in
    the Supabase leaderboard table.
    ============================================================ */
@@ -40,6 +40,8 @@
     { id: "var-drama",         emoji: "📺", name: "VAR Drama",       desc: "Win a VAR check in Matchday" },
     { id: "halfway-hero",      emoji: "🌠", name: "Halfway Hero",    desc: "Score from the halfway line in Matchday" },
     { id: "red-mist",          emoji: "🟥", name: "Seeing Red",      desc: "Get an opposition player sent off in Matchday" },
+    { id: "pack-icon",         emoji: "🌟", name: "Icon Pulled",     desc: "Pull an Icon card from a pack" },
+    { id: "pack-regular",      emoji: "📦", name: "Pack Regular",    desc: "Open 10 packs" },
   ];
 
   function defaultStats() {
@@ -47,6 +49,7 @@
       gamesPlayed: { "football-frenzy": 0, "capital-quest": 0, "mountain-peaks": 0, "times-tables": 0, "penalty-shootout": 0, "free-kick": 0, "matchday": 0, "name-that-riff": 0, "quickfire-quiz": 0, "guess-the-player": 0 },
       bestScore:   { "football-frenzy": 0, "capital-quest": 0, "mountain-peaks": 0, "times-tables": 0, "penalty-shootout": 0, "free-kick": 0, "matchday": 0, "name-that-riff": 0, "quickfire-quiz": 0, "guess-the-player": 0 },
       keepyUppyBest: 0,
+      packsOpened: 0,
       badges: [],
       streak: 0,
       lastPlayed: null,
@@ -200,6 +203,23 @@
     return { stats: s, newBadges: newlyAwarded.map(bid => BADGES.find(b => b.id === bid)).filter(Boolean) };
   }
 
+  /* Pack Opener: r = { tier: best card's tier in that pack } */
+  function recordPackOpener(r) {
+    const s = load();
+    s.packsOpened = (s.packsOpened || 0) + 1;
+    updateStreak(s);
+    const newlyAwarded = [];
+    function award(bid) {
+      if (!s.badges.includes(bid)) { s.badges.push(bid); newlyAwarded.push(bid); }
+    }
+    award("first-whistle");
+    if (r.tier === "icon") award("pack-icon");
+    if (s.packsOpened >= 10) award("pack-regular");
+    if ((s.streak || 0) >= 3) award("three-day-streak");
+    save(s);
+    return { stats: s, newBadges: newlyAwarded.map(bid => BADGES.find(b => b.id === bid)).filter(Boolean) };
+  }
+
   /* Matchday: r = { score, won, georgeGoals, cleanSheet, giantKiller, varWin, halfway, oppReds } */
   function recordMatchday(r) {
     const s = load();
@@ -336,6 +356,7 @@
   GZ.recordPenalty = recordPenalty;
   GZ.recordFreeKick = recordFreeKick;
   GZ.recordMatchday = recordMatchday;
+  GZ.recordPackOpener = recordPackOpener;
   GZ.randomNickname = randomNickname;
   GZ.showToast = showToast;
   GZ.announceBadges = announceBadges;
