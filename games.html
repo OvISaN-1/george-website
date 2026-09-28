@@ -58,11 +58,19 @@
   <main id="main">
     <section class="page-banner" style="border-top:none;">
       <div class="wrap">
-        <p class="eyebrow">Video Games</p>
-        <h1>What I'm playing.</h1>
-        <p class="lede">I play a lot of games, but these are the ones I keep coming back to. Some of these scores took me ages.</p>
-        <!-- All the text and lists on this page come from js/content.js (the "games" part). -->
-        <p class="live-badge" style="margin-top:var(--s3);"><span class="live-dot"></span>Live: Right now I'm mostly playing&nbsp;<span id="currently-playing">EA Sports FC 26</span></p>
+        <div class="hero-inner">
+          <div class="hero-copy">
+            <p class="eyebrow">Video Games</p>
+            <h1>What I'm playing.</h1>
+            <p class="lede">I play a lot of games, but these are the ones I keep coming back to. Some of these scores took me ages.</p>
+            <!-- All the text and lists on this page come from js/content.js (the "games" part). -->
+            <p class="live-badge" style="margin-top:var(--s3);"><span class="live-dot"></span>Live: Right now I'm mostly playing&nbsp;<span id="currently-playing">EA Sports FC 26</span></p>
+          </div>
+          <figure class="banner-figure reveal" aria-hidden="true">
+            <span class="banner-deco"><span style="top:12%;left:16%;">🕹️</span><span style="top:70%;left:20%;">🏎️</span><span style="top:20%;left:72%;">⚽</span><span style="top:74%;left:70%;">🐐</span></span>
+            <span class="icon-badge purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="8" width="20" height="9" rx="4"/><circle cx="16" cy="11.5" r="1"/><circle cx="18.5" cy="14" r="1"/></svg></span>
+          </figure>
+        </div>
       </div>
     </section>
 
@@ -82,7 +90,7 @@
         <div class="section-head">
           <h2>My top scores</h2>
         </div>
-        <div class="table-wrap">
+        <div class="table-wrap score-table">
           <table>
             <caption class="visually-hidden">George's personal best scores by game</caption>
             <thead>

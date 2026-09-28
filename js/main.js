@@ -715,7 +715,7 @@ function renderGames(C) {
   const body = $('scores-body');
   if (body && G.topScores) {
     body.innerHTML = G.topScores.map((r) =>
-      `<tr><td>${escapeHtml(r.game)}</td><td class="mono-num">${escapeHtml(r.best)}</td><td class="mono-num">${escapeHtml(r.date)}</td></tr>`
+      `<tr><td><span class="icon-badge sm purple" aria-hidden="true">🏆</span>${escapeHtml(r.game)}</td><td class="mono-num"><span class="score-value">${escapeHtml(r.best)}</span></td><td class="mono-num">${escapeHtml(r.date)}</td></tr>`
     ).join('');
   }
   setText('trying-to-beat', G.tryingToBeat);
@@ -758,9 +758,10 @@ function renderAbout(C) {
   const A = C.about || {};
   renderList('fun-facts', A.funFacts);
   const loves = $('loves');
+  const badgeColours = ['red', 'purple', 'gold', 'pink', 'teal'];
   if (loves && A.loves) {
-    loves.innerHTML = A.loves.map((x) =>
-      `<article class="card love-card${x.dogPhoto ? ' dog-card' : ''}">${x.dogPhoto ? `<figure class="dog-photo" id="dog-photo"><span class="love-emoji" aria-hidden="true">${escapeHtml(x.emoji)}</span></figure>` : `<span class="love-emoji" aria-hidden="true">${escapeHtml(x.emoji)}</span>`}<h3>${escapeHtml(x.title)}</h3><p>${escapeHtml(x.text)}</p>${x.dogPhoto ? '<button type="button" class="link-btn dog-next" id="dog-next">Another one! 🐶</button>' : ''}${x.jukebox ? '<div class="jukebox" id="jukebox"><button type="button" class="jukebox-btn" id="jukebox-btn">▶ Play some AC/DC</button><p class="jukebox-now" id="jukebox-now" aria-live="polite"></p></div>' : ''}</article>`
+    loves.innerHTML = A.loves.map((x, i) =>
+      `<article class="card love-card${x.dogPhoto ? ' dog-card' : ''}">${x.dogPhoto ? `<figure class="dog-photo" id="dog-photo"><span class="love-emoji" aria-hidden="true">${escapeHtml(x.emoji)}</span></figure>` : `<span class="icon-badge ${badgeColours[i % badgeColours.length]} love-emoji" aria-hidden="true">${escapeHtml(x.emoji)}</span>`}<h3>${escapeHtml(x.title)}</h3><p>${escapeHtml(x.text)}</p>${x.dogPhoto ? '<button type="button" class="link-btn dog-next" id="dog-next">Another one! 🐶</button>' : ''}${x.jukebox ? '<div class="jukebox" id="jukebox"><button type="button" class="jukebox-btn" id="jukebox-btn">▶ Play some AC/DC</button><p class="jukebox-now" id="jukebox-now" aria-live="polite"></p></div>' : ''}</article>`
     ).join('');
     if ($('dog-photo')) initDogPhoto();
     if ($('jukebox')) initJukebox();

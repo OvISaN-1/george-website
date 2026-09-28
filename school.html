@@ -59,9 +59,17 @@
     <!-- All the text and lists on this page come from js/content.js (the "school" part). -->
     <section class="page-banner" style="border-top:none;">
       <div class="wrap">
-        <p class="eyebrow">School Zone</p>
-        <h1>Yes, this page is about school. It's actually good though.</h1>
-        <p class="lede">Not everything at school is my favourite thing ever, but some of it I'm genuinely proud of. Here's the proof.</p>
+        <div class="hero-inner">
+          <div class="hero-copy">
+            <p class="eyebrow">School Zone</p>
+            <h1>Yes, this page is about school. It's actually good though.</h1>
+            <p class="lede">Not everything at school is my favourite thing ever, but some of it I'm genuinely proud of. Here's the proof.</p>
+          </div>
+          <figure class="banner-figure reveal" aria-hidden="true">
+            <span class="banner-deco"><span style="top:14%;left:18%;">📝</span><span style="top:68%;left:16%;">🔬</span><span style="top:18%;left:70%;">🚀</span><span style="top:72%;left:68%;">⭐</span></span>
+            <span class="icon-badge gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4l9 4-9 4-9-4z"/><path d="M6 10.5V16c0 1.4 2.7 3 6 3s6-1.6 6-3v-5.5"/></svg></span>
+          </figure>
+        </div>
       </div>
     </section>
 
@@ -71,14 +79,17 @@
         <div class="section-head"><h2 id="me-school-title">Me at school</h2></div>
         <div class="school-row">
           <div class="note-block school-cell">
+            <span class="icon-badge sm gold" aria-hidden="true">📚</span>
             <span class="note-label">My favourite subject</span>
             <p><strong style="color:var(--chalk);" id="fav-subject">PE</strong>, because <span id="fav-reason"></span></p>
           </div>
           <div class="school-cell">
+            <span class="icon-badge sm purple" aria-hidden="true">🏅</span>
             <span class="note-label">Wall of achievements</span>
             <div class="achievements-stack" id="achievements-grid"></div>
           </div>
           <div class="note-block school-cell school-goal">
+            <span class="icon-badge sm red" aria-hidden="true">🎯</span>
             <span class="note-label">This term's goal</span>
             <p><strong style="color:var(--chalk);" id="goal-title"></strong></p>
             <div class="medal-track" id="goal-track"></div>
@@ -98,9 +109,9 @@
           <p>Every topic from the Year 6 SATs papers, with how to work out every answer.</p>
         </div>
         <div class="grid-3">
-          <a class="card school sats-link" href="sats.html#maths"><span class="sats-link-emoji" aria-hidden="true">🧮</span><h3>Maths</h3><p>13 topics, from place value to algebra. New questions every time.</p></a>
-          <a class="card school sats-link" href="sats.html#gps"><span class="sats-link-emoji" aria-hidden="true">✏️</span><h3>Grammar, punctuation &amp; spelling</h3><p>Word classes, punctuation, tenses, spelling and more.</p></a>
-          <a class="card school sats-link" href="sats.html#reading"><span class="sats-link-emoji" aria-hidden="true">📖</span><h3>Reading</h3><p>Short texts with questions, just like the reading paper.</p></a>
+          <a class="card school sats-link" href="sats.html#maths"><span class="icon-badge purple sats-link-emoji" aria-hidden="true">🧮</span><h3>Maths</h3><p>13 topics, from place value to algebra. New questions every time.</p></a>
+          <a class="card school sats-link" href="sats.html#gps"><span class="icon-badge red sats-link-emoji" aria-hidden="true">✏️</span><h3>Grammar, punctuation &amp; spelling</h3><p>Word classes, punctuation, tenses, spelling and more.</p></a>
+          <a class="card school sats-link" href="sats.html#reading"><span class="icon-badge gold sats-link-emoji" aria-hidden="true">📖</span><h3>Reading</h3><p>Short texts with questions, just like the reading paper.</p></a>
         </div>
       </div>
     </section>
