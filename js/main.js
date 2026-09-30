@@ -460,9 +460,58 @@ function renderFixtures(live) {
   if (wantResultEvents) loadResultEvents();
 }
 
-/* ---- Scorers and cards under each result (ESPN via worker/extras.js) -----
-   Fetched only once the Results tab is opened, for the latest 10 results.
-   Anything that can't be found just leaves the row as it was. */
+/* ---- Scorers and cards under each result (ESPN, straight from the browser) --
+   ESPN's public scoreboard (no key, unofficial) answers 403 to Cloudflare's
+   servers, so George's browser asks it directly; it allows that
+   (access-control-allow-origin: *). football-data.org's free plan has no
+   scorers or cards. ESPN's soccer fields aren't documented anywhere that
+   could be checked, so both its true/false flags and its type text are read,
+   and the match summary's keyEvents are tried if the scoreboard has none.
+   Fetched only once the Results tab is opened, for the latest 10 results;
+   finished matches are remembered in this browser. Anything that can't be
+   found just leaves the row as it was. */
+const ESPN_PL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1';
+function espnEvent(d, forestId) {
+  if (!d) return null;
+  const text = String((d.type && d.type.text) || '');
+  const red = d.redCard === true || /red card/i.test(text);
+  const yellow = !red && (d.yellowCard === true || /yellow card/i.test(text));
+  const goal = !red && !yellow && (d.scoringPlay === true || (/goal|penalty - scored/i.test(text) && !/disallowed|missed|saved|no goal/i.test(text)));
+  if (!goal && !red && !yellow) return null;
+  const who = (d.athletesInvolved && d.athletesInvolved[0]) || (d.participants && d.participants[0] && d.participants[0].athlete) || {};
+  const player = String(who.shortName || who.displayName || '').replace(/^[A-Z]\.\s+/, '').trim().slice(0, 40);
+  if (!player) return null;
+  const teamId = d.team && d.team.id;
+  return {
+    kind: goal ? 'goal' : red ? 'red' : 'yellow',
+    min: String((d.clock && d.clock.displayValue) || '').trim(),
+    sort: Number(d.clock && d.clock.value) || 0,
+    forest: teamId != null && String(teamId) === String(forestId),
+    player,
+    pen: goal && (d.penaltyKick === true || /penalty/i.test(text)),
+    og: goal && (d.ownGoal === true || /own goal/i.test(text)),
+  };
+}
+async function matchEvents(date) {
+  const key = `gz_goals_v1_${date}`;
+  try { const hit = localStorage.getItem(key); if (hit) return JSON.parse(hit); } catch (e) { /* private mode */ }
+  const get = async (url) => { const r = await fetch(url, { signal: AbortSignal.timeout(12000) }); if (!r.ok) throw new Error(`espn ${r.status}`); return r.json(); };
+  const j = await get(`${ESPN_PL}/scoreboard?dates=${date.replace(/-/g, '')}`);
+  if (!j || !Array.isArray(j.events)) throw new Error('espn: unexpected response shape');
+  const isForest = (c) => c && c.team && /nottingham/i.test(`${c.team.displayName || ''} ${c.team.name || ''}`);
+  const ev = j.events.find((e) => e && e.competitions && e.competitions[0] && (e.competitions[0].competitors || []).some(isForest));
+  if (!ev) throw new Error('espn: no Forest match that day');
+  if (!(ev.status && ev.status.type && ev.status.type.completed)) throw new Error('espn: not finished');
+  const comp = ev.competitions[0];
+  const forestId = comp.competitors.find(isForest).team.id;
+  let raw = Array.isArray(comp.details) ? comp.details : [];
+  if (!raw.length) {
+    try { const sj = await get(`${ESPN_PL}/summary?event=${encodeURIComponent(ev.id)}`); if (Array.isArray(sj.keyEvents)) raw = sj.keyEvents; } catch (e) { /* no details then */ }
+  }
+  const out = { events: raw.map((d) => espnEvent(d, forestId)).filter(Boolean).sort((a, b) => a.sort - b.sort).map(({ sort, ...e }) => e) };
+  try { localStorage.setItem(key, JSON.stringify(out)); } catch (e) { /* storage full */ }
+  return out;
+}
 let resultsReady = false, wantResultEvents = false, resultEventsLoaded = false;
 function loadResultEvents() {
   wantResultEvents = true;
@@ -471,9 +520,7 @@ function loadResultEvents() {
   const rows = [...document.querySelectorAll('#fx-results .fx-events')].slice(0, 10);
   rows.forEach(async (box) => {
     try {
-      const res = await fetch(`${apiUrl('goals')}?date=${encodeURIComponent(box.dataset.date)}`, { signal: AbortSignal.timeout(12000) });
-      const d = await res.json();
-      if (!res.ok || d.error || !Array.isArray(d.events)) return;
+      const d = await matchEvents(box.dataset.date);
       const opp = box.dataset.opp;
       const fmt = (e) => `${escapeHtml(e.player)} ${escapeHtml(e.min)}${e.pen ? ' (pen)' : ''}${e.og ? ' (o.g.)' : ''}`;
       const side = (list) => [
