@@ -15,7 +15,7 @@
 
 import { coach } from './coach.js';
 import { weatherFor, apod, iss, live, trivia, population, launch, earth, quakes, aurora } from './extras.js';
-import { squad, track, report, games, newReleases, SONGS, songList, player, PLAYERS } from './more.js';
+import { squad, track, report, games, newReleases, joke, fpl, SONGS, songList, player, PLAYERS } from './more.js';
 
 const API = 'https://api.football-data.org/v4';
 const CACHE_VERSION = 'v1';
@@ -74,6 +74,12 @@ export default {
       if (!env.RAWG_KEY) return json({ error: 'no-key' }, 503, 0);
       return openToAll(await cached(request, ctx, 'new-games-2', 12 * 3600, () => newReleases(env)));
     }
+    if (url.pathname === '/api/joke') {
+      // One joke per UK day: the date is part of the cache key.
+      const day = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+      return openToAll(await cached(request, ctx, `joke-${day}`, 86400, () => joke()));
+    }
+    if (url.pathname === '/api/fpl') return openToAll(await cached(request, ctx, 'fpl', 3 * 3600, () => fpl()));
     if (url.pathname.startsWith('/api/')) return json({ error: 'not-found' }, 404, 0);
     return env.ASSETS.fetch(request);
   },

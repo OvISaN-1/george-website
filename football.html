@@ -101,12 +101,13 @@
       <div class="wrap reveal">
         <div class="section-head">
           <h2 id="matchday-title">Matchday</h2>
-          <p>The next match, fixtures and results. Everything here updates by itself.</p>
+          <p>The next match, fixtures, results and Forest in Fantasy Premier League. Everything here updates by itself.</p>
         </div>
         <div class="md-tabs" role="tablist" aria-label="Matchday">
           <button type="button" role="tab" id="tab-next" aria-controls="panel-next" aria-selected="true">Next match</button>
           <button type="button" role="tab" id="tab-fixtures" aria-controls="panel-fixtures" aria-selected="false" tabindex="-1">Fixtures</button>
           <button type="button" role="tab" id="tab-results" aria-controls="panel-results" aria-selected="false" tabindex="-1">Results</button>
+          <button type="button" role="tab" id="tab-fpl" aria-controls="panel-fpl" aria-selected="false" tabindex="-1">⭐ Fantasy</button>
         </div>
         <div role="tabpanel" id="panel-next" aria-labelledby="tab-next">
           <!-- Match centre: only on a Forest matchday -->
@@ -125,6 +126,7 @@
         </div>
         <div role="tabpanel" id="panel-fixtures" aria-labelledby="tab-fixtures" hidden><div id="fx-next"><p>Loading fixtures...</p></div></div>
         <div role="tabpanel" id="panel-results" aria-labelledby="tab-results" hidden><div id="fx-results"><p>Loading results...</p></div></div>
+        <div role="tabpanel" id="panel-fpl" aria-labelledby="tab-fpl" hidden><div id="fpl"><p>Loading Fantasy Premier League…</p></div></div>
       </div>
     </section>
 

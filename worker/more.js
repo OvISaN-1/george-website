@@ -618,3 +618,56 @@ export async function newReleases(env) {
     }));
   return { games };
 }
+
+/* ---------- Home: joke of the day (JokeAPI, free, no key) ----------
+   Only the "Misc" and "Pun" categories (no programming or dark humour),
+   with JokeAPI's safe mode on AND every flag blacklisted. Anything that
+   still comes back not marked safe, or with any flag set, is skipped. */
+export async function joke() {
+  const url = 'https://v2.jokeapi.dev/joke/Misc,Pun?safe-mode&blacklistFlags=nsfw,religious,political,racist,sexist,explicit';
+  for (let tries = 0; tries < 3; tries++) {
+    const res = await fetch(url, { headers: HEADERS });
+    if (!res.ok) throw new Error(`jokeapi ${res.status}`);
+    const j = await res.json();
+    if (!j || j.error) throw new Error(`jokeapi: ${(j && (j.message || j.additionalInfo)) || 'error'}`);
+    const clean = j.safe === true && (!j.flags || Object.values(j.flags).every((v) => v === false));
+    if (!clean) continue;
+    if (j.type === 'single' && j.joke) return { joke: String(j.joke).slice(0, 400) };
+    if (j.type === 'twopart' && j.setup && j.delivery) return { setup: String(j.setup).slice(0, 300), delivery: String(j.delivery).slice(0, 300) };
+  }
+  throw new Error('jokeapi: no clean joke');
+}
+
+/* ---------- Football: Forest in Fantasy Premier League ----------
+   The official game's public bootstrap data (no key). Big (~2 MB), so
+   it's boiled down to Forest's players plus this gameweek's headline
+   numbers, and cached for 3 hours. */
+export async function fpl() {
+  const res = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/', {
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; GeorgesWebsite/1.0; +https://georgeneagu.win)', Accept: 'application/json' },
+  });
+  if (!res.ok) throw new Error(`fpl ${res.status}`);
+  const j = await res.json();
+  if (!j || !Array.isArray(j.elements) || !Array.isArray(j.teams) || !Array.isArray(j.events)) throw new Error('fpl: unexpected response shape');
+  const forest = j.teams.find((t) => t.short_name === 'NFO') || j.teams.find((t) => /nott/i.test(t.name || ''));
+  if (!forest) throw new Error('fpl: Forest not found');
+  const POS = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' };
+  const all = j.elements
+    .filter((e) => e.team === forest.id)
+    .map((e) => ({
+      name: String(e.web_name || ''), pos: POS[e.element_type] || '', points: e.total_points || 0, week: e.event_points || 0,
+      price: Math.round(e.now_cost) / 10, goals: e.goals_scored || 0, assists: e.assists || 0, minutes: e.minutes || 0,
+    }))
+    .sort((a, b) => b.points - a.points || b.week - a.week);
+  const played = all.filter((p) => p.minutes > 0);
+  const ev = j.events.find((e) => e.is_current) || null;
+  const topInfo = ev && ev.top_element_info;
+  const top = topInfo && j.elements.find((e) => e.id === topInfo.id);
+  const topTeam = top && j.teams.find((t) => t.id === top.team);
+  return {
+    gameweek: ev ? ev.id : null,
+    average: ev && typeof ev.average_entry_score === 'number' ? ev.average_entry_score : null,
+    star: top ? { name: top.web_name, team: topTeam ? topTeam.short_name : '', points: topInfo.points } : null,
+    players: (played.length ? played : all).slice(0, 30).map(({ minutes, ...p }) => p),
+  };
+}

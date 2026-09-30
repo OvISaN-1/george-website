@@ -252,8 +252,62 @@
     }
   }
 
+  /* ---------------- Tonight's Moon (worked out here, with js/suncalc.js) ----------------
+     No outside service, so it can't be down. Phase 0 = new, 0.25 = first
+     quarter, 0.5 = full, 0.75 = last quarter. */
+  const HOME = [52.95, -1.15]; // Nottingham
+  const PHASES = [
+    [0.02, '🌑', 'New Moon'], [0.23, '🌒', 'Waxing crescent'], [0.27, '🌓', 'First quarter'], [0.48, '🌔', 'Waxing gibbous'],
+    [0.52, '🌕', 'Full Moon'], [0.73, '🌖', 'Waning gibbous'], [0.77, '🌗', 'Last quarter'], [0.98, '🌘', 'Waning crescent'], [1.01, '🌑', 'New Moon'],
+  ];
+  // SVG of the Moon with the lit part drawn as a half-disc plus an elliptical terminator.
+  function moonSvg(phase, fraction) {
+    const r = 50;
+    const rx = Math.abs(Math.cos(2 * Math.PI * phase)) * r;
+    const gibbous = fraction > 0.5;
+    const lit = `M0,${-r} A${r},${r} 0 0 1 0,${r} A${rx.toFixed(2)},${r} 0 0 ${gibbous ? 1 : 0} 0,${-r} Z`;
+    const flip = phase > 0.5 ? ' transform="scale(-1,1)"' : ''; // waning: lit side on the left
+    return `<svg class="moon-svg" viewBox="-60 -60 120 120" role="img" aria-label="The Moon tonight, ${Math.round(fraction * 100)}% lit">
+      <circle r="${r}" class="moon-dark"/><path d="${lit}" class="moon-lit"${flip}/><circle r="${r}" class="moon-rim"/></svg>`;
+  }
+  function moonTonight() {
+    const el = $('moon');
+    if (!el || !window.SunCalc) return;
+    const now = new Date();
+    const { fraction, phase } = SunCalc.getMoonIllumination(now);
+    const [, emoji, name] = PHASES.find(([limit]) => phase < limit);
+    const times = SunCalc.getMoonTimes(now, HOME[0], HOME[1]);
+    const hm = (d) => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
+    const riseSet = times.alwaysUp ? 'Up all day and night today' : times.alwaysDown ? 'Doesn\'t rise today'
+      : [times.rise && `Moonrise ${hm(times.rise)}`, times.set && `Moonset ${hm(times.set)}`].filter(Boolean).join(' · ');
+    // Step forward an hour at a time to find the next full and new moon.
+    let full = null, fresh = null, prev = phase;
+    for (let h = 1; h <= 24 * 31 && !(full && fresh); h++) {
+      const t = new Date(now.getTime() + h * 3600e3);
+      const p = SunCalc.getMoonIllumination(t).phase;
+      if (!full && prev < 0.5 && p >= 0.5) full = t;
+      if (!fresh && prev > 0.9 && p < 0.1) fresh = t;
+      prev = p;
+    }
+    const day = (d) => d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/London' });
+    const age = Math.round(phase * 29.53);
+    el.innerHTML = `
+      <p class="space-kicker">🌙 Tonight's Moon</p>
+      <div class="moon-row">
+        ${moonSvg(phase, fraction)}
+        <div>
+          <h3>${emoji} ${esc(name)}</h3>
+          <p class="aurora-level" style="font-size:1.05rem;">${Math.round(fraction * 100)}% lit up</p>
+          <p class="space-credit">${esc(riseSet)} (Nottingham)</p>
+        </div>
+      </div>
+      <p class="space-credit">${full ? `Next full moon: <b>${esc(day(full))}</b>` : ''}${full && fresh ? ' · ' : ''}${fresh ? `Next new moon: <b>${esc(day(fresh))}</b>` : ''}</p>
+      <p class="space-credit">The Moon is ${age} day${age === 1 ? '' : 's'} into its 29½-day cycle. It doesn't make its own light: we only see the part the Sun is shining on.</p>`;
+  }
+
   apod();
   start();
+  moonTonight();
   nextLaunch();
   earthToday();
   earthquakes();

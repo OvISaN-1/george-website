@@ -62,7 +62,7 @@
           <div class="hero-copy">
             <p class="eyebrow"><a href="school.html" class="eyebrow-link">School Zone</a> · Space</p>
             <h1>Space corner 🚀</h1>
-            <p class="lede">A new picture from NASA every day, the Space Station flying round right now, the next rocket launch, and what our planet is up to. All of it live.</p>
+            <p class="lede">A new picture from NASA every day, the Space Station flying round right now, the next rocket launch, tonight's Moon, and what our planet is up to. All of it live.</p>
           </div>
           <figure class="banner-figure reveal" aria-hidden="true">
             <span class="banner-deco"><span style="top:14%;left:18%;">🛰️</span><span style="top:68%;left:16%;">🌍</span><span style="top:18%;left:70%;">🌌</span><span style="top:72%;left:68%;">🪐</span></span>
@@ -72,13 +72,14 @@
       </div>
     </section>
 
-    <!-- Every card below is filled in by js/space.js, through the site's Worker. -->
+    <!-- Every card below is filled in by js/space.js (the Moon is worked out
+         on the page with js/suncalc.js; everything else comes through the Worker). -->
     <section aria-labelledby="today-title">
       <div class="wrap reveal">
         <div class="section-head"><h2 id="today-title">Today in space</h2></div>
         <div class="space-grid space-pair">
           <article class="space-card" id="apod"><p class="space-kicker">NASA picture of the day</p><p class="space-off">Loading…</p></article>
-          <article class="space-card" id="earth"><p class="space-kicker">🌍 Earth today</p><p class="space-off">Loading…</p></article>
+          <article class="space-card" id="launch"><p class="space-kicker">🚀 Next rocket launch</p><p class="space-off">Loading…</p></article>
         </div>
       </div>
     </section>
@@ -86,13 +87,20 @@
     <section aria-labelledby="now-title">
       <div class="wrap reveal">
         <div class="section-head"><h2 id="now-title">Right now</h2></div>
+        <article class="space-card">
+          <p class="space-kicker">🛰️ Where's the ISS?</p>
+          <div class="iss-map" id="iss-map"></div>
+          <p class="iss-text" id="iss-text" aria-live="polite">Finding the Space Station…</p>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="tonight-title">
+      <div class="wrap reveal">
+        <div class="section-head"><h2 id="tonight-title">Tonight's sky</h2></div>
         <div class="space-grid space-pair">
-          <article class="space-card">
-            <p class="space-kicker">🛰️ Where's the ISS?</p>
-            <div class="iss-map" id="iss-map"></div>
-            <p class="iss-text" id="iss-text" aria-live="polite">Finding the Space Station…</p>
-          </article>
-          <article class="space-card" id="launch"><p class="space-kicker">🚀 Next rocket launch</p><p class="space-off">Loading…</p></article>
+          <article class="space-card" id="moon"><p class="space-kicker">🌙 Tonight's Moon</p><p class="space-off">Working it out…</p></article>
+          <article class="space-card" id="aurora"><p class="space-kicker">🌌 Northern Lights tonight?</p><p class="space-off">Loading…</p></article>
         </div>
       </div>
     </section>
@@ -101,12 +109,12 @@
       <div class="wrap reveal">
         <div class="section-head"><h2 id="planet-title">Our planet</h2></div>
         <div class="space-grid space-pair">
+          <article class="space-card" id="earth"><p class="space-kicker">🌍 Earth today</p><p class="space-off">Loading…</p></article>
           <article class="space-card">
             <p class="space-kicker">🌋 Earthquakes in the last day</p>
             <div class="iss-map" id="quake-map"></div>
             <p class="iss-text" id="quake-text">Checking for earthquakes…</p>
           </article>
-          <article class="space-card" id="aurora"><p class="space-kicker">🌌 Northern Lights tonight?</p><p class="space-off">Loading…</p></article>
         </div>
         <p style="margin-top:var(--s5); display:flex; gap:var(--s3); flex-wrap:wrap;"><a class="btn btn-ghost" href="quiz-zone/matchday.html">🚀 Practise Space questions in Matchday</a> <a class="btn btn-ghost" href="school.html">&larr; Back to School Zone</a></p>
       </div>
@@ -121,6 +129,7 @@
   </footer>
 
   <script src="js/main.js"></script>
+  <script src="js/suncalc.js"></script>
   <script src="js/space.js"></script>
 </body>
 </html>
