@@ -31,7 +31,9 @@ export default {
       return open;
     }
     if (url.pathname === '/api/coach') return coach(request, env, json);
-    if (url.pathname === '/api/apod') return openToAll(await cached(request, ctx, 'apod', 3 * 3600, () => apod(env)));
+    // Cache key bumped ("apod" -> "apod-2") to bypass the stale placeholder
+    // response already cached under the old endpoint before this switched over.
+    if (url.pathname === '/api/apod') return openToAll(await cached(request, ctx, 'apod-2', 3 * 3600, () => apod()));
     if (url.pathname === '/api/iss') return openToAll(await cached(request, ctx, 'iss', 5, () => iss()));
     if (url.pathname === '/api/trivia') {
       const cat = url.searchParams.get('category') || '0';
