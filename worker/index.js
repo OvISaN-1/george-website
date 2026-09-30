@@ -48,7 +48,7 @@ export default {
     if (url.pathname === '/api/player') {
       const id = url.searchParams.get('id') || '';
       if (!PLAYERS[id]) return json({ error: 'unknown-player' }, 404, 0);
-      return openToAll(await cached(request, ctx, `player-${id}`, 24 * 3600, () => player(id)));
+      return openToAll(await cached(request, ctx, `player-2-${id}`, 24 * 3600, () => player(id)));
     }
     if (url.pathname === '/api/players') return openToAll(json({ ids: Object.keys(PLAYERS) }, 200, 3600));
     if (url.pathname === '/api/report') return matchReport(request, env);
@@ -68,7 +68,12 @@ async function cached(request, ctx, name, secs, make) {
   if (cache) { const hit = await cache.match(key); if (hit) return hit; }
   let data;
   try { data = await make(); } catch (err) { return json({ error: 'upstream', detail: String(err && err.message || err).slice(0, 120) }, 502, 0); }
-  const res = json(data, 200, secs);
+  // A result that's itself an error (an id genuinely not found, say) isn't
+  // worth caching for a whole day — if it's a passing upstream hiccup this
+  // lets it heal itself in a minute instead of being stuck till the cache
+  // expires.
+  const ttl = data && data.error ? Math.min(secs, 60) : secs;
+  const res = json(data, 200, ttl);
   if (cache) ctx.waitUntil(cache.put(key, res.clone()));
   return res;
 }
