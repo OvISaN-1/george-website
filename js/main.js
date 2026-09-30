@@ -466,12 +466,24 @@ function renderFixtures(live) {
       <span class="fx-team">${escapeHtml(f.opponent)} <small>(${f.venue})</small></span>
       <span class="fx-right">${wx(f)}${isLive(f) ? `<b class="fx-live">LIVE ${f.forest ?? 0}-${f.opp ?? 0}</b>` : escapeHtml(f.time)}</span>
     </li>`).join('')}</ul>` : '<p class="fx-off">No more fixtures this season.</p>';
-  doneEl.innerHTML = done.length ? `<ul class="fx-list">${done.map((f) => `<li>
-      <span class="fx-date">${escapeHtml(when(f))}</span>
-      <span class="fx-team">${escapeHtml(f.opponent)} <small>(${f.venue})</small></span>
-      <span class="fx-right"><span class="fx-score">${f.forest}-${f.opp}</span><span class="fx-chip ${res(f)}" aria-label="${res(f) === 'W' ? 'Won' : res(f) === 'L' ? 'Lost' : 'Drew'}">${res(f)}</span></span>
-      <div class="fx-events" data-date="${escapeAttr(f.date)}" data-opp="${escapeAttr(f.opponent)}" hidden></div>
-    </li>`).join('')}</ul>` : '<p class="fx-off">No results yet this season.</p>';
+  // Results as proper scorelines: home team on the left, away on the right,
+  // each team's scorers and cards underneath its own name.
+  const FOREST = 'Nottingham Forest';
+  doneEl.innerHTML = done.length ? `<ul class="fxr-list">${done.map((f) => {
+    const home = f.venue === 'H';
+    const [hName, aName] = home ? [FOREST, f.opponent] : [f.opponent, FOREST];
+    const [hGoals, aGoals] = home ? [f.forest, f.opp] : [f.opp, f.forest];
+    const r = res(f);
+    return `<li>
+      <div class="fxr-top"><span class="fx-date">${escapeHtml(when(f))}</span><span class="fx-chip ${r}" aria-label="${r === 'W' ? 'Forest won' : r === 'L' ? 'Forest lost' : 'Draw'}">${r}</span></div>
+      <div class="fxr-board">
+        <span class="fxr-team fxr-home${home ? ' is-forest' : ''}">${escapeHtml(hName)}</span>
+        <span class="fxr-score">${hGoals}<span aria-hidden="true"> – </span><span class="visually-hidden"> to </span>${aGoals}</span>
+        <span class="fxr-team fxr-away${home ? '' : ' is-forest'}">${escapeHtml(aName)}</span>
+      </div>
+      <div class="fxr-events" data-date="${escapeAttr(f.date)}" data-home="${home ? 'forest' : 'opp'}" hidden></div>
+    </li>`;
+  }).join('')}</ul>` : '<p class="fx-off">No results yet this season.</p>';
   resultsReady = true;
   if (wantResultEvents) loadResultEvents();
 }
@@ -533,25 +545,19 @@ function loadResultEvents() {
   wantResultEvents = true;
   if (!resultsReady || resultEventsLoaded) return;
   resultEventsLoaded = true;
-  const rows = [...document.querySelectorAll('#fx-results .fx-events')].slice(0, 10);
+  const rows = [...document.querySelectorAll('#fx-results .fxr-events')].slice(0, 10);
+  const ICON = { goal: '⚽', yellow: '🟨', red: '🟥' };
+  const line = (e) => `<span class="fxr-ev"><span aria-hidden="true">${ICON[e.kind]}</span> ${escapeHtml(e.player)} ${escapeHtml(e.min)}${e.pen ? ' (pen)' : ''}${e.og ? ' (o.g.)' : ''}<span class="visually-hidden"> ${e.kind === 'goal' ? 'goal' : `${e.kind} card`}</span></span>`;
+  // Goals first, then cards (yellow before red), each in minute order.
+  const order = { goal: 0, yellow: 1, red: 2 };
+  const side = (list) => list.slice().sort((a, b) => order[a.kind] - order[b.kind]).map(line).join('');
   rows.forEach(async (box) => {
     try {
       const d = await matchEvents(box.dataset.date);
-      const opp = box.dataset.opp;
-      const fmt = (e) => `${escapeHtml(e.player)} ${escapeHtml(e.min)}${e.pen ? ' (pen)' : ''}${e.og ? ' (o.g.)' : ''}`;
-      const side = (list) => [
-        list.filter((e) => e.forest).map(fmt).join(', '),
-        list.filter((e) => !e.forest).length ? `${list.filter((e) => !e.forest).map(fmt).join(', ')} <small>(${escapeHtml(opp)})</small>` : '',
-      ].filter(Boolean).join(' · ');
-      const goals = d.events.filter((e) => e.kind === 'goal');
-      const yellows = d.events.filter((e) => e.kind === 'yellow');
-      const reds = d.events.filter((e) => e.kind === 'red');
-      const lines = [
-        goals.length ? `<span>⚽ ${side(goals)}</span>` : '<span>⚽ No goals</span>',
-        yellows.length ? `<span>🟨 ${side(yellows)}</span>` : '',
-        reds.length ? `<span>🟥 ${side(reds)}</span>` : '',
-      ].filter(Boolean);
-      box.innerHTML = lines.join('');
+      if (!d.events.length) return;
+      const forest = d.events.filter((e) => e.forest), them = d.events.filter((e) => !e.forest);
+      const [left, right] = box.dataset.home === 'forest' ? [forest, them] : [them, forest];
+      box.innerHTML = `<div class="fxr-side fxr-home">${side(left)}</div><div class="fxr-mid" aria-hidden="true"></div><div class="fxr-side fxr-away">${side(right)}</div>`;
       box.hidden = false;
     } catch (e) { /* leave the row as it is */ }
   });
