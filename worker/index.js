@@ -14,7 +14,7 @@
    =========================================================== */
 
 import { coach } from './coach.js';
-import { weatherFor, apod, iss, live, trivia, population, launch, earth, quakes, aurora } from './extras.js';
+import { weatherFor, apod, iss, live, trivia, population, launch, earth, quakes, aurora, matchEvents } from './extras.js';
 import { squad, track, report, games, newReleases, joke, fpl, SONGS, songList, player, PLAYERS } from './more.js';
 
 const API = 'https://api.football-data.org/v4';
@@ -35,6 +35,12 @@ export default {
     // response already cached under the old endpoint before this switched over.
     if (url.pathname === '/api/apod') return openToAll(await cached(request, ctx, 'apod-2', 3 * 3600, () => apod()));
     if (url.pathname === '/api/iss') return openToAll(await cached(request, ctx, 'iss', 5, () => iss()));
+    if (url.pathname === '/api/goals') {
+      // Scorers and cards for a finished match: those never change, so keep them 30 days.
+      const date = url.searchParams.get('date') || '';
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Date.parse(date) > Date.now()) return json({ error: 'bad-date' }, 400, 0);
+      return openToAll(await cached(request, ctx, `goals-${date}`, 30 * 86400, () => matchEvents(date)));
+    }
     if (url.pathname === '/api/launch') return openToAll(await cached(request, ctx, 'launch', 3600, () => launch()));
     if (url.pathname === '/api/earth') return openToAll(await cached(request, ctx, 'earth', 3 * 3600, () => earth()));
     if (url.pathname === '/api/quakes') return openToAll(await cached(request, ctx, 'quakes', 600, () => quakes()));

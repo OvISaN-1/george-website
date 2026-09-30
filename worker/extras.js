@@ -245,6 +245,57 @@ async function launchFromLL2() {
   };
 }
 
+/* ---------------- Goals and cards for a finished Forest league match ----------------
+   ESPN's public scoreboard (no key, unofficial). football-data.org's free
+   plan has no scorers or cards, and API-Football's free plan doesn't cover
+   the current season. ESPN's soccer "details" aren't documented anywhere
+   that could be checked, so both its true/false flags and its type text
+   ("Goal", "Penalty - Scored", "Yellow Card", "Red Card"…) are accepted,
+   and the match summary's keyEvents are tried if details are missing. */
+const ESPN_PL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1';
+function espnEvent(d, forestId) {
+  if (!d) return null;
+  const text = String((d.type && d.type.text) || '');
+  const red = d.redCard === true || /red card/i.test(text);
+  const yellow = !red && (d.yellowCard === true || /yellow card/i.test(text));
+  const goal = !red && !yellow && (d.scoringPlay === true || (/goal|penalty - scored/i.test(text) && !/disallowed|missed|saved|no goal/i.test(text)));
+  if (!goal && !red && !yellow) return null;
+  const who = (d.athletesInvolved && d.athletesInvolved[0]) || (d.participants && d.participants[0] && d.participants[0].athlete) || {};
+  const player = String(who.shortName || who.displayName || '').replace(/^[A-Z]\.\s+/, '').trim();
+  const teamId = d.team && d.team.id;
+  return {
+    kind: goal ? 'goal' : red ? 'red' : 'yellow',
+    min: String((d.clock && d.clock.displayValue) || '').trim(),
+    sort: Number(d.clock && d.clock.value) || 0,
+    forest: teamId != null && String(teamId) === String(forestId),
+    player: player.slice(0, 40),
+    pen: goal && (d.penaltyKick === true || /penalty/i.test(text)),
+    og: goal && (d.ownGoal === true || /own goal/i.test(text)),
+  };
+}
+export async function matchEvents(date) {
+  const res = await fetch(`${ESPN_PL}/scoreboard?dates=${date.replace(/-/g, '')}`, { headers: LAUNCH_HEADERS });
+  if (!res.ok) throw new Error(`espn ${res.status}`);
+  const j = await res.json();
+  if (!j || !Array.isArray(j.events)) throw new Error('espn: unexpected response shape');
+  const isForest = (c) => c && c.team && /nottingham/i.test(`${c.team.displayName || ''} ${c.team.name || ''}`);
+  const ev = j.events.find((e) => e && e.competitions && e.competitions[0] && (e.competitions[0].competitors || []).some(isForest));
+  if (!ev) return { error: 'no-match' };
+  if (!(ev.status && ev.status.type && ev.status.type.completed)) return { error: 'not-final' };
+  const comp = ev.competitions[0];
+  const forestId = comp.competitors.find(isForest).team.id;
+  let raw = Array.isArray(comp.details) ? comp.details : [];
+  if (!raw.length) {
+    try {
+      const s = await fetch(`${ESPN_PL}/summary?event=${encodeURIComponent(ev.id)}`, { headers: LAUNCH_HEADERS });
+      if (s.ok) { const sj = await s.json(); if (Array.isArray(sj.keyEvents)) raw = sj.keyEvents; }
+    } catch (e) { /* no details then */ }
+  }
+  const events = raw.map((d) => espnEvent(d, forestId)).filter((e) => e && e.player).sort((a, b) => a.sort - b.sort)
+    .map(({ sort, ...e }) => e);
+  return { events };
+}
+
 /* ---------------- The whole Earth today (NASA EPIC, free, no key) ----------------
    DSCOVR photographs the sunlit side of Earth several times a day from
    ~1.5 million km away. Picks the photo whose centre is nearest

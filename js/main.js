@@ -454,7 +454,44 @@ function renderFixtures(live) {
       <span class="fx-date">${escapeHtml(when(f))}</span>
       <span class="fx-team">${escapeHtml(f.opponent)} <small>(${f.venue})</small></span>
       <span class="fx-right"><span class="fx-score">${f.forest}-${f.opp}</span><span class="fx-chip ${res(f)}" aria-label="${res(f) === 'W' ? 'Won' : res(f) === 'L' ? 'Lost' : 'Drew'}">${res(f)}</span></span>
+      <div class="fx-events" data-date="${escapeAttr(f.date)}" data-opp="${escapeAttr(f.opponent)}" hidden></div>
     </li>`).join('')}</ul>` : '<p class="fx-off">No results yet this season.</p>';
+  resultsReady = true;
+  if (wantResultEvents) loadResultEvents();
+}
+
+/* ---- Scorers and cards under each result (ESPN via worker/extras.js) -----
+   Fetched only once the Results tab is opened, for the latest 10 results.
+   Anything that can't be found just leaves the row as it was. */
+let resultsReady = false, wantResultEvents = false, resultEventsLoaded = false;
+function loadResultEvents() {
+  wantResultEvents = true;
+  if (!resultsReady || resultEventsLoaded) return;
+  resultEventsLoaded = true;
+  const rows = [...document.querySelectorAll('#fx-results .fx-events')].slice(0, 10);
+  rows.forEach(async (box) => {
+    try {
+      const res = await fetch(`${apiUrl('goals')}?date=${encodeURIComponent(box.dataset.date)}`, { signal: AbortSignal.timeout(12000) });
+      const d = await res.json();
+      if (!res.ok || d.error || !Array.isArray(d.events)) return;
+      const opp = box.dataset.opp;
+      const fmt = (e) => `${escapeHtml(e.player)} ${escapeHtml(e.min)}${e.pen ? ' (pen)' : ''}${e.og ? ' (o.g.)' : ''}`;
+      const side = (list) => [
+        list.filter((e) => e.forest).map(fmt).join(', '),
+        list.filter((e) => !e.forest).length ? `${list.filter((e) => !e.forest).map(fmt).join(', ')} <small>(${escapeHtml(opp)})</small>` : '',
+      ].filter(Boolean).join(' · ');
+      const goals = d.events.filter((e) => e.kind === 'goal');
+      const yellows = d.events.filter((e) => e.kind === 'yellow');
+      const reds = d.events.filter((e) => e.kind === 'red');
+      const lines = [
+        goals.length ? `<span>⚽ ${side(goals)}</span>` : '<span>⚽ No goals</span>',
+        yellows.length ? `<span>🟨 ${side(yellows)}</span>` : '',
+        reds.length ? `<span>🟥 ${side(reds)}</span>` : '',
+      ].filter(Boolean);
+      box.innerHTML = lines.join('');
+      box.hidden = false;
+    } catch (e) { /* leave the row as it is */ }
+  });
 }
 
 // Matchday tabs (Next match · Fixtures · Results), with arrow-key support.
@@ -469,6 +506,7 @@ function initMatchdayTabs() {
       $(x.getAttribute('aria-controls')).hidden = !on;
     });
     if (t.id === 'tab-fpl') loadFpl(); // only fetched if George opens the tab
+    if (t.id === 'tab-results') loadResultEvents();
   };
   tabs.forEach((t, i) => {
     t.addEventListener('click', () => select(t));
