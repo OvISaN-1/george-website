@@ -104,6 +104,20 @@ export async function apod(env) {
   };
 }
 
+/* ---------------- Quickfire Quiz questions (Open Trivia DB) ----------------
+   Fetched and cached here instead of straight from the browser: opentdb.com
+   rate-limits by IP, and every visitor sharing a home/school network shares
+   one IP, so this shields them from each other and from opentdb's own
+   outages (it's known to go down or 403 from time to time). */
+export async function trivia(catId) {
+  const catParam = catId ? `&category=${catId}` : '';
+  const res = await fetch(`https://opentdb.com/api.php?amount=20&difficulty=easy&type=multiple${catParam}`);
+  if (!res.ok) throw new Error(`trivia ${res.status}`);
+  const data = await res.json();
+  if (data.response_code !== 0 || !data.results || !data.results.length) throw new Error(`trivia response_code ${data.response_code}`);
+  return { results: data.results };
+}
+
 /* ---------------- The International Space Station ---------------- */
 export async function iss() {
   const res = await fetch('https://api.wheretheiss.at/v1/satellites/25544');

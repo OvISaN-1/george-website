@@ -18,7 +18,8 @@
     const el = $('apod');
     if (!el) return;
     try {
-      const res = await fetch(apiUrl('apod'));
+      // A slow/hung upstream shouldn't leave this stuck on "Loading…" forever.
+      const res = await fetch(apiUrl('apod'), { signal: AbortSignal.timeout(12000) });
       const a = await res.json();
       if (!res.ok || a.error) throw new Error(a.error || res.status);
       const page = `https://apod.nasa.gov/apod/ap${a.date.slice(2).replace(/-/g, '')}.html`;
