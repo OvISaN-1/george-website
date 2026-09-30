@@ -73,7 +73,7 @@ body[data-page="games"]{
   --accent: var(--volt); --accent-text: var(--volt-text); --accent-ink: var(--volt-ink); --glow-accent: var(--glow-volt);
   --btn-bg: var(--volt); --on-accent: var(--ink); /* chalk-on-volt was 3.33:1 — fails AA. Ink-on-volt is 4.87:1. */
 }
-body[data-page="school"]{
+body[data-page="school"], body[data-page="space"]{
   --accent: var(--gold); --accent-text: var(--gold); --accent-ink: var(--gold-ink); --glow-accent: var(--glow-gold);
   --btn-bg: var(--gold); --on-accent: var(--ink); /* chalk-on-gold was 1.52:1 — badly fails AA. Ink-on-gold is 10.7:1. */
 }
@@ -105,7 +105,7 @@ body[data-page="quiz-zone"], body[data-page="quiz-game"]{
   transition: color 0.15s ease, border-color 0.15s ease;
 }
 .nav-links a:hover, .nav-links a:focus-visible { color: var(--chalk); }
-.nav-links a[aria-current="page"] { color: var(--accent-text); border-color: var(--accent); }
+.nav-links a[aria-current="page"], .nav-links a[aria-current="true"] { color: var(--accent-text); border-color: var(--accent); }
 
 .nav-toggle{
   display: none; background: none; border: 1px solid var(--line-strong); border-radius: var(--r-sm);
@@ -121,7 +121,7 @@ body[data-page="quiz-zone"], body[data-page="quiz-game"]{
   font-family: var(--font-display); font-weight: 600; display: flex; align-items: center; gap: 10px;
   padding: 12px 14px; border-radius: var(--r-sm); color: var(--chalk-dim); min-height: 44px;
 }
-.mobile-nav a[aria-current="page"] { background: var(--accent-ink); color: var(--accent-text); }
+.mobile-nav a[aria-current="page"], .mobile-nav a[aria-current="true"] { background: var(--accent-ink); color: var(--accent-text); }
 .mobile-nav svg { width: 20px; height: 20px; flex-shrink: 0; }
 
 @media (max-width: 760px){
@@ -152,8 +152,8 @@ body[data-page="quiz-zone"], body[data-page="quiz-game"]{
   letter-spacing: 0.01em; text-transform: uppercase; transition: color 0.15s ease;
 }
 .bottom-tabbar a svg{ width: 22px; height: 22px; transition: transform 0.15s ease; }
-.bottom-tabbar a[aria-current="page"]{ color: var(--accent-text); }
-.bottom-tabbar a[aria-current="page"] svg{ transform: translateY(-1px) scale(1.08); }
+.bottom-tabbar a[aria-current="page"], .bottom-tabbar a[aria-current="true"]{ color: var(--accent-text); }
+.bottom-tabbar a[aria-current="page"] svg, .bottom-tabbar a[aria-current="true"] svg{ transform: translateY(-1px) scale(1.08); }
 .bottom-tabbar a:active svg{ transform: scale(0.9); }
 @media (max-width: 760px){
   .bottom-tabbar{ display: flex; }

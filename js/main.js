@@ -49,7 +49,7 @@ function initBottomTabs() {
   bar.className = 'bottom-tabbar';
   bar.setAttribute('aria-label', 'Quick navigation');
   bar.innerHTML = TABS.map(([href, key, label, path]) =>
-    `<a href="${base}${href}"${key === page ? ' aria-current="page"' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">${path}</svg>${label}</a>`
+    `<a href="${base}${href}"${key === page ? ' aria-current="page"' : key === 'school' && page === 'space' ? ' aria-current="true"' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">${path}</svg>${label}</a>`
   ).join('');
   document.body.appendChild(bar);
   document.body.classList.add('has-bottom-tabbar');
@@ -208,9 +208,9 @@ async function renderNow() {
       let name = s.country;
       try { if (name) name = new Intl.DisplayNames(['en-GB'], { type: 'region' }).of(name); } catch (e) { /* keep the code */ }
       const flag = s.country ? s.country.replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0))) + ' ' : '🌊 ';
-      tile(sp, `Over ${flag}${escapeHtml(name || 'the ocean')}`, `${s.altitude} km up · ${s.speed.toLocaleString('en-GB')} km/h · see the map and NASA's picture of the day`);
+      tile(sp, `Over ${flag}${escapeHtml(name || 'the ocean')}`, `${s.altitude} km up · ${s.speed.toLocaleString('en-GB')} km/h · tap for the Space corner: rocket launches, Earth from space and more`);
     } catch (e) {
-      tile(sp, 'Somewhere up there 🛰️', 'See NASA\'s picture of the day');
+      tile(sp, 'Somewhere up there 🛰️', 'Tap for the Space corner: rocket launches, Earth from space and more');
     }
   }
   if (ad) {
