@@ -38,6 +38,8 @@ window.SITE = {
     fanStory: 'I started supporting Forest in September 2024, when they beat Liverpool 1-0 at Anfield. Callum Hudson-Odoi scored the winner, and Liverpool went on to win the league that season. I have been Forest ever since.',
 
     // Favourite player cards. Leave "photo" out to show a plain card.
+    // "livePhoto" (an id from the PLAYERS list in worker/more.js) fetches a
+    // photo from TheSportsDB; "livePhotoTeam" makes sure it's the right player.
     players: [
       {
         title: 'Morgan Gibbs-White',
@@ -57,9 +59,14 @@ window.SITE = {
         title: 'Murillo',
         meta: 'Centre-back',
         description: 'One of the best defenders in the league and he is only young. Wins everything in the air.',
-        // Placeholder graphic. Swap for a real photo with the same name when you have one.
+        // The red-shirt graphic shows first; "livePhoto" then swaps in his photo
+        // from TheSportsDB (same source as Guess the Player) if it's really the
+        // Forest Murillo. Replace "photo" with a real one and delete the two
+        // livePhoto lines whenever you like.
         photo: 'assets/images/players/murillo.webp',
         photoAlt: 'Murillo',
+        livePhoto: 'murillo',
+        livePhotoTeam: 'Nottingham Forest',
       },
     ],
 

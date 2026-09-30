@@ -158,7 +158,7 @@ function renderCards(containerId, items, type) {
     .map((item) => {
       const photoText = item.photoAlt || 'Photo coming soon';
       const photoBlock = item.photo
-        ? `<div class="card-photo"><img src="${escapeAttr(item.photo)}" alt="${escapeAttr(photoText)}" loading="lazy"></div>`
+        ? `<div class="card-photo"><img src="${escapeAttr(item.photo)}" alt="${escapeAttr(photoText)}" loading="lazy"${item.livePhoto ? ` data-live-photo="${escapeAttr(item.livePhoto)}" data-live-team="${escapeAttr(item.livePhotoTeam || '')}"` : ''}></div>`
         : `<div class="photo-slot" aria-hidden="true">${placeholderIcon}<span>${escapeHtml(photoText)}</span></div>`;
       return `
         <article class="card ${type} reveal">
@@ -172,7 +172,23 @@ function renderCards(containerId, items, type) {
     })
     .join('');
 
+  container.querySelectorAll('img[data-live-photo]').forEach(swapInLivePhoto);
   initScrollReveal();
+}
+
+// Swap a card's placeholder for a live photo (TheSportsDB via /api/player),
+// but only once it's loaded, and only if it's the right team's player.
+async function swapInLivePhoto(img) {
+  try {
+    const res = await fetch(`${apiUrl('player')}?id=${encodeURIComponent(img.dataset.livePhoto)}`, { signal: AbortSignal.timeout(10000) });
+    const p = await res.json();
+    if (!res.ok || !p || !p.photo || !/^https:\/\//.test(p.photo)) return;
+    const team = (img.dataset.liveTeam || '').toLowerCase();
+    if (team && !String(p.team || '').toLowerCase().includes(team.split(' ')[0])) return;
+    const pic = new Image();
+    pic.onload = () => { img.src = p.photo; img.classList.add('live-photo'); };
+    pic.src = p.photo;
+  } catch (e) { /* keep the placeholder */ }
 }
 
 function renderList(id, items) {
