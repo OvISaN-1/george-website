@@ -339,7 +339,9 @@ nameForm.addEventListener("submit", async (e) => {
     if (saveStatusEl) saveStatusEl.textContent = `Saved! ${correctCount} correct for ${name}.`;
     await renderLeaderboard();
   } catch (err) {
-    if (saveStatusEl) saveStatusEl.textContent = "Couldn't save your score online right now. Try again later.";
+    // Shows the real reason for now (network/CORS vs. a rejected save) so
+    // a genuine problem can be tracked down instead of just "didn't work".
+    if (saveStatusEl) saveStatusEl.textContent = `Couldn't save your score online right now (${(err && err.message) || "unknown error"}). Try again later.`;
   }
 });
 
