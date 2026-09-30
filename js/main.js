@@ -213,6 +213,28 @@ async function renderNow() {
       tile(sp, 'Somewhere up there 🛰️', 'Tap for the Space corner: rocket launches, Earth from space and more');
     }
   }
+  const jk = $('now-joke');
+  if (jk) {
+    try {
+      const res = await fetch(apiUrl('joke'), { signal: AbortSignal.timeout(10000) });
+      const j = await res.json();
+      if (!res.ok || j.error || !(j.joke || (j.setup && j.delivery))) throw new Error('joke');
+      $('joke-text').textContent = j.joke || j.setup;
+      const punch = $('joke-punch');
+      if (j.delivery) {
+        // Two-part joke: keep the punchline back until George taps.
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'joke-btn';
+        btn.textContent = 'Tell me! 🥁';
+        btn.addEventListener('click', () => { punch.textContent = j.delivery; punch.classList.add('joke-punchline'); });
+        punch.replaceChildren(btn);
+      } else {
+        punch.textContent = 'A new one every day';
+      }
+      jk.hidden = false;
+    } catch (e) { /* leave it hidden */ }
+  }
   if (ad) {
     try {
       // Busts the API's own response cache so it's not the same line all day.
@@ -439,12 +461,15 @@ function renderFixtures(live) {
 function initMatchdayTabs() {
   const tabs = [...document.querySelectorAll('.md-tabs [role="tab"]')];
   if (!tabs.length) return;
-  const select = (t) => tabs.forEach((x) => {
-    const on = x === t;
-    x.setAttribute('aria-selected', String(on));
-    x.tabIndex = on ? 0 : -1;
-    $(x.getAttribute('aria-controls')).hidden = !on;
-  });
+  const select = (t) => {
+    tabs.forEach((x) => {
+      const on = x === t;
+      x.setAttribute('aria-selected', String(on));
+      x.tabIndex = on ? 0 : -1;
+      $(x.getAttribute('aria-controls')).hidden = !on;
+    });
+    if (t.id === 'tab-fpl') loadFpl(); // only fetched if George opens the tab
+  };
   tabs.forEach((t, i) => {
     t.addEventListener('click', () => select(t));
     t.addEventListener('keydown', (e) => {
@@ -455,6 +480,30 @@ function initMatchdayTabs() {
       select(n); n.focus();
     });
   });
+}
+
+/* ---- Forest in Fantasy Premier League (worker/more.js fpl()) --------------
+   Top 5 Forest players by FPL points, the rest tucked behind "show all". */
+let fplLoaded = false;
+async function loadFpl() {
+  const box = $('fpl');
+  if (!box || fplLoaded) return;
+  fplLoaded = true;
+  try {
+    const res = await fetch(apiUrl('fpl'), { signal: AbortSignal.timeout(15000) });
+    const d = await res.json();
+    if (!res.ok || d.error || !Array.isArray(d.players) || !d.players.length) throw new Error('fpl');
+    const row = (p, i) => `<li><span class="fpl-rank">${i + 1}</span><span class="fpl-name"><b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.pos)} · £${p.price.toFixed(1)}m${p.goals ? ` · ⚽ ${p.goals}` : ''}${p.assists ? ` · 🅰️ ${p.assists}` : ''}</small></span><span class="fpl-pts"><b>${p.points}</b><small>${p.week} this week</small></span></li>`;
+    const top = d.players.slice(0, 5), rest = d.players.slice(5);
+    box.innerHTML = `
+      <p class="fpl-head">${d.gameweek ? `Gameweek ${d.gameweek} · ` : ''}Forest's top scorers in <b>Fantasy Premier League</b></p>
+      <ol class="fpl-list">${top.map(row).join('')}</ol>
+      ${rest.length ? `<details class="fpl-more"><summary>Show all ${d.players.length} Forest players</summary><ol class="fpl-list" start="6">${rest.map((p, i) => row(p, i + 5)).join('')}</ol></details>` : ''}
+      ${d.star ? `<p class="fpl-foot">Best in the whole game this week: <b>${escapeHtml(d.star.name)}</b>${d.star.team ? ` (${escapeHtml(d.star.team)})` : ''} with ${d.star.points} points${d.average != null ? `. Average team: ${d.average}` : ''}.</p>` : ''}`;
+  } catch (e) {
+    fplLoaded = false; // let it try again next time the tab is opened
+    box.innerHTML = '<p>Couldn\'t load Fantasy Premier League right now. Try again later!</p>';
+  }
 }
 
 /* ---- Match centre (API-Football via worker/extras.js) ----------------------
