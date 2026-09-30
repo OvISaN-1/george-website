@@ -143,7 +143,35 @@
   .answer-btn:disabled{cursor:default;}
 
   #feedback{text-align:center;font-weight:800;margin-top:14px;min-height:22px;font-size:15px;}
-  #country-facts{text-align:center;margin-top:6px;min-height:20px;font-size:13px;color:#b9b2ac;}
+  #country-facts{text-align:center;margin-top:6px;min-height:40px;font-size:13px;line-height:1.55;color:#b9b2ac;}
+  #country-facts b{color:var(--cream);}
+  .fact-flag{height:14px;width:auto;vertical-align:-2px;border-radius:2px;margin-right:5px;box-shadow:0 0 0 1px rgba(255,255,255,0.2);}
+
+  /* mode picker (start screen) */
+  .mode-pick{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:4px 0 6px;}
+  .mode-btn{background:rgba(255,255,255,0.05);color:var(--cream);border:2px solid rgba(255,255,255,0.12);
+    border-radius:14px;padding:14px 10px;font-size:18px;display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .mode-btn .emoji{font-size:26px;}
+  .mode-btn small{font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#b9b2ac;text-align:center;}
+  .mode-btn[aria-pressed="true"]{border-color:var(--gold);background:rgba(245,185,66,0.12);}
+  .mode-btn:focus-visible{outline:2px solid var(--cream);outline-offset:3px;}
+
+  /* flags on the question screen */
+  .country-name{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;}
+  .q-flag{height:26px;width:auto;border-radius:3px;box-shadow:0 0 0 1px rgba(255,255,255,0.2);}
+  #flag-box{height:230px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;}
+  #flag-box img{max-height:200px;max-width:100%;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.4),0 0 0 1px rgba(255,255,255,0.15);}
+
+  /* "countries you met" recap (results screen) */
+  #visited{text-align:left;margin-top:22px;}
+  #visited summary{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;cursor:pointer;text-align:center;}
+  #visited-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:12px;}
+  .met-card{display:flex;gap:10px;background:rgba(255,255,255,0.05);border-radius:12px;padding:10px;border-left:3px solid var(--good);}
+  .met-card.miss{border-left-color:var(--bad);}
+  .met-card img{width:48px;height:36px;object-fit:cover;border-radius:4px;flex:none;box-shadow:0 0 0 1px rgba(255,255,255,0.15);}
+  .met-card b{font-size:14px;}
+  .met-card .cap{display:block;font-size:12px;color:var(--gold);font-weight:700;}
+  .met-card ul{margin:4px 0 0;padding:0;list-style:none;font-size:12px;color:#b9b2ac;line-height:1.45;}
 
   /* results */
   #results-screen{display:none;text-align:center;}
@@ -248,12 +276,16 @@
 
 <div class="card" id="start-screen">
   <div id="start-greeting"></div>
-  <h2>Guess the capital!</h2>
-  <p>Look at the shape. Find the dot. Pick the right capital city. Answer as many as you can before time runs out.</p>
+  <h2 id="start-title">Guess the capital!</h2>
+  <p id="start-blurb">Look at the shape. Find the dot. Pick the right capital city. Answer as many as you can before time runs out.</p>
+  <div class="mode-pick" role="group" aria-label="Choose a mode">
+    <button type="button" class="mode-btn" data-mode="capitals" aria-pressed="true"><span class="emoji" aria-hidden="true">🏙️</span>Capitals<small>Name the capital city</small></button>
+    <button type="button" class="mode-btn" data-mode="flags" aria-pressed="false"><span class="emoji" aria-hidden="true">🚩</span>Flags<small>Name the country from its flag</small></button>
+  </div>
   <div class="rules">
     <div class="rule"><div class="emoji">⏱️</div><div class="label">60 seconds<br>total</div></div>
     <div class="rule"><div class="emoji">🌍</div><div class="label">Every country<br>in the world</div></div>
-    <div class="rule"><div class="emoji">🏆</div><div class="label">Score = capitals<br>you get right</div></div>
+    <div class="rule"><div class="emoji">🏆</div><div class="label">Score = answers<br>you get right</div></div>
   </div>
   <button class="btn-primary" id="start-btn">Start the quiz</button>
 </div>
@@ -264,9 +296,10 @@
     <span class="timer" id="timer-display">60</span>
   </div>
   <div id="timer-bar-track"><div id="timer-bar"></div></div>
-  <div class="prompt">What is the capital of...</div>
-  <div class="country-name" id="country-name">—</div>
+  <div class="prompt" id="prompt">What is the capital of...</div>
+  <div class="country-name" id="country-name"><img class="q-flag" id="q-flag" alt="" hidden><span id="country-label">—</span></div>
   <div id="map-box"><svg id="map-svg" viewBox="0 0 300 230"></svg></div>
+  <div id="flag-box" hidden><img id="big-flag" alt="Mystery flag"></div>
   <div class="answers" id="answers"></div>
   <div id="feedback"></div>
   <div id="country-facts" aria-live="polite"></div>
@@ -274,13 +307,14 @@
 
 <div class="card" id="results-screen">
   <h2>Time's up!</h2>
-  <p>Capitals answered correctly:</p>
+  <p id="final-label">Capitals answered correctly:</p>
   <div class="score-big" id="final-score">0</div>
   <div id="results-message"></div>
   <div id="category-breakdown">
     <h3 style="margin-top:22px;">How you did, by continent</h3>
     <div id="category-chart"></div>
   </div>
+  <details id="visited" open hidden><summary>Countries you met this round</summary><div id="visited-grid"></div></details>
   <form id="name-form">
     <input type="text" id="player-name" placeholder="Enter your name" maxlength="18" required>
     <button type="submit">Save score</button>
@@ -291,7 +325,7 @@
   <button class="btn-primary" id="play-again-btn">Play again</button>
 </div>
 
-<p class="footer-note">Shapes drawn from public map data. Loads once from the internet, then stays in your browser. Wrong-answer options are real neighbouring capitals where possible. Top scores are shared online with everyone who plays. Badges and streaks save on this device.</p>
+<p class="footer-note">Shapes drawn from public map data. Flags from flag-icons; country facts from the open mledoze/countries dataset, with populations kept up to date from the World Bank. Wrong-answer options are real neighbours where possible. Top scores are shared online with everyone who plays. Badges and streaks save on this device.</p>
   </main>
 
   <footer class="site-footer">
@@ -305,6 +339,7 @@
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
 <script src="../js/main.js"></script>
 <script src="stats.js"></script>
+<script src="country-facts.js"></script>
 <script>
 /* ---------- Country data: every UN member state ---------- */
 /* ccn3 = ISO numeric code, used to find the shape in the world map file */
@@ -515,7 +550,10 @@ const LEADERBOARD_SIZE = 10;
    This is the SAME URL and key in all three game files. */
 const SUPABASE_URL = "https://hucnucpfyjltlhmvprso.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1Y251Y3BmeWpsdGxobXZwcnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgzNjEsImV4cCI6MjEwMzU4NDM2MX0.DSjLCkiUWB47wVd4wnW_2RvWFoISbH80JI9ukB1bBdg";
-const GAME_ID = "capital-quest";
+// Each mode keeps its own leaderboard ("flag-quest" for Flags).
+const GAME_IDS = { capitals: "capital-quest", flags: "flag-quest" };
+let mode = "capitals";
+let GAME_ID = GAME_IDS.capitals;
 /* ==================================================== */
 
 const byCca3 = {};
@@ -523,6 +561,7 @@ COUNTRIES.forEach(c => byCca3[c.cca3] = c);
 
 let worldTopology = null;
 let quizPool = [];      // countries with a matching shape in the map data
+let activePool = [];    // what this round draws from (quizPool, or every country with a flag)
 let questionQueue = [];
 let queuePos = 0;
 let correctCount = 0;
@@ -552,8 +591,35 @@ const playAgainBtn = document.getElementById("play-again-btn");
 const startGreetingEl = document.getElementById("start-greeting");
 const resultsMessageEl = document.getElementById("results-message");
 const categoryChartEl = document.getElementById("category-chart");
+const promptEl = document.getElementById("prompt");
+const countryLabelEl = document.getElementById("country-label");
+const qFlagEl = document.getElementById("q-flag");
+const mapBox = document.getElementById("map-box");
+const flagBox = document.getElementById("flag-box");
+const bigFlagEl = document.getElementById("big-flag");
+const finalLabelEl = document.getElementById("final-label");
+const visitedEl = document.getElementById("visited");
+const visitedGrid = document.getElementById("visited-grid");
+let currentQ = null;
+let visited = [];      // countries seen this round, for the recap
 
 if (startGreetingEl) startGreetingEl.textContent = `Ready, ${GZ.randomNickname()}? 🌍`;
+
+/* ---------- Mode: Capitals or Flags ---------- */
+const MODE_TEXT = {
+  capitals: ["Guess the capital!", "Look at the shape. Find the dot. Pick the right capital city. Answer as many as you can before time runs out."],
+  flags: ["Guess the flag!", "A flag pops up. Pick the country it belongs to. Answer as many as you can before time runs out."],
+};
+function setMode(m) {
+  mode = m === "flags" ? "flags" : "capitals";
+  GAME_ID = GAME_IDS[mode];
+  document.querySelectorAll(".mode-btn").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
+  document.getElementById("start-title").textContent = MODE_TEXT[mode][0];
+  document.getElementById("start-blurb").textContent = MODE_TEXT[mode][1];
+  try { localStorage.setItem("gz_capital_mode", mode); } catch (e) { /* private mode */ }
+}
+document.querySelectorAll(".mode-btn").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.mode)));
+setMode((() => { try { return localStorage.getItem("gz_capital_mode"); } catch (e) { return null; } })());
 
 /* ---------- Setup ---------- */
 startBtn.addEventListener("click", startGame);
@@ -580,19 +646,28 @@ nameForm.addEventListener("submit", async (e) => {
 });
 
 async function startGame() {
-  startBtn.disabled = true;
-  startBtn.textContent = "Loading map...";
-  if (!worldTopology) {
-    const res = await fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json");
-    worldTopology = await res.json();
-    const features = topojson.feature(worldTopology, worldTopology.objects.countries).features;
-    const idsPresent = new Set(features.map(f => Number(f.id)));
-    quizPool = COUNTRIES.filter(c => c.ccn3 && idsPresent.has(Number(c.ccn3)));
+  if (mode === "capitals" && !worldTopology) {
+    startBtn.disabled = true;
+    startBtn.textContent = "Loading map...";
+    try {
+      const res = await fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json");
+      worldTopology = await res.json();
+      const features = topojson.feature(worldTopology, worldTopology.objects.countries).features;
+      const idsPresent = new Set(features.map(f => Number(f.id)));
+      quizPool = COUNTRIES.filter(c => c.ccn3 && idsPresent.has(Number(c.ccn3)));
+    } catch (e) {
+      worldTopology = null;
+      startBtn.disabled = false;
+      startBtn.textContent = "Couldn't load the map. Tap to try again";
+      return;
+    }
   }
   startBtn.disabled = false;
   startBtn.textContent = "Start the quiz";
 
-  questionQueue = shuffle([...quizPool]);
+  activePool = mode === "flags" ? COUNTRIES.filter(c => FACTS[c.cca3]) : quizPool;
+  questionQueue = shuffle([...activePool]);
+  visited = [];
   queuePos = 0;
   correctCount = 0;
   answeredCount = 0;
@@ -650,54 +725,129 @@ function loadQuestion() {
   factsEl.textContent = "";
 
   if (queuePos >= questionQueue.length) {
-    questionQueue = shuffle([...quizPool]); // recycle if someone is very fast
+    questionQueue = shuffle([...activePool]); // recycle if someone is very fast
     queuePos = 0;
   }
   const q = questionQueue[queuePos];
-  countryNameEl.textContent = q.name;
-  currentCountry = q.name;
-  lookUpCountry(q.name);
+  currentQ = q;
   currentRegion = q.region || "World";
-  drawCountryShape(q);
 
-  const distractors = pickDistractorCapitals(q, 3);
-  const options = shuffle([q.capital, ...distractors]);
+  let correct, options;
+  const others = pickDistractors(q, 3);
+  if (mode === "flags") {
+    promptEl.textContent = "Which country has this flag?";
+    countryNameEl.hidden = true;
+    mapBox.hidden = true;
+    flagBox.hidden = false;
+    bigFlagEl.src = flagUrl(q);
+    correct = q.name;
+    options = shuffle([q.name, ...others.map(c => c.name)]);
+  } else {
+    promptEl.textContent = "What is the capital of...";
+    countryNameEl.hidden = false;
+    mapBox.hidden = false;
+    flagBox.hidden = true;
+    countryLabelEl.textContent = q.name;
+    qFlagEl.hidden = !FACTS[q.cca3];
+    if (FACTS[q.cca3]) qFlagEl.src = flagUrl(q);
+    drawCountryShape(q);
+    correct = q.capital;
+    options = shuffle([q.capital, ...others.map(c => c.capital)]);
+  }
+  // Warm up the next flag so it doesn't pop in.
+  const next = questionQueue[queuePos + 1];
+  if (next && FACTS[next.cca3]) new Image().src = flagUrl(next);
+
   answersEl.innerHTML = "";
   options.forEach(opt => {
     const btn = document.createElement("button");
     btn.className = "answer-btn";
     btn.textContent = opt;
-    btn.addEventListener("click", () => handleAnswer(btn, opt, q.capital));
+    btn.addEventListener("click", () => handleAnswer(btn, opt, correct));
     answersEl.appendChild(btn);
   });
 }
 
-/* ---------- Country facts (REST Countries, free, no key) ----------
-   Looked up while the question is on screen, then shown with the answer:
-   flag, population and money. Adds nothing to the timer or the score. */
+/* ---------- Country facts and flags ----------
+   Built into the site (country-facts.js + assets/flags) so they can't go
+   down. Populations are ~2018 and get topped up from the World Bank via
+   the Worker; if that's unreachable the built-in numbers stay. */
+const FACTS = window.COUNTRY_FACTS || {};
 const factsEl = document.getElementById("country-facts");
-const COUNTRY_FACTS = (() => { try { return JSON.parse(localStorage.getItem("gz_country_facts_v1")) || {}; } catch (e) { return {}; } })();
-let currentCountry = null;
-async function lookUpCountry(name) {
-  if (COUNTRY_FACTS[name] !== undefined) return;
-  COUNTRY_FACTS[name] = null; // don't ask twice
-  const fields = "fields=name,flag,population,currencies";
-  const tryUrl = async (url) => { const r = await fetch(url); if (!r.ok) return null; const j = await r.json(); return Array.isArray(j) ? j : null; };
-  try {
-    const list = (await tryUrl(`https://restcountries.com/v3.1/name/${encodeURIComponent(name)}?fullText=true&${fields}`)) ||
-      (await tryUrl(`https://restcountries.com/v3.1/name/${encodeURIComponent(name)}?${fields}`));
-    const c = list && (list.find((x) => x.name && x.name.common.toLowerCase() === name.toLowerCase()) || list[0]);
-    if (!c) return;
-    const money = c.currencies ? Object.values(c.currencies)[0] : null;
-    COUNTRY_FACTS[name] = { flag: c.flag || "", people: c.population || 0, money: money ? money.name : "" };
-    try { localStorage.setItem("gz_country_facts_v1", JSON.stringify(COUNTRY_FACTS)); } catch (e) { /* full */ }
-  } catch (e) { /* offline: just no facts */ }
+const UK_AREA = 242900;
+fetch(apiUrl("population"), { signal: AbortSignal.timeout(8000) })
+  .then(r => r.ok ? r.json() : null)
+  .then(d => {
+    if (!d || !d.pop) return;
+    for (const [code, n] of Object.entries(d.pop)) {
+      if (FACTS[code] && typeof n === "number" && n > 0) FACTS[code][1] = n;
+    }
+  })
+  .catch(() => { /* keep the built-in figures */ });
+
+function flagUrl(c) { return FACTS[c.cca3] ? `../assets/flags/${FACTS[c.cca3][0]}.svg` : ""; }
+
+function peopleText(n) {
+  if (!n) return null;
+  const trim = (x) => String(x).replace(/\.0$/, "");
+  if (n >= 1e9) return `about ${trim((n / 1e9).toFixed(1))} billion people`;
+  if (n >= 1e7) return `about ${Math.round(n / 1e6)} million people`;
+  if (n >= 1e6) return `about ${trim((n / 1e6).toFixed(1))} million people`;
+  if (n >= 1e4) return `about ${(Math.round(n / 1000) * 1000).toLocaleString("en-GB")} people`;
+  return `about ${(Math.round(n / 100) * 100).toLocaleString("en-GB")} people`;
 }
-function showCountryFacts() {
-  const f = currentCountry && COUNTRY_FACTS[currentCountry];
+
+function sizeText(area) {
+  if (!area) return null;
+  if (area < 75) return "smaller than the city of Nottingham!";
+  const ratio = area / UK_AREA;
+  if (ratio >= 1.25) return `${ratio >= 10 ? Math.round(ratio) : Math.round(ratio * 2) / 2} times bigger than the UK`;
+  if (ratio > 0.8) return "about the same size as the UK";
+  const fit = UK_AREA / area;
+  if (fit < 2) return "a bit smaller than the UK";
+  return `${fit >= 10 ? Math.round(fit).toLocaleString("en-GB") : Math.round(fit * 2) / 2} of them would fit inside the UK`;
+}
+
+// Short list of kid-friendly facts, e.g. for the recap cards.
+function factBits(c) {
+  const f = FACTS[c.cca3];
+  if (!f) return [];
+  const [, pop, area, money, langs, landlocked] = f;
+  const bits = [];
+  const people = peopleText(pop);
+  if (people) bits.push(`👥 ${people}`);
+  if (money) bits.push(`💰 ${money}`);
+  if (langs && langs.length) bits.push(`🗣️ ${langs.join(" & ")}`);
+  const size = sizeText(area);
+  if (size) bits.push(`📏 ${size}`);
+  if (landlocked) bits.push("🏔️ no coastline at all");
+  else if (!(c.borders || []).length) bits.push("🏝️ no land borders with anyone");
+  return bits;
+}
+
+function showCountryFacts(c) {
+  const f = FACTS[c.cca3];
   if (!f) { factsEl.textContent = ""; return; }
-  const people = f.people >= 1e6 ? `${(f.people / 1e6).toFixed(f.people >= 1e7 ? 0 : 1)} million people` : `${f.people.toLocaleString("en-GB")} people`;
-  factsEl.textContent = `${f.flag} ${currentCountry} · ${people}${f.money ? ` · ${f.money}` : ""}`;
+  const head = mode === "flags"
+    ? `<b>${escapeHtml(c.name)}</b> · capital ${escapeHtml(c.capital)}`
+    : `<img class="fact-flag" src="${flagUrl(c)}" alt=""><b>${escapeHtml(c.name)}</b>`;
+  factsEl.innerHTML = `${head}<br>${factBits(c).slice(0, 3).map(escapeHtml).join(" · ")}`;
+}
+
+function renderVisited() {
+  const list = visited.slice(-30);
+  visitedEl.hidden = !list.length;
+  if (!list.length) return;
+  visitedEl.querySelector("summary").textContent = `Countries you met this round (${list.length})`;
+  visitedGrid.innerHTML = list.map(({ c, ok }) => `
+    <div class="met-card${ok ? "" : " miss"}">
+      ${FACTS[c.cca3] ? `<img src="${flagUrl(c)}" alt="Flag of ${escapeHtml(c.name)}" loading="lazy">` : ""}
+      <div>
+        <b>${escapeHtml(c.name)}</b> ${ok ? "✅" : "❌"}
+        <span class="cap">Capital: ${escapeHtml(c.capital)}</span>
+        <ul>${factBits(c).map(b => `<li>${escapeHtml(b)}</li>`).join("")}</ul>
+      </div>
+    </div>`).join("");
 }
 
 function handleAnswer(btn, chosen, correct) {
@@ -724,14 +874,16 @@ function handleAnswer(btn, chosen, correct) {
     feedbackEl.style.color = "var(--bad)";
   }
   scorePillEl.textContent = `Correct: ${correctCount}`;
-  showCountryFacts();
+  visited.push({ c: currentQ, ok: chosen === correct });
+  showCountryFacts(currentQ);
   queuePos++;
   setTimeout(loadQuestion, 1500);
 }
 
 function resultsMessageFor(nickname, score) {
-  if (score >= 20) return `Wow, ${nickname}! ${score} capitals — you're a walking atlas! 🌍🏆`;
-  if (score >= 10) return `Great round, ${nickname}! ${score} capitals correct. 🌍`;
+  const what = mode === "flags" ? "flags" : "capitals";
+  if (score >= 20) return `Wow, ${nickname}! ${score} ${what} — you're a walking atlas! 🌍🏆`;
+  if (score >= 10) return `Great round, ${nickname}! ${score} ${what} correct. 🌍`;
   if (score >= 1) return `Nice one, ${nickname}! ${score} correct. Have another go!`;
   return `That's alright, ${nickname} — everyone misses now and then. Try again!`;
 }
@@ -741,6 +893,9 @@ function endGame() {
   gameScreen.style.display = "none";
   resultsScreen.style.display = "block";
   finalScoreEl.textContent = correctCount;
+  finalLabelEl.textContent = mode === "flags" ? "Flags named correctly:" : "Capitals answered correctly:";
+  if (saveStatusEl) saveStatusEl.textContent = "";
+  renderVisited();
   playerNameInput.value = "";
 
   const nickname = GZ.randomNickname();
@@ -764,7 +919,8 @@ function haversine(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function pickDistractorCapitals(country, count) {
+// Returns country objects; the caller picks .capital or .name.
+function pickDistractors(country, count) {
   const chosen = [];
   const usedCca3 = new Set([country.cca3]);
 
@@ -776,7 +932,7 @@ function pickDistractorCapitals(country, count) {
   );
   for (const b of borderCountries) {
     if (chosen.length >= count) break;
-    chosen.push(b.capital);
+    chosen.push(b);
     usedCca3.add(b.cca3);
   }
 
@@ -788,7 +944,7 @@ function pickDistractorCapitals(country, count) {
       .sort((a, b) => a.d - b.d);
     for (const { c } of rest) {
       if (chosen.length >= count) break;
-      chosen.push(c.capital);
+      chosen.push(c);
       usedCca3.add(c.cca3);
     }
   }
