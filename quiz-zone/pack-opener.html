@@ -218,10 +218,21 @@ function hash(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s
 
 let POOLS = null; // { icon: [], gold: [], silver: [], bronze: [] }
 const playerCache = {};
+const failCount = {}; // id -> how many times it's failed to load this visit
 function getPlayer(id) {
   if (!playerCache[id]) {
     playerCache[id] = fetch(`${api("player")}?id=${encodeURIComponent(id)}`).then((r) => r.json()).then((p) => (p && p.photo ? p : null)).catch(() => null);
-    playerCache[id].then((p) => { if (!p) delete playerCache[id]; });
+    playerCache[id].then((p) => {
+      if (p) return;
+      delete playerCache[id]; // a blip: worth trying again later
+      // Failed twice: that player's likely just missing from TheSportsDB
+      // (no photo on file), not a passing hiccup — stop drawing them,
+      // rather than showing "Couldn't load" again and again.
+      failCount[id] = (failCount[id] || 0) + 1;
+      if (failCount[id] >= 2 && POOLS) {
+        Object.keys(POOLS).forEach((t) => { POOLS[t] = POOLS[t].filter((x) => x !== id); });
+      }
+    });
   }
   return playerCache[id];
 }
@@ -278,6 +289,10 @@ function pullFive() {
   return tiers.map((tier) => {
     let pool = POOLS[tier].filter((id) => !used.has(id));
     if (!pool.length) pool = POOLS[tier]; // pool exhausted (tiny Icon pool): allow a repeat
+    // Rare, but if enough of one tier has turned out to be unloadable this
+    // visit, fall back to whichever pool still has players in it.
+    if (!pool.length) pool = Object.values(POOLS).flat().filter((id) => !used.has(id));
+    if (!pool.length) pool = Object.values(POOLS).flat();
     const id = pick(pool);
     used.add(id);
     return { id, tier, rank: TIER_RANK[tier] };
