@@ -164,6 +164,109 @@ export async function population() {
   return { year, pop };
 }
 
+/* ---------------- Next rocket launch (Launch Library 2, free, no key) ----------------
+   Anonymous use is limited to ~15 calls an hour, which the Worker cache
+   keeps us well under. 2.3.0 turned image URLs into Image objects, so
+   both shapes are accepted. */
+export async function launch() {
+  const res = await fetch('https://ll.thespacedevs.com/2.3.0/launches/upcoming/?limit=6&mode=normal', {
+    headers: { Accept: 'application/json', 'User-Agent': 'GeorgesWebsite/1.0 (+https://georgeneagu.win)' },
+  });
+  if (!res.ok) throw new Error(`launches ${res.status}`);
+  const j = await res.json();
+  if (!j || !Array.isArray(j.results)) throw new Error('launches: unexpected response shape');
+  const l = j.results.find((x) => x && x.name && x.net && Date.parse(x.net) > Date.now() - 3600e3);
+  if (!l) throw new Error('launches: none upcoming');
+  const img = typeof l.image === 'string' ? l.image : (l.image && (l.image.thumbnail_url || l.image.image_url)) || null;
+  const conf = (l.rocket && l.rocket.configuration) || {};
+  const pad = l.pad || {};
+  const about = l.mission && l.mission.description ? String(l.mission.description).replace(/\s+/g, ' ').trim() : '';
+  return {
+    name: String(l.name),
+    net: l.net,
+    status: (l.status && l.status.name) || '',
+    statusCode: (l.status && l.status.abbrev) || '',
+    rocket: conf.full_name || conf.name || null,
+    provider: (l.launch_service_provider && l.launch_service_provider.name) || null,
+    mission: (l.mission && l.mission.name) || null,
+    about: about.length > 320 ? `${about.slice(0, 317)}…` : about || null,
+    pad: pad.name || null,
+    place: (pad.location && pad.location.name) || null,
+    image: img && /^https:\/\//.test(img) ? img : null,
+  };
+}
+
+/* ---------------- The whole Earth today (NASA EPIC, free, no key) ----------------
+   DSCOVR photographs the sunlit side of Earth several times a day from
+   ~1.5 million km away. Picks the photo whose centre is nearest
+   Nottingham's longitude, so it's "our" side of the planet. */
+export async function earth() {
+  const res = await fetch('https://epic.gsfc.nasa.gov/api/natural');
+  if (!res.ok) throw new Error(`epic ${res.status}`);
+  const list = await res.json();
+  const good = Array.isArray(list) ? list.filter((x) => x && /^[\w-]+$/.test(x.image || '') && /^\d{4}-\d{2}-\d{2}/.test(x.date || '')
+    && x.centroid_coordinates && typeof x.centroid_coordinates.lon === 'number') : [];
+  if (!good.length) throw new Error('epic: unexpected response shape');
+  const away = (x) => Math.abs(((x.centroid_coordinates.lon + 1.13 + 540) % 360) - 180);
+  const pick = good.reduce((a, b) => (away(b) < away(a) ? b : a));
+  const [y, m, d] = pick.date.slice(0, 10).split('-');
+  return {
+    image: `https://epic.gsfc.nasa.gov/archive/natural/${y}/${m}/${d}/jpg/${pick.image}.jpg`,
+    date: pick.date,
+    lat: pick.centroid_coordinates.lat,
+    lon: pick.centroid_coordinates.lon,
+  };
+}
+
+/* ---------------- Earthquakes in the last day (USGS, free, no key) ---------------- */
+export async function quakes() {
+  const res = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson');
+  if (!res.ok) throw new Error(`usgs ${res.status}`);
+  const j = await res.json();
+  if (!j || !Array.isArray(j.features)) throw new Error('usgs: unexpected response shape');
+  const list = j.features
+    .map((f) => {
+      const p = (f && f.properties) || {};
+      const c = (f && f.geometry && f.geometry.coordinates) || [];
+      return { mag: p.mag, place: p.place, time: p.time, lon: c[0], lat: c[1] };
+    })
+    .filter((q) => typeof q.mag === 'number' && typeof q.lat === 'number' && typeof q.lon === 'number' && typeof q.time === 'number')
+    .sort((a, b) => b.mag - a.mag)
+    .slice(0, 150)
+    .map((q) => ({ ...q, mag: Math.round(q.mag * 10) / 10, place: String(q.place || 'Out at sea').slice(0, 90) }));
+  return { count: list.length, quakes: list };
+}
+
+/* ---------------- Northern Lights tonight? (NOAA SWPC Kp forecast, free, no key) ----------------
+   NOAA changed this file in March 2026 from rows of arrays (first row =
+   headers, values as strings) to an array of objects with numbers. Both
+   are read. Returns the highest forecast Kp for the next UK night
+   (3-hour slots starting 18:00–03:00 UTC). */
+export async function aurora() {
+  const res = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json');
+  if (!res.ok) throw new Error(`swpc ${res.status}`);
+  const j = await res.json();
+  if (!Array.isArray(j) || !j.length) throw new Error('swpc: unexpected response shape');
+  const rows = Array.isArray(j[0]) ? j.slice(1).map((r) => Object.fromEntries(j[0].map((k, i) => [k, r[i]]))) : j;
+  const when = (s) => {
+    const t = String(s || '').trim().replace(' ', 'T');
+    return Date.parse(/(Z|[+-]\d\d:?\d\d)$/.test(t) ? t : `${t}Z`);
+  };
+  const slots = rows
+    .map((r) => ({ t: when(r && r.time_tag), kp: Number(r && r.kp) }))
+    .filter((r) => Number.isFinite(r.t) && Number.isFinite(r.kp) && r.kp >= 0 && r.kp <= 9);
+  if (!slots.length) throw new Error('swpc: unexpected response shape');
+  const now = Date.now();
+  const ahead = slots.filter((r) => r.t > now - 3 * 3600e3 && r.t < now + 24 * 3600e3);
+  const night = ahead.filter((r) => { const h = new Date(r.t).getUTCHours(); return h >= 18 || h < 6; });
+  const pool = night.length ? night : ahead.length ? ahead : slots.slice(-8);
+  const past = slots.filter((r) => r.t <= now);
+  return {
+    kp: Math.round(Math.max(...pool.map((r) => r.kp)) * 10) / 10,
+    now: past.length ? Math.round(past[past.length - 1].kp * 10) / 10 : null,
+  };
+}
+
 /* ---------------- The International Space Station ---------------- */
 export async function iss() {
   const res = await fetch('https://api.wheretheiss.at/v1/satellites/25544');

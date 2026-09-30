@@ -14,7 +14,7 @@
    =========================================================== */
 
 import { coach } from './coach.js';
-import { weatherFor, apod, iss, live, trivia, population } from './extras.js';
+import { weatherFor, apod, iss, live, trivia, population, launch, earth, quakes, aurora } from './extras.js';
 import { squad, track, report, games, newReleases, SONGS, songList, player, PLAYERS } from './more.js';
 
 const API = 'https://api.football-data.org/v4';
@@ -35,6 +35,10 @@ export default {
     // response already cached under the old endpoint before this switched over.
     if (url.pathname === '/api/apod') return openToAll(await cached(request, ctx, 'apod-2', 3 * 3600, () => apod()));
     if (url.pathname === '/api/iss') return openToAll(await cached(request, ctx, 'iss', 5, () => iss()));
+    if (url.pathname === '/api/launch') return openToAll(await cached(request, ctx, 'launch', 1800, () => launch()));
+    if (url.pathname === '/api/earth') return openToAll(await cached(request, ctx, 'earth', 3 * 3600, () => earth()));
+    if (url.pathname === '/api/quakes') return openToAll(await cached(request, ctx, 'quakes', 600, () => quakes()));
+    if (url.pathname === '/api/aurora') return openToAll(await cached(request, ctx, 'aurora', 1800, () => aurora()));
     if (url.pathname === '/api/population') return openToAll(await cached(request, ctx, 'population', 7 * 86400, () => population()));
     if (url.pathname === '/api/trivia') {
       const cat = url.searchParams.get('category') || '0';
