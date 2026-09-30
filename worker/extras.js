@@ -99,23 +99,31 @@ export async function weatherFor(matches) {
    parse into an actual title + image throws, which shows the site's
    normal "couldn't reach NASA" message rather than the wrong picture. */
 export async function apod() {
-  const res = await fetch('https://science.nasa.gov/wp-json/wp/v2/apod-basic?per_page=1&_embed=true');
+  const res = await fetch('https://science.nasa.gov/wp-json/wp/v2/apod-basic?per_page=1');
   if (!res.ok) throw new Error(`apod ${res.status}`);
   const list = await res.json();
   const a = Array.isArray(list) ? list[0] : list;
   if (!a) throw new Error('apod empty');
 
-  const stripHtml = (s) => String(s || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
-  const title = stripHtml(a.title && a.title.rendered);
-  const explanation = stripHtml((a.content && a.content.rendered) || (a.excerpt && a.excerpt.rendered));
-  const media = a._embedded && a._embedded['wp:featuredmedia'] && a._embedded['wp:featuredmedia'][0];
-  const image = media && media.source_url;
-  if (!title || !image) throw new Error('apod: unexpected response shape');
+  // Confirmed shape (2026-09): a flat object, not the nested WordPress
+  // post shape guessed at first — title/explanation/credit are plain
+  // strings (explanation and credit contain HTML links), and the real
+  // image is at hdurl, not behind any _embedded media.
+  const stripHtml = (s) => String(s || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+    .replace(/^Explanation:\s*/, '');
+  const title = stripHtml(a.title);
+  const explanation = stripHtml(a.explanation);
+  const video = a.media_type === 'video';
+  const image = a.hdurl || null;
+  if (!title || (!video && !image)) throw new Error('apod: unexpected response shape');
 
   return {
     date: a.date ? String(a.date).slice(0, 10) : null,
-    title, explanation, image, hd: image, video: null,
-    credit: media.caption && media.caption.rendered ? stripHtml(media.caption.rendered) : 'NASA',
+    title, explanation,
+    image: video ? null : image,
+    hd: video ? null : image,
+    video: video ? (a.hdurl || a.url || null) : null,
+    credit: stripHtml(a.credit || a.copyright) || 'NASA',
   };
 }
 
