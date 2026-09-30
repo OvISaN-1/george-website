@@ -275,6 +275,7 @@
     <input type="text" id="player-name" placeholder="Enter your name" maxlength="18" required>
     <button type="submit">Save score</button>
   </form>
+  <p id="save-status"></p>
   <h3 style="margin-top:26px;">Top scores</h3>
   <table id="leaderboard"><tbody></tbody></table>
   <button class="btn-primary" id="play-again-btn">Play again</button>
@@ -534,13 +535,19 @@ playAgainBtn.addEventListener("click", () => {
   startScreen.style.display = "block";
   if (startGreetingEl) startGreetingEl.textContent = `Go again, ${GZ.randomNickname()}? 🏔️`;
 });
+const saveStatusEl = document.getElementById("save-status");
 nameForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const name = playerNameInput.value.trim();
   if (!name) return;
-  await saveScore(name, correctCount);
-  await renderLeaderboard();
-  nameForm.style.display = "none";
+  try {
+    await saveScore(name, correctCount);
+    nameForm.style.display = "none";
+    if (saveStatusEl) saveStatusEl.textContent = `Saved! ${correctCount} correct for ${name}.`;
+    await renderLeaderboard();
+  } catch (err) {
+    if (saveStatusEl) saveStatusEl.textContent = "Couldn't save your score online right now. Try again later.";
+  }
 });
 
 function startGame() {
@@ -762,20 +769,21 @@ async function getLeaderboard() {
 }
 
 async function saveScore(name, points) {
-  if (!isSupabaseConfigured()) return;
-  try {
-    await fetch(`${SUPABASE_URL}/rest/v1/leaderboard`, {
-      method: "POST",
-      headers: {
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-        "Content-Type": "application/json",
-        "Prefer": "return=minimal"
-      },
-      body: JSON.stringify({ game: GAME_ID, player_name: name, score: points })
-    });
-  } catch (e) {
-    console.error("Could not save score", e);
+  if (!isSupabaseConfigured()) throw new Error("not-configured");
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/leaderboard`, {
+    method: "POST",
+    headers: {
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      "Content-Type": "application/json",
+      "Prefer": "return=minimal"
+    },
+    body: JSON.stringify({ game: GAME_ID, player_name: name, score: points })
+  });
+  if (!res.ok) {
+    let detail = "";
+    try { detail = (await res.json()).message || ""; } catch (e) { /* ignore */ }
+    throw new Error(detail || `save ${res.status}`);
   }
 }
 
