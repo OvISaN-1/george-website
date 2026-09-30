@@ -637,6 +637,21 @@ details.predict-toggle[open] summary{ margin-bottom: var(--s3); }
 @keyframes iss-ping { from { transform: scale(0.5); opacity: 1; } to { transform: scale(1.8); opacity: 0; } }
 .iss-text { margin: 4px 0 0; color: var(--chalk); }
 .iss-text span { font-size: 0.82rem; color: var(--chalk-faint); }
+.space-more { margin-top: var(--s4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+.apod-img.contain img { object-fit: contain; }
+.launch-count { margin: 2px 0; font: 700 1.7rem var(--font-display); color: var(--chalk); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+.space-chip { align-self: flex-start; font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: rgba(245,185,66,0.14); color: var(--gold); }
+.space-chip.go { background: rgba(61,204,124,0.16); color: #3dcc7c; }
+.quake-dot { fill: rgba(232,76,97,0.7); stroke: rgba(255,255,255,0.6); stroke-width: 0.6; }
+.quake-dot.big { fill: var(--gold); stroke: #fff; }
+.aurora-level { margin: 4px 0 2px; font: 700 1.25rem var(--font-display); color: var(--chalk); }
+.aurora-meter { position: relative; height: 12px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
+.aurora-meter span { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: linear-gradient(90deg, #3dcc7c, #45d4c4, #9d5cff, #e84c61); }
+.aurora-meter::after { content: ''; position: absolute; left: 66.7%; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.55); }
+.aurora-scale { position: relative; height: 1.3em; font-size: 0.72rem; color: var(--chalk-faint); }
+.aurora-scale span { position: absolute; top: 0; white-space: nowrap; }
+.aurora-scale span:nth-child(2) { left: 66.7%; transform: translateX(-50%); }
+.aurora-scale span:last-child { right: 0; }
 @media (prefers-reduced-motion: reduce) { .iss-dot .iss-ring { animation: none; } .apod-img img { transition: none; } }
 
 /* Home: "Right now" tiles */
