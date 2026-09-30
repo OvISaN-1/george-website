@@ -68,7 +68,7 @@ export default {
     }
     if (url.pathname === '/api/new-games') {
       if (!env.RAWG_KEY) return json({ error: 'no-key' }, 503, 0);
-      return openToAll(await cached(request, ctx, 'new-games', 12 * 3600, () => newReleases(env)));
+      return openToAll(await cached(request, ctx, 'new-games-2', 12 * 3600, () => newReleases(env)));
     }
     if (url.pathname.startsWith('/api/')) return json({ error: 'not-found' }, 404, 0);
     return env.ASSETS.fetch(request);

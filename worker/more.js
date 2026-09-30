@@ -584,23 +584,30 @@ export async function games(env, titles) {
 }
 
 /* ---------- Video Games page: "Just released" (RAWG) ----------
-   Games out in the last 45 days on PlayStation, Xbox or Nintendo (console
-   releases get age ratings; PC-only lists are mostly unrated indies),
-   most popular first. Only ESRB "Everyone" / "Everyone 10+" make it
-   through, so a brand-new game can take a few days to appear, until
-   RAWG has its rating. */
+   Popular games out recently on PlayStation, Xbox or Nintendo (console
+   releases get age ratings; PC-only lists are mostly unrated indies).
+   Only ESRB "Everyone" / "Everyone 10+" make it through, and RAWG often
+   hasn't rated the newest games yet, so if the last 45 days give fewer
+   than 3 it looks back 90, then 180 days. Newest first. */
 export async function newReleases(env) {
   const key = env.RAWG_KEY;
   if (!key) return { error: 'no-key' };
   const day = (d) => new Date(Date.now() - d * 864e5).toISOString().slice(0, 10);
-  const url = `https://api.rawg.io/api/games?dates=${day(45)},${day(0)}&parent_platforms=2,3,7&exclude_additions=true&ordering=-added&page_size=40&key=${encodeURIComponent(key)}`;
-  const res = await fetch(url, { headers: HEADERS });
-  if (!res.ok) throw new Error(`rawg ${res.status}`);
-  const j = await res.json();
-  if (!Array.isArray(j.results)) throw new Error('rawg: unexpected response shape');
   const ok = ['everyone', 'everyone-10-plus'];
-  const games = j.results
-    .filter((g) => g.name && g.released && g.background_image && g.esrb_rating && ok.includes(g.esrb_rating.slug))
+  const found = new Map();
+  for (const back of [45, 90, 180]) {
+    const url = `https://api.rawg.io/api/games?dates=${day(back)},${day(0)}&parent_platforms=2,3,7&exclude_additions=true&ordering=-added&page_size=40&key=${encodeURIComponent(key)}`;
+    const res = await fetch(url, { headers: HEADERS });
+    if (!res.ok) throw new Error(`rawg ${res.status}`);
+    const j = await res.json();
+    if (!Array.isArray(j.results)) throw new Error('rawg: unexpected response shape');
+    j.results
+      .filter((g) => g.name && g.released && g.background_image && g.esrb_rating && ok.includes(g.esrb_rating.slug))
+      .forEach((g) => { if (!found.has(g.name)) found.set(g.name, g); });
+    if (found.size >= 3) break;
+  }
+  const games = [...found.values()]
+    .sort((a, b) => b.released.localeCompare(a.released))
     .slice(0, 8)
     .map((g) => ({
       name: g.name,
