@@ -15,7 +15,7 @@
 
 import { coach } from './coach.js';
 import { weatherFor, apod, iss, live, trivia, population } from './extras.js';
-import { squad, track, report, games, SONGS, songList, player, PLAYERS } from './more.js';
+import { squad, track, report, games, newReleases, SONGS, songList, player, PLAYERS } from './more.js';
 
 const API = 'https://api.football-data.org/v4';
 const CACHE_VERSION = 'v1';
@@ -65,6 +65,10 @@ export default {
     if (url.pathname === '/api/games') {
       if (!env.RAWG_KEY) return json({ error: 'no-key' }, 503, 0);
       return openToAll(await cached(request, ctx, 'games-2', 12 * 3600, async () => games(env, await gameTitles(env, request))));
+    }
+    if (url.pathname === '/api/new-games') {
+      if (!env.RAWG_KEY) return json({ error: 'no-key' }, 503, 0);
+      return openToAll(await cached(request, ctx, 'new-games', 12 * 3600, () => newReleases(env)));
     }
     if (url.pathname.startsWith('/api/')) return json({ error: 'not-found' }, 404, 0);
     return env.ASSETS.fetch(request);

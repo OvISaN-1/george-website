@@ -712,6 +712,7 @@ function renderGames(C) {
   setText('currently-playing', G.currentlyPlaying);
   renderCards('games-grid', G.topGames, 'gaming');
   addGameDetails(G.topGames || []);
+  addNewReleases();
   const body = $('scores-body');
   if (body && G.topScores) {
     body.innerHTML = G.topScores.map((r) =>
@@ -806,6 +807,26 @@ async function addGameDetails(top) {
     wrap.innerHTML = `<h3>🔜 Coming soon</h3><ul>${data.soon.map((g) => `<li>${g.image ? `<img src="${escapeAttr(g.image)}" alt="" loading="lazy">` : ''}<span><b>${escapeHtml(g.name)}</b><small>${g.released ? escapeHtml(date(g.released)) : 'Date to be announced'}</small></span></li>`).join('')}</ul><p class="small-print">Game details from RAWG.</p>`;
     grid.after(wrap);
   }
+}
+
+/* ---- Video games: "Just released" from RAWG (through the Worker) --------- */
+async function addNewReleases() {
+  const section = $('new-games-section'), list = $('new-games');
+  if (!section || !list) return;
+  let data;
+  try {
+    const res = await fetch(apiUrl('new-games'), { signal: AbortSignal.timeout(12000) });
+    data = await res.json();
+    if (!res.ok || data.error || !Array.isArray(data.games) || !data.games.length) return;
+  } catch (e) { return; }
+  const out = (d) => new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  list.innerHTML = data.games.map((g) => `<li>
+    <img src="${escapeAttr(g.image)}" alt="" loading="lazy">
+    <div class="ng-body"><b>${escapeHtml(g.name)}</b>
+    <small>Out ${escapeHtml(out(g.released))}${g.platforms.length ? ` · 🎮 ${escapeHtml(g.platforms.join(', '))}` : ''}</small>
+    <small>Rated ${escapeHtml(g.age)}</small></div>
+  </li>`).join('');
+  section.hidden = false;
 }
 
 /* ---- Rock jukebox: 30-second clips through the Worker (Deezer) ----------

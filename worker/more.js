@@ -582,3 +582,32 @@ export async function games(env, titles) {
   soon.sort((a, b) => String(a.released).localeCompare(String(b.released)));
   return { games: found.filter(Boolean), soon: soon.slice(0, 4) };
 }
+
+/* ---------- Video Games page: "Just released" (RAWG) ----------
+   Games out in the last 45 days on PlayStation, Xbox or Nintendo (console
+   releases get age ratings; PC-only lists are mostly unrated indies),
+   most popular first. Only ESRB "Everyone" / "Everyone 10+" make it
+   through, so a brand-new game can take a few days to appear, until
+   RAWG has its rating. */
+export async function newReleases(env) {
+  const key = env.RAWG_KEY;
+  if (!key) return { error: 'no-key' };
+  const day = (d) => new Date(Date.now() - d * 864e5).toISOString().slice(0, 10);
+  const url = `https://api.rawg.io/api/games?dates=${day(45)},${day(0)}&parent_platforms=2,3,7&exclude_additions=true&ordering=-added&page_size=40&key=${encodeURIComponent(key)}`;
+  const res = await fetch(url, { headers: HEADERS });
+  if (!res.ok) throw new Error(`rawg ${res.status}`);
+  const j = await res.json();
+  if (!Array.isArray(j.results)) throw new Error('rawg: unexpected response shape');
+  const ok = ['everyone', 'everyone-10-plus'];
+  const games = j.results
+    .filter((g) => g.name && g.released && g.background_image && g.esrb_rating && ok.includes(g.esrb_rating.slug))
+    .slice(0, 8)
+    .map((g) => ({
+      name: g.name,
+      released: g.released,
+      image: g.background_image,
+      platforms: (g.parent_platforms || []).map((p) => p.platform.name).slice(0, 3),
+      age: g.esrb_rating.slug === 'everyone' ? 'Everyone' : 'Everyone 10+',
+    }));
+  return { games };
+}
