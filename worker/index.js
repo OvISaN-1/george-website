@@ -14,7 +14,7 @@
    =========================================================== */
 
 import { coach } from './coach.js';
-import { weatherFor, apod, iss, live } from './extras.js';
+import { weatherFor, apod, iss, live, trivia } from './extras.js';
 import { squad, track, report, games, SONGS, songList, player, PLAYERS } from './more.js';
 
 const API = 'https://api.football-data.org/v4';
@@ -33,6 +33,13 @@ export default {
     if (url.pathname === '/api/coach') return coach(request, env, json);
     if (url.pathname === '/api/apod') return openToAll(await cached(request, ctx, 'apod', 3 * 3600, () => apod(env)));
     if (url.pathname === '/api/iss') return openToAll(await cached(request, ctx, 'iss', 5, () => iss()));
+    if (url.pathname === '/api/trivia') {
+      const cat = url.searchParams.get('category') || '0';
+      if (!/^\d+$/.test(cat)) return json({ error: 'bad-category' }, 400, 0);
+      // Short TTL: long enough to shield opentdb.com from repeat hits, short
+      // enough that "fresh questions every time" still basically holds.
+      return openToAll(await cached(request, ctx, `trivia-${cat}`, 180, () => trivia(Number(cat))));
+    }
     if (url.pathname === '/api/live') return liveMatch(request, env, ctx, url);
     if (url.pathname === '/api/squad') {
       if (!env.FOOTBALL_DATA_KEY) return json({ error: 'no-key' }, 503, 0);
@@ -66,15 +73,19 @@ async function cached(request, ctx, name, secs, make) {
   const cache = typeof caches !== 'undefined' ? caches.default : null;
   const key = new Request(new URL(`/api/${name}?${CACHE_VERSION}`, request.url).toString());
   if (cache) { const hit = await cache.match(key); if (hit) return hit; }
-  let data;
-  try { data = await make(); } catch (err) { return json({ error: 'upstream', detail: String(err && err.message || err).slice(0, 120) }, 502, 0); }
-  // A result that's itself an error (an id genuinely not found, say) isn't
-  // worth caching for a whole day — if it's a passing upstream hiccup this
-  // lets it heal itself in a minute instead of being stuck till the cache
-  // expires.
+  let data, status = 200;
+  try { data = await make(); } catch (err) {
+    data = { error: 'upstream', detail: String(err && err.message || err).slice(0, 120) };
+    status = 502;
+  }
+  // A result that's itself an error (an id genuinely not found, or the
+  // upstream API being down/rate-limited) isn't worth caching for the full
+  // duration — if it's a passing hiccup this lets it heal itself in a
+  // minute instead of being stuck till the cache expires, but it does stop
+  // a stream of visitors from all hammering a struggling upstream API at once.
   const ttl = data && data.error ? Math.min(secs, 60) : secs;
-  const res = json(data, 200, ttl);
-  if (cache) ctx.waitUntil(cache.put(key, res.clone()));
+  const res = json(data, status, ttl);
+  if (cache && ttl > 0) ctx.waitUntil(cache.put(key, res.clone()));
   return res;
 }
 function openToAll(res) {

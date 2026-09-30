@@ -218,7 +218,6 @@ const CATEGORIES = [
   { id: 27, name: "Animals", emoji: "🐾" },
 ];
 const GAME_SECONDS = 60;
-const TOKEN_KEY = "gz_trivia_token_v1";
 
 /* ================= SUPABASE CONFIG (same as the other games) ================= */
 const SUPABASE_URL = "https://hucnucpfyjltlhmvprso.supabase.co";
@@ -279,37 +278,14 @@ function decodeEntities(str) {
   return t.value;
 }
 
-/* ---------- Session token, so the same question doesn't repeat too soon ---------- */
-function readToken() { try { return localStorage.getItem(TOKEN_KEY) || ""; } catch (e) { return ""; } }
-function writeToken(t) { try { localStorage.setItem(TOKEN_KEY, t); } catch (e) { /* private mode */ } }
-async function getToken() {
-  const have = readToken();
-  if (have) return have;
-  try {
-    const res = await fetch("https://opentdb.com/api_token.php?command=request");
-    const data = await res.json();
-    if (data && data.token) { writeToken(data.token); return data.token; }
-  } catch (e) { /* fine without one */ }
-  return "";
-}
-
-/* ---------- Fetching a fresh set of questions ---------- */
+/* ---------- Fetching a fresh set of questions ----------
+   Goes through the site's Worker (worker/extras.js trivia()), not straight
+   to opentdb.com — that shields us from its rate limits and outages, and
+   from a slow/hung request leaving this stuck on "Loading…" forever. */
 async function fetchQuestions(catId) {
-  const token = await getToken();
-  const catParam = catId ? `&category=${catId}` : "";
-  const tokenParam = token ? `&token=${encodeURIComponent(token)}` : "";
-  const url = `https://opentdb.com/api.php?amount=20&difficulty=easy&type=multiple${catParam}${tokenParam}`;
-  const res = await fetch(url);
+  const res = await fetch(`${apiUrl("trivia")}?category=${catId || 0}`, { signal: AbortSignal.timeout(12000) });
   const data = await res.json();
-  // 4 = "all questions used up" for this token: reset it and try once more.
-  if (data.response_code === 4 && token) {
-    await fetch(`https://opentdb.com/api_token.php?command=reset&token=${encodeURIComponent(token)}`);
-    const res2 = await fetch(url);
-    const data2 = await res2.json();
-    if (data2.response_code !== 0 || !data2.results.length) throw new Error("no questions");
-    return data2.results;
-  }
-  if (data.response_code !== 0 || !data.results.length) throw new Error("no questions");
+  if (!res.ok || data.error || !data.results || !data.results.length) throw new Error("no questions");
   return data.results;
 }
 
