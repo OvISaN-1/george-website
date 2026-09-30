@@ -22,7 +22,10 @@
       const res = await fetch(apiUrl('apod'), { signal: AbortSignal.timeout(12000) });
       const a = await res.json();
       if (!res.ok || a.error) throw new Error(a.error || res.status);
-      const page = `https://apod.nasa.gov/apod/ap${a.date.slice(2).replace(/-/g, '')}.html`;
+      // NASA moved APOD from apod.nasa.gov to science.nasa.gov in 2026;
+      // the old per-day URL pattern doesn't carry over, so this links to
+      // today's picture on the new site rather than guessing a dated URL.
+      const page = 'https://science.nasa.gov/apod/';
       const day = new Date(a.date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
       el.innerHTML = `
         <a class="apod-img" href="${esc(a.hd || page)}" target="_blank" rel="noopener">

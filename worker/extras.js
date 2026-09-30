@@ -88,19 +88,34 @@ export async function weatherFor(matches) {
   return out;
 }
 
-/* ---------------- NASA picture of the day ---------------- */
+/* ---------------- NASA picture of the day ----------------
+   NASA is retiring the old api.nasa.gov/planetary/apod endpoint (shutting
+   down 1 Dec 2026) in favour of a WordPress-backed one on science.nasa.gov.
+   In the meantime the old one has started answering with 200 OK but a
+   generic placeholder (title "NASA Science", the NASA logo as the image)
+   instead of real content — worse than an outright error, since nothing
+   here treated it as a failure. This calls the new endpoint instead, and
+   is strict about what counts as a real result: anything that doesn't
+   parse into an actual title + image throws, which shows the site's
+   normal "couldn't reach NASA" message rather than the wrong picture. */
 export async function apod(env) {
-  const key = env.NASA_KEY || 'DEMO_KEY';
-  const res = await fetch(`https://api.nasa.gov/planetary/apod?api_key=${encodeURIComponent(key)}&thumbs=true`);
+  const res = await fetch('https://science.nasa.gov/wp-json/wp/v2/apod-basic?per_page=1&_embed=true');
   if (!res.ok) throw new Error(`apod ${res.status}`);
-  const a = await res.json();
-  const video = a.media_type === 'video';
+  const list = await res.json();
+  const a = Array.isArray(list) ? list[0] : list;
+  if (!a) throw new Error('apod empty');
+
+  const stripHtml = (s) => String(s || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+  const title = stripHtml(a.title && a.title.rendered);
+  const explanation = stripHtml((a.content && a.content.rendered) || (a.excerpt && a.excerpt.rendered));
+  const media = a._embedded && a._embedded['wp:featuredmedia'] && a._embedded['wp:featuredmedia'][0];
+  const image = media && media.source_url;
+  if (!title || !image) throw new Error('apod: unexpected response shape');
+
   return {
-    date: a.date, title: a.title, explanation: a.explanation,
-    image: video ? (a.thumbnail_url || null) : a.url,
-    hd: video ? null : (a.hdurl || a.url),
-    video: video ? a.url : null,
-    credit: a.copyright ? String(a.copyright).replace(/\s+/g, ' ').trim() : 'NASA',
+    date: a.date ? String(a.date).slice(0, 10) : null,
+    title, explanation, image, hd: image, video: null,
+    credit: media.caption && media.caption.rendered ? stripHtml(media.caption.rendered) : 'NASA',
   };
 }
 
