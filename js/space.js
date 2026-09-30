@@ -149,20 +149,23 @@
         Go: ['✅ Go for launch', ' go'], TBC: ['🗓️ Date to be confirmed', ''], TBD: ['🗓️ Date not fixed yet', ''], Hold: ['⏸️ On hold', ''],
       }[l.statusCode] || [l.status ? `ℹ️ ${l.status}` : '', ''];
       el.innerHTML = `
-        ${l.image ? `<span class="apod-img"><img src="${esc(l.image)}" alt="" loading="lazy" decoding="async"></span>` : ''}
+        <span class="apod-img">${l.image ? `<img src="${esc(l.image)}" alt="" loading="lazy" decoding="async">` : '<span class="apod-none" aria-hidden="true">🚀</span>'}</span>
         <p class="space-kicker">🚀 Next rocket launch</p>
         <h3>${esc(l.mission || missionBit || l.name)}</h3>
         <p class="space-credit">${esc(l.rocket || rocketBit || '')}${l.provider ? ` · ${esc(l.provider)}` : ''}</p>
         <p class="launch-count" id="launch-count" aria-live="off">—</p>
         ${status[0] ? `<span class="space-chip${status[1]}">${esc(status[0])}</span>` : ''}
-        <p class="space-credit">${esc(ukTime(l.net, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))} UK time${l.place ? ` · ${esc(l.place)}` : ''}</p>
-        ${l.about ? `<details class="apod-more"><summary>What's it launching?</summary><p>${esc(l.about)}</p></details>` : ''}`;
+        <p class="space-credit">${l.statusCode === 'TBD' ? '' : `${esc(ukTime(l.net, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))} UK time`}${l.statusCode !== 'TBD' && l.place ? ' · ' : ''}${l.place ? esc(l.place) : ''}</p>
+        ${l.about ? `<details class="apod-more"><summary>What's it launching?</summary><p>${esc(l.about)}</p></details>` : ''}
+        ${l.source ? `<p class="space-credit">Launch data: ${esc(l.source)}</p>` : ''}`;
       const img = el.querySelector('.apod-img img');
-      if (img) img.addEventListener('error', () => img.parentElement.remove(), { once: true });
+      if (img) img.addEventListener('error', () => { img.parentElement.innerHTML = '<span class="apod-none" aria-hidden="true">🚀</span>'; }, { once: true });
       const count = $('launch-count');
       const when = Date.parse(l.net);
       const pad = (n) => String(n).padStart(2, '0');
       const tickDown = () => {
+        // A launch without a fixed date has only a placeholder time: don't count down to it.
+        if (l.statusCode === 'TBD') { count.textContent = `Around ${ukTime(l.net, { month: 'long', year: 'numeric' })}`; return false; }
         const ms = when - Date.now();
         if (ms <= 0) { count.textContent = 'Lift-off time! 🔥'; return false; }
         const s = Math.floor(ms / 1000);

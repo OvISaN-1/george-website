@@ -164,14 +164,62 @@ export async function population() {
   return { year, pop };
 }
 
-/* ---------------- Next rocket launch (Launch Library 2, free, no key) ----------------
-   Anonymous use is limited to ~15 calls an hour, which the Worker cache
-   keeps us well under. 2.3.0 turned image URLs into Image objects, so
-   both shapes are accepted. */
+/* ---------------- Next rocket launch ----------------
+   Launch Library 2 first (pictures and a go/no-go status). Its free tier
+   is ~15 calls an hour per IP, and Cloudflare Workers share IPs with lots
+   of other sites, so it often answers 429 from here; then RocketLaunch.Live's
+   free "next 5" list is used instead (no pictures, and sometimes only an
+   estimated date). */
+const LAUNCH_HEADERS = { Accept: 'application/json', 'User-Agent': 'GeorgesWebsite/1.0 (+https://georgeneagu.win)' };
+const clipText = (s, n) => { const t = String(s || '').replace(/\s+/g, ' ').trim(); return t.length > n ? `${t.slice(0, n - 3)}…` : t || null; };
+
 export async function launch() {
-  const res = await fetch('https://ll.thespacedevs.com/2.3.0/launches/upcoming/?limit=6&mode=normal', {
-    headers: { Accept: 'application/json', 'User-Agent': 'GeorgesWebsite/1.0 (+https://georgeneagu.win)' },
-  });
+  try {
+    return await launchFromLL2();
+  } catch (e) {
+    try {
+      return await launchFromRLL();
+    } catch (e2) {
+      throw new Error(`${e.message}; ${e2.message}`);
+    }
+  }
+}
+
+async function launchFromRLL() {
+  const res = await fetch('https://fdo.rocketlaunch.live/json/launches/next/5', { headers: LAUNCH_HEADERS });
+  if (!res.ok) throw new Error(`rocketlaunch.live ${res.status}`);
+  const j = await res.json();
+  if (!j || !Array.isArray(j.result)) throw new Error('rocketlaunch.live: unexpected response shape');
+  const when = (x) => {
+    const t = x.t0 || x.win_open;
+    if (t) return Date.parse(t);
+    const s = Number(x.sort_date);
+    return s > 0 ? s * 1000 : NaN;
+  };
+  const l = j.result.find((x) => x && x.name && Number.isFinite(when(x)) && when(x) > Date.now() - 3600e3);
+  if (!l) throw new Error('rocketlaunch.live: none upcoming');
+  const exact = !!(l.t0 || l.win_open);
+  const m = Array.isArray(l.missions) && l.missions[0];
+  const loc = (l.pad && l.pad.location) || {};
+  const place = [loc.name, loc.country].filter((x) => typeof x === 'string' && x).join(', ');
+  return {
+    name: String(l.name),
+    net: new Date(when(l)).toISOString(),
+    status: exact ? '' : 'Date not fixed yet',
+    statusCode: exact ? '' : 'TBD',
+    rocket: (l.vehicle && l.vehicle.name) || null,
+    provider: (l.provider && l.provider.name) || null,
+    mission: (m && m.name) || String(l.name),
+    about: clipText((m && m.description) || l.mission_description || l.launch_description, 320),
+    pad: (l.pad && l.pad.name) || null,
+    place: place || null,
+    image: null,
+    source: 'RocketLaunch.Live',
+  };
+}
+
+async function launchFromLL2() {
+  const res = await fetch('https://ll.thespacedevs.com/2.3.0/launches/upcoming/?limit=6&mode=normal', { headers: LAUNCH_HEADERS });
   if (!res.ok) throw new Error(`launches ${res.status}`);
   const j = await res.json();
   if (!j || !Array.isArray(j.results)) throw new Error('launches: unexpected response shape');
@@ -193,6 +241,7 @@ export async function launch() {
     pad: pad.name || null,
     place: (pad.location && pad.location.name) || null,
     image: img && /^https:\/\//.test(img) ? img : null,
+    source: 'Launch Library 2',
   };
 }
 
