@@ -637,7 +637,14 @@ details.predict-toggle[open] summary{ margin-bottom: var(--s3); }
 @keyframes iss-ping { from { transform: scale(0.5); opacity: 1; } to { transform: scale(1.8); opacity: 0; } }
 .iss-text { margin: 4px 0 0; color: var(--chalk); }
 .iss-text span { font-size: 0.82rem; color: var(--chalk-faint); }
-.space-more { margin-top: var(--s4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+.space-pair { grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+.eyebrow-link { color: inherit; text-decoration: none; }
+.eyebrow-link:hover, .eyebrow-link:focus-visible { text-decoration: underline; }
+.card.space-link { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; text-align: left; gap: var(--s4); flex-wrap: wrap; text-decoration: none; color: var(--chalk); }
+.card.space-link > div { flex: 1 1 260px; }
+.space-link h3 { margin: 0 0 4px; }
+.space-link p { margin: 0; }
+.space-link .space-link-go { margin-left: auto; align-self: center; font-weight: 700; color: var(--gold); white-space: nowrap; }
 .apod-img.contain img { object-fit: contain; }
 .launch-count { margin: 2px 0; font: 700 1.7rem var(--font-display); color: var(--chalk); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
 .space-chip { align-self: flex-start; font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: rgba(245,185,66,0.14); color: var(--gold); }

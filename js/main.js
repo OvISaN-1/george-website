@@ -49,7 +49,7 @@ function initBottomTabs() {
   bar.className = 'bottom-tabbar';
   bar.setAttribute('aria-label', 'Quick navigation');
   bar.innerHTML = TABS.map(([href, key, label, path]) =>
-    `<a href="${base}${href}"${key === page ? ' aria-current="page"' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">${path}</svg>${label}</a>`
+    `<a href="${base}${href}"${key === page ? ' aria-current="page"' : key === 'school' && page === 'space' ? ' aria-current="true"' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">${path}</svg>${label}</a>`
   ).join('');
   document.body.appendChild(bar);
   document.body.classList.add('has-bottom-tabbar');
