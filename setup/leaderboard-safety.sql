@@ -2,7 +2,7 @@
 -- George's website: LEADERBOARD SAFETY (run once in Supabase)
 -- ---------------------------------------------------------------------
 -- Every game saves scores straight into the "leaderboard" table. These
--- rules live in the database, so they protect all 11 games at once
+-- rules live in the database, so they protect all 12 games at once
 -- without changing any game:
 --   * names: 1-18 characters, letters/numbers/spaces (and ' - .),
 --     at least one letter, and no rude words (tidied up automatically)
@@ -43,6 +43,7 @@ begin
     when 'penalty-shootout' then 500
     when 'football-frenzy' then 1000
     when 'capital-quest' then 1000
+    when 'flag-quest' then 1000
     when 'mountain-peaks' then 1000
     when 'times-tables' then 5000
     when 'name-that-riff' then 2500

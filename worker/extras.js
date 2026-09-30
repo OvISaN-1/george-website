@@ -141,6 +141,29 @@ export async function trivia(catId) {
   return { results: data.results };
 }
 
+/* ---------------- Country populations (World Bank, free, no key) ----------------
+   Capital Quest ships its own ~2018 figures; this refreshes them. Rows are
+   keyed by ISO alpha-3, the same codes the game uses; regional aggregates
+   ("WLD", "EUU"…) simply never match a country in the game. Unverified
+   against the live API when written, so the game treats any odd shape as
+   "no update" and keeps its built-in numbers. */
+export async function population() {
+  const res = await fetch('https://api.worldbank.org/v2/country/all/indicator/SP.POP.TOTL?format=json&mrv=1&per_page=400');
+  if (!res.ok) throw new Error(`worldbank ${res.status}`);
+  const j = await res.json();
+  const rows = Array.isArray(j) && Array.isArray(j[1]) ? j[1] : [];
+  const pop = {};
+  let year = null;
+  for (const r of rows) {
+    if (r && /^[A-Z]{3}$/.test(r.countryiso3code || '') && typeof r.value === 'number' && r.value > 0) {
+      pop[r.countryiso3code] = r.value;
+      if (!year || r.date > year) year = r.date;
+    }
+  }
+  if (Object.keys(pop).length < 100) throw new Error('worldbank: unexpected response shape');
+  return { year, pop };
+}
+
 /* ---------------- The International Space Station ---------------- */
 export async function iss() {
   const res = await fetch('https://api.wheretheiss.at/v1/satellites/25544');

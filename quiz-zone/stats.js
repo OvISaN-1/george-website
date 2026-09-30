@@ -12,6 +12,7 @@
   const BADGES = [
     { id: "first-whistle",     emoji: "🎮", name: "First Whistle",   desc: "Play your very first quiz" },
     { id: "globe-trotter",     emoji: "🌍", name: "Globe Trotter",   desc: "Finish a round of Capital Quest" },
+    { id: "flag-spotter",      emoji: "🚩", name: "Flag Spotter",    desc: "Finish a round of Capital Quest in Flags mode" },
     { id: "peak-bagger",       emoji: "🏔️", name: "Peak Bagger",     desc: "Finish a round of Peak Challenge" },
     { id: "riff-master",       emoji: "🎸", name: "Riff Master",     desc: "Finish a round of Name That Riff" },
     { id: "trivia-titan",      emoji: "🧠", name: "Trivia Titan",    desc: "Finish a round of Quickfire Quiz" },
@@ -115,6 +116,7 @@
     }
     award("first-whistle");
     if (gameId === "capital-quest") award("globe-trotter");
+    if (gameId === "flag-quest") award("flag-spotter");
     if (gameId === "mountain-peaks") award("peak-bagger");
     if (gameId === "name-that-riff") award("riff-master");
     if (gameId === "quickfire-quiz") award("trivia-titan");
@@ -319,6 +321,7 @@
     const games = [
       { id: "football-frenzy", label: "Football Frenzy", emoji: "⚽" },
       { id: "capital-quest", label: "Capital Quest", emoji: "🌍" },
+      { id: "flag-quest", label: "Capital Quest: Flags", emoji: "🚩" },
       { id: "mountain-peaks", label: "Peak Challenge", emoji: "🏔️" },
       { id: "name-that-riff", label: "Name That Riff (songs right)", emoji: "🎸" },
       { id: "quickfire-quiz", label: "Quickfire Quiz", emoji: "🧠" },
