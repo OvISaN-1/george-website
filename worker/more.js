@@ -485,10 +485,17 @@ export const PLAYERS = {
   ramos: 'Sergio Ramos',
 };
 
+// TheSportsDB's shared free test key. It has changed before (it used to
+// be "3"; as of when this was last checked it's "123") — if every player
+// suddenly stops loading, this is the first thing to check against
+// https://www.thesportsdb.com/free_sports_api
+const SPORTSDB_KEY = '123';
+
 async function findPlayer(name) {
-  const res = await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=${encodeURIComponent(name)}`, { headers: HEADERS });
+  const res = await fetch(`https://www.thesportsdb.com/api/v1/json/${SPORTSDB_KEY}/searchplayers.php?p=${encodeURIComponent(name)}`, { headers: HEADERS });
   if (!res.ok) throw new Error(`sportsdb ${res.status}`);
   const j = await res.json();
+  if (j.error) throw new Error(`sportsdb ${j.error}`);   // e.g. a retired or bad key
   const list = (j.player || []).filter((x) => x.strSport === 'Soccer');
   return list.find((x) => x.strPlayer === name) || list[0] || null;
 }
