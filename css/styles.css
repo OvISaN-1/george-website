@@ -535,6 +535,8 @@ details.predict-toggle[open] summary{ margin-bottom: var(--s3); }
 .fpl-foot { margin: var(--s2) 0; font-size: 0.8rem; color: var(--chalk-faint); }
 .fx-list li { display: grid; grid-template-columns: 5.8em 1fr auto; gap: var(--s3); align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .fx-list li:last-child { border-bottom: none; }
+.fx-events { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 2px; margin-top: -2px; font-size: 0.82rem; color: var(--chalk-dim); }
+.fx-events small { color: var(--chalk-faint); font-size: 0.78rem; }
 .fx-date { font-size: 0.8rem; color: var(--chalk-faint); }
 .fx-team small { color: var(--chalk-faint); }
 .fx-right { display: inline-flex; gap: 8px; align-items: center; font-variant-numeric: tabular-nums; }
