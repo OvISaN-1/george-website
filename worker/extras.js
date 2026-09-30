@@ -98,7 +98,7 @@ export async function weatherFor(matches) {
    is strict about what counts as a real result: anything that doesn't
    parse into an actual title + image throws, which shows the site's
    normal "couldn't reach NASA" message rather than the wrong picture. */
-export async function apod(env) {
+export async function apod() {
   const res = await fetch('https://science.nasa.gov/wp-json/wp/v2/apod-basic?per_page=1&_embed=true');
   if (!res.ok) throw new Error(`apod ${res.status}`);
   const list = await res.json();
