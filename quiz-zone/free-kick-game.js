@@ -186,6 +186,7 @@
   const goalG = $("goal-g"), wallG = $("wall-g"), keeperG = $("keeper"), strikerG = $("striker");
   const ballG = $("ball"), shadowEl = $("ball-shadow"), aimEl = $("aim"), guideEl = $("guide"), targetEl = $("target-ring"), trailEl = $("trail");
   const BX = FKP.BX, BY = FKP.BY;
+  PitchFX.init({ svg, stage, ballEl: ballG, beforeId: "goal-g", crowdId: "crowd", poolY: 190 });
   const STRIKER_HOME = { x: 160, y: 438, s: 1 };
   const STRIKER_KICK = { x: 186, y: 430, s: 0.95 };
 
@@ -220,6 +221,8 @@
     }
     html += fanBanners();
     $("crowd").innerHTML = html;
+    PitchFX.waveCrowd($("crowd"));
+    PitchFX.setNight(match.night);
     $("stand").setAttribute("fill", match.home ? "#3a0e18" : "#1d2233");
     $("sky").setAttribute("fill", match.night ? "url(#g-night)" : "url(#g-sky)");
     $("lights").style.opacity = match.night ? 1 : 0.35;
@@ -246,7 +249,7 @@
       <path d="M0 -3.5 L3.3 -1 L2 3 L-2 3 L-3.3 -1 Z" fill="${b.patch}"/>
       <path d="M0 -3.5 L0 -8.5 M3.3 -1 L8 -2.8 M2 3 L5 7 M-2 3 L-5 7 M-3.3 -1 L-8 -2.8" stroke="${b.patch}" stroke-width="1"/>`;
   }
-  function setBall(x, y, s, spin) { ballG.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${s.toFixed(3)}) rotate(${(spin || 0).toFixed(0)})`); }
+  function setBall(x, y, s, spin) { PitchFX.trail(x, y, s); ballG.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${s.toFixed(3)}) rotate(${(spin || 0).toFixed(0)})`); }
   function setShadow(x, y, s, o) {
     shadowEl.setAttribute("cx", x.toFixed(1)); shadowEl.setAttribute("cy", y.toFixed(1));
     shadowEl.setAttribute("rx", (9 * s).toFixed(2)); shadowEl.setAttribute("ry", (3 * s).toFixed(2));
@@ -293,18 +296,19 @@
     // wall
     const sw = L.sw;
     wallG.innerHTML = L.defenders.map((x) =>
-      `<g class="def" data-x="${x}" data-y="${L.wallY}" data-s="${sw * 1.15}" transform="translate(${x.toFixed(1)} ${L.wallY.toFixed(1)}) scale(${(sw * 1.15).toFixed(3)})">${GK.defender(m.oppKit.shirt, m.oppKit.shorts, pick(["#f1c7a0", "#d9a67f", "#8d5a3b", "#5c3a24", "#e8b48f"]), m.oppKit.hair)}</g>`
+      `<g class="def" data-x="${x}" data-y="${L.wallY}" data-s="${sw * 1.15}" transform="translate(${x.toFixed(1)} ${L.wallY.toFixed(1)}) scale(${(sw * 1.15).toFixed(3)})">${PitchFX.idle(GK.defender(m.oppKit.shirt, m.oppKit.shorts, pick(["#f1c7a0", "#d9a67f", "#8d5a3b", "#5c3a24", "#e8b48f"]), m.oppKit.hair), "shuffle")}</g>`
     ).join("");
     // keeper
-    keeperG.innerHTML = GK.keeper(m.keeperKit, false);
+    keeperG.innerHTML = PitchFX.idle(GK.keeper(m.keeperKit, false), "pace");
     setKeeper(L.keeperX, L.gy, L.k * 1.05, 0, 0, 0);
     // striker + ball
-    strikerG.innerHTML = GK.georgeStriker(SAVE.selected.kit, selectedBoots());
+    strikerG.innerHTML = PitchFX.idle(GK.georgeStriker(SAVE.selected.kit, selectedBoots()), "breathe", 0);
     setStriker(STRIKER_HOME.x, STRIKER_HOME.y, STRIKER_HOME.s);
     setKickLeg(0);
     ballG.innerHTML = ballMarkup();
     ballG.style.opacity = 1;
     setBall(BX, BY, 1); setShadow(BX, BY + 7, 1);
+    PitchFX.reset(); PitchFX.spot(BX, BY + 1);
     trailEl.setAttribute("d", ""); trailEl.style.opacity = 0;
     aimEl.setAttribute("opacity", 0);
     guideEl.setAttribute("d", "");
@@ -563,6 +567,7 @@
     if (S.phase !== "power") return;
     cancelAnimationFrame(S.raf);
     S.phase = "flying";
+    PitchFX.shot(true);
     controls(null);
     guideEl.setAttribute("d", "");
     say("");
@@ -570,6 +575,7 @@
     S.lastShot = shot;
     await runUp();
     sfx.kick();
+    PitchFX.kickDust(BX, BY + 8);
     await animateShot(shot, 1);
     await afterShot(shot);
   }
@@ -607,19 +613,23 @@
       const tau = t * stopTau;
       const p = FKP.flightPoint(shot, tau);
       setBall(p.x, p.y, p.s, tau * 900 * Math.sign(shot.curl || 1));
+      PitchFX.follow(tau);
       setShadow(p.gx, p.gy + 6 * p.s, p.s, 0.35 * (1 - tau * 0.6));
       if (ballStyle.trail) { trail.push(`${p.x.toFixed(1)} ${p.y.toFixed(1)}`); trailEl.setAttribute("d", "M" + trail.slice(-14).join(" L")); trailEl.setAttribute("stroke", ballStyle.trail); trailEl.style.opacity = 0.7; }
     }, (t) => 1 - Math.pow(1 - t, 1.5));
     const end = FKP.flightPoint(shot, stopTau);
     if (shot.result === "wall") {
       sfx.thud();
+      PitchFX.hit(end.x, end.y, "wall");
       await tween(450 / speed, (t) => setBall(end.x + (shot.curl >= 0 ? 1 : -1) * 40 * t, end.y + 60 * t * t - 30 * t, end.s + 0.2 * t, 0));
     } else if (shot.result === "saved") {
       sfx.save();
+      PitchFX.hit(end.x, end.y, "save");
       const dir = shot.tx < L.gx ? -1 : 1;
       await tween(420 / speed, (t) => setBall(end.x + dir * 50 * t, end.y + 40 * t * t - 10 * t, end.s + 0.1 * t, 0));
     } else if (shot.result === "post" || shot.result === "post-in") {
       sfx.post();
+      PitchFX.hit(end.x, end.y, "post");
       const inward = shot.result === "post-in";
       const dirX = shot.tx < L.gx ? (inward ? 1 : -1) : (inward ? -1 : 1);
       await tween(420 / speed, (t) => setBall(end.x + dirX * 26 * L.k * t, end.y + (inward ? 14 : 30) * L.k * t, end.s, 0));
@@ -627,6 +637,7 @@
     } else if (shot.result === "over" || shot.result === "wide") {
       await tween(350 / speed, (t) => { setBall(end.x + (end.x - BX) * 0.15 * t, end.y - 40 * t, end.s * (1 - 0.3 * t), 0); ballG.style.opacity = 1 - t; });
     } else {
+      PitchFX.hit(end.x, end.y, "goal");
       rippleNet();
     }
     await keeperDive;
@@ -667,6 +678,7 @@
       S.lastGoal = { pts, tags, shot };
       renderHud();
       sfx.roar(); crowdJump(); GK.confetti(confettiCanvas, shot.topBins || hitTarget ? 180 : 110);
+      PitchFX.goal(shot.topBins || hitTarget);
       const key = shot.result === "post-in" ? "postin" : shot.topBins ? "topbins" : Math.abs(shot.curl) > 0.6 ? "banana" : S.kick.dist >= 26 ? "long" : "goal";
       commentate(key, S.kick, true);
       pop(hitTarget ? "BULLSEYE!" : shot.topBins ? "TOP BINS!" : shot.result === "post-in" ? "IN OFF THE POST!" : "GOAL!", hitTarget || shot.topBins ? "gold" : "");
@@ -676,6 +688,7 @@
       showNext(true);
     } else {
       sfx.aww();
+      PitchFX.groan(); PitchFX.release();
       const key = shot.result === "post" ? "post" : shot.result;
       commentate(key);
       pop({ wall: "BLOCKED!", saved: "SAVED!", over: "OVER THE BAR!", wide: "WIDE!", post: "OFF THE POST!" }[shot.result] || "MISSED", "soft");
@@ -719,8 +732,10 @@
     setBall(BX, BY, 1); ballG.style.opacity = 1; setShadow(BX, BY + 7, 1);
     setKeeper(L.keeperX, L.gy, L.k * 1.05, 0, 0, 0);
     setStriker(STRIKER_HOME.x, STRIKER_HOME.y, STRIKER_HOME.s);
+    PitchFX.reset(); PitchFX.shot(true);
     await runUp();
     await animateShot(shot, 0.35);
+    PitchFX.release();
     stage.classList.remove("replaying");
     showNext(true);
   }

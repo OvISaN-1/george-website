@@ -82,6 +82,7 @@
   const ballEl = $("ball"), shadowEl = $("ball-shadow"), aimEl = $("aim");
   const keeperEl = $("keeper"), strikerEl = $("striker"), netEl = $("net");
   const instructionEl = $("instruction");
+  PitchFX.init({ svg, stage, ballEl, beforeId: "net", crowdId: "crowd", poolY: 215 });
 
   (function drawCrowd() {
     const g = $("crowd"); let html = "";
@@ -94,6 +95,7 @@
       }
     }
     g.innerHTML = html;
+    PitchFX.waveCrowd(g);
   })();
 
   function crowdJump() {
@@ -127,6 +129,7 @@
   const STRIKER_KICK = { x: 184, y: 394, s: 0.9 };
 
   function setBall(x, y, s) {
+    PitchFX.trail(x, y, s);
     ballEl.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${s.toFixed(3)})`);
   }
   function setShadow(x, y, s, o) {
@@ -146,13 +149,14 @@
 
   function resetScene(forestShooting) {
     const r = ROUNDS[S.round];
-    strikerEl.innerHTML = strikerMarkup(forestShooting ? GEORGE_KIT : oppKit(r));
-    keeperEl.innerHTML = keeperMarkup(forestShooting ? r.keeperKit : "#1f9d55", !forestShooting);
+    strikerEl.innerHTML = PitchFX.idle(strikerMarkup(forestShooting ? GEORGE_KIT : oppKit(r)), "breathe", 0);
+    keeperEl.innerHTML = PitchFX.idle(keeperMarkup(forestShooting ? r.keeperKit : "#1f9d55", !forestShooting), forestShooting ? "pace" : "bounce");
     setStriker(STRIKER_HOME.x, STRIKER_HOME.y, STRIKER_HOME.s);
     setBall(BALL_HOME.x, BALL_HOME.y, 1); setShadow(200, 364, 1);
     ballEl.style.opacity = 1;
     setKeeperPose(0, 0, 0);
     netEl.setAttribute("transform", "");
+    PitchFX.reset(); PitchFX.spot(BALL_HOME.x, BALL_HOME.y + 1);
     aimEl.setAttribute("opacity", 0);
     $("stage-desc").textContent = forestShooting
       ? `George, in Forest red with GEORGE 10 on his back, stands over the ball. ${r.opp}'s keeper waits on the line.`
@@ -276,8 +280,10 @@
     else outcome = "goal";
 
     say("");
+    PitchFX.shot(true);
     await runUp();
     sfx.kick();
+    PitchFX.kickDust(BALL_HOME.x, BALL_HOME.y + 8);
     await Promise.all([ballFlight(tx, ty, outcome, p), keeperDive(keeperZone, ty, outcome === "saved" ? { x: tx, y: ty } : null)]);
 
     if (outcome === "goal") {
@@ -287,12 +293,15 @@
       renderScoreboard();
       rippleNet();
       sfx.roar(); crowdJump(); confetti(topBins ? 170 : 110);
+      PitchFX.goal(topBins);
+      georgeCelebrates();
       pop(topBins ? "TOP BINS!" : pick(["GOAL!", "GOAL!", "WHAT A PEN!", "GET IN!"]), topBins ? "gold" : "");
       say(topBins ? "Right in the top corner. Unstoppable!" : pick(["Back of the net!", "The City Ground goes wild!", "Cool as you like, George!"]));
       await sleep(1700);
       nextTurn();
     } else {
       sfx.aww();
+      PitchFX.groan(); PitchFX.release();
       pop(outcome === "over" ? "OVER THE BAR!" : "SAVED!", "soft");
       say(outcome === "over" ? "Too much power, it flew over." : (p < 14 ? "Not enough power, the keeper got it." : "The keeper guessed right."));
       await sleep(1400);
@@ -337,8 +346,12 @@
       const y = it * it * y0 + 2 * it * t * cy + t * t * y1;
       const s = lerp(1, outcome === "over" ? 0.45 : 0.6, t);
       setBall(x, y, s);
+      PitchFX.follow(t);
       setShadow(lerp(200, x1, t), lerp(364, 250, t), lerp(1, 0.6, t), lerp(0.35, 0.15, t));
     }, (t) => 1 - Math.pow(1 - t, 1.6)).then(async () => {
+      if (outcome === "goal") PitchFX.hit(x1, y1, "goal");
+      else if (outcome === "saved") PitchFX.hit(x1, y1, "save");
+      else if (outcome === "post") PitchFX.hit(x1, y1, "post");
       if (outcome === "over") {
         await tween(350, (t) => { setBall(x1 + (x1 - 200) * 0.1 * t, lerp(118, 70, t), lerp(0.45, 0.3, t)); ballEl.style.opacity = 1 - t; });
       } else if (outcome === "saved") {
@@ -363,6 +376,16 @@
       await tween(reduced ? 220 : 380, (t) => setKeeperPose(dx * t, dy * Math.sin(t * Math.PI * 0.5), rot * t), easeOut);
       if (catchAt) sfx.save();
     })();
+  }
+
+  // George runs off with his arms out: a couple of jumps and a little spin towards the fans.
+  async function georgeCelebrates() {
+    if (reduced) return;
+    const from = STRIKER_KICK;
+    await tween(1100, (t) => {
+      const hop = Math.abs(Math.sin(t * Math.PI * 3)) * 16 * (1 - t * 0.4);
+      setStriker(from.x + (200 - from.x) * t * 0.6, from.y - hop + 24 * t, from.s + 0.22 * t);
+    }, (t) => t);
   }
 
   function rippleNet() {
@@ -403,8 +426,10 @@
     else outcome = "goal";
 
     say("");
+    PitchFX.shot(true);
     await runUp();
     sfx.kick();
+    PitchFX.kickDust(BALL_HOME.x, BALL_HOME.y + 8);
     const flightTarget = outcome === "post" ? { x: zone === "R" ? 300 : 100, y: ty } : { x: tx, y: ty };
     await Promise.all([
       ballFlight(flightTarget.x, flightTarget.y, outcome, 50),
@@ -415,6 +440,7 @@
       S.opp.push(true);
       rippleNet();
       sfx.aww();
+      PitchFX.groan(); PitchFX.release();
       pop("They score", "soft");
       say("They scored that one. Shake it off, George!");
     } else {
@@ -422,10 +448,12 @@
       if (outcome === "saved") {
         S.cup.saves++; S.matchSaves++;
         sfx.roar(); crowdJump(); confetti(90);
+        PitchFX.goal(true);
         pop(pick(["WHAT A SAVE!", "GEORGE SAVES!", "BRICK WALL!"]), "gold");
         say("Unbelievable save from George!");
       } else {
         sfx.roar(); crowdJump();
+        PitchFX.goal(false);
         pop(outcome === "over" ? "OVER!" : "OFF THE POST!", "gold");
         say(outcome === "over" ? "They blazed it over! The Trent End loves it." : "It hit the post and stayed out!");
       }
