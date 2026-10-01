@@ -341,13 +341,14 @@
         <circle cx="${PW / 2}" cy="34" r="0.25" fill="#fff"/>
         ${box(0, 1)}${box(PW, -1)}
         <path d="M0 1 A1 1 0 0 0 1 0 M${PW - 1} 0 A1 1 0 0 0 ${PW} 1 M0 ${PH - 1} A1 1 0 0 1 1 ${PH} M${PW - 1} ${PH} A1 1 0 0 1 ${PW} ${PH - 1}" ${L}/>
-        ${[[0, 0], [PW, 0], [0, PH], [PW, PH]].map(([x, y]) => `<path d="M${x} ${y} l0 -1.6 l${x ? -1 : 1} 0.5 l${x ? 1 : -1} 0.5" fill="#f5b942" stroke="#fff" stroke-width="0.06"/>`).join("")}
+        ${[[0, 0], [PW, 0], [0, PH], [PW, PH]].map(([x, y]) => `<path class="md-flag" style="animation-delay:${((x ? 0.4 : 0) + (y ? 0.8 : 0)).toFixed(1)}s" d="M${x} ${y} l0 -1.6 l${x ? -1 : 1} 0.5 l${x ? 1 : -1} 0.5" fill="#f5b942" stroke="#fff" stroke-width="0.06"/>`).join("")}
         ${goal(0, 1)}${goal(PW, -1)}
         <polygon points="0,0 ${PW},0 ${PW},${PH * 0.18} 0,${PH * 0.32}" fill="#000" opacity="${night ? 0.0 : 0.09}"/>
         ${lights}
         <rect x="-14" y="-12" width="${PW + 28}" height="${PH + 24}" fill="url(#g-vig)"/>
         <g id="fx-pitch"></g>
       </g>
+      <g id="halo" opacity="0"><circle class="halo-ring" r="27" fill="none" stroke="#f5b942" stroke-width="2.5"/></g>
       <g id="tokens"></g>
       <g id="ball-g">
         <ellipse id="ball-sh" rx="7" ry="3" fill="#000" opacity=".35"/>
@@ -357,7 +358,7 @@
       <g id="fx-top"></g>`;
   }
 
-  function tokenSVG(p) {
+  function tokenSVG(p, i) {
     const kit = p.team === "f" ? (p.george ? S.georgeKit : S.forestKit) : S.oppKit;
     const keeperFill = p.team === "f" ? MD.FOREST.keeperKit : S.opp.keeperKit;
     const fill = p.gk ? keeperFill : kit.shirt;
@@ -365,7 +366,7 @@
     const stroke = p.gk ? (dark ? "#ffffff" : "#15121a") : kit.trim;
     const txt = p.gk ? (dark ? "#ffffff" : "#15121a") : kit.text;
     const r = p.george ? 21 : 16;
-    return `<g class="md-tok${p.george ? " george" : ""}" id="tok-${p.id}">
+    return `<g class="md-tok${p.george ? " george" : ""}" id="tok-${p.id}" style="--i:${i || 0}">
       <ellipse cx="3" cy="${r * 0.75}" rx="${r}" ry="${r * 0.42}" fill="#000" opacity=".28"/>
       ${p.george ? `<circle class="g-ring" r="${r + 6}" fill="none" stroke="#f5b942" stroke-width="3"/>` : ""}
       <circle r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${p.george ? 3.5 : 2.5}"/>
@@ -389,7 +390,7 @@
     const svg = $("pitch");
     svg.innerHTML = pitchSVG();
     const tokens = $("tokens");
-    tokens.innerHTML = S.players.map(tokenSVG).join("") + officialSVG("ref") + officialSVG("la1") + officialSVG("la2");
+    tokens.innerHTML = S.players.map((p, i) => tokenSVG(p, i)).join("") + officialSVG("ref") + officialSVG("la1") + officialSVG("la2");
     S.players.forEach((p) => { p.el = $("tok-" + p.id); });
     // George on top of everyone else.
     tokens.appendChild(S.george.el);
@@ -527,6 +528,14 @@
     S.la1.x += (l1 - S.la1.x) * k; S.la2.x += (l2 - S.la2.x) * k;
     S.la1.el.setAttribute("transform", `translate(${(S.la1.x * U).toFixed(1)} ${(-1.3 * U).toFixed(1)})`);
     S.la2.el.setAttribute("transform", `translate(${(S.la2.x * U).toFixed(1)} ${((PH + 1.3) * U).toFixed(1)})`);
+    // Soft ring under whoever has the ball.
+    const halo = $("halo");
+    if (S.carrier && S.carrier.on !== false) {
+      halo.setAttribute("opacity", "1");
+      halo.setAttribute("transform", `translate(${(S.carrier.x * U).toFixed(1)} ${(S.carrier.y * U).toFixed(1)})`);
+      const ring = halo.firstElementChild, col = S.carrier.team === "f" ? "#f5b942" : "#ff6b7d";
+      if (ring.getAttribute("stroke") !== col) ring.setAttribute("stroke", col);
+    } else halo.setAttribute("opacity", "0");
     // Name of whoever has the ball.
     const cl = $("carrier-label");
     if (S.carrier && !S.carrier.george) {
@@ -606,6 +615,7 @@
     MDFX.trail(bx, by - lift, 1 + f.xy[n * 2 + 2] * 0.09);
     S.refP.el.setAttribute("transform", `translate(${(f.rx * U).toFixed(1)} ${(f.ry * U).toFixed(1)})`);
     $("carrier-label").setAttribute("opacity", "0");
+    $("halo").setAttribute("opacity", "0");
     // Replay camera: always zoomed in on the ball.
     const c = S.cam, tw = 720, th = 488;
     const cx = clamp(bx - tw / 2, -90, 1270 - 90 - tw), cy = clamp(by - th / 2, -90, 860 - 90 - th);
@@ -813,8 +823,10 @@
     $("sb-clock").textContent = `${String(whole).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
   }
   function drawScore() {
-    $("sb-f").textContent = S.score.f;
-    $("sb-o").textContent = S.score.o;
+    [["sb-f", S.score.f], ["sb-o", S.score.o]].forEach(([id, v]) => {
+      const e = $(id);
+      if (e.textContent !== String(v)) { e.textContent = v; PitchFX.retrigger(e, "ps-bump"); }
+    });
     const f = S.goals.filter((g) => g.team === "f" && !g.disallowed).map((g) => `${g.who} ${g.minLabel}'`);
     const o = S.goals.filter((g) => g.team === "o" && !g.disallowed).map((g) => `${g.who} ${g.minLabel}'`);
     $("sb-scorers").textContent = [f.join(", "), o.join(", ")].filter(Boolean).join("  |  ");
@@ -823,6 +835,7 @@
   function say(text, opts) {
     const o = opts || {};
     $("commentary").innerHTML = `<span aria-hidden="true">${ICON[o.icon] || "🎙️"}</span> ${escapeHtml(text)}`;
+    PitchFX.retrigger($("commentary"), "ps-slide");
     if (o.log) logEvent(o.icon || "info", text, o.team);
     if (o.voice) VOICE.say(o.voiceText || text, o.excited);
   }
@@ -1558,6 +1571,7 @@
     const taker = kickTeam === "f" ? S.george : outfield("o").find((p) => p.line === "fwd") || outfield("o")[0];
     S.carrier = taker;
     sfx.whistle();
+    MDFX.ring(PW * U / 2, PH * U / 2, { r0: 8, r1: 120, ms: 900, color: "#ffffff", w: 2 });
     await wait(250);
     S.phase = "play";
     S.poss = kickTeam;

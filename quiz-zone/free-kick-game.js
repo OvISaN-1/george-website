@@ -460,19 +460,26 @@
     setupKick(false);
   }
 
+  let lastDots = 0;
+  function bumpIfChanged(id, text) {
+    const e = $(id);
+    if (e.textContent !== text) { e.textContent = text; PitchFX.retrigger(e, "ps-bump"); }
+  }
   function renderHud() {
     const total = S.mode === "practice" ? null : S.match.kicks;
     $("hud-kick").textContent = total ? `Free kick ${Math.min(S.kickIndex + 1, total)} of ${total}` : `Free kick ${S.kickIndex + 1}`;
-    $("hud-goals").textContent = S.mode === "practice" ? `Streak ${S.streak} · Best ${Math.max(S.bestStreak, SAVE.practiceBest)}` : `${S.goals} goal${S.goals === 1 ? "" : "s"}`;
-    $("hud-points").textContent = `${S.points} pts`;
+    bumpIfChanged("hud-goals", S.mode === "practice" ? `Streak ${S.streak} · Best ${Math.max(S.bestStreak, SAVE.practiceBest)}` : `${S.goals} goal${S.goals === 1 ? "" : "s"}`);
+    bumpIfChanged("hud-points", `${S.points} pts`);
     $("hud-dots").innerHTML = total ? Array.from({ length: total }, (_, i) =>
-      `<span class="ps-dot ${i < S.results.length ? (S.results[i] ? "scored" : "missed") : ""}" aria-hidden="true"></span>`).join("") : "";
+      `<span class="ps-dot ${i < S.results.length ? (S.results[i] ? "scored" : "missed") : ""}${i === S.results.length - 1 && S.results.length > lastDots ? " new" : ""}" aria-hidden="true"></span>`).join("") : "";
+    lastDots = S.results.length;
   }
 
-  function say(text) { $("instruction").textContent = text; }
+  function say(text) { $("instruction").textContent = text; PitchFX.retrigger($("instruction"), "ps-slide"); }
   function commentate(key, kick, excited) {
     const line = fill(pick(LINES[key]), kick || S.kick);
     $("commentary").textContent = "🎙️ " + line;
+    PitchFX.retrigger($("commentary"), "ps-slide");
     VOICE.say(line, excited);
     return line;
   }
@@ -568,6 +575,7 @@
     cancelAnimationFrame(S.raf);
     S.phase = "flying";
     PitchFX.shot(true);
+    PitchFX.retrigger(document.querySelector("#ctl-power .fk-track"), "ps-lock");
     controls(null);
     guideEl.setAttribute("d", "");
     say("");
@@ -639,6 +647,11 @@
     } else {
       PitchFX.hit(end.x, end.y, "goal");
       rippleNet();
+      // The ball drops down inside the net and bounces once.
+      await tween(480 / speed, (t) => {
+        const drop = 16 * t * L.k, bounce = Math.abs(Math.sin(t * Math.PI * 1.6)) * 7 * (1 - t) * L.k;
+        setBall(end.x + (L.gx - end.x) * 0.08 * t, end.y + drop - bounce, end.s * (1 - 0.1 * t), 0);
+      }, (t) => t);
     }
     await keeperDive;
     trailEl.style.opacity = 0;
