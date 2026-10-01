@@ -248,8 +248,6 @@
   }
 
   function randomNickname() {
-    // Logged in (see progress.html): use George's own username in the messages.
-    try { const a = JSON.parse(localStorage.getItem("gz_account_v1")); if (a && a.display) return a.display; } catch (e) {}
     return NICKNAMES[Math.floor(Math.random() * NICKNAMES.length)];
   }
 

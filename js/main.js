@@ -1097,7 +1097,7 @@ window.GZWake = (function () {
 
   if (a && root && !window.GZSync && !onProgress) {
     const s = document.createElement("script");
-    s.src = root + "sync.js";
+    s.src = root + "js/sync.js";
     document.head.appendChild(s);
   }
 
@@ -1121,8 +1121,7 @@ window.GZWake = (function () {
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   function note() {
     if (document.hidden || onProgress || !root) return;
-    const acc = account();
-    const auto = (() => { try { return localStorage.getItem("gz_autoname") !== "0"; } catch (e) { return true; } })();
+    const loggedIn = !!account();
     BOXES.forEach((id) => {
       const box = document.getElementById(id);
       const form = box && box.form;
@@ -1130,9 +1129,8 @@ window.GZWake = (function () {
       form.dataset.gzNote = "1";
       const p = document.createElement("p");
       p.className = "gz-login-note";
-      p.innerHTML = acc
-        ? (auto ? "👤 Logged in as <b>" + esc(acc.display || acc.user) + "</b>: your score is saved under this name automatically, and your progress is saved to your account."
-                : "👤 Logged in as <b>" + esc(acc.display || acc.user) + "</b>. Type the name you want for the top scores. Your progress is saved to your account.")
+      p.innerHTML = loggedIn
+        ? "👤 Logged in as <b>" + esc(account().display || account().user) + "</b>: your score is saved under your username automatically. George's progress is saved to your account."
         : 'Not logged in: type any name for the top scores. Your progress only saves on this device. <a href="' + root + 'progress.html">Log in to keep it on every device</a>.';
       form.insertAdjacentElement("afterend", p);
     });
