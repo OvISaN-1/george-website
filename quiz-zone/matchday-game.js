@@ -367,7 +367,6 @@
     const r = p.george ? 21 : 16;
     return `<g class="md-tok${p.george ? " george" : ""}" id="tok-${p.id}">
       <ellipse cx="3" cy="${r * 0.75}" rx="${r}" ry="${r * 0.42}" fill="#000" opacity=".28"/>
-      <g class="wake" opacity="0"><ellipse cx="${-r * 1.5}" cy="0" rx="${r * 1.2}" ry="${r * 0.55}" fill="#fff"/></g>
       ${p.george ? `<circle class="g-ring" r="${r + 6}" fill="none" stroke="#f5b942" stroke-width="3"/>` : ""}
       <circle r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${p.george ? 3.5 : 2.5}"/>
       <text class="tok-num" y="${p.george ? 6 : 5}" text-anchor="middle" font-family="Rajdhani, Arial Narrow, sans-serif" font-weight="700" font-size="${p.george ? 18 : 15}" fill="${txt}">${p.num}</text>
@@ -403,7 +402,6 @@
     $("stage").classList.toggle("rain", S.rain);
     $("stage").classList.toggle("snow", !!S.snow);
     $("stage").classList.toggle("night", S.night);
-    S.players.forEach((p) => { p.wake = p.el.querySelector(".wake"); });
     svg.classList.add("fx-td");
     const standPos = () => {
       const w = rand();
@@ -501,12 +499,6 @@
       p.x += dx;
       p.y += dy;
       p.el.setAttribute("transform", `translate(${(p.x * U).toFixed(1)} ${(p.y * U).toFixed(1)})`);
-      // A faint streak behind anyone who is really moving.
-      if (p.wake) {
-        const v = (Math.hypot(dx, dy) * 1000) / Math.max(8, dt), o = v > 5.5 ? Math.min(0.38, (v - 5.5) / 16) : 0;
-        p.wake.setAttribute("opacity", o.toFixed(2));
-        if (o) p.wake.setAttribute("transform", `rotate(${(Math.atan2(dy, dx) * 57.296).toFixed(0)}) scale(${(0.7 + Math.min(1, (v - 5.5) / 9)).toFixed(2)} 1)`);
-      }
     });
     // Ball follows whoever has it.
     if (S.carrier && !S.ballFlying) {
@@ -606,7 +598,7 @@
     }
     const f = frameAt(R.clip, pt);
     const n = S.players.length;
-    S.players.forEach((p, i) => { p.el.setAttribute("transform", `translate(${(f.xy[i * 2] * U).toFixed(1)} ${(f.xy[i * 2 + 1] * U).toFixed(1)})`); if (p.wake) p.wake.setAttribute("opacity", "0"); });
+    S.players.forEach((p, i) => { p.el.setAttribute("transform", `translate(${(f.xy[i * 2] * U).toFixed(1)} ${(f.xy[i * 2 + 1] * U).toFixed(1)})`); });
     const bx = f.xy[n * 2] * U, by = f.xy[n * 2 + 1] * U, lift = f.xy[n * 2 + 2] * 6;
     S.ballSh.setAttribute("cx", bx + lift * 0.3);
     S.ballSh.setAttribute("cy", by + 4);
