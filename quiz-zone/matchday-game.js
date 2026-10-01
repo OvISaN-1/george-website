@@ -1422,6 +1422,7 @@
         : `GOAL! ${scorer.short} scores for Forest! ${S.score.f}-${S.score.o}.`;
       say(line + (assister ? ` Assist: ${assister.george ? "George" : assister.short}.` : ""), { icon: "goal", log: true, team: "f", voice: true, excited: true, voiceText: scorer.george ? `George scores! ${S.score.f} ${S.score.o}` : `${scorer.short} scores for Forest!` });
       momentum(5);
+      maybeCounterGoal();
       await wait(reduced ? 200 : 1300);
       if (scorer.george) await celebrateGeorge();
       else await wait(reduced ? 300 : 1200);
@@ -1508,6 +1509,7 @@
     else if (m.type === "penalty") await penaltyMoment();
     else if (m.type === "freekick") await freeKickMoment();
     else if (m.type === "wonder") await oppWonderGoal();
+    else if (m.type === "oppgoal") await oppCounterGoal();
     else if (m.type === "redcard") await redCardMoment();
     else if (m.type === "halfway") await halfwayMoment();
     releaseAll();
@@ -1984,6 +1986,64 @@
     say(pick([`What a strike from ${star.short}. Nothing ${gk.short} could do about that.`, `Unstoppable! ${star.short} bends it into the top corner. That's why they're one of the best.`, `Wow. ${star.short} with a worldie. Even the Forest fans are clapping that one.`]), { icon: "goal" });
     await wait(reduced ? 200 : 1200);
     await goalReplay("o");
+    await restart("f");
+  }
+
+  /* ---------------- They hit back: a goal George has no question to stop ----------------
+     When Forest are well clear, now and then the other lot score anyway: a quick counter,
+     a corner, a scramble or a worldie. The bigger the lead, the likelier it is.
+     At most 3 a match, they never get past 4 in total, and it only happens while Forest are
+     still 2+ goals ahead, so it makes a 5-0 into a 5-2 but never costs George the win. */
+  function maybeCounterGoal() {
+    const lead = S.score.f - S.score.o;
+    if (lead < 2 || (S.surprise || 0) >= 3 || S.score.o >= 4) return;
+    if (S.schedule.some((x) => !x.done && x.type === "oppgoal")) return;
+    const p = (lead >= 5 ? 0.7 : lead === 4 ? 0.5 : lead === 3 ? 0.3 : 0.15) * (S.tier.goalIfWrong / 0.65);
+    if (rand() >= p) return;
+    const end = (S.half === 1 ? 45 + S.added1 : 90 + S.added2) - 1;
+    S.schedule.push({ type: "oppgoal", min: Math.min(end, S.min + 3 + Math.floor(rand() * 6)), half: S.half, done: false });
+  }
+
+  async function oppCounterGoal() {
+    // Things may have changed since it was planned: only while Forest are still 2+ clear.
+    if (S.score.f - S.score.o < 2) return;
+    S.surprise = (S.surprise || 0) + 1;
+    const kind = pick(["counter", "counter", "corner", "scramble", "worldie"]);
+    if (kind === "worldie") return oppWonderGoal();
+    const star = pick(outfield("o").filter((p) => p.line === "fwd" || p.line === "att")) || pick(outfield("o"));
+    const mate = pick(outfield("o").filter((p) => p !== star && p.line === "mid")) || null;
+    const corner = pick(["left", "right"]);
+    if (kind === "counter") {
+      await buildUp("o");
+      say(pick([`Forest have too many men forward and ${S.opp.name} break at speed!`, `Lost it in midfield, and ${S.opp.name} are away on the counter!`]), { icon: "chance", voice: true });
+      holdAt(star, 22, 28 + rand() * 12, true);
+      await passTo(star, 380, 3);
+      await wait(reduced ? 200 : 600);
+      await shoot(star, "o", "goal", { xg: 0.4, lift: 1, ms: 480, corner });
+      await scoreGoal("o", star, mate, "shot");
+    } else if (kind === "corner") {
+      S.stats.o.corners += 1;
+      await placeBall(0.5, rand() < 0.5 ? 0.5 : PH - 0.5);
+      const taker = mate || star;
+      holdAt(taker, S.ball.x, S.ball.y, true);
+      holdAt(star, 7, 34, true);
+      say(`${S.opp.name} win a corner. ${taker.short} swings it in...`, { icon: "info" });
+      await wait(reduced ? 200 : 900);
+      await passTo(star, 520, 4);
+      await shoot(star, "o", "goal", { xg: 0.2, lift: 1, ms: 450, corner });
+      await scoreGoal("o", star, taker, "shot");
+    } else {
+      await buildUp("o");
+      say(`A scramble in the Forest box... it drops to ${star.short}...`, { icon: "chance" });
+      holdAt(star, 8, 30 + rand() * 8, true);
+      await passTo(star, 420);
+      await wait(reduced ? 150 : 400);
+      await shoot(star, "o", "goal", { xg: 0.3, lift: 0.6, ms: 420, corner });
+      await scoreGoal("o", star, null, "shot");
+    }
+    say(pick([`${S.opp.name} pull one back. ${S.score.f}-${S.score.o}. Forest can't switch off now.`, `That's a goal back for ${S.opp.name}. Not a mistake George could do anything about.`, `${star.short} gets one for ${S.opp.name}. It's ${S.score.f}-${S.score.o}.`]), { icon: "goal" });
+    await wait(reduced ? 200 : 1000);
+    if (rand() < 0.6) await goalReplay("o");
     await restart("f");
   }
 
