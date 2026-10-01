@@ -1112,7 +1112,7 @@ window.GZWake = (function () {
       chip.innerHTML = '<span aria-hidden="true">👤</span><b></b>';
       chip.querySelector("b").textContent = a.display || a.user;
       chip.setAttribute("aria-label", "Logged in as " + (a.display || a.user));
-      bar.insertBefore(chip, bar.querySelector(".nav-toggle"));
+      bar.insertBefore(chip, bar.querySelector(".nav-links") || bar.querySelector(".nav-toggle"));
     }
   }
 
