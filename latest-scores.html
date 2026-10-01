@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Latest scores | George's Game Zone</title>
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121014'/%3E%3Ctext x='16' y='23' font-family='Arial, sans-serif' font-weight='700' font-size='19' fill='%23f5b942' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E">
+  <style>
+    :root{--bg:#121014;--card:#1c1820;--ink:#f1ede9;--muted:#b9b2ac;--faint:#8a857e;--gold:#f5b942;--red:#e84c61;--line:rgba(241,237,233,0.10);}
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:'Manrope',sans-serif;color:var(--ink);background:var(--bg);}
+    h1,h2{font-family:'Rajdhani',sans-serif;margin:0;}
+    main{max-width:960px;margin:0 auto;padding:24px 16px 60px;}
+    .top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+    h1{font-size:34px;line-height:1.05;}
+    .sub{color:var(--muted);font-size:14px;margin:4px 0 0;}
+    .btn{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;min-height:44px;padding:8px 18px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;}
+    .btn:hover{border-color:var(--gold);color:var(--gold);}
+    .btn:focus-visible,select:focus-visible{outline:2px solid var(--ink);outline-offset:3px;}
+    .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px;}
+    .tile{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;}
+    .tile .k{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);}
+    .tile .v{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:30px;line-height:1.1;margin-top:2px;overflow-wrap:anywhere;}
+    .tile .v.sm{font-size:22px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:16px;}
+    .card h2{font-size:22px;margin-bottom:10px;}
+    .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+    select{font:inherit;min-height:44px;padding:6px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);}
+    .scroll{overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;font-size:15px;}
+    th{text-align:left;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:600;padding:6px 10px;border-bottom:1px solid var(--line);}
+    td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top;}
+    tr:last-child td{border-bottom:none;}
+    td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;}
+    .when{color:var(--muted);white-space:nowrap;}
+    .when small{display:block;color:var(--faint);font-size:12px;}
+    .pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;background:rgba(245,185,66,.12);color:var(--gold);white-space:nowrap;}
+    .hi{color:var(--gold);font-weight:700;}
+    .msg{color:var(--muted);padding:14px 4px;}
+    .err{color:var(--red);}
+    @media (max-width:560px){h1{font-size:28px;} td,th{padding:8px 6px;} .hide-sm{display:none;}}
+  </style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <div>
+      <h1>Latest scores</h1>
+      <p class="sub" id="updated">Loading…</p>
+    </div>
+    <button class="btn" id="refresh" type="button">Refresh</button>
+  </div>
+
+  <div class="tiles" id="tiles" aria-live="polite"></div>
+
+  <section class="card" aria-labelledby="recent-h">
+    <h2 id="recent-h">Who just scored</h2>
+    <div class="bar">
+      <label for="game-filter" class="sub">Game</label>
+      <select id="game-filter"><option value="">All games</option></select>
+    </div>
+    <div class="scroll"><table>
+      <thead><tr><th>When</th><th>Player</th><th>Game</th><th class="n">Score</th></tr></thead>
+      <tbody id="recent"><tr><td colspan="4" class="msg">Loading…</td></tr></tbody>
+    </table></div>
+  </section>
+
+  <section class="card" aria-labelledby="players-h">
+    <h2 id="players-h">Players</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Player</th><th class="n">Scores</th><th class="n hide-sm">Games tried</th><th>Last seen</th></tr></thead>
+      <tbody id="players"></tbody>
+    </table></div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var URL_BASE = 'https://hucnucpfyjltlhmvprso.supabase.co/rest/v1/leaderboard';
+  var KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1Y251Y3BmeWpsdGxobXZwcnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgzNjEsImV4cCI6MjEwMzU4NDM2MX0.DSjLCkiUWB47wVd4wnW_2RvWFoISbH80JI9ukB1bBdg';
+  var GAMES = {
+    'matchday': 'Matchday', 'free-kick': 'Free Kick Masters', 'keepy-uppy': 'Keepy-Uppy',
+    'penalty-shootout': 'Penalty Shootout', 'football-frenzy': 'Football Frenzy', 'capital-quest': 'Capital Quest',
+    'flag-quest': 'Flag Quest', 'mountain-peaks': 'Peak Challenge', 'times-tables': 'Times Tables Blitz',
+    'name-that-riff': 'Name That Riff', 'quickfire-quiz': 'Quickfire Quiz', 'guess-the-player': 'Guess the Player'
+  };
+  var rows = [];
+
+  function $(id) { return document.getElementById(id); }
+  function gameName(g) { return GAMES[g] || g; }
+  function el(tag, text, cls) { var e = document.createElement(tag); if (text != null) e.textContent = text; if (cls) e.className = cls; return e; }
+  function parse(r) { return r.created_at ? new Date(r.created_at) : null; }
+  function ago(d) {
+    if (!d) return 'unknown';
+    var s = Math.max(0, (Date.now() - d.getTime()) / 1000);
+    if (s < 60) return 'just now';
+    if (s < 3600) return Math.floor(s / 60) + ' min ago';
+    if (s < 86400) return Math.floor(s / 3600) + ' h ago';
+    var days = Math.floor(s / 86400);
+    return days + (days === 1 ? ' day ago' : ' days ago');
+  }
+  function full(d) { return d ? d.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''; }
+
+  function tile(k, v, small) {
+    var t = el('div', null, 'tile'); t.appendChild(el('div', k, 'k')); t.appendChild(el('div', v, 'v' + (small ? ' sm' : ''))); return t;
+  }
+  function count(list, key) { var m = {}; list.forEach(function (r) { m[r[key]] = (m[r[key]] || 0) + 1; }); return m; }
+  function top(m) { var best = null; Object.keys(m).forEach(function (k) { if (!best || m[k] > m[best]) best = k; }); return best; }
+
+  function renderTiles() {
+    var t = $('tiles'); t.textContent = '';
+    var dayAgo = Date.now() - 864e5;
+    var today = rows.filter(function (r) { var d = parse(r); return d && d.getTime() > dayAgo; });
+    var names = count(rows, 'player_name');
+    t.appendChild(tile('Scores saved', String(rows.length)));
+    t.appendChild(tile('Players', String(Object.keys(names).length)));
+    t.appendChild(tile('Last 24 hours', String(today.length)));
+    var g = top(count(rows, 'game'));
+    t.appendChild(tile('Most played', g ? gameName(g) : '-', true));
+    var p = top(names);
+    t.appendChild(tile('Busiest player', p || '-', true));
+  }
+
+  function renderRecent() {
+    var f = $('game-filter').value, tb = $('recent'); tb.textContent = '';
+    var list = rows.filter(function (r) { return !f || r.game === f; }).slice(0, 100);
+    if (!list.length) { var tr = el('tr'); var td = el('td', 'No scores yet.', 'msg'); td.colSpan = 4; tr.appendChild(td); tb.appendChild(tr); return; }
+    var best = {};
+    rows.forEach(function (r) { if (!(r.game in best) || r.score > best[r.game]) best[r.game] = r.score; });
+    list.forEach(function (r) {
+      var d = parse(r), tr = el('tr'), w = el('td', null, 'when');
+      w.appendChild(document.createTextNode(ago(d)));
+      if (d) w.appendChild(el('small', full(d)));
+      tr.appendChild(w);
+      tr.appendChild(el('td', r.player_name));
+      var gt = el('td'); gt.appendChild(el('span', gameName(r.game), 'pill')); tr.appendChild(gt);
+      tr.appendChild(el('td', String(r.score) + (r.score === best[r.game] ? ' 🏆' : ''), 'n' + (r.score === best[r.game] ? ' hi' : '')));
+      tb.appendChild(tr);
+    });
+  }
+
+  function renderPlayers() {
+    var tb = $('players'); tb.textContent = '';
+    var by = {};
+    rows.forEach(function (r) {
+      var p = by[r.player_name] || (by[r.player_name] = { n: 0, games: {}, last: null });
+      p.n++; p.games[r.game] = 1;
+      var d = parse(r); if (d && (!p.last || d > p.last)) p.last = d;
+    });
+    Object.keys(by).sort(function (a, b) { return by[b].n - by[a].n; }).forEach(function (name) {
+      var p = by[name], tr = el('tr');
+      tr.appendChild(el('td', name));
+      tr.appendChild(el('td', String(p.n), 'n'));
+      tr.appendChild(el('td', String(Object.keys(p.games).length), 'n hide-sm'));
+      tr.appendChild(el('td', ago(p.last), 'when'));
+      tb.appendChild(tr);
+    });
+  }
+
+  function fillFilter() {
+    var sel = $('game-filter'), cur = sel.value, seen = count(rows, 'game');
+    while (sel.options.length > 1) sel.remove(1);
+    Object.keys(seen).sort().forEach(function (g) { var o = el('option', gameName(g)); o.value = g; sel.appendChild(o); });
+    sel.value = cur;
+  }
+
+  function load() {
+    $('updated').textContent = 'Loading…';
+    fetch(URL_BASE + '?select=game,player_name,score,created_at&order=created_at.desc.nullslast&limit=1000',
+      { headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } })
+      .then(function (res) { if (!res.ok) throw new Error('Database said ' + res.status); return res.json(); })
+      .then(function (data) {
+        rows = data;
+        fillFilter(); renderTiles(); renderRecent(); renderPlayers();
+        $('updated').textContent = 'Updated ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) +
+          (rows.length === 1000 ? ' (showing the latest 1,000)' : '');
+      })
+      .catch(function (e) {
+        $('updated').textContent = "Couldn't load scores: " + e.message;
+        $('updated').className = 'sub err';
+      });
+  }
+
+  $('refresh').addEventListener('click', load);
+  $('game-filter').addEventListener('change', renderRecent);
+  load();
+  setInterval(load, 60000);
+})();
+</script>
+</body>
+</html>
