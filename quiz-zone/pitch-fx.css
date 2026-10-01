@@ -1,0 +1,65 @@
+/* Visual polish for Free Kick Masters and Penalty Shootout (see pitch-fx.js). */
+
+/* Crowd: gentle bobbing all the time, a big wave when a goal goes in. */
+#pitch #crowd .wv{animation:fxBob var(--bob,2.6s) ease-in-out infinite;}
+@keyframes fxBob{0%,100%{transform:translateY(0);}50%{transform:translateY(calc(var(--amp,1.1px) * -1));}}
+#pitch.fx-cheer #crowd .wv{--amp:5px;--bob:.5s;}
+#pitch.fx-groan #crowd .wv{--amp:.3px;--bob:3.2s;}
+#pitch.fx-groan #crowd{opacity:.82;}
+#pitch #crowd{transition:opacity .4s ease;}
+
+/* Camera flashes in the stands. */
+.fx-cam{fill:#fff;transform-box:fill-box;transform-origin:center;animation:fxFlash .5s ease-out forwards;}
+@keyframes fxFlash{0%{opacity:1;transform:scale(.3);}35%{opacity:1;transform:scale(2.4);}100%{opacity:0;transform:scale(1);}}
+
+/* Floodlight beams, light pool and twinkling lamps. */
+.fx-beam{animation:fxBeam 5.5s ease-in-out infinite;}
+.fx-beam.b{animation-delay:-2.7s;}
+@keyframes fxBeam{0%,100%{opacity:.75;}50%{opacity:1;}}
+.fx-pool{animation:fxBeam 7s ease-in-out infinite;}
+.fx-twinkle{transform-box:fill-box;transform-origin:center;animation:fxTwinkle 2.8s ease-in-out infinite;}
+@keyframes fxTwinkle{0%,100%{opacity:.25;transform:scale(.5) rotate(0);}50%{opacity:1;transform:scale(1.15) rotate(45deg);}}
+
+/* Players keep moving while you line up the kick. */
+.fx-idle{transform-box:fill-box;transform-origin:50% 100%;}
+.fx-breathe{animation:fxBreathe 2.6s ease-in-out infinite;}
+@keyframes fxBreathe{0%,100%{transform:scale(1,1);}50%{transform:scale(1.012,1.022);}}
+.fx-pace{animation:fxPace 3.4s ease-in-out infinite;}
+@keyframes fxPace{0%,100%{transform:translateX(-7px);}50%{transform:translateX(7px);}}
+.fx-bounce{animation:fxBounce .9s ease-in-out infinite;}
+@keyframes fxBounce{0%,100%{transform:translateY(0) scale(1,1);}50%{transform:translateY(-3px) scale(.99,1.03);}}
+.fx-shuffle{animation:fxShuffle 1.9s ease-in-out infinite;}
+@keyframes fxShuffle{0%,100%{transform:translateX(-1.6px) rotate(-.6deg);}50%{transform:translateX(1.6px) rotate(.6deg);}}
+.fx-shot .fx-idle{animation:none;}
+
+/* Aim marker and bonus target feel alive. */
+#aim > circle:first-child{stroke-dasharray:6 4;transform-box:fill-box;transform-origin:center;animation:fxSpin 5s linear infinite;}
+@keyframes fxSpin{to{transform:rotate(360deg);}}
+#target-ring circle:nth-child(2){transform-box:fill-box;transform-origin:center;animation:fxPulse 1.1s ease-in-out infinite;}
+@keyframes fxPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.35);opacity:.45;}}
+
+/* Ring under the ball before the kick. */
+.fx-spot{fill:rgba(245,185,66,.12);stroke:#f5b942;stroke-width:1.6;transform-box:fill-box;transform-origin:center;animation:fxSpot 1.4s ease-out infinite;}
+@keyframes fxSpot{0%{transform:scale(.55);stroke-opacity:.9;}100%{transform:scale(1.7);stroke-opacity:0;}}
+
+/* Stage overlays. */
+.fx-vignette{position:absolute;inset:0;pointer-events:none;z-index:1;
+  background:radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(7,5,10,.5) 100%);}
+.fx-flash{position:absolute;inset:0;pointer-events:none;z-index:3;opacity:0;
+  background:radial-gradient(circle at 50% 38%,rgba(255,255,255,.85),rgba(255,236,170,.35) 45%,transparent 75%);}
+.fx-flash.on{animation:fxGoalFlash .7s ease-out forwards;}
+@keyframes fxGoalFlash{0%{opacity:0;}12%{opacity:1;}100%{opacity:0;}}
+.fx-rays{position:absolute;left:50%;top:34%;width:150%;aspect-ratio:1;margin:0;transform:translate(-50%,-50%);pointer-events:none;z-index:2;opacity:0;
+  background:repeating-conic-gradient(from 0deg,rgba(255,90,110,.35) 0 8deg,transparent 8deg 22deg);
+  -webkit-mask-image:radial-gradient(circle,#000 0,transparent 62%);mask-image:radial-gradient(circle,#000 0,transparent 62%);}
+.fx-rays.gold{background:repeating-conic-gradient(from 0deg,rgba(245,185,66,.45) 0 8deg,transparent 8deg 22deg);}
+.fx-rays.on{animation:fxRays 1.8s ease-out forwards;}
+@keyframes fxRays{0%{opacity:0;transform:translate(-50%,-50%) rotate(0) scale(.4);}20%{opacity:1;}100%{opacity:0;transform:translate(-50%,-50%) rotate(40deg) scale(1.1);}}
+
+/* Bigger, bouncier score words. */
+.ps-pop{letter-spacing:.06em;}
+.ps-pop.show{animation:popIn 1.5s cubic-bezier(.2,1.4,.4,1) forwards;}
+
+@media (prefers-reduced-motion: reduce){
+  #pitch #crowd .wv,.fx-beam,.fx-pool,.fx-twinkle,.fx-idle,#aim > circle:first-child,#target-ring circle:nth-child(2),.fx-spot,.fx-flash,.fx-rays{animation:none !important;}
+}
