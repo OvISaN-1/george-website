@@ -16,7 +16,10 @@
 --     overwrite each other.
 --
 -- How to use: Supabase > SQL Editor > New query > paste this whole
--- file > Run. Safe to run again.
+-- file > click once in the editor, press Ctrl+A (select all) and Run.
+-- (If only part of the text is highlighted, Supabase runs only that
+-- part and fails with "unterminated dollar-quoted string".)
+-- Safe to run again.
 --
 -- If George forgets his password (there is no email reset), run this
 -- with his username and a new password:
@@ -90,8 +93,9 @@ declare
   tok text;
   newtokens text[];
 begin
-  select * into a from public.progress_accounts where username = u for update;
-  if not found then
+  perform 1 from public.progress_accounts where username = u for update;
+  a := (select t from public.progress_accounts t where t.username = u);
+  if a.username is null then
     perform pg_sleep(0.4);     -- same wait as a wrong password, so names can't be guessed
     return jsonb_build_object('ok', false, 'error', 'wrong');
   end if;
@@ -127,8 +131,8 @@ declare
   u text := lower(btrim(coalesce(p_user, '')));
   a public.progress_accounts;
 begin
-  select * into a from public.progress_accounts where username = u;
-  if not found or not (encode(digest(coalesce(p_token, ''), 'sha256'), 'hex') = any (a.tokens)) then
+  a := (select t from public.progress_accounts t where t.username = u);
+  if a.username is null or not (encode(digest(coalesce(p_token, ''), 'sha256'), 'hex') = any (a.tokens)) then
     return jsonb_build_object('ok', false, 'error', 'auth');
   end if;
   if p_since is not null and a.updated_at <= p_since then
@@ -154,8 +158,9 @@ declare
   a public.progress_accounts;
   stamp timestamptz := clock_timestamp();
 begin
-  select * into a from public.progress_accounts where username = u for update;
-  if not found or not (encode(digest(coalesce(p_token, ''), 'sha256'), 'hex') = any (a.tokens)) then
+  perform 1 from public.progress_accounts where username = u for update;
+  a := (select t from public.progress_accounts t where t.username = u);
+  if a.username is null or not (encode(digest(coalesce(p_token, ''), 'sha256'), 'hex') = any (a.tokens)) then
     return jsonb_build_object('ok', false, 'error', 'auth');
   end if;
   if octet_length(coalesce(p_data, '{}'::jsonb)::text) > 1500000 then
