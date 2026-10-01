@@ -1084,3 +1084,15 @@ window.GZWake = (function () {
     off() { wanted = false; if (lock) { lock.release().catch(() => {}); lock = null; } },
   };
 })();
+
+/* Progress account: only devices that have logged in (see progress.html) load the sync script. */
+(function () {
+  try {
+    if (!localStorage.getItem("gz_account_v1") || window.GZSync || /progress\.html$/.test(location.pathname)) return;
+    const me = document.currentScript || document.querySelector('script[src*="js/main.js"]');
+    if (!me || !me.src) return;
+    const s = document.createElement("script");
+    s.src = me.src.replace(/main\.js.*$/, "sync.js");
+    document.head.appendChild(s);
+  } catch (e) { /* no storage, no account */ }
+})();

@@ -4,7 +4,7 @@
    Topics from js/sats-maths.js and js/sats-english.js.
    George picks a topic, answers a round of questions and sees
    how to work out anything he gets wrong. Best scores save on
-   this device (gz_sats_v1), and "Move my progress" carries them
+   this device (gz_sats_v1), and "Save my progress" carries them
    over, like the games.
    =========================================================== */
 (function () {

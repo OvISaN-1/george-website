@@ -185,17 +185,24 @@
   }
   const suddenDeath = () => S.forest.length >= 5 && S.opp.length >= 5;
 
+  const lastDots = {};
   function renderScoreboard() {
     const r = ROUNDS[S.round];
     $("round-label").textContent = `The George Cup · ${r.stage}`;
     $("opp-name").textContent = r.short;
-    $("score-forest").textContent = goals(S.forest);
-    $("score-opp").textContent = goals(S.opp);
+    [["score-forest", goals(S.forest)], ["score-opp", goals(S.opp)]].forEach(([id, v]) => {
+      const e = $(id);
+      if (e.textContent !== String(v)) { e.textContent = v; PitchFX.retrigger(e, "ps-bump"); }
+    });
     const n = Math.max(5, S.forest.length, S.opp.length);
-    const dots = (arr) => Array.from({ length: n }, (_, i) =>
-      `<span class="ps-dot ${i < arr.length ? (arr[i] ? "scored" : "missed") : ""}" aria-hidden="true"></span>`).join("");
-    $("dots-forest").innerHTML = dots(S.forest);
-    $("dots-opp").innerHTML = dots(S.opp);
+    const dots = (arr, key) => {
+      const html = Array.from({ length: n }, (_, i) =>
+        `<span class="ps-dot ${i < arr.length ? (arr[i] ? "scored" : "missed") : ""}${i === arr.length - 1 && arr.length > (lastDots[key] || 0) ? " new" : ""}" aria-hidden="true"></span>`).join("");
+      lastDots[key] = arr.length;
+      return html;
+    };
+    $("dots-forest").innerHTML = dots(S.forest, "f");
+    $("dots-opp").innerHTML = dots(S.opp, "o");
   }
 
   function renderBracket(el) {
@@ -205,7 +212,7 @@
     }).join("");
   }
 
-  function say(text) { instructionEl.textContent = text; }
+  function say(text) { instructionEl.textContent = text; PitchFX.retrigger(instructionEl, "ps-slide"); }
   function showControls(which) {
     $("power").hidden = which !== "power";
     $("dive").hidden = which !== "dive";
@@ -262,6 +269,7 @@
   async function shoot() {
     if (S.phase !== "power") return;
     S.phase = "shooting";
+    PitchFX.retrigger(document.querySelector(".ps-power-track"), "ps-lock");
     cancelAnimationFrame(S.powerRaf);
     showControls(null);
     const r = ROUNDS[S.round];
@@ -349,7 +357,15 @@
       PitchFX.follow(t);
       setShadow(lerp(200, x1, t), lerp(364, 250, t), lerp(1, 0.6, t), lerp(0.35, 0.15, t));
     }, (t) => 1 - Math.pow(1 - t, 1.6)).then(async () => {
-      if (outcome === "goal") PitchFX.hit(x1, y1, "goal");
+      if (outcome === "goal") {
+        PitchFX.hit(x1, y1, "goal");
+        rippleNet();
+        // The ball drops down inside the net and bounces once.
+        await tween(480, (t) => {
+          const drop = 14 * t, bounce = Math.abs(Math.sin(t * Math.PI * 1.6)) * 7 * (1 - t);
+          setBall(x1 + (200 - x1) * 0.08 * t, y1 + drop - bounce, 0.6 * (1 - 0.1 * t));
+        }, (t) => t);
+      }
       else if (outcome === "saved") PitchFX.hit(x1, y1, "save");
       else if (outcome === "post") PitchFX.hit(x1, y1, "post");
       if (outcome === "over") {

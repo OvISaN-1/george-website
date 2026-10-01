@@ -76,3 +76,67 @@ svg.fx-td.fx-cheer .wv{--amp:1px;}
 /* Overhead pitch: keep the rays softer so the players stay easy to read. */
 .md-stage .fx-rays.on{animation-name:fxRaysSoft;}
 @keyframes fxRaysSoft{0%{opacity:0;transform:translate(-50%,-50%) rotate(0) scale(.4);}20%{opacity:.5;}100%{opacity:0;transform:translate(-50%,-50%) rotate(40deg) scale(1.1);}}
+
+/* ================= More movement: menus, HUD, keeper, nets, Matchday ================= */
+
+/* Screens slide in; lists and buttons rise one after another. */
+.ps-card:not([hidden]){animation:psIn .42s cubic-bezier(.2,.8,.3,1) backwards;}
+@keyframes psIn{from{opacity:0;transform:translateY(14px);}}
+.fk-menu-btns .fk-mode,.md-modes .md-mode,.ps-how li,.md-teams .md-team{animation:psRise .5s cubic-bezier(.2,.9,.3,1) backwards;}
+.fk-menu-btns .fk-mode:nth-child(1),.md-modes .md-mode:nth-child(1),.ps-how li:nth-child(1){animation-delay:.08s;}
+.fk-menu-btns .fk-mode:nth-child(2),.md-modes .md-mode:nth-child(2),.ps-how li:nth-child(2){animation-delay:.16s;}
+.fk-menu-btns .fk-mode:nth-child(3),.md-modes .md-mode:nth-child(3),.ps-how li:nth-child(3){animation-delay:.24s;}
+.fk-menu-btns .fk-mode:nth-child(4),.md-modes .md-mode:nth-child(4),.ps-how li:nth-child(4){animation-delay:.32s;}
+.md-teams .md-team:nth-child(2){animation-delay:.04s;}.md-teams .md-team:nth-child(3){animation-delay:.08s;}
+.md-teams .md-team:nth-child(4){animation-delay:.12s;}.md-teams .md-team:nth-child(5){animation-delay:.16s;}
+.md-teams .md-team:nth-child(6){animation-delay:.2s;}.md-teams .md-team:nth-child(n+7){animation-delay:.24s;}
+.fk-season li:nth-child(-n+8),.md-fx:nth-child(-n+8){animation:psRise .45s cubic-bezier(.2,.9,.3,1) backwards;}
+.fk-season li:nth-child(2),.md-fx:nth-child(2){animation-delay:.05s;}.fk-season li:nth-child(3),.md-fx:nth-child(3){animation-delay:.1s;}
+.fk-season li:nth-child(4),.md-fx:nth-child(4){animation-delay:.15s;}.fk-season li:nth-child(n+5),.md-fx:nth-child(n+5){animation-delay:.2s;}
+@keyframes psRise{from{opacity:0;transform:translateY(16px) scale(.97);}}
+
+/* George on the start screens floats gently; the live chip pulses. */
+.ps-avatar svg,.md-avatar svg{animation:psFloat 4.2s ease-in-out infinite;}
+@keyframes psFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
+.ps-chip.now{animation:chipPulse 1.8s ease-in-out infinite;}
+@keyframes chipPulse{0%,100%{box-shadow:0 0 0 0 rgba(202,14,40,.55);}50%{box-shadow:0 0 0 7px rgba(202,14,40,0);}}
+.fk-xp-track span{background-size:200% 100%;animation:xpShine 3s linear infinite;}
+@keyframes xpShine{to{background-position:-200% 0;}}
+
+/* Scores pop, new dots bounce in, commentary slides in. */
+.ps-bump{animation:psBump .55s cubic-bezier(.2,1.8,.4,1);display:inline-block;}
+@keyframes psBump{0%{transform:scale(1);}35%{transform:scale(1.35);color:#f5b942;}100%{transform:scale(1);}}
+.ps-dot.new{animation:dotPop .6s cubic-bezier(.2,1.9,.4,1);}
+@keyframes dotPop{0%{transform:scale(0);}100%{transform:scale(1);}}
+.ps-slide{animation:psSlide .4s ease-out;}
+@keyframes psSlide{from{opacity:0;transform:translateX(-10px);}}
+.ps-lock{animation:psLock .5s ease-out;}
+@keyframes psLock{0%{box-shadow:0 0 0 0 rgba(255,255,255,.9);}100%{box-shadow:0 0 0 14px rgba(255,255,255,0);}}
+
+/* Keeper: arms pump while you line up the kick. The wall braces when you shoot. */
+.k-arm{transform-box:fill-box;}
+.k-arm.l{transform-origin:100% 100%;animation:armL 1.1s ease-in-out infinite;}
+.k-arm.r{transform-origin:0% 100%;animation:armR 1.1s ease-in-out infinite;animation-delay:-.55s;}
+@keyframes armL{0%,100%{transform:rotate(0);}50%{transform:rotate(-16deg);}}
+@keyframes armR{0%,100%{transform:rotate(0);}50%{transform:rotate(16deg);}}
+.fx-shot .k-arm{animation:none;}
+.fx-shot .fx-shuffle{animation:fxBrace .45s ease-out forwards;}
+@keyframes fxBrace{to{transform:scale(1.03,.93);}}
+
+/* Nets sway in the breeze. */
+#net > path,#goal-g path[fill="url(#p-net)"],.sp-goal path[fill="url(#sp-net)"]{transform-box:fill-box;transform-origin:50% 0;animation:netSway 5s ease-in-out infinite;}
+@keyframes netSway{0%,100%{transform:skewX(0);}50%{transform:skewX(1.2deg);}}
+.fx-shot #net > path,.fx-shot #goal-g path[fill="url(#p-net)"]{animation:none;}
+
+/* Matchday: ring under the ball carrier, waving corner flags, players pop onto the pitch. */
+.halo-ring{transform-box:fill-box;transform-origin:center;animation:haloPulse 1.3s ease-in-out infinite;}
+@keyframes haloPulse{0%,100%{transform:scale(.88);opacity:.95;}50%{transform:scale(1.08);opacity:.45;}}
+.md-flag{transform-box:fill-box;transform-origin:0 100%;animation:flagWave 1.5s ease-in-out infinite;}
+@keyframes flagWave{0%,100%{transform:skewY(0) scaleX(1);}50%{transform:skewY(8deg) scaleX(.85);}}
+.md-tok > circle:not(.g-ring),.md-tok > text{transform-box:fill-box;transform-origin:center;animation:tokIn .55s calc(var(--i,0) * 35ms) cubic-bezier(.2,1.6,.4,1) backwards;}
+@keyframes tokIn{from{transform:scale(0);opacity:0;}}
+
+@media (prefers-reduced-motion: reduce){
+  .ps-card,.fk-mode,.md-mode,.ps-how li,.md-team,.fk-season li,.md-fx,.ps-avatar svg,.md-avatar svg,.ps-chip.now,.fk-xp-track span,
+  .ps-bump,.ps-dot.new,.ps-slide,.ps-lock,.k-arm,.fx-shuffle,#net > path,#goal-g path,.sp-goal path,.halo-ring,.md-flag,.md-tok > circle,.md-tok > text{animation:none !important;}
+}

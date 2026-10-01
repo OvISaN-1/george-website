@@ -168,10 +168,8 @@
         <rect x="2" y="-22" width="7" height="22" rx="2" fill="${kit}"/>
         <rect x="-10" y="-3" width="9" height="4" rx="2" fill="#15121a"/><rect x="1" y="-3" width="9" height="4" rx="2" fill="#15121a"/>
         <rect x="-11" y="-32" width="22" height="12" rx="3" fill="#15121a"/>
-        <path d="M-12 -52 L-28 -64" stroke="${kit}" stroke-width="7" stroke-linecap="round"/>
-        <path d="M12 -52 L28 -64" stroke="${kit}" stroke-width="7" stroke-linecap="round"/>
-        <circle cx="-29" cy="-66" r="5.5" fill="#f4f4f4" stroke="#15121a" stroke-width="1"/>
-        <circle cx="29" cy="-66" r="5.5" fill="#f4f4f4" stroke="#15121a" stroke-width="1"/>
+        <g class="k-arm l"><path d="M-12 -52 L-28 -64" stroke="${kit}" stroke-width="7" stroke-linecap="round"/><circle cx="-29" cy="-66" r="5.5" fill="#f4f4f4" stroke="#15121a" stroke-width="1"/></g>
+        <g class="k-arm r"><path d="M12 -52 L28 -64" stroke="${kit}" stroke-width="7" stroke-linecap="round"/><circle cx="29" cy="-66" r="5.5" fill="#f4f4f4" stroke="#15121a" stroke-width="1"/></g>
         <rect x="-13" y="-56" width="26" height="26" rx="6" fill="${kit}"/>
         ${isGeorge ? `<text x="0" y="-37" text-anchor="middle" font-family="Rajdhani, Arial Narrow, sans-serif" font-weight="700" font-size="11" fill="#fff">1</text>` : ""}
         ${face}

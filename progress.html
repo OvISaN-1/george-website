@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script>document.documentElement.classList.add('js');</script>
-  <title>Move my progress | George's Game Zone</title>
-  <meta name="description" content="Save George's game progress to a file and load it on another device or the new web address.">
+  <title>Save my progress | George's Game Zone</title>
+  <meta name="description" content="Save George's game progress with a username and password and pick it up on any device.">
   <meta name="robots" content="noindex, nofollow">
   <link rel="canonical" href="https://georgeneagu.win/progress.html">
   <link rel="stylesheet" href="css/fonts.css">
@@ -40,6 +40,18 @@
     .msg{margin-top:12px;font-weight:700;min-height:1.4em;}
     .msg.good{color:var(--good);} .msg.bad{color:var(--bad);}
     .small{font-size:12px;color:var(--faint);line-height:1.45;}
+    label.fld{display:block;font-weight:700;margin:12px 0 4px;}
+    input[type=text],input[type=password]{width:100%;max-width:360px;min-height:48px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--cream);padding:0 14px;font:600 16px 'Manrope',sans-serif;}
+    input:focus-visible{outline:2px solid var(--cream);outline-offset:2px;}
+    #acct-form .btn{margin-top:14px;}
+    .btn[aria-selected="true"]{background:var(--accent);color:var(--navy);border:0;}
+    .who{font-size:18px;color:var(--cream);}
+    .pick{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    @media (max-width:560px){.pick{grid-template-columns:1fr;}}
+    .pick h3{margin:0 0 6px;font-size:18px;}
+    details.more{margin-bottom:16px;}
+    details.more > summary{cursor:pointer;color:var(--muted);padding:12px 4px;font-weight:700;}
+    details.more > summary:focus-visible{outline:2px solid var(--cream);outline-offset:3px;}
     [hidden]{display:none!important;}
   </style>
 </head>
@@ -75,9 +87,52 @@
     <div class="wrap">
       <div class="title">
         <span class="eyebrow">Game Zone</span>
-        <h1 style="view-transition-name:t-progress">💾 Move my progress</h1>
-        <p>Your games save on this device only. To play somewhere else, like another tablet or the new web address <b>georgeneagu.win</b>, save your progress here, then load it there. It covers Matchday (career, season, unlocks, what the game has learned), Free Kick Masters, badges and settings.</p>
+        <h1 style="view-transition-name:t-progress">💾 Save my progress</h1>
+        <p>Your games save on this device only. Make a login and your progress follows you to any phone, tablet or computer. It covers Matchday (career, season, unlocks, what the game has learned), Free Kick Masters, badges and settings.</p>
       </div>
+
+      <section class="card" id="acct" aria-labelledby="acct-h">
+        <h2 id="acct-h">Your login</h2>
+
+        <div id="acct-out">
+          <p>Pick a username and a password. Once you are logged in, your progress saves by itself while you play. Log in on another device to get it back.</p>
+          <div class="row" role="tablist" style="margin-bottom:12px">
+            <button type="button" class="btn" id="tab-login" role="tab" aria-selected="true">I have a login</button>
+            <button type="button" class="btn alt" id="tab-create" role="tab" aria-selected="false">Make a login</button>
+          </div>
+          <form id="acct-form" autocomplete="on">
+            <label class="fld" for="a-user">Username</label>
+            <input id="a-user" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="18" required>
+            <label class="fld" for="a-pass">Password</label>
+            <input id="a-pass" name="password" type="password" autocomplete="current-password" maxlength="72" required>
+            <p class="small" id="a-hint" hidden>Username: 3 to 18 letters, numbers, - or _. Password: at least 4 characters. <b>Write your password down.</b> There is no email, so Dad has to reset it if you forget. Please don't use your real name or a password you use anywhere else.</p>
+            <button type="submit" class="btn" id="a-go">Log in</button>
+          </form>
+        </div>
+
+        <div id="acct-in" hidden>
+          <p class="who">✓ Logged in as <b id="who-name"></b></p>
+          <p class="small" id="who-sync"></p>
+          <ul class="summary" id="who-here"></ul>
+          <div class="row">
+            <button type="button" class="btn" id="a-now">Save now</button>
+            <button type="button" class="btn alt" id="a-out">Log out on this device</button>
+          </div>
+        </div>
+
+        <div id="acct-choose" hidden>
+          <p><b>This device and your account both have progress, and they are different.</b> Nothing has been changed yet. Which one do you want to keep?</p>
+          <div class="pick">
+            <div><h3>On this device</h3><ul class="summary" id="pick-here"></ul><button type="button" class="btn alt" id="keep-device">Keep this device's</button></div>
+            <div><h3>In your account</h3><ul class="summary" id="pick-account"></ul><button type="button" class="btn alt" id="keep-account">Use my account's</button></div>
+          </div>
+        </div>
+
+        <div class="msg" id="acct-msg" role="status"></div>
+      </section>
+
+      <details class="more">
+        <summary>Other ways to move progress: a file or a code</summary>
 
       <section class="card">
         <h2>1. Save progress</h2>
@@ -109,6 +164,7 @@
         </div>
         <div class="msg" id="load-msg" role="status"></div>
       </section>
+      </details>
     </div>
   </main>
 
@@ -121,6 +177,7 @@
 
   <script src="js/content.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/sync.js"></script>
   <script src="js/progress.js"></script>
 </body>
 </html>

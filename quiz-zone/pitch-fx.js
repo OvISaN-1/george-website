@@ -377,6 +377,12 @@
   return api;
   }
 
+  // Replays a CSS animation class on an element (score pops, commentary slide-ins).
+  FX.retrigger = function (el, cls) {
+    if (!el || reduced) return;
+    el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+  };
+
   const def = make();
   Object.keys(def).forEach((k) => { FX[k] = def[k]; });
   FX.create = make;
