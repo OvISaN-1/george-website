@@ -93,6 +93,17 @@ body[data-page="quiz-zone"], body[data-page="quiz-game"]{
   display: flex; align-items: center; justify-content: space-between; gap: var(--s4);
 }
 .logo{ font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; color: var(--chalk); }
+/* Small "logged in as" box in the header (added by js/main.js, only when logged in). */
+.acct-chip{ display: inline-flex; align-items: center; gap: 6px; max-width: 150px; min-height: 36px; padding: 0 12px; margin-left: auto;
+  border-radius: var(--r-pill); border: 1px solid var(--line-strong); background: var(--surface-raised); color: var(--chalk);
+  font-family: var(--font-display); font-weight: 700; font-size: 0.9rem; letter-spacing: 0.02em; text-decoration: none; }
+.acct-chip b{ overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.acct-chip:hover, .acct-chip:focus-visible{ border-color: var(--gold); color: var(--gold); }
+.acct-chip + .nav-toggle{ margin-left: 0; }
+/* The note under the name box at the end of a game. */
+.gz-login-note{ flex: 1 0 100%; margin: 8px 2px 0; font-size: 13px; line-height: 1.45; color: #b9b2ac; text-align: left; }
+.gz-login-note b{ color: #f1ede9; }
+.gz-login-note a{ color: #f5b942; text-decoration: underline; }
 .logo span { color: var(--garibaldi); }
 .nav-links{ display: flex; gap: var(--s5); }
 .nav-links a{

@@ -1085,14 +1085,55 @@ window.GZWake = (function () {
   };
 })();
 
-/* Progress account: only devices that have logged in (see progress.html) load the sync script. */
+/* Progress account (see progress.html). Logging in is optional:
+   - logged in: a small "logged in as" box in the header, the sync script, and a note under the name box
+   - not logged in: nothing changes, and the name box at the end of each game still works as before */
 (function () {
-  try {
-    if (!localStorage.getItem("gz_account_v1") || window.GZSync || /progress\.html$/.test(location.pathname)) return;
-    const me = document.currentScript || document.querySelector('script[src*="js/main.js"]');
-    if (!me || !me.src) return;
+  const me = document.currentScript || document.querySelector('script[src*="js/main.js"]');
+  const root = me && me.src ? me.src.replace(/js\/main\.js.*$/, "") : "";
+  const account = () => { try { return JSON.parse(localStorage.getItem("gz_account_v1")); } catch (e) { return null; } };
+  const a = account();
+  const onProgress = /progress\.html$/.test(location.pathname);
+
+  if (a && root && !window.GZSync && !onProgress) {
     const s = document.createElement("script");
-    s.src = me.src.replace(/main\.js.*$/, "sync.js");
+    s.src = root + "js/sync.js";
     document.head.appendChild(s);
-  } catch (e) { /* no storage, no account */ }
+  }
+
+  // Header box.
+  if (a && root) {
+    const bar = document.querySelector(".nav-bar");
+    if (bar && !bar.querySelector(".acct-chip")) {
+      const chip = document.createElement("a");
+      chip.className = "acct-chip";
+      chip.href = root + "progress.html";
+      chip.title = "You are logged in. Your progress saves to your account. Click to manage it.";
+      chip.innerHTML = '<span aria-hidden="true">👤</span><b></b>';
+      chip.querySelector("b").textContent = a.display || a.user;
+      chip.setAttribute("aria-label", "Logged in as " + (a.display || a.user));
+      bar.insertBefore(chip, bar.querySelector(".nav-toggle"));
+    }
+  }
+
+  // Note under the name box on each game's results screen.
+  const BOXES = ["player-name", "r-name", "keepy-name"];
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  function note() {
+    if (document.hidden || onProgress || !root) return;
+    const loggedIn = !!account();
+    BOXES.forEach((id) => {
+      const box = document.getElementById(id);
+      const form = box && box.form;
+      if (!form || !box.getClientRects().length || form.dataset.gzNote) return;
+      form.dataset.gzNote = "1";
+      const p = document.createElement("p");
+      p.className = "gz-login-note";
+      p.innerHTML = loggedIn
+        ? "👤 Logged in as <b>" + esc(account().display || account().user) + "</b>: your score is saved under your username automatically. George's progress is saved to your account."
+        : 'Not logged in: type any name for the top scores. Your progress only saves on this device. <a href="' + root + 'progress.html">Log in to keep it on every device</a>.';
+      form.insertAdjacentElement("afterend", p);
+    });
+  }
+  setInterval(note, 700);
 })();
