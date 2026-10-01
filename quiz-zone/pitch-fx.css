@@ -1,12 +1,18 @@
 /* Visual polish for Free Kick Masters and Penalty Shootout (see pitch-fx.js). */
 
 /* Crowd: gentle bobbing all the time, a big wave when a goal goes in. */
-#pitch #crowd .wv{animation:fxBob var(--bob,2.6s) ease-in-out infinite;}
+svg .wv{animation:fxBob var(--bob,2.6s) ease-in-out infinite;}
 @keyframes fxBob{0%,100%{transform:translateY(0);}50%{transform:translateY(calc(var(--amp,1.1px) * -1));}}
-#pitch.fx-cheer #crowd .wv{--amp:5px;--bob:.5s;}
-#pitch.fx-groan #crowd .wv{--amp:.3px;--bob:3.2s;}
-#pitch.fx-groan #crowd{opacity:.82;}
-#pitch #crowd{transition:opacity .4s ease;}
+svg.fx-cheer .wv{--amp:5px;--bob:.5s;}
+svg.fx-groan .wv{--amp:.3px;--bob:3.2s;}
+svg.fx-groan .fx-crowd{filter:brightness(.8);}
+svg .fx-crowd{transition:filter .4s ease;}
+
+/* Overhead pitch (Matchday): units are metres, so the bob is much smaller. */
+svg.fx-td .wv{--amp:.3px;}
+svg.fx-td.fx-cheer .wv{--amp:1px;}
+.fx-flood{animation:fxBeam 6s ease-in-out infinite;}
+.fx-flood:nth-of-type(2n){animation-delay:-3s;}
 
 /* Camera flashes in the stands. */
 .fx-cam{fill:#fff;transform-box:fill-box;transform-origin:center;animation:fxFlash .5s ease-out forwards;}
@@ -61,5 +67,12 @@
 .ps-pop.show{animation:popIn 1.5s cubic-bezier(.2,1.4,.4,1) forwards;}
 
 @media (prefers-reduced-motion: reduce){
-  #pitch #crowd .wv,.fx-beam,.fx-pool,.fx-twinkle,.fx-idle,#aim > circle:first-child,#target-ring circle:nth-child(2),.fx-spot,.fx-flash,.fx-rays{animation:none !important;}
+  svg .wv,.fx-beam,.fx-pool,.fx-twinkle,.fx-idle,#aim > circle:first-child,#target-ring circle:nth-child(2),.fx-spot,.fx-flash,.fx-rays{animation:none !important;}
 }
+
+/* Matchday close-up sits inside the main stage. */
+.sp .fx-flash,.sp .fx-rays{z-index:3;}
+
+/* Overhead pitch: keep the rays softer so the players stay easy to read. */
+.md-stage .fx-rays.on{animation-name:fxRaysSoft;}
+@keyframes fxRaysSoft{0%{opacity:0;transform:translate(-50%,-50%) rotate(0) scale(.4);}20%{opacity:.5;}100%{opacity:0;transform:translate(-50%,-50%) rotate(40deg) scale(1.1);}}

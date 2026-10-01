@@ -15,11 +15,6 @@
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const rand = Math.random;
 
-  let svg = null, stage = null, fxG = null, ghostG = null, beamG = null, flashG = null, spotEl = null;
-  let flashTimer = null, ghostTimer = null, night = true;
-  const cam = { z: 1, sx: 0, sy: 0, ox: 50, oy: 42, raf: 0 };
-  let shakeAmp = 0, shakeRaf = 0;
-
   function mk(tag, attrs, parent) {
     const el = document.createElementNS(NS, tag);
     for (const k in attrs) el.setAttribute(k, attrs[k]);
@@ -27,74 +22,106 @@
     return el;
   }
 
+
+  function make() {
+  const api = {};
+  let svg = null, stage = null, fxG = null, ghostG = null, beamG = null, flashG = null, spotEl = null;
+  let flashTimer = null, ghostTimer = null, night = true;
+  const cam = { z: 1, sx: 0, sy: 0, ox: 50, oy: 42, raf: 0 };
+  let shakeAmp = 0, shakeRaf = 0;
+
   /* ---------------- set up ---------------- */
-  FX.init = function (o) {
+  const el$ = (x) => (typeof x === "string" ? document.getElementById(x) : x);
+  let opt = {};
+
+  /* o: svg, stage, ballEl (the ball group), plus optional
+       beforeId/beforeEl  where the floodlight beams go (side-on scenes)
+       crowdId/crowdEl    the crowd group
+       topDown            true for the overhead pitch: no beams or lamp stars
+       fxLayer            an existing group for sparks and rings
+       flashPos(), flashR where camera flashes appear (defaults suit the side-on stands)
+       ghostJump, ghostMin, ghostScale   tuning for the ball trail
+       camOrigin          [x%, y%] the camera zooms towards
+     Safe to call again: Matchday rebuilds its pitch for every match. */
+  api.init = function (o) {
+    clearTimeout(flashTimer); clearTimeout(ghostTimer);
+    parts.forEach((p) => p.el.remove()); parts.length = 0; ghosts.length = 0; lastBall = null;
+    opt = o;
     svg = o.svg; stage = o.stage;
+    stage.querySelectorAll(".fx-vignette,.fx-flash,.fx-rays").forEach((n) => n.remove());
     if (o.camOrigin) { cam.ox = o.camOrigin[0]; cam.oy = o.camOrigin[1]; }
+    cam.z = 1; cam.sx = cam.sy = 0; shakeAmp = 0;
+    svg.style.transform = "";
     svg.style.transformOrigin = `${cam.ox}% ${cam.oy}%`;
     svg.style.willChange = "transform";
+    const crowd = el$(o.crowdEl || o.crowdId);
 
-    const defs = svg.querySelector("defs") || svg.insertBefore(mk("defs", {}), svg.firstChild);
-    const bg = mk("linearGradient", { id: "fxBeam", x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
-    mk("stop", { offset: 0, "stop-color": "#fff6d8", "stop-opacity": 0.2 }, bg);
-    mk("stop", { offset: 1, "stop-color": "#fff6d8", "stop-opacity": 0 }, bg);
-    const pool = mk("radialGradient", { id: "fxPool", cx: 0.5, cy: 0.5, r: 0.5 }, defs);
-    mk("stop", { offset: 0, "stop-color": "#fff6d8", "stop-opacity": 0.2 }, pool);
-    mk("stop", { offset: 1, "stop-color": "#fff6d8", "stop-opacity": 0 }, pool);
-
-    // Floodlight beams and a pool of light round the goal, laid over the grass.
-    beamG = mk("g", { class: "fx-beams", "pointer-events": "none" });
-    const before = o.beforeId && document.getElementById(o.beforeId);
-    (before && before.parentNode ? before.parentNode : svg).insertBefore(beamG, before || null);
-    mk("polygon", { points: "40,16 70,16 220,330 -90,330", fill: "url(#fxBeam)", class: "fx-beam a" }, beamG);
-    mk("polygon", { points: "330,16 366,16 500,330 190,330", fill: "url(#fxBeam)", class: "fx-beam b" }, beamG);
-    mk("ellipse", { cx: 200, cy: o.poolY || 205, rx: 230, ry: 70, fill: "url(#fxPool)", class: "fx-pool" }, beamG);
-
-    // Twinkling stars on the floodlights.
-    const tw = mk("g", { class: "fx-twinkles", "pointer-events": "none" });
-    const crowd = o.crowdId && document.getElementById(o.crowdId);
-    if (crowd) crowd.parentNode.insertBefore(tw, crowd); else svg.appendChild(tw);
-    [[-74, 14, 0], [52, 14, 0.7], [348, 14, 1.4], [474, 14, 2.1]].forEach(([x, y, d]) => {
-      mk("path", { d: `M${x} ${y - 9} L${x + 1.6} ${y - 1.6} L${x + 9} ${y} L${x + 1.6} ${y + 1.6} L${x} ${y + 9} L${x - 1.6} ${y + 1.6} L${x - 9} ${y} L${x - 1.6} ${y - 1.6} Z`,
-        fill: "#fff6d8", class: "fx-twinkle", style: `animation-delay:${d}s` }, tw);
-    });
+    if (!o.topDown) {
+      const defs = svg.querySelector("defs") || svg.insertBefore(mk("defs", {}), svg.firstChild);
+      if (!defs.querySelector("#fxBeam")) {
+        const bg = mk("linearGradient", { id: "fxBeam", x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
+        mk("stop", { offset: 0, "stop-color": "#fff6d8", "stop-opacity": 0.2 }, bg);
+        mk("stop", { offset: 1, "stop-color": "#fff6d8", "stop-opacity": 0 }, bg);
+        const pool = mk("radialGradient", { id: "fxPool", cx: 0.5, cy: 0.5, r: 0.5 }, defs);
+        mk("stop", { offset: 0, "stop-color": "#fff6d8", "stop-opacity": 0.2 }, pool);
+        mk("stop", { offset: 1, "stop-color": "#fff6d8", "stop-opacity": 0 }, pool);
+      }
+      // Floodlight beams and a pool of light round the goal, laid over the grass.
+      svg.querySelectorAll(".fx-beams,.fx-twinkles").forEach((n) => n.remove());
+      beamG = mk("g", { class: "fx-beams", "pointer-events": "none" });
+      const before = el$(o.beforeEl || o.beforeId);
+      (before && before.parentNode ? before.parentNode : svg).insertBefore(beamG, before || null);
+      mk("polygon", { points: "40,16 70,16 220,330 -90,330", fill: "url(#fxBeam)", class: "fx-beam a" }, beamG);
+      mk("polygon", { points: "330,16 366,16 500,330 190,330", fill: "url(#fxBeam)", class: "fx-beam b" }, beamG);
+      mk("ellipse", { cx: 200, cy: o.poolY || 205, rx: 230, ry: 70, fill: "url(#fxPool)", class: "fx-pool" }, beamG);
+      // Twinkling stars on the floodlights.
+      const tw = mk("g", { class: "fx-twinkles", "pointer-events": "none" });
+      if (crowd) crowd.parentNode.insertBefore(tw, crowd); else svg.appendChild(tw);
+      [[-74, 14, 0], [52, 14, 0.7], [348, 14, 1.4], [474, 14, 2.1]].forEach(([x, y, d]) => {
+        mk("path", { d: `M${x} ${y - 9} L${x + 1.6} ${y - 1.6} L${x + 9} ${y} L${x + 1.6} ${y + 1.6} L${x} ${y + 9} L${x - 1.6} ${y + 1.6} L${x - 9} ${y} L${x - 1.6} ${y - 1.6} Z`,
+          fill: "#fff6d8", class: "fx-twinkle", style: `animation-delay:${d}s` }, tw);
+      });
+    } else beamG = null;
 
     // Camera flashes pop up in the stands; more of them when a goal goes in.
+    svg.querySelectorAll(".fx-flashes,.fx-ghosts").forEach((n) => n.remove());
     flashG = mk("g", { class: "fx-flashes", "pointer-events": "none" });
-    if (crowd && crowd.nextSibling) crowd.parentNode.insertBefore(flashG, crowd.nextSibling); else svg.appendChild(flashG);
+    if (crowd && crowd.nextSibling) crowd.parentNode.insertBefore(flashG, crowd.nextSibling); else (crowd ? crowd.parentNode : svg).appendChild(flashG);
 
-    // Soft pulsing ring under the ball while the player lines up the kick.
+    // Streak behind the ball, and a soft pulsing ring under it while the player lines up the kick.
     ghostG = mk("g", { class: "fx-ghosts", "pointer-events": "none" });
-    const ball = o.ballEl;
+    const ball = el$(o.ballEl);
     ball.parentNode.insertBefore(ghostG, ball);
     spotEl = mk("circle", { r: 13, class: "fx-spot", opacity: 0 }, ghostG);
 
     // Sparks, rings and dust go on top of everything in the scene.
-    fxG = mk("g", { class: "fx-top", "pointer-events": "none" }, svg);
+    if (o.fxLayer) fxG = el$(o.fxLayer);
+    else { svg.querySelectorAll(".fx-top").forEach((n) => n.remove()); fxG = mk("g", { class: "fx-top", "pointer-events": "none" }, svg); }
 
     // Stage overlays: vignette for depth, white flash and burst rays for goals.
-    ["fx-vignette", "fx-flash", "fx-rays"].forEach((c) => {
+    ["fx-vignette", "fx-flash", "fx-rays"].filter((c) => !(o.topDown && c === "fx-vignette")).forEach((c) => {
       const d = document.createElement("div"); d.className = c; d.setAttribute("aria-hidden", "true"); stage.appendChild(d);
     });
 
     if (!reduced) {
       const loop = () => {
-        if (!document.hidden) spawnFlash(1 + (rand() < 0.4 ? 1 : 0));
+        if (!document.hidden && stage.isConnected && stage.offsetParent !== null) spawnFlash(1 + (rand() < 0.4 ? 1 : 0));
         flashTimer = setTimeout(loop, 280 + rand() * 520);
       };
       loop();
     }
   };
 
-  FX.setNight = function (on) {
+  api.setNight = function (on) {
     night = !!on;
     if (beamG) beamG.style.opacity = night ? 1 : 0.15;
-    document.querySelectorAll(".fx-twinkles").forEach((g) => { g.style.opacity = night ? 1 : 0.2; });
+    if (svg) svg.querySelectorAll(".fx-twinkles").forEach((g) => { g.style.opacity = night ? 1 : 0.2; });
   };
 
   /* ---------------- crowd ---------------- */
   // Groups the dots into small blocks so they can bob in a wave.
-  FX.waveCrowd = function (crowdG) {
+  api.waveCrowd = function (crowdG) {
+    crowdG.classList.add("fx-crowd");
     const fans = Array.from(crowdG.querySelectorAll(".fan"));
     const blocks = new Map();
     fans.forEach((f) => {
@@ -112,23 +139,47 @@
     blocks.forEach((g) => crowdG.appendChild(g));
   };
 
+  // Overhead pitch: the stands run along all four sides, so group the dots by side and position.
+  // ph is the pitch height, used to tell the top stand from the bottom one.
+  api.waveStands = function (crowdG, ph) {
+    crowdG.classList.add("fx-crowd");
+    const blocks = new Map();
+    Array.from(crowdG.children).forEach((f) => {
+      if (f.tagName !== "circle") return;
+      const cx = +f.getAttribute("cx"), cy = +f.getAttribute("cy");
+      const side = cy < -4 ? "t" : cy > ph + 4 ? "b" : cx < 0 ? "l" : "r";
+      const along = side === "t" || side === "b" ? cx : cy;
+      const col = Math.floor((along + 12) / 9);
+      const key = side + col;
+      let g = blocks.get(key);
+      if (!g) {
+        const lap = side === "t" ? col : side === "r" ? 14 + col * 0.8 : side === "b" ? 26 - col : 40 - col * 0.8;
+        g = mk("g", { class: "wv", style: `animation-delay:${(-lap * 0.18).toFixed(2)}s` });
+        blocks.set(key, g);
+      }
+      g.appendChild(f);
+    });
+    blocks.forEach((g) => crowdG.appendChild(g));
+  };
+
   function spawnFlash(n) {
     if (!flashG || reduced) return;
     for (let i = 0; i < n; i++) {
-      const c = mk("circle", { cx: (-110 + rand() * 620).toFixed(1), cy: (60 + rand() * 72).toFixed(1), r: 1.7, class: "fx-cam" }, flashG);
+      const p = opt.flashPos ? opt.flashPos() : { x: -110 + rand() * 620, y: 60 + rand() * 72 };
+      const c = mk("circle", { cx: p.x.toFixed(1), cy: p.y.toFixed(1), r: opt.flashR || 1.7, class: "fx-cam" }, flashG);
       c.addEventListener("animationend", () => c.remove());
       if (flashG.childNodes.length > 40) flashG.firstChild.remove();
     }
   }
 
-  FX.cheer = function (ms) {
+  api.cheer = function (ms) {
     if (reduced || !svg) return;
     svg.classList.add("fx-cheer");
     for (let i = 0; i < 22; i++) setTimeout(() => spawnFlash(2), i * 60);
     setTimeout(() => svg.classList.remove("fx-cheer"), ms || 2400);
   };
 
-  FX.groan = function () {
+  api.groan = function () {
     if (reduced || !svg) return;
     svg.classList.add("fx-groan");
     setTimeout(() => svg.classList.remove("fx-groan"), 1600);
@@ -136,18 +187,18 @@
 
   /* ---------------- idle life for the players ---------------- */
   // kind: breathe (striker), pace (keeper on his line), bounce (penalty keeper), shuffle (wall).
-  FX.idle = function (html, kind, delay) {
+  api.idle = function (html, kind, delay) {
     return `<g class="fx-idle fx-${kind}" style="animation-delay:${(delay == null ? -rand() * 2 : delay).toFixed(2)}s">${html}</g>`;
   };
   // While the ball is in flight the characters snap back to neutral so dives start clean.
-  FX.shot = function (on) {
+  api.shot = function (on) {
     if (!stage) return;
     stage.classList.toggle("fx-shot", !!on);
     if (on && spotEl) spotEl.setAttribute("opacity", 0);
   };
 
   /* ---------------- ball ---------------- */
-  FX.spot = function (x, y) {
+  api.spot = function (x, y) {
     if (!spotEl || reduced) return;
     spotEl.setAttribute("cx", x); spotEl.setAttribute("cy", y);
     spotEl.setAttribute("opacity", 1);
@@ -156,13 +207,13 @@
   const ghosts = [];
   let lastBall = null;
   // Called every frame the ball moves. Leaves a fading streak of ball shapes behind it.
-  FX.trail = function (x, y, s) {
+  api.trail = function (x, y, s) {
     if (reduced || !ghostG) return;
     const prev = lastBall; lastBall = { x, y, s };
     if (!prev) return;
     const d = Math.hypot(x - prev.x, y - prev.y);
-    if (d > 140) { clearGhosts(); return; }
-    if (d < 2.4) return;
+    if (d > (opt.ghostJump || 140)) { clearGhosts(); return; }
+    if (d < (opt.ghostMin || 2.4)) return;
     ghosts.push({ x: prev.x, y: prev.y, s: prev.s });
     if (ghosts.length > 7) ghosts.shift();
     drawGhosts();
@@ -176,7 +227,7 @@
       const g = ghosts[i];
       if (!g) { c.setAttribute("opacity", 0); return; }
       c.setAttribute("cx", g.x.toFixed(1)); c.setAttribute("cy", g.y.toFixed(1));
-      c.setAttribute("r", (8.2 * g.s).toFixed(2));
+      c.setAttribute("r", (8.2 * (opt.ghostScale || 1) * g.s).toFixed(2));
       c.setAttribute("opacity", ((i + 1) / ghosts.length * 0.22).toFixed(3));
     });
   }
@@ -211,7 +262,7 @@
   }
 
   // opts: n, colors, speed, grav, life, size, a0/a1 (angle range, radians; -PI/2 is straight up)
-  FX.burst = function (x, y, o) {
+  api.burst = function (x, y, o) {
     if (reduced || !fxG) return;
     o = o || {};
     const n = o.n || 14, cols = o.colors || ["#fff"], sp = o.speed || 3, grav = o.grav == null ? 0.16 : o.grav;
@@ -228,7 +279,7 @@
     }
   };
 
-  FX.ring = function (x, y, o) {
+  api.ring = function (x, y, o) {
     if (reduced || !fxG) return;
     o = o || {};
     const r0 = o.r0 || 4, r1 = o.r1 || 40;
@@ -242,15 +293,15 @@
   };
 
   // Ready-made effects the games call.
-  FX.kickDust = function (x, y) {
-    FX.burst(x, y, { n: 12, colors: ["#6fbf6a", "#4f9a4a", "#8a6b3f", "#c9e8b0"], speed: 2.6, grav: 0.14, life: 600, size: 2, a0: -Math.PI * 0.95, a1: -Math.PI * 0.05 });
+  api.kickDust = function (x, y) {
+    api.burst(x, y, { n: 12, colors: ["#6fbf6a", "#4f9a4a", "#8a6b3f", "#c9e8b0"], speed: 2.6, grav: 0.14, life: 600, size: 2, a0: -Math.PI * 0.95, a1: -Math.PI * 0.05 });
   };
-  FX.hit = function (x, y, kind) {
+  api.hit = function (x, y, kind) {
     const gold = ["#f5b942", "#ffe08a", "#ffffff"], white = ["#ffffff", "#dfe8ff"], red = ["#ff5a6e", "#ffffff"];
-    if (kind === "goal") { FX.ring(x, y, { r1: 52, ms: 650, color: "#ffffff" }); FX.ring(x, y, { r1: 30, ms: 450, color: "#f5b942", w: 2 }); FX.burst(x, y, { n: 26, colors: gold.concat(white), speed: 4.4, grav: 0.1, life: 750, a0: -Math.PI, a1: Math.PI }); FX.shake(4); }
-    else if (kind === "save") { FX.ring(x, y, { r1: 34, ms: 420, color: "#ffe08a" }); FX.burst(x, y, { n: 16, colors: gold, speed: 3.4, life: 550, a0: -Math.PI, a1: Math.PI }); FX.shake(3); }
-    else if (kind === "post") { FX.ring(x, y, { r1: 38, ms: 480, color: "#ffffff", w: 4 }); FX.burst(x, y, { n: 14, colors: white, speed: 3.8, life: 500, a0: -Math.PI, a1: Math.PI }); FX.shake(5); }
-    else if (kind === "wall") { FX.burst(x, y, { n: 12, colors: red, speed: 2.6, life: 500, a0: -Math.PI, a1: 0 }); FX.shake(2.5); }
+    if (kind === "goal") { api.ring(x, y, { r1: 52, ms: 650, color: "#ffffff" }); api.ring(x, y, { r1: 30, ms: 450, color: "#f5b942", w: 2 }); api.burst(x, y, { n: 26, colors: gold.concat(white), speed: 4.4, grav: 0.1, life: 750, a0: -Math.PI, a1: Math.PI }); api.shake(4); }
+    else if (kind === "save") { api.ring(x, y, { r1: 34, ms: 420, color: "#ffe08a" }); api.burst(x, y, { n: 16, colors: gold, speed: 3.4, life: 550, a0: -Math.PI, a1: Math.PI }); api.shake(3); }
+    else if (kind === "post") { api.ring(x, y, { r1: 38, ms: 480, color: "#ffffff", w: 4 }); api.burst(x, y, { n: 14, colors: white, speed: 3.8, life: 500, a0: -Math.PI, a1: Math.PI }); api.shake(5); }
+    else if (kind === "wall") { api.burst(x, y, { n: 12, colors: red, speed: 2.6, life: 500, a0: -Math.PI, a1: 0 }); api.shake(2.5); }
   };
 
   /* ---------------- camera ---------------- */
@@ -260,7 +311,7 @@
     svg.style.transform = z === 1 && !shakeAmp ? "" : `translate(${cam.sx.toFixed(1)}px,${cam.sy.toFixed(1)}px) scale(${z.toFixed(4)})`;
   }
   // t runs 0 to 1 along the ball's flight: a gentle push in towards the goal.
-  FX.follow = function (t) {
+  api.follow = function (t) {
     if (reduced) return;
     cancelAnimationFrame(cam.raf);
     cam.z = 1 + 0.075 * Math.min(1, t);
@@ -276,14 +327,14 @@
     };
     cam.raf = requestAnimationFrame(step);
   }
-  FX.release = function (ms) { if (!reduced) camTo(1, ms || 700); };
-  FX.punch = function () {
+  api.release = function (ms) { if (!reduced) camTo(1, ms || 700); };
+  api.punch = function () {
     if (reduced) return;
     cam.z = Math.max(cam.z, 1.1); applyCam();
-    setTimeout(() => FX.release(900), 320);
+    setTimeout(() => api.release(900), 320);
   };
 
-  FX.shake = function (amp) {
+  api.shake = function (amp) {
     if (reduced || !svg) return;
     shakeAmp = Math.max(shakeAmp, amp);
     cancelAnimationFrame(shakeRaf);
@@ -298,19 +349,19 @@
   };
 
   /* ---------------- goal moment ---------------- */
-  FX.goal = function (gold) {
+  api.goal = function (gold) {
     if (!stage || reduced) return;
     const flash = stage.querySelector(".fx-flash"), rays = stage.querySelector(".fx-rays");
     [flash, rays].forEach((el) => { if (!el) return; el.classList.remove("on"); void el.offsetWidth; });
     if (flash) flash.classList.add("on");
     if (rays) { rays.classList.toggle("gold", !!gold); rays.classList.add("on"); }
-    FX.cheer(2600);
-    FX.shake(gold ? 7 : 5);
-    FX.punch();
+    api.cheer(2600);
+    api.shake(gold ? 7 : 5);
+    api.punch();
   };
 
   /* ---------------- tidy up between kicks ---------------- */
-  FX.reset = function () {
+  api.reset = function () {
     clearGhosts();
     if (stage) {
       stage.classList.remove("fx-shot");
@@ -321,5 +372,12 @@
     if (!reduced) camTo(1, 350);
   };
 
-  FX.stop = function () { clearTimeout(flashTimer); };
+  api.stop = function () { clearTimeout(flashTimer); };
+
+  return api;
+  }
+
+  const def = make();
+  Object.keys(def).forEach((k) => { FX[k] = def[k]; });
+  FX.create = make;
 })(window.PitchFX = window.PitchFX || {});

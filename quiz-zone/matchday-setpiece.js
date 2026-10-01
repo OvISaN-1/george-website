@@ -18,6 +18,7 @@
   const HOME = { x: 160, y: 438, s: 1 };
   const KICK = { x: 186, y: 430, s: 0.95 };
 
+  const fx = PitchFX.create();   // crowd wave, ball trail, sparks, goal flash (quiz-zone/pitch-fx.js)
   let el = null;        // the overlay
   let st = null;        // state for the current kick
   let token = 0;        // bumps on close(), so old animations stop
@@ -72,6 +73,8 @@
       <span class="sp-tag" aria-hidden="true"></span>`;
     root.appendChild(el);
     const svg = q(".sp-svg");
+    fx.init({ svg, stage: el, ballEl: q(".sp-ball"), crowdEl: q(".sp-crowd"), beforeEl: q(".sp-goal"), poolY: 190,
+      flashPos: () => ({ x: 30 + rand() * 340, y: 112 + rand() * 20 }) });
     svg.addEventListener("pointerdown", (e) => {
       if (!st) return;
       if (st.phase === "aim") {
@@ -92,7 +95,7 @@
   }
 
   /* ---------------- drawing ---------------- */
-  function setBall(x, y, s, spin) { q(".sp-ball").setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${s.toFixed(3)}) rotate(${(spin || 0).toFixed(0)})`); }
+  function setBall(x, y, s, spin) { fx.trail(x, y, s); q(".sp-ball").setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${s.toFixed(3)}) rotate(${(spin || 0).toFixed(0)})`); }
   function setShadow(x, y, s, o) {
     const sh = q(".sp-shadow");
     sh.setAttribute("cx", x.toFixed(1)); sh.setAttribute("cy", y.toFixed(1));
@@ -148,11 +151,13 @@
       const y = 56 + row * 11.5;
       for (let x = -296 + (row % 2) * 4; x < 700; x += 8.2) {
         const col = !o.home && x < -100 ? pick(["#e1102c", "#e1102c", "#f4efe9"]) : pick(cols);
-        crowd += `<circle cx="${x.toFixed(1)}" cy="${(y + (rand() - 0.5) * 3).toFixed(1)}" r="3.1" fill="${col}"/>`;
+        crowd += `<circle class="fan" cx="${x.toFixed(1)}" cy="${(y + (rand() - 0.5) * 3).toFixed(1)}" r="3.1" fill="${col}"/>`;
       }
     }
     crowd += fanBanners();
     q(".sp-crowd").innerHTML = crowd;
+    fx.waveCrowd(q(".sp-crowd"));
+    fx.setNight(o.night);
     q(".sp-led").textContent = ("COME ON YOU REDS ★ GEORGE 10 ★ " + (o.ground || "").toUpperCase() + " ★ ").repeat(6);
     const k = L.k, back = 12 * k;
     q(".sp-goal").innerHTML = `
@@ -176,16 +181,17 @@
     const sw = L.sw;
     const skins = ["#f1c7a0", "#d9a67f", "#8d5a3b", "#5c3a24", "#e8b48f"];
     q(".sp-wall").innerHTML = K.wallN ? L.defenders.map((x) =>
-      `<g class="sp-def" data-x="${x}" data-y="${L.wallY}" data-s="${sw * 1.15}" transform="translate(${x.toFixed(1)} ${L.wallY.toFixed(1)}) scale(${(sw * 1.15).toFixed(3)})">${GK.defender(o.oppKit.shirt, o.oppKit.shorts, pick(skins), "#231914")}</g>`
+      `<g class="sp-def" data-x="${x}" data-y="${L.wallY}" data-s="${sw * 1.15}" transform="translate(${x.toFixed(1)} ${L.wallY.toFixed(1)}) scale(${(sw * 1.15).toFixed(3)})">${fx.idle(GK.defender(o.oppKit.shirt, o.oppKit.shorts, pick(skins), "#231914"), "shuffle")}</g>`
     ).join("") : "";
-    q(".sp-keeper").innerHTML = GK.keeper(o.keeperKit, false);
+    q(".sp-keeper").innerHTML = fx.idle(GK.keeper(o.keeperKit, false), "pace");
     setKeeper(L.keeperX, L.gy, L.k * 1.05, 0, 0, 0);
-    q(".sp-striker").innerHTML = GK.georgeStriker(o.kitKey, o.boots);
+    q(".sp-striker").innerHTML = fx.idle(GK.georgeStriker(o.kitKey, o.boots), "breathe", 0);
     setStriker(HOME.x, HOME.y, HOME.s);
     setKickLeg(0);
     ballBehindKeeper(false);
     q(".sp-ball").style.opacity = 1;
     setBall(BX, BY, 1); setShadow(BX, BY + 7, 1);
+    fx.reset(); fx.spot(BX, BY + 1);
     q(".sp-trail").setAttribute("d", ""); q(".sp-trail").style.opacity = 0;
     q(".sp-aim").setAttribute("opacity", 0);
     q(".sp-guide").setAttribute("d", "");
@@ -289,8 +295,10 @@
     if (st.kind === "shot" && shot.result === "saved" && rand() < 0.12) { shot.result = "goal"; st.squeezed = true; }
     if (st.kind === "shot" && shot.result === "post" && rand() < 0.5) shot.result = "post-in";
     st.lastShot = shot;
+    fx.shot(true);
     await runUp();
     st.sfx.kick();
+    fx.kickDust(BX, BY + 8);
     await animateShot(shot, 1);
     st.done({ result: shot.result, goal: shot.result === "goal" || shot.result === "post-in", shot, topBins: !!shot.topBins, curl: st.curl });
   }
@@ -333,6 +341,7 @@
       const tau = t * stopTau;
       const p = FKP.flightPoint(shot, tau);
       setBall(p.x, p.y, p.s, tau * 900 * Math.sign(shot.curl || 1));
+      fx.follow(tau);
       setShadow(p.gx, p.gy + 6 * p.s, p.s, 0.35 * (1 - tau * 0.6));
       trail.push(`${p.x.toFixed(1)} ${p.y.toFixed(1)}`);
       trailEl.setAttribute("d", "M" + trail.slice(-14).join(" L"));
@@ -342,22 +351,28 @@
     const ball = q(".sp-ball");
     if (shot.result === "wall") {
       st.sfx.thud();
+      fx.hit(end.x, end.y, "wall"); fx.groan(); fx.release();
       await tween(450 / speed, (t) => setBall(end.x + (shot.curl >= 0 ? 1 : -1) * 40 * t, end.y + 60 * t * t - 30 * t, end.s + 0.2 * t, 0));
     } else if (shot.result === "saved") {
       st.sfx.save();
+      fx.hit(end.x, end.y, "save"); fx.groan(); fx.release();
       const dir = shot.tx < L.gx ? -1 : 1;
       await tween(420 / speed, (t) => setBall(end.x + dir * 50 * t, end.y + 40 * t * t - 10 * t, end.s + 0.1 * t, 0));
     } else if (shot.result === "post" || shot.result === "post-in") {
       st.sfx.post();
+      fx.hit(end.x, end.y, "post");
       const inward = shot.result === "post-in";
+      if (inward) fx.goal(false); else { fx.groan(); fx.release(); }
       const dirX = shot.tx < L.gx ? (inward ? 1 : -1) : (inward ? -1 : 1);
       await tween(420 / speed, (t) => setBall(end.x + dirX * 26 * L.k * t, end.y + (inward ? 14 : 30) * L.k * t, end.s, 0));
       if (inward) rippleNet();
     } else if (shot.result === "over" || shot.result === "wide") {
+      fx.groan(); fx.release();
       await tween(350 / speed, (t) => { setBall(end.x + (end.x - BX) * 0.15 * t, end.y - 40 * t, end.s * (1 - 0.3 * t), 0); ball.style.opacity = 1 - t; });
     } else {
       // GOAL: the ball carries on past the line into the back of the net, behind the keeper.
       ballBehindKeeper(true);
+      fx.hit(end.x, end.y, "goal"); fx.goal(!!shot.topBins);
       q(".sp-shadow").setAttribute("fill-opacity", 0);
       rippleNet();
       const back = 12 * L.k;
@@ -489,8 +504,10 @@
     setKeeper(L.keeperX, L.gy, L.k * 1.05, 0, 0, 0);
     setStriker(HOME.x, HOME.y, HOME.s);
     setKickLeg(0);
+    fx.reset(); fx.shot(true);
     await runUp();
     await animateShot(shot, 0.35);
+    fx.release();
     await sleep(400);
     el.classList.remove("replaying");
     q(".sp-tag").textContent = "";

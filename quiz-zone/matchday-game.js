@@ -77,6 +77,7 @@
   // "Clap clap, clap-clap-clap" from the Forest end.
   function claps() { [0, 0.4, 0.8, 1.0, 1.2, 1.8, 2.2, 2.6, 2.8, 3.0].forEach((t) => burst(t, 0.07, 0.4, 1900)); }
 
+  const MDFX = PitchFX.create();      // crowd wave, ball trail, sparks, goal flash (quiz-zone/pitch-fx.js)
   const PW = 105, PH = 68;           // pitch size in metres
   const U = 10;                       // SVG units per metre
   const GOAL_TOP = 34 - 3.66, GOAL_BOT = 34 + 3.66;
@@ -312,7 +313,7 @@
         <path d="M${x0} ${GOAL_TOP} v7.32" stroke="#fff" stroke-width="0.35"/></g>`;
     const dugout = (x) => `<g><rect x="${x}" y="-3.4" width="9" height="2" rx="0.5" fill="#15121a" stroke="#555" stroke-width="0.1"/><rect x="${x + 0.4}" y="-3.1" width="8.2" height="1.1" fill="#3a3540"/></g>
       <rect x="${x - 1}" y="-1.2" width="11" height="1" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="0.08" stroke-dasharray="0.4 0.4"/>`;
-    const lights = night ? [[-6, -6], [PW + 6, -6], [-6, PH + 6], [PW + 6, PH + 6]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="42" fill="url(#g-flood)"/>`).join("") : "";
+    const lights = night ? [[-6, -6], [PW + 6, -6], [-6, PH + 6], [PW + 6, PH + 6]].map(([x, y], i) => `<circle class="fx-flood" cx="${x}" cy="${y}" r="42" fill="url(#g-flood)"/><path class="fx-twinkle" style="animation-delay:${i * 0.7}s" fill="#fff6d8" d="M${x} ${y - 3} L${x + 0.6} ${y - 0.6} L${x + 3} ${y} L${x + 0.6} ${y + 0.6} L${x} ${y + 3} L${x - 0.6} ${y + 0.6} L${x - 3} ${y} L${x - 0.6} ${y - 0.6} Z"/>`).join("") : "";
     return `
       <defs>
         <pattern id="p-net" width="0.6" height="0.6" patternUnits="userSpaceOnUse"><path d="M0 0 L0.6 0.6 M0.6 0 L0 0.6" stroke="#fff" stroke-opacity=".55" stroke-width="0.07"/></pattern>
@@ -366,6 +367,7 @@
     const r = p.george ? 21 : 16;
     return `<g class="md-tok${p.george ? " george" : ""}" id="tok-${p.id}">
       <ellipse cx="3" cy="${r * 0.75}" rx="${r}" ry="${r * 0.42}" fill="#000" opacity=".28"/>
+      <g class="wake" opacity="0"><ellipse cx="${-r * 1.5}" cy="0" rx="${r * 1.2}" ry="${r * 0.55}" fill="#fff"/></g>
       ${p.george ? `<circle class="g-ring" r="${r + 6}" fill="none" stroke="#f5b942" stroke-width="3"/>` : ""}
       <circle r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${p.george ? 3.5 : 2.5}"/>
       <text class="tok-num" y="${p.george ? 6 : 5}" text-anchor="middle" font-family="Rajdhani, Arial Narrow, sans-serif" font-weight="700" font-size="${p.george ? 18 : 15}" fill="${txt}">${p.num}</text>
@@ -401,6 +403,18 @@
     $("stage").classList.toggle("rain", S.rain);
     $("stage").classList.toggle("snow", !!S.snow);
     $("stage").classList.toggle("night", S.night);
+    S.players.forEach((p) => { p.wake = p.el.querySelector(".wake"); });
+    svg.classList.add("fx-td");
+    const standPos = () => {
+      const w = rand();
+      if (w < 0.35) return { x: -9 + rand() * (PW + 18), y: -7.6 + rand() * 2 };
+      if (w < 0.7) return { x: -9 + rand() * (PW + 18), y: PH + 5.6 + rand() * 2 };
+      if (w < 0.85) return { x: -7.6 + rand() * 1.2, y: -3 + rand() * (PH + 6) };
+      return { x: PW + 6.6 + rand() * 1.2, y: -3 + rand() * (PH + 6) };
+    };
+    MDFX.init({ svg, stage: $("stage"), ballEl: "ball-g", crowdEl: "crowd-g", topDown: true, fxLayer: "fx-top", camOrigin: [50, 50],
+      ghostJump: 300, ghostMin: 6, ghostScale: 0.8, flashR: 0.4, flashPos: standPos });
+    MDFX.waveStands($("crowd-g"), PH);
     setZoom();
   }
 
@@ -487,6 +501,12 @@
       p.x += dx;
       p.y += dy;
       p.el.setAttribute("transform", `translate(${(p.x * U).toFixed(1)} ${(p.y * U).toFixed(1)})`);
+      // A faint streak behind anyone who is really moving.
+      if (p.wake) {
+        const v = (Math.hypot(dx, dy) * 1000) / Math.max(8, dt), o = v > 5.5 ? Math.min(0.38, (v - 5.5) / 16) : 0;
+        p.wake.setAttribute("opacity", o.toFixed(2));
+        if (o) p.wake.setAttribute("transform", `rotate(${(Math.atan2(dy, dx) * 57.296).toFixed(0)}) scale(${(0.7 + Math.min(1, (v - 5.5) / 9)).toFixed(2)} 1)`);
+      }
     });
     // Ball follows whoever has it.
     if (S.carrier && !S.ballFlying) {
@@ -505,6 +525,7 @@
     S.ballSh.setAttribute("cx", bx + lift * 0.3);
     S.ballSh.setAttribute("cy", by + 4);
     S.ballB.setAttribute("transform", `translate(${bx.toFixed(1)} ${(by - lift).toFixed(1)}) scale(${(1 + S.ball.h * 0.09).toFixed(2)}) rotate(${((S.ball.x + S.ball.y) * 40) % 360})`);
+    MDFX.trail(bx, by - lift, 1 + S.ball.h * 0.09);
     // Officials
     const r = S.refP;
     const rt = { x: clamp(S.ball.x - 9, 12, PW - 12), y: clamp(S.ball.y + (S.ball.y < 34 ? 10 : -10), 6, PH - 6) };
@@ -585,11 +606,12 @@
     }
     const f = frameAt(R.clip, pt);
     const n = S.players.length;
-    S.players.forEach((p, i) => { p.el.setAttribute("transform", `translate(${(f.xy[i * 2] * U).toFixed(1)} ${(f.xy[i * 2 + 1] * U).toFixed(1)})`); });
+    S.players.forEach((p, i) => { p.el.setAttribute("transform", `translate(${(f.xy[i * 2] * U).toFixed(1)} ${(f.xy[i * 2 + 1] * U).toFixed(1)})`); if (p.wake) p.wake.setAttribute("opacity", "0"); });
     const bx = f.xy[n * 2] * U, by = f.xy[n * 2 + 1] * U, lift = f.xy[n * 2 + 2] * 6;
     S.ballSh.setAttribute("cx", bx + lift * 0.3);
     S.ballSh.setAttribute("cy", by + 4);
     S.ballB.setAttribute("transform", `translate(${bx.toFixed(1)} ${(by - lift).toFixed(1)}) scale(${(1 + f.xy[n * 2 + 2] * 0.09).toFixed(2)})`);
+    MDFX.trail(bx, by - lift, 1 + f.xy[n * 2 + 2] * 0.09);
     S.refP.el.setAttribute("transform", `translate(${(f.rx * U).toFixed(1)} ${(f.ry * U).toFixed(1)})`);
     $("carrier-label").setAttribute("opacity", "0");
     // Replay camera: always zoomed in on the ball.
@@ -749,6 +771,7 @@
     const loser = S.carrier;
     S.carrier = p; S.poss = p.team;
     S.stats[p.team].tackles += 1;
+    puff(p.x, p.y, 7);
     // The player who lost it stops running at goal.
     if (loser && loser !== p) { loser.hold = null; }
     p.hold = null;
@@ -768,10 +791,17 @@
     tackler.hold = null;
     S.carrier = tackler; S.poss = t;
     S.stats[t].tackles += 1;
+    puff(tackler.x, tackler.y, 7);
     if (c && !c.gk) { c.hold = null; }
   }
   function holdAt(p, x, y, fast) { p.hold = { x, y }; p.fast = !!fast; }
   function releaseAll() { S.players.forEach((p) => { p.hold = null; p.fast = false; }); }
+
+  // Overhead dust and rings (pitch units in, screen units out).
+  function puff(x, y, n) {
+    MDFX.burst(x * U, y * U, { n: n || 9, colors: ["#8ccf84", "#5fa85a", "#b99b6a", "#e6f5d8"], speed: 2.3, grav: 0, life: 520, size: 2.8, a0: -Math.PI, a1: Math.PI });
+    MDFX.ring(x * U, y * U, { r0: 6, r1: 30, ms: 420, color: "#ffffff", w: 2 });
+  }
 
   function trail(from, to, colour) {
     const fx = $("fx-pitch");
@@ -926,6 +956,8 @@
     }
     offender.hold = null;
     sfx.thud();
+    puff(victim.x, victim.y, 12);
+    MDFX.shake(2);
     sfx.whistle();
     const card = rand() < 0.4;
     if (!card) { say(`Free kick. ${offender.short} catches ${victim.george ? "George" : victim.short}. ${S.ref} has a word.`, { icon: "whistle" }); return; }
@@ -944,6 +976,7 @@
     const cardEl = p.el.querySelector(".tok-card");
     cardEl.setAttribute("fill", c === "yellow" ? "#f5d000" : "#e1102c");
     cardEl.setAttribute("opacity", "1");
+    MDFX.ring(p.x * U, p.y * U, { r0: 10, r1: 70, ms: 700, color: c === "yellow" ? "#f5d000" : "#e1102c", w: 4 });
     const teamName = t === "f" ? "Forest" : S.opp.name;
     $("card-overlay").className = "md-card-pop " + (c === "yellow" ? "yellow" : "red");
     $("card-who").textContent = `${p.name} (${t === "f" ? "NFO" : S.opp.abbr})`;
@@ -1233,10 +1266,12 @@
     if (result === "goal" || result === "save" || result === "post") S.stats[t].onTarget += result === "post" ? 0 : 1;
     trail({ x: S.ball.x, y: S.ball.y }, target, t === "f" ? "#f5b942" : "#ff5d5d");
     sfx.kick();
+    puff(S.ball.x, S.ball.y, 8);
     if (result === "save") {
       holdAt(keeper, keeper.x, target.y, true);
       await ballTo(t === "f" ? PW - 2.5 : 2.5, target.y, o.ms || 520, o.lift || 1.2);
       sfx.save();
+      MDFX.hit(S.ball.x * U, S.ball.y * U, "save");
       S.stats[other(t)].saves += 1;
       await ballTo(t === "f" ? PW + 1 : -1, target.y < 34 ? -1 : PH + 1, 420, 1.5);
       return "save";
@@ -1244,6 +1279,7 @@
     if (result === "post") {
       await ballTo(target.x - (t === "f" ? 1 : -1), GOAL_TOP, o.ms || 520, o.lift || 1.5);
       sfx.post();
+      MDFX.hit(S.ball.x * U, S.ball.y * U, "post");
       await ballTo(t === "f" ? PW - 14 : 14, 20, 500, 1);
       return "post";
     }
@@ -1251,6 +1287,7 @@
       const y = rand() < 0.5 ? GOAL_TOP - 3 - rand() * 4 : GOAL_BOT + 3 + rand() * 4;
       await ballTo(t === "f" ? PW + 3 : -3, y, o.ms || 560, o.lift || 2);
       sfx.aww();
+      MDFX.groan();
       return "miss";
     }
     // Goal!
@@ -1258,6 +1295,7 @@
     holdAt(keeper, t === "f" ? PW - 1.2 : 1.2, target.y < 34 ? GOAL_BOT - 0.6 : GOAL_TOP + 0.6, true);
     await ballTo(target.x, target.y, o.ms || 520, o.lift || 1.2);
     S.goalRec = S.recClock;
+    MDFX.hit(target.x * U, target.y * U, "goal");
     const net = $(t === "f" ? "net-r" : "net-l");
     net.classList.remove("flash"); void net.getBBox(); net.classList.add("flash");
     return "goal";
@@ -1354,6 +1392,7 @@
     const c = $("crowd-g");
     if (!c || reduced) return;
     c.classList.remove("bounce"); void c.getBBox(); c.classList.add("bounce");
+    MDFX.cheer(2400);
   }
 
   async function scoreGoal(t, scorer, assister, kind) {
@@ -1371,8 +1410,7 @@
       crowd.swell(0.3, 3.5);
       bounceCrowd();
       pop("GOAL!");
-      if (!reduced) $("stage").classList.add("shake");
-      setTimeout(() => $("stage").classList.remove("shake"), 600);
+      MDFX.goal(scorer.george);
       GK.confetti($("confetti"), 140);
       const line = scorer.george
         ? pick([`GEORGE! What a finish! ${S.score.f}-${S.score.o} Forest!`, scorer.goals > 1 ? `It's George! Again! ${S.home ? "The City Ground erupts!" : "The away end is bouncing!"}` : `It's George! ${S.home ? "The City Ground erupts!" : "The away end goes wild!"}`, `George, you beauty! That is top class.`, `GOAL! George with the finish, cool as you like.`])
@@ -1385,6 +1423,7 @@
       claps();
     } else {
       sfx.aww();
+      MDFX.groan();
       crowd.swell(0.02, 3);
       pop(`${S.opp.abbr} GOAL`, "soft");
       say(`${S.opp.name} score. ${scorer.short} finds the net. ${S.score.f}-${S.score.o}.`, { icon: "goal", log: true, team: "o", voice: true });
