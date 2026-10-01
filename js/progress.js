@@ -9,6 +9,7 @@
   "use strict";
   const $ = (id) => document.getElementById(id);
   const OURS = /^(gz_|gamezone_|gw_)/;
+  const SKIP = /^gz_account/;          // the login is never part of a save or load
   const FORMAT = "george-website-progress";
 
   function collect() {
@@ -16,7 +17,7 @@
     try {
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (OURS.test(k)) data[k] = localStorage.getItem(k);
+        if (OURS.test(k) && !SKIP.test(k)) data[k] = localStorage.getItem(k);
       }
     } catch (e) {}
     return data;
@@ -93,7 +94,7 @@
   function check(obj) {
     if (!obj || obj.format !== FORMAT || typeof obj.data !== "object") throw new Error("wrong format");
     const data = {};
-    Object.entries(obj.data).forEach(([k, v]) => { if (OURS.test(k) && typeof v === "string") data[k] = v; });
+    Object.entries(obj.data).forEach(([k, v]) => { if (OURS.test(k) && !SKIP.test(k) && typeof v === "string") data[k] = v; });
     if (!Object.keys(data).length) throw new Error("empty");
     pending = data;
     list($("there"), describe(data).concat(obj.saved ? [`🕒 Saved ${new Date(obj.saved).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}${obj.from ? " on " + obj.from : ""}`] : []));
@@ -121,4 +122,102 @@
     list($("here"), describe(collect()));
     loadMsg("✓ Loaded! Everything is back. Off you go and play. ⚽", true);
   });
+
+  /* ================================================================
+     Login: username + password, kept in step by js/sync.js
+     ================================================================ */
+  const Sync = window.GZSync;
+  if (Sync) {
+    let mode = "login";
+    const msg = (t, ok) => { $("acct-msg").textContent = t; $("acct-msg").className = "msg " + (ok ? "good" : "bad"); };
+    const ERR = {
+      bad_username: "Username: 3 to 18 letters, numbers, - or _ (no spaces).",
+      bad_password: "Password: at least 4 characters.",
+      taken: "Someone already has that username. Try another one.",
+      wrong: "Wrong username or password. Check the spelling.",
+      locked: "Too many wrong tries. Please wait 15 minutes, then try again.",
+      busy: "Lots of people are signing up right now. Try again in a minute.",
+      too_big: "Your save is too big to store. Ask Dad.",
+      offline: "Can't reach the internet. Check your connection and try again.",
+      setup: "Logins aren't switched on yet. Ask Dad to finish the setup.",
+    };
+    const when = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }); };
+
+    function setMode(m) {
+      mode = m;
+      $("tab-login").setAttribute("aria-selected", m === "login");
+      $("tab-create").setAttribute("aria-selected", m === "create");
+      $("tab-login").className = "btn" + (m === "login" ? "" : " alt");
+      $("tab-create").className = "btn" + (m === "create" ? "" : " alt");
+      $("a-go").textContent = m === "login" ? "Log in" : "Make my login";
+      $("a-hint").hidden = m !== "create";
+      $("a-pass").setAttribute("autocomplete", m === "login" ? "current-password" : "new-password");
+      msg("", true);
+    }
+    $("tab-login").addEventListener("click", () => setMode("login"));
+    $("tab-create").addEventListener("click", () => setMode("create"));
+
+    async function render() {
+      const a = Sync.account();
+      $("acct-out").hidden = !!a;
+      $("acct-in").hidden = !a || !!a.conflict;
+      $("acct-choose").hidden = !a || !a.conflict;
+      if (!a) return;
+      $("who-name").textContent = a.display || a.user;
+      $("who-sync").textContent = a.base ? `Last saved to your account: ${when(a.base)}. It saves by itself while you play.` : "";
+      list($("who-here"), describe(Sync.collect()));
+      if (a.conflict) {
+        list($("pick-here"), describe(Sync.collect()));
+        list($("pick-account"), ["Loading..."]);
+        const r = await Sync.peek();
+        list($("pick-account"), r && r.ok ? describe(r.data || {}) : ["Couldn't load. Check your internet."]);
+      }
+    }
+
+    $("acct-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const user = $("a-user").value, pass = $("a-pass").value;
+      $("a-go").disabled = true;
+      msg(mode === "login" ? "Logging in..." : "Making your login...", true);
+      const r = mode === "login" ? await Sync.login(user, pass) : await Sync.create(user, pass);
+      $("a-go").disabled = false;
+      if (!r.ok) return msg(ERR[r.error] || "Something went wrong. Try again.", false);
+      $("a-pass").value = "";
+      await render();
+      if (mode === "create") msg("✓ Your login is ready, and your progress is saved. Use the same username and password on any other device.", true);
+      else if (r.state === "loaded") { msg("✓ Welcome back! Your progress is loaded on this device.", true); list($("who-here"), describe(Sync.collect())); }
+      else if (r.state === "saved") msg("✓ Logged in. Your progress from this device is now saved to your account.", true);
+      else if (r.state === "choose") msg("", true);
+      else msg("✓ Logged in. Everything matches.", true);
+    });
+
+    $("a-now").addEventListener("click", async () => {
+      msg("Saving...", true);
+      const r = await Sync.push(false);
+      if (r.ok) { msg("✓ Saved to your account.", true); await render(); }
+      else if (r.error === "conflict") { await render(); msg("", true); }
+      else msg(ERR[r.error] || "Couldn't save. Try again.", false);
+    });
+    $("a-out").addEventListener("click", async () => {
+      await Sync.logout();
+      msg("Logged out on this device. Your progress is still safe in your account.", true);
+      setMode("login");
+      await render();
+    });
+    const choose = async (which) => {
+      msg(which === "device" ? "Saving this device's progress to your account..." : "Loading your account's progress...", true);
+      const r = await Sync.resolve(which);
+      if (!r.ok) return msg(ERR[r.error] || "Couldn't do that. Try again.", false);
+      msg(which === "device" ? "✓ Done. Your account now matches this device." : "✓ Done. This device now matches your account.", true);
+      list($("here"), describe(Sync.collect()));
+      await render();
+    };
+    $("keep-device").addEventListener("click", () => choose("device"));
+    $("keep-account").addEventListener("click", () => choose("account"));
+
+    setMode("login");
+    render();
+  } else {
+    $("acct").hidden = true;
+  }
 })();
