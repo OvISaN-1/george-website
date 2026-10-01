@@ -135,17 +135,10 @@ function storageSet(key, value) {
 }
 
 /* ---- Card renderer --------------------------------------------------------
-   type: 'football' | 'gaming' | 'school' — controls the accent colour
-   and the tag label shown on each card. */
+   type: 'football' | 'gaming' | 'school' — controls the accent colour. */
 function renderCards(containerId, items, type) {
   const container = $(containerId);
   if (!container || !items) return;
-
-  const tagLabel = {
-    football: 'Football',
-    gaming: 'Video Games',
-    school: 'School Zone',
-  }[type] || '';
 
   const placeholderIcon = `
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
@@ -163,7 +156,6 @@ function renderCards(containerId, items, type) {
       return `
         <article class="card ${type} reveal">
           ${photoBlock}
-          <span class="tag">${escapeHtml(tagLabel)}</span>
           <h3>${escapeHtml(item.title)}</h3>
           ${item.meta ? `<p class="mono-num" style="margin-bottom:0;">${escapeHtml(item.meta)}</p>` : ''}
           <p>${escapeHtml(item.description)}</p>
@@ -478,7 +470,7 @@ function renderFixtures(live) {
       <div class="fxr-top"><span class="fx-date">${escapeHtml(when(f))}</span><span class="fx-chip ${r}" aria-label="${r === 'W' ? 'Forest won' : r === 'L' ? 'Forest lost' : 'Draw'}">${r}</span></div>
       <div class="fxr-board">
         <span class="fxr-team fxr-home${home ? ' is-forest' : ''}">${escapeHtml(hName)}</span>
-        <span class="fxr-score">${hGoals}<span aria-hidden="true"> – </span><span class="visually-hidden"> to </span>${aGoals}</span>
+        <span class="fxr-score">${hGoals}<span aria-hidden="true"> - </span><span class="visually-hidden"> to </span>${aGoals}</span>
         <span class="fxr-team fxr-away${home ? '' : ' is-forest'}">${escapeHtml(aName)}</span>
       </div>
       <div class="fxr-events" data-date="${escapeAttr(f.date)}" data-home="${home ? 'forest' : 'opp'}" hidden></div>
@@ -656,7 +648,7 @@ function renderMatchCentre(el, m) {
   const live = LIVE_STATUSES.includes(m.status);
   const state = live ? `<span class="mc-live">🔴 LIVE ${m.status === 'HT' ? 'Half-time' : `${m.elapsed}'`}</span>` : m.status === 'NS' ? `<span class="mc-soon">Kick-off ${new Date(m.kickoff).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' })}</span>` : `<span class="mc-ft">${escapeHtml(m.statusText || 'Full time')}</span>`;
   const us = `<span class="mc-team us">Forest</span>`, them = `<span class="mc-team">${escapeHtml(m.opponent)}</span>`;
-  const score = m.forest == null ? 'v' : m.home ? `${m.forest} – ${m.opp}` : `${m.opp} – ${m.forest}`;
+  const score = m.forest == null ? 'v' : m.home ? `${m.forest} - ${m.opp}` : `${m.opp} - ${m.forest}`;
   const events = (m.events || []).slice().reverse();
   el.innerHTML = `
     <div class="mc-head">${state}${m.venue ? `<span class="mc-venue">🏟️ ${escapeHtml(m.venue)}</span>` : ''}</div>
@@ -840,9 +832,9 @@ function renderTracker(el, fixtures, past, preds) {
     return `<tr>
       <td>${escapeHtml(d)}</td>
       <td>${escapeHtml(f.opponent)} (${f.venue === 'H' ? 'H' : 'A'})</td>
-      <td class="mono-num">${p.pred_forest != null ? `${p.pred_forest}-${p.pred_opponent}` : '–'}</td>
+      <td class="mono-num">${p.pred_forest != null ? `${p.pred_forest}-${p.pred_opponent}` : '-'}</td>
       <td class="mono-num">${p.result_forest != null ? `${p.result_forest}-${p.result_opponent}` : (isLive(f) ? 'playing' : 'waiting')}</td>
-      <td class="mono-num ${pts == null ? '' : 'pts-' + pts}">${pts == null ? '–' : pts}</td>
+      <td class="mono-num ${pts == null ? '' : 'pts-' + pts}">${pts == null ? '-' : pts}</td>
     </tr>`;
   }).join('');
 
@@ -872,7 +864,7 @@ function renderGames(C) {
   const body = $('scores-body');
   if (body && G.topScores) {
     body.innerHTML = G.topScores.map((r) =>
-      `<tr><td><span class="icon-badge sm purple" aria-hidden="true">🏆</span>${escapeHtml(r.game)}</td><td class="mono-num"><span class="score-value">${escapeHtml(r.best)}</span></td><td class="mono-num">${escapeHtml(r.date)}</td></tr>`
+      `<tr><td><span class="icon-badge sm gold" aria-hidden="true">🏆</span>${escapeHtml(r.game)}</td><td class="mono-num"><span class="score-value">${escapeHtml(r.best)}</span></td><td class="mono-num">${escapeHtml(r.date)}</td></tr>`
     ).join('');
   }
   setText('trying-to-beat', G.tryingToBeat);
@@ -915,7 +907,7 @@ function renderAbout(C) {
   const A = C.about || {};
   renderList('fun-facts', A.funFacts);
   const loves = $('loves');
-  const badgeColours = ['red', 'purple', 'gold', 'pink', 'teal'];
+  const badgeColours = ['red', 'gold'];
   if (loves && A.loves) {
     loves.innerHTML = A.loves.map((x, i) =>
       `<article class="card love-card${x.dogPhoto ? ' dog-card' : ''}">${x.dogPhoto ? `<figure class="dog-photo" id="dog-photo"><span class="love-emoji" aria-hidden="true">${escapeHtml(x.emoji)}</span></figure>` : `<span class="icon-badge ${badgeColours[i % badgeColours.length]} love-emoji" aria-hidden="true">${escapeHtml(x.emoji)}</span>`}<h3>${escapeHtml(x.title)}</h3><p>${escapeHtml(x.text)}</p>${x.dogPhoto ? '<button type="button" class="link-btn dog-next" id="dog-next">Another one! 🐶</button>' : ''}${x.jukebox ? '<div class="jukebox" id="jukebox"><button type="button" class="jukebox-btn" id="jukebox-btn">▶ Play some AC/DC</button><p class="jukebox-now" id="jukebox-now" aria-live="polite"></p></div>' : ''}</article>`

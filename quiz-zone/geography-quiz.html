@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Capital Quest — Guess the Capital</title>
+<title>Capital Quest | Guess the Capital</title>
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://georgeneagu.win/quiz-zone/geography-quiz.html">
-<meta property="og:title" content="Capital Quest — George's Game Zone">
-<meta property="og:description" content="Guess the capital city from the country's shape — every UN member state, 60 seconds on the clock.">
+<meta property="og:title" content="Capital Quest | George's Game Zone">
+<meta property="og:description" content="Guess the capital city from the country's shape: every UN member state, 60 seconds on the clock.">
 <meta property="og:image" content="https://georgeneagu.win/assets/images/share/capital-quest.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://georgeneagu.win/assets/images/share/capital-quest.png">
-<meta name="description" content="Guess the capital city from the country's shape — every UN member state, 60 seconds on the clock.">
+<meta name="description" content="Guess the capital city from the country's shape: every UN member state, 60 seconds on the clock.">
 <meta name="robots" content="noindex, nofollow">
 <link rel="canonical" href="https://georgeneagu.win/quiz-zone/geography-quiz.html">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121014'/%3E%3Ctext x='16' y='23' font-family='Arial, sans-serif' font-weight='700' font-size='19' fill='%23e1102c' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E">
@@ -297,7 +297,7 @@
   </div>
   <div id="timer-bar-track"><div id="timer-bar"></div></div>
   <div class="prompt" id="prompt">What is the capital of...</div>
-  <div class="country-name" id="country-name"><img class="q-flag" id="q-flag" alt="" hidden><span id="country-label">—</span></div>
+  <div class="country-name" id="country-name"><img class="q-flag" id="q-flag" alt="" hidden><span id="country-label">-</span></div>
   <div id="map-box"><svg id="map-svg" viewBox="0 0 300 230"></svg></div>
   <div id="flag-box" hidden><img id="big-flag" alt="Mystery flag"></div>
   <div class="answers" id="answers"></div>
@@ -882,10 +882,10 @@ function handleAnswer(btn, chosen, correct) {
 
 function resultsMessageFor(nickname, score) {
   const what = mode === "flags" ? "flags" : "capitals";
-  if (score >= 20) return `Wow, ${nickname}! ${score} ${what} — you're a walking atlas! 🌍🏆`;
+  if (score >= 20) return `Wow, ${nickname}! ${score} ${what}. You're a walking atlas! 🌍🏆`;
   if (score >= 10) return `Great round, ${nickname}! ${score} ${what} correct. 🌍`;
   if (score >= 1) return `Nice one, ${nickname}! ${score} correct. Have another go!`;
-  return `That's alright, ${nickname} — everyone misses now and then. Try again!`;
+  return `That's alright, ${nickname}. Everyone misses now and then. Try again!`;
 }
 
 function endGame() {

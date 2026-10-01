@@ -51,7 +51,7 @@
     $('sats-summary').innerHTML = `
       <div><b>${topicsTried.length}</b><span>of ${topicCount} topics tried</span></div>
       <div><b>${answered}</b><span>questions answered</span></div>
-      <div><b>${answered ? Math.round((right / answered) * 100) + '%' : '–'}</b><span>right overall</span></div>
+      <div><b>${answered ? Math.round((right / answered) * 100) + '%' : '-'}</b><span>right overall</span></div>
       <div><b>${starCount} ⭐</b><span>of ${topicCount * 3} stars</span></div>`;
   }
   function renderHome() {

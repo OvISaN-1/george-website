@@ -1347,7 +1347,7 @@
     const el = $("lower-third");
     const kit = t === "f" ? S.forestKit : S.oppKit;
     el.style.setProperty("--lt", kit.shirt === "#f4f1ee" || kit.shirt === "#ffffff" ? "#d7102b" : kit.shirt);
-    el.innerHTML = `<b>⚽ GOAL</b><span>${escapeHtml(g.who.toUpperCase())} ${g.minLabel}'</span><em>NFO ${S.score.f} – ${S.score.o} ${escapeHtml(S.opp.abbr)}</em>`;
+    el.innerHTML = `<b>⚽ GOAL</b><span>${escapeHtml(g.who.toUpperCase())} ${g.minLabel}'</span><em>NFO ${S.score.f} - ${S.score.o} ${escapeHtml(S.opp.abbr)}</em>`;
     el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
   }
   function bounceCrowd() {
@@ -2351,7 +2351,7 @@
         <p class="md-kicker">Full-time · ${escapeHtml(S.ground)}</p>
         <div class="md-ft-score">
           <div><i style="background:${S.forestKit.shirt}"></i><span>Forest</span></div>
-          <b>${S.score.f} – ${S.score.o}</b>
+          <b>${S.score.f} - ${S.score.o}</b>
           <div><i style="background:${S.oppKit.shirt}"></i><span>${escapeHtml(S.opp.name)}</span></div>
         </div>
         <p class="md-ft-scorers">${fScorers ? "⚽ " + fScorers : ""}${fScorers && oScorers ? "<br>" : ""}${oScorers ? `<span class="o">${oScorers}</span>` : ""}</p>
@@ -2411,7 +2411,7 @@
     writeReport(motm);
     if ($("r-share")) $("r-share").onclick = async () => {
       const g = S.george.goals;
-      const how = await window.GZShare(`⚽ Matchday: Forest ${S.score.f}–${S.score.o} ${S.opp.name}${g ? `, and George scored ${g === 1 ? "one" : g}` : ""}! ${pts.total} points. Can you beat it?`);
+      const how = await window.GZShare(`⚽ Matchday: Forest ${S.score.f}-${S.score.o} ${S.opp.name}${g ? `, and George scored ${g === 1 ? "one" : g}` : ""}! ${pts.total} points. Can you beat it?`);
       if (how === "copied") $("r-share").textContent = "✓ Copied";
     };
     if ($("r-table")) MDL.render($("r-table"), leagueResults(), SAVE.sims, { around: true });
