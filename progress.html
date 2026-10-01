@@ -46,6 +46,8 @@
     #acct-form .btn{margin-top:14px;}
     .btn[aria-selected="true"]{background:var(--accent);color:var(--navy);border:0;}
     .who{font-size:18px;color:var(--cream);}
+    label.chk{display:flex;gap:10px;align-items:flex-start;margin:4px 0 16px;line-height:1.4;color:var(--muted);font-size:15px;cursor:pointer;}
+    label.chk input{width:22px;height:22px;flex-shrink:0;accent-color:var(--accent);margin-top:1px;}
     .pick{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
     @media (max-width:560px){.pick{grid-template-columns:1fr;}}
     .pick h3{margin:0 0 6px;font-size:18px;}
@@ -95,7 +97,7 @@
         <h2 id="acct-h">Your login</h2>
 
         <div id="acct-out">
-          <p>Pick a username and a password. Once you are logged in, your progress saves by itself while you play. Log in on another device to get it back.</p>
+          <p>Pick a username and a password. Once you are logged in, your progress saves by itself while you play, and your scores go on the top-scores tables under your username, so you never have to type your name again. Log in on another device to get it all back.</p>
           <div class="row" role="tablist" style="margin-bottom:12px">
             <button type="button" class="btn" id="tab-login" role="tab" aria-selected="true">I have a login</button>
             <button type="button" class="btn alt" id="tab-create" role="tab" aria-selected="false">Make a login</button>
@@ -114,6 +116,7 @@
           <p class="who">✓ Logged in as <b id="who-name"></b></p>
           <p class="small" id="who-sync"></p>
           <ul class="summary" id="who-here"></ul>
+          <label class="chk"><input type="checkbox" id="auto-name" checked> Put my scores on the top-scores tables under my username automatically</label>
           <div class="row">
             <button type="button" class="btn" id="a-now">Save now</button>
             <button type="button" class="btn alt" id="a-out">Log out on this device</button>

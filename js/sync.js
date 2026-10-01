@@ -23,7 +23,9 @@
   const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1Y251Y3BmeWpsdGxobXZwcnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgzNjEsImV4cCI6MjEwMzU4NDM2MX0.DSjLCkiUWB47wVd4wnW_2RvWFoISbH80JI9ukB1bBdg";
   const ACC = "gz_account_v1";
   const OURS = /^(gz_|gamezone_|gw_)/;
-  const SKIP = /^gz_account/;          // the login itself is never part of a save
+  // Never part of a save: the login itself, Dad's secret PIN, and short-lived copies of live data
+  // (fixtures, squad, goal scorers) that change on every visit and would look like false clashes.
+  const SKIP = /^(gz_account|gz_sync_|gz_forest_live|gz_forest_squad|gz_goals_v1_|gz_scout_open|gw_prediction_pin)/;
   const onProgressPage = /progress\.html$/.test(location.pathname);
 
   const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
@@ -178,10 +180,56 @@
     document.body.appendChild(d);
   }
 
+  /* ---- Scores: name filled in, score saved ----
+     Every game ends with an "Enter your name" box for the online top scores. While George is
+     logged in the box fills itself with his username and the score is saved straight away.
+     (The leaderboard only takes letters, numbers, spaces, ' - and . so anything else in a
+     username, like _, becomes a space. It can be switched off on the progress page; if a
+     save fails, the box stays open with his name in it.) */
+  const BOXES = ["player-name", "r-name", "keepy-name"];
+  const autoOn = () => lsGet("gz_autoname") !== "0";
+  function scoreName() {
+    const a = account();
+    if (!a) return "";
+    const n = (a.display || a.user || "").replace(/[^A-Za-z0-9 '.-]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 18);
+    return /[A-Za-z]/.test(n) ? n : "";
+  }
+  function fillNameBoxes() {
+    if (document.hidden || onProgressPage || !autoOn()) return;
+    const name = scoreName();
+    if (!name) return;
+    BOXES.forEach((id) => {
+      const box = document.getElementById(id);
+      if (!box) return;
+      if (!box.getClientRects().length) { delete box.dataset.gzAuto; return; }   // hidden: ready for next time
+      if (box.dataset.gzAuto) return;                                           // already done for this one
+      box.dataset.gzAuto = "1";
+      box.value = name;
+      const form = box.form;
+      if (form && form.requestSubmit) setTimeout(() => { if (box.getClientRects().length) form.requestSubmit(); }, 700);
+    });
+  }
+
+  /* ---- save soon after anything changes (Locker Room upgrades, challenges, new unlocks...) ---- */
+  let soon = 0;
+  function saveSoon() {
+    clearTimeout(soon);
+    soon = setTimeout(() => {
+      const a = account();
+      if (a && !a.conflict && !busy && hashOf(collect()) !== a.hash) push(false);
+    }, 4000);
+  }
+  try {
+    const rawSet = Storage.prototype.setItem, rawDel = Storage.prototype.removeItem;
+    Storage.prototype.setItem = function (k) { const r = rawSet.apply(this, arguments); if (this === window.localStorage && OURS.test(k) && !SKIP.test(k)) saveSoon(); return r; };
+    Storage.prototype.removeItem = function (k) { const r = rawDel.apply(this, arguments); if (this === window.localStorage && OURS.test(k) && !SKIP.test(k)) saveSoon(); return r; };
+  } catch (e) { /* can't watch writes: the 20-second check still covers it */ }
+
   window.GZSync = { account, collect, hashOf, apply, create, login, logout, push, pullAll, peek, resolve, sync };
 
   /* ---- go ---- */
   if (account()) {
+    setInterval(fillNameBoxes, 500);
     setTimeout(() => sync(true), 1200);
     setInterval(() => { const a = account(); if (a && !a.conflict && hashOf(collect()) !== a.hash) push(false); }, 20000);
     document.addEventListener("visibilitychange", () => {

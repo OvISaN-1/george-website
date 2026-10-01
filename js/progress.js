@@ -9,7 +9,8 @@
   "use strict";
   const $ = (id) => document.getElementById(id);
   const OURS = /^(gz_|gamezone_|gw_)/;
-  const SKIP = /^gz_account/;          // the login is never part of a save or load
+  // Never part of a save or load: the login, Dad's secret PIN, and short-lived copies of live data.
+  const SKIP = /^(gz_account|gz_sync_|gz_forest_live|gz_forest_squad|gz_goals_v1_|gz_scout_open|gw_prediction_pin)/;
   const FORMAT = "george-website-progress";
 
   function collect() {
@@ -214,6 +215,10 @@
     };
     $("keep-device").addEventListener("click", () => choose("device"));
     $("keep-account").addEventListener("click", () => choose("account"));
+
+    const auto = $("auto-name");
+    try { auto.checked = localStorage.getItem("gz_autoname") !== "0"; } catch (e) {}
+    auto.addEventListener("change", () => { try { localStorage.setItem("gz_autoname", auto.checked ? "1" : "0"); } catch (e) {} });
 
     setMode("login");
     render();
