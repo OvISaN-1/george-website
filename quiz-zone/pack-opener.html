@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pack Opener — Open a Card Pack</title>
+<title>Pack Opener | Open a Card Pack</title>
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://georgeneagu.win/quiz-zone/pack-opener.html">
-<meta property="og:title" content="Pack Opener — George's Game Zone">
+<meta property="og:title" content="Pack Opener | George's Game Zone">
 <meta property="og:description" content="Rip open a pack of five player cards. Bronze, Silver, Gold... or an Icon?">
 <meta property="og:image" content="https://georgeneagu.win/assets/images/share/pack-opener.png">
 <meta property="og:image:width" content="1200">
@@ -162,7 +162,7 @@
 
 <div class="card" id="intro">
   <h2>Rip open a pack! 📦</h2>
-  <p>Five real players in every pack — mostly Bronze and Silver, sometimes a Gold, and every so often... an Icon. Same 209 players as Guess the Player, real photos and all. Open as many as you like.</p>
+  <p>Five real players in every pack: mostly Bronze and Silver, sometimes a Gold, and every so often... an Icon. Same 209 players as Guess the Player, real photos and all. Open as many as you like.</p>
   <div id="pack-scene">
     <div class="pack" id="pack" role="button" tabindex="0" aria-label="Open a pack">
       <span class="pack-emoji" aria-hidden="true">📦</span>
@@ -179,7 +179,7 @@
   <p id="clip-status">Warming up the players…</p>
 </div>
 
-<p class="footer-note">Photos, nationalities, ages and clubs come live from TheSportsDB, the same source as Guess the Player. Pack rarity (Bronze/Silver/Gold/Icon) is just for fun — it isn't a real rating of how good a player is. Nothing is saved between visits; every pack is just for the moment.</p>
+<p class="footer-note">Photos, nationalities, ages and clubs come live from TheSportsDB, the same source as Guess the Player. Pack rarity (Bronze/Silver/Gold/Icon) is just for fun. It isn't a real rating of how good a player is. Nothing is saved between visits; every pack is just for the moment.</p>
   </main>
 
   <footer class="site-footer">
@@ -347,8 +347,8 @@ async function openPack() {
   showStats();
 
   bestPullEl.textContent = bestTier === "icon" ? "🌟 An ICON! What a pull!"
-    : bestTier === "gold" ? "🥇 A Gold card — nice pack!"
-    : bestTier === "silver" ? "🥈 A solid pack." : "🥉 A Bronze pack — every player counts!";
+    : bestTier === "gold" ? "🥇 A Gold card. Nice pack!"
+    : bestTier === "silver" ? "🥈 A solid pack." : "🥉 A Bronze pack. Every player counts!";
   reveal.hidden = false;
   opening = false;
 }

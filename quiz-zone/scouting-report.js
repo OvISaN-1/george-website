@@ -219,7 +219,7 @@
     const tiles = `
       <div class="tiles">
         <div class="tile"><div class="k">Questions answered</div><div class="v">${A.total.toLocaleString("en-GB")}</div><div class="s">${A.mastered} mastered (right 80%+ over 3 goes)</div></div>
-        <div class="tile"><div class="k">Right overall</div><div class="v">${A.total ? pct(A.right, A.total) + "%" : "–"}</div><div class="s">${formPct != null ? `Recent form: ${formPct}% of the last ${A.form.length}` : "No answers yet"}</div></div>
+        <div class="tile"><div class="k">Right overall</div><div class="v">${A.total ? pct(A.right, A.total) + "%" : "-"}</div><div class="s">${formPct != null ? `Recent form: ${formPct}% of the last ${A.form.length}` : "No answers yet"}</div></div>
         <div class="tile"><div class="k">Last 7 days</div><div class="v">${A.week[0]}</div><div class="s">${A.week[0] ? `${pct(A.week[1], A.week[0])}% right · played ${A.daysPlayed} day${A.daysPlayed === 1 ? "" : "s"}` : "No answers this week"}</div></div>
         <div class="tile"><div class="k">Matches</div><div class="v">${played}</div><div class="s">Won ${s.wins || 0} · drew ${s.draws || 0} · lost ${s.losses || 0}${s.georgeGoals ? ` · ${s.georgeGoals} goals` : ""}</div></div>
         ${lvl ? `<div class="tile"><div class="k">George's card</div><div class="v">${ovr} OVR</div><div class="s">Career level ${lvl}</div></div>` : ""}
@@ -232,7 +232,7 @@
       const st = status(x.n, x.p), meta = SUBJECTS[x.key], wa = workingAt(x);
       const lv = [1, 2, 3, 4].map((l) => {
         const [n, r] = x.lv[l];
-        return `<span style="background:${heat(pct(r, n), n)}" title="${["", "Easy", "Medium", "Hard", "World Class"][l]}: ${n ? `${r} of ${n} right` : "not asked yet"}">${["", "E", "M", "H", "WC"][l]} ${n >= 3 ? pct(r, n) + "%" : "–"}</span>`;
+        return `<span style="background:${heat(pct(r, n), n)}" title="${["", "Easy", "Medium", "Hard", "World Class"][l]}: ${n ? `${r} of ${n} right` : "not asked yet"}">${["", "E", "M", "H", "WC"][l]} ${n >= 3 ? pct(r, n) + "%" : "-"}</span>`;
       }).join("");
       return `<div class="row" tabindex="0">
         <div class="name">${meta.emoji} ${esc(meta.label)}${trendText(A.trend[x.key])}<small>${x.n} answer${x.n === 1 ? "" : "s"} · ${x.qs} different question${x.qs === 1 ? "" : "s"}${wa ? ` · working at ${wa}` : ""}</small></div>
@@ -241,10 +241,10 @@
       </div>`;
     }).join("");
     const table = `<details><summary>Show as a table</summary><table><thead><tr><th>Subject</th><th class="n">Answers</th><th class="n">Right</th><th class="n">%</th></tr></thead><tbody>${
-      list.map((x) => `<tr><td>${esc(SUBJECTS[x.key].label)}</td><td class="n">${x.n}</td><td class="n">${x.r}</td><td class="n">${x.n ? x.p + "%" : "–"}</td></tr>`).join("")}</tbody></table></details>`;
+      list.map((x) => `<tr><td>${esc(SUBJECTS[x.key].label)}</td><td class="n">${x.n}</td><td class="n">${x.r}</td><td class="n">${x.n ? x.p + "%" : "-"}</td></tr>`).join("")}</tbody></table></details>`;
 
     // 3. Maths: times tables grid + SATs topics
-    const tt = Object.entries(A.tables).map(([t, [n, r]]) => `<div style="background:${heat(pct(r, n), n)}" title="${t} times table: ${n ? `${r} of ${n} right` : "not asked yet"}"><b>${t}×</b><span>${n >= 3 ? pct(r, n) + "%" : "–"}</span></div>`).join("");
+    const tt = Object.entries(A.tables).map(([t, [n, r]]) => `<div style="background:${heat(pct(r, n), n)}" title="${t} times table: ${n ? `${r} of ${n} right` : "not asked yet"}"><b>${t}×</b><span>${n >= 3 ? pct(r, n) + "%" : "-"}</span></div>`).join("");
     const satsRows = SATS_TOPICS.map(([, name]) => name).filter((name) => A.sats[name]).map((name) => {
       const [n, r] = A.sats[name], p = pct(r, n), st = status(n, p);
       return `<div class="row"><div class="name">${esc(name)}<small>${n} answer${n === 1 ? "" : "s"}</small></div><div class="viz"><div class="bar" title="${r} of ${n} right"><i style="width:${p}%"></i><b>${p}%</b></div></div><span class="chip ${st.cls}">${st.text}</span></div>`;
@@ -268,7 +268,7 @@
     el.innerHTML = `
       <section class="card">
         <h2>The headlines</h2>
-        <p class="lede">From every answer George has given in Matchday on this device. The game makes questions harder as he gets them right, so 70–80% right means he's being stretched about the right amount.</p>
+        <p class="lede">From every answer George has given in Matchday on this device. The game makes questions harder as he gets them right, so 70-80% right means he's being stretched about the right amount.</p>
         ${tiles}
       </section>
       <section class="card">
@@ -285,7 +285,7 @@
         <h2>Times tables</h2>
         <p class="lede">From the Times tables subject. 7 × 8 counts towards both the 7s and the 8s.</p>
         <div class="tt">${tt}</div>
-        <div class="scale"><span>Fewer right</span><i style="background:${heat(20, 9)}"></i><i style="background:${heat(50, 9)}"></i><i style="background:${heat(80, 9)}"></i><i style="background:${heat(100, 9)}"></i><span>More right</span><span style="margin-left:auto">– = fewer than 3 goes</span></div>
+        <div class="scale"><span>Fewer right</span><i style="background:${heat(20, 9)}"></i><i style="background:${heat(50, 9)}"></i><i style="background:${heat(80, 9)}"></i><i style="background:${heat(100, 9)}"></i><span>More right</span><span style="margin-left:auto">- = fewer than 3 goes</span></div>
       </section>
       <section class="card">
         <h2>SATs maths in Matchday</h2>

@@ -97,7 +97,7 @@ section + section { border-top: 1px solid var(--line); }
 .hero{
   background:
     radial-gradient(120% 140% at 15% 0%, rgba(225,16,44,0.16), transparent 55%),
-    radial-gradient(100% 120% at 100% 10%, rgba(157,92,255,0.12), transparent 55%),
+    radial-gradient(100% 120% at 100% 10%, rgba(245,185,66,0.08), transparent 55%),
     var(--surface);
   border-bottom: 1px solid var(--line-strong);
   padding-block: var(--s8) var(--s7);
@@ -110,13 +110,17 @@ section + section { border-top: 1px solid var(--line); }
 .hero-wordmark span { color: var(--garibaldi); }
 @keyframes pulseGlow{
   0%,100% { text-shadow: 0 0 40px rgba(225,16,44,0.45); }
-  50% { text-shadow: 0 0 58px rgba(225,16,44,0.75), 0 0 20px rgba(157,92,255,0.25); }
+  50% { text-shadow: 0 0 58px rgba(225,16,44,0.75); }
 }
 .hero-tag{ color: var(--chalk-dim); font-size: 1.1rem; max-width: 46ch; }
+.hero-actions{ display: flex; gap: var(--s3); flex-wrap: wrap; margin-top: var(--s5); }
+.btn-big{ font-size: 1.1rem; padding: 16px 30px; min-height: 56px; }
+@media (max-width: 520px){ .hero-actions .btn-big{ flex: 1 1 40%; justify-content: center; } .hero-actions .btn-primary{ flex-basis: 100%; } }
 
 .hero-inner{ display: flex; align-items: center; justify-content: space-between; gap: var(--s7); flex-wrap: wrap; }
 .hero-copy{ flex: 1 1 380px; }
 .hero-photo{ flex: 0 1 260px; max-width: 260px; }
+.hero-photo-wide{ flex-basis: 360px; max-width: 360px; }
 .hero-photo img{
   width: 100%; height: auto; display: block; border-radius: var(--r-lg);
   border: 1px solid var(--line-strong); box-shadow: var(--glow-garibaldi);
@@ -179,7 +183,7 @@ section + section { border-top: 1px solid var(--line); }
 }
 .card:hover, .card:focus-within { transform: translateY(-4px); }
 .card.football:hover, .card.football:focus-within { border-color: var(--garibaldi); box-shadow: var(--glow-garibaldi); }
-.card.gaming:hover, .card.gaming:focus-within { border-color: var(--volt); box-shadow: var(--glow-volt); }
+.card.gaming:hover, .card.gaming:focus-within { border-color: var(--garibaldi); box-shadow: var(--glow-garibaldi); }
 .card.school:hover, .card.school:focus-within { border-color: var(--gold); box-shadow: var(--glow-gold); }
 .card.quiz:hover, .card.quiz:focus-within { border-color: var(--volt); box-shadow: var(--glow-volt), 0 0 40px rgba(245,185,66,0.18); }
 
@@ -195,7 +199,7 @@ section + section { border-top: 1px solid var(--line); }
 }
 .photo-slot svg{ width: 22px; height: 22px; opacity: 0.55; }
 .card.football .photo-slot svg{ color: var(--garibaldi); }
-.card.gaming .photo-slot svg{ color: var(--volt); }
+.card.gaming .photo-slot svg{ color: var(--garibaldi); }
 
 /* Real logo/cover-art image, same footprint as .photo-slot above so a
    card looks the same whether it has a real image yet or not. contain
@@ -215,7 +219,7 @@ section + section { border-top: 1px solid var(--line); }
   letter-spacing: 0.02em; padding: 4px 10px; border-radius: var(--r-pill);
 }
 .card.football .tag { background: var(--garibaldi-ink); color: var(--garibaldi-text); }
-.card.gaming .tag { background: var(--volt-ink); color: var(--volt-text); }
+.card.gaming .tag { background: var(--garibaldi-ink); color: var(--garibaldi-text); }
 .card.school .tag { background: var(--gold-ink); color: var(--gold); }
 
 /* Card CTA affordance: an arrow that nudges right on hover. Used on the
@@ -227,7 +231,7 @@ section + section { border-top: 1px solid var(--line); }
 .card-arrow svg{ width: 16px; height: 16px; transition: transform 0.2s ease; }
 .card:hover .card-arrow svg, .card:focus-within .card-arrow svg{ transform: translateX(4px); }
 .card.football .card-arrow{ color: var(--garibaldi-text); }
-.card.gaming .card-arrow{ color: var(--volt-text); }
+.card.gaming .card-arrow{ color: var(--garibaldi-text); }
 .card.school .card-arrow{ color: var(--gold); }
 .card.quiz .card-arrow{ color: var(--volt-text); }
 
@@ -256,14 +260,14 @@ section + section { border-top: 1px solid var(--line); }
 /* The bento asymmetry: Game Zone is the tall feature column on the
    right, School is a wide bar underneath Football and Video Games. */
 .hub-tile.football{ --tile-glow: rgba(225,16,44,0.16); grid-column: 1; grid-row: 1; }
-.hub-tile.gaming{ --tile-glow: rgba(157,92,255,0.16); grid-column: 2; grid-row: 1; }
+.hub-tile.gaming{ --tile-glow: rgba(225,16,44,0.14); grid-column: 2; grid-row: 1; }
 .hub-tile.quiz{ --tile-glow: rgba(157,92,255,0.18); grid-column: 3; grid-row: 1 / span 2; justify-content: center; }
 .hub-tile.school{ --tile-glow: rgba(245,185,66,0.16); grid-column: 1 / span 2; grid-row: 2; flex-direction: row; align-items: center; }
 .hub-tile.school .hub-icon{ margin-bottom: 0; }
 .hub-tile.school .hub-text{ display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
 .hub-tile.school .card-arrow{ margin-top: 0; margin-left: auto; flex-shrink: 0; white-space: nowrap; }
 .hub-tile.football:hover, .hub-tile.football:focus-within{ border-color: var(--garibaldi); box-shadow: var(--glow-garibaldi); }
-.hub-tile.gaming:hover, .hub-tile.gaming:focus-within{ border-color: var(--volt); box-shadow: var(--glow-volt); }
+.hub-tile.gaming:hover, .hub-tile.gaming:focus-within{ border-color: var(--garibaldi); box-shadow: var(--glow-garibaldi); }
 .hub-tile.quiz:hover, .hub-tile.quiz:focus-within{ border-color: var(--volt); box-shadow: var(--glow-volt), 0 0 46px rgba(245,185,66,0.16); }
 .hub-tile.school:hover, .hub-tile.school:focus-within{ border-color: var(--gold); box-shadow: var(--glow-gold); }
 
@@ -288,7 +292,7 @@ section + section { border-top: 1px solid var(--line); }
 .icon-badge.teal{ background: linear-gradient(145deg, #6fe3c8, #1f9d78); }
 .icon-badge.mixed{ background: linear-gradient(145deg, #ffd27a, #b98bff); }
 .hub-tile.football .hub-icon{ background: linear-gradient(145deg, #ff4d62, var(--garibaldi-solid)); }
-.hub-tile.gaming .hub-icon{ background: linear-gradient(145deg, #b98bff, #6a2fc0); }
+.hub-tile.gaming .hub-icon{ background: linear-gradient(145deg, #ff4d62, var(--garibaldi-solid)); }
 .hub-tile.quiz .hub-icon{ background: linear-gradient(145deg, #ffd27a, #b98bff); }
 .hub-tile.school .hub-icon{ background: linear-gradient(145deg, #ffd27a, var(--gold)); }
 .hub-tile h2{ font-size: 1.3rem; }
@@ -329,11 +333,11 @@ section + section { border-top: 1px solid var(--line); }
 
 .live-badge{
   display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 700;
-  font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--volt-text);
-  background: var(--volt-ink); border-radius: var(--r-pill); padding: 8px 16px;
+  font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--garibaldi-text);
+  background: var(--garibaldi-ink); border-radius: var(--r-pill); padding: 8px 16px;
 }
-.live-dot{ width: 8px; height: 8px; border-radius: 50%; background: var(--volt); animation: livePulse 1.8s ease-in-out infinite; }
-@keyframes livePulse{ 0%,100% { box-shadow: 0 0 0 0 rgba(157,92,255,0.6); } 50% { box-shadow: 0 0 0 8px rgba(157,92,255,0); } }
+.live-dot{ width: 8px; height: 8px; border-radius: 50%; background: var(--garibaldi); animation: livePulse 1.8s ease-in-out infinite; }
+@keyframes livePulse{ 0%,100% { box-shadow: 0 0 0 0 rgba(225,16,44,0.6); } 50% { box-shadow: 0 0 0 8px rgba(225,16,44,0); } }
 
 .fact-list{ display: flex; flex-direction: column; gap: var(--s3); }
 .fact-list li{
@@ -698,7 +702,7 @@ details.predict-toggle[open] summary{ margin-bottom: var(--s3); }
 .now-tile { display: flex; flex-direction: column; gap: 4px; padding: var(--s4) var(--s5); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); color: var(--chalk); text-decoration: none; transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
 .now-tile:hover, .now-tile:focus-visible { transform: translateY(-3px); }
 .now-tile.football:hover, .now-tile.football:focus-visible { border-color: var(--garibaldi); box-shadow: var(--glow-garibaldi); }
-.now-tile.space:hover, .now-tile.space:focus-visible { border-color: var(--volt); box-shadow: var(--glow-volt); }
+.now-tile.space:hover, .now-tile.space:focus-visible { border-color: var(--gold); box-shadow: var(--glow-gold); }
 .now-tile.advice { cursor: default; }
 .now-tile.advice:hover, .now-tile.advice:focus-visible { border-color: var(--gold); box-shadow: var(--glow-gold); }
 .now-kicker { font: 700 0.78rem var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--chalk-faint); }
@@ -748,7 +752,7 @@ details.predict-toggle[open] summary{ margin-bottom: var(--s3); }
 /* About: rock jukebox in the Rock music card */
 .jukebox { margin-top: 6px; display: flex; flex-direction: column; gap: 8px; }
 .jukebox-btn { align-self: flex-start; font-family: var(--font-display); font-weight: 700; font-size: 1rem; min-height: 42px; padding: 6px 16px; border-radius: 999px; border: 0; cursor: pointer; color: #fff;
-  background: linear-gradient(135deg, #ff8a1f, #e1102c); box-shadow: 0 0 16px rgba(225,16,44,0.3); }
+  background: var(--garibaldi-solid); box-shadow: 0 0 16px rgba(225,16,44,0.3); }
 .jukebox-now { margin: 0; display: flex; gap: 10px; align-items: center; font-size: 0.85rem; color: var(--chalk-dim); }
 .jukebox-now img { border-radius: 6px; flex-shrink: 0; }
 .jukebox-now small { color: var(--chalk-faint); }

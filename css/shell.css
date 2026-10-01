@@ -69,10 +69,6 @@
 
 /* Per-page accent: the current section's colour drives the nav
    underline, hero glow and primary button on that page only. */
-body[data-page="games"]{
-  --accent: var(--volt); --accent-text: var(--volt-text); --accent-ink: var(--volt-ink); --glow-accent: var(--glow-volt);
-  --btn-bg: var(--volt); --on-accent: var(--ink); /* chalk-on-volt was 3.33:1 — fails AA. Ink-on-volt is 4.87:1. */
-}
 body[data-page="school"], body[data-page="space"]{
   --accent: var(--gold); --accent-text: var(--gold); --accent-ink: var(--gold-ink); --glow-accent: var(--glow-gold);
   --btn-bg: var(--gold); --on-accent: var(--ink); /* chalk-on-gold was 1.52:1 — badly fails AA. Ink-on-gold is 10.7:1. */
@@ -239,7 +235,7 @@ body[data-page="quiz-zone"], body[data-page="quiz-game"]{
 .page-banner::after, .hero::after{
   content: ''; position: absolute; inset: -40%; pointer-events: none; z-index: 0;
   background: conic-gradient(from var(--aurora) at 30% 45%,
-    rgba(225,16,44,0.20), rgba(245,185,66,0.10), transparent 30%, rgba(157,92,255,0.10), transparent 60%, rgba(225,16,44,0.20));
+    rgba(225,16,44,0.20), rgba(245,185,66,0.10), transparent 30%, rgba(245,185,66,0.06), transparent 60%, rgba(225,16,44,0.20));
   filter: blur(70px); opacity: 0.8;
   animation: aurora 30s linear infinite;
 }

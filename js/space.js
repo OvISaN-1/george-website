@@ -153,7 +153,7 @@
         <p class="space-kicker">🚀 Next rocket launch</p>
         <h3>${esc(l.mission || missionBit || l.name)}</h3>
         <p class="space-credit">${esc(l.rocket || rocketBit || '')}${l.provider ? ` · ${esc(l.provider)}` : ''}</p>
-        <p class="launch-count" id="launch-count" aria-live="off">—</p>
+        <p class="launch-count" id="launch-count" aria-live="off">-</p>
         ${status[0] ? `<span class="space-chip${status[1]}">${esc(status[0])}</span>` : ''}
         <p class="space-credit">${l.statusCode === 'TBD' ? '' : `${esc(ukTime(l.net, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))} UK time`}${l.statusCode !== 'TBD' && l.place ? ' · ' : ''}${l.place ? esc(l.place) : ''}</p>
         ${l.about ? `<details class="apod-more"><summary>What's it launching?</summary><p>${esc(l.about)}</p></details>` : ''}
