@@ -43,45 +43,11 @@
       { id: "trent", name: "Trent End thunder", need: 15, rock: 40, icon: "🌳" },
       { id: "master", name: "Riff Master", need: 18, rock: 50, icon: "🤘" },
     ],
-    kit: [
-      { id: "home", name: "Home red", need: 1 },
-      { id: "away", name: "Away white", need: 1 },
-      { id: "third", name: "Third kit (black & gold)", need: 4 },
-      { id: "retro", name: "1979 European Cup", need: 6 },
-      { id: "retro90", name: "1990 League Cup", need: 9 },
-      { id: "pink", name: "Pink away", need: 12 },
-      { id: "legend", name: "Forest Legend gold", need: 15 },
-    ],
-    boots: [
-      { id: "black", name: "Classic black", need: 1, colour: "#15121a" },
-      { id: "red", name: "Forest red", need: 2, colour: "#e1102c" },
-      { id: "neon", name: "Neon", need: 7, colour: "#a3e635" },
-      { id: "gold", name: "Gold", need: 10, colour: "#f5b942" },
-      { id: "pearl", name: "Pearl white", need: 13, colour: "#f4f1ee" },
-    ],
-    cele: [
-      { id: "armsup", name: "Arms up", need: 1, pose: "up", anim: "cele-jump", shout: "GET IN!" },
-      { id: "slide", name: "Knee slide", need: 2, pose: "out", anim: "cele-slide", shout: "KNEE SLIDE!" },
-      { id: "siuuu", name: "SIUUU", need: 3, pose: "out", anim: "cele-siuuu", shout: "SIUUUU!" },
-      { id: "aeroplane", name: "Aeroplane", need: 5, pose: "out", anim: "cele-plane", shout: "NEEEOOOWW!" },
-      { id: "shiver", name: "Cold shiver", need: 8, pose: "idle", anim: "cele-shiver", shout: "ICE COLD 🥶" },
-      { id: "badge", name: "Kiss the badge", need: 11, pose: "point", anim: "cele-zoom", shout: "FOREST!" },
-      { id: "backflip", name: "Backflip", need: 14, pose: "up", anim: "cele-flip", shout: "BACKFLIP!" },
-      { id: "robot", name: "The Robot", need: 16, pose: "out", anim: "cele-robot", shout: "BEEP BOOP GOAL" },
-      // More from levelling up
-      { id: "corner", name: "Corner flag dance", need: 4, pose: "out", anim: "cele-dance", shout: "CORNER FLAG PARTY!", fx: "🚩" },
-      { id: "heart", name: "Heart hands", need: 6, pose: "up", anim: "cele-zoom", shout: "LOVE THIS CLUB ❤️", fx: "❤️" },
-      { id: "salute", name: "The salute", need: 9, pose: "point", anim: "cele-salute", shout: "SALUTE!", fx: "⭐" },
-      { id: "baby", name: "Rock the baby", need: 12, pose: "out", anim: "cele-rock", shout: "ROCK-A-BYE!", fx: "🍼" },
-      { id: "cartwheel", name: "Cartwheel", need: 18, pose: "out", anim: "cele-cartwheel", shout: "CARTWHEEL!", fx: "✨" },
-      // Special ones: earned by doing something, not by level
-      { id: "hattrick", name: "Hat-trick hat", ach: "hattrick", how: "Score a hat-trick", pose: "up", anim: "cele-jump", shout: "HAT-TRICK HERO!", fx: "🎩" },
-      { id: "rocket", name: "Rocket launch", ach: "halfway", how: "Score from the halfway line", pose: "up", anim: "cele-rocket", shout: "3... 2... 1... GOAL!", fx: "🚀" },
-      { id: "crown", name: "King of the Trees", ach: "giant", how: "Beat Arsenal, Liverpool, Chelsea or Man City", pose: "point", anim: "cele-zoom", shout: "KING GEORGE!", fx: "👑" },
-      { id: "wall", name: "The Wall", ach: "clean", how: "Win with a clean sheet", pose: "out", anim: "cele-zoom", shout: "NOTHING GETS PAST US!", fx: "🧱" },
-      { id: "tv", name: "Draw the VAR screen", ach: "var", how: "Win a VAR check", pose: "out", anim: "cele-salute", shout: "CHECK COMPLETE ✅", fx: "📺" },
-      { id: "redcard", name: "Show 'em red", ach: "red", how: "Get an opposition player sent off", pose: "point", anim: "cele-zoom", shout: "OFF YOU GO! 🟥", fx: "🟥" },
-    ],
+    // Kits, boots and celebrations are shared with Free Kick Masters and Penalty Shootout:
+    // see george-look.js (an item is open if it is unlocked in either game).
+    kit: GL.CATALOG.kit,
+    boots: GL.CATALOG.boots,
+    cele: GL.CATALOG.cele,
   };
 
   // XP needed to reach each level: 0, 250, 750, 1500, 2500, 3750...
@@ -138,12 +104,16 @@
   }
 
   function unlocked(item) { return item.ach ? !!C.ach[item.ach] : levelOf(C.xp) >= item.need || (item.rock != null && C.rock >= item.rock); }
+  // Riffs are Matchday's own; kits, boots and celebrations are open if unlocked in either game.
+  const isOpen = (type, it) => (type === "riff" ? unlocked(it) : GL.unlocked(type, it.id));
   function item(type, id) { return ITEMS[type].find((x) => x.id === id) || ITEMS[type][0]; }
   function gear() {
     const g = C.gear;
-    const kit = unlocked(item("kit", g.kit)) ? g.kit : "home";
-    const boots = item("boots", unlocked(item("boots", g.boots)) ? g.boots : "black");
-    const cele = item("cele", unlocked(item("cele", g.cele)) ? g.cele : "armsup");
+    // George's saved look (from My Player) wins, if it is unlocked; otherwise what he picked here.
+    const kitId = GL.pick("kit", g.kit), bootsId = GL.pick("boots", g.boots), celeId = GL.pick("cele", g.cele);
+    const kit = GL.unlocked("kit", kitId) ? kitId : "home";
+    const boots = item("boots", GL.unlocked("boots", bootsId) ? bootsId : "black");
+    const cele = item("cele", GL.unlocked("cele", celeId) ? celeId : "armsup");
     const riff = item("riff", unlocked(item("riff", g.riff)) ? g.riff : "power");
     return { kit, boots: boots.colour, bootsId: boots.id, cele, riff: riff.id };
   }
@@ -212,10 +182,10 @@
   }
 
   function celeIcon(x) {
-    return { armsup: "🙌", slide: "🛷", siuuu: "🕺", aeroplane: "✈️", shiver: "🥶", badge: "💋", backflip: "🤸", robot: "🤖" }[x.id] || x.fx || "🎉";
+    return x.icon || x.fx || "🎉";
   }
   // Every celebration George has unlocked, for the after-goal picker.
-  function celebrations() { return ITEMS.cele.filter(unlocked); }
+  function celebrations() { return ITEMS.cele.filter((x) => GL.unlocked("cele", x.id)); }
 
   /* ---------------- The career screen ---------------- */
   function render(el, onChange) {
@@ -223,14 +193,14 @@
     const pct = lvl >= 30 ? 100 : Math.round(((C.xp - prev) / (next - prev)) * 100);
     const g = gear();
     const section = (type, title) => `<div class="mdc-sec"><h3>${title}</h3><div class="mdc-items">${ITEMS[type].map((x) => {
-      const on = unlocked(x), sel = (type === "kit" ? g.kit : type === "boots" ? g.bootsId : type === "riff" ? g.riff : g.cele.id) === x.id;
+      const on = isOpen(type, x), sel = (type === "kit" ? g.kit : type === "boots" ? g.bootsId : type === "riff" ? g.riff : g.cele.id) === x.id;
       const art = type === "kit"
-        ? `<span class="mdc-art kit" style="background:${GK.KITS[x.id].shirt};color:${GK.KITS[x.id].text};border-color:${GK.KITS[x.id].trim}">10</span>`
+        ? `<span class="mdc-art kit" style="background:${GK.KITS[x.id].shirt};color:${GK.KITS[x.id].text};border-color:${GK.KITS[x.id].trim}">${GL.number()}</span>`
         : type === "boots" ? `<span class="mdc-art boot" style="background:${x.colour}"></span>`
         : type === "riff" ? `<span class="mdc-art cele">${x.icon}</span>`
         : `<span class="mdc-art cele">${celeIcon(x)}</span>`;
       return `<button type="button" class="mdc-item${sel ? " selected" : ""}${on ? "" : " locked"}" data-type="${type}" data-id="${x.id}" ${on ? "" : "aria-disabled=\"true\""}>
-        ${art}<span class="mdc-item-name">${esc(x.name)}</span><span class="mdc-need">${on ? (sel ? (type === "cele" ? "✓ Favourite" : type === "riff" ? "✓ Goal anthem" : "✓ Wearing") : type === "riff" && x.id !== "none" ? "Tap to play" : "Tap to use") : x.ach ? "🏆 " + esc(x.how) : x.rock != null ? `🔒 Level ${x.need} or 🎸 ${Math.min(C.rock, x.rock)}/${x.rock} rock answers` : "🔒 Level " + x.need}</span></button>`;
+        ${art}<span class="mdc-item-name">${esc(x.name)}</span><span class="mdc-need">${on ? (sel ? (type === "cele" ? "✓ Favourite" : type === "riff" ? "✓ Goal anthem" : "✓ Wearing") : type === "riff" && x.id !== "none" ? "Tap to play" : "Tap to use") : x.ach ? "🏆 " + esc(x.how) : x.rock != null ? `🔒 Level ${x.need} or 🎸 ${Math.min(C.rock, x.rock)}/${x.rock} rock answers` : "🔒 Level " + x.need + (x.fk ? (x.fk.stars != null ? ` or ${x.fk.stars} ★ in Free Kick` : ` or Free Kick level ${x.fk.level}`) : "")}</span></button>`;
     }).join("")}</div></div>`;
     el.innerHTML = `
       <div class="mdc-head">
@@ -254,8 +224,9 @@
     el.querySelectorAll(".mdc-plus").forEach((b) => b.addEventListener("click", () => { if (upgrade(b.dataset.stat)) { render(el, onChange); if (onChange) onChange("upgrade"); } }));
     el.querySelectorAll(".mdc-item").forEach((b) => b.addEventListener("click", () => {
       const it = item(b.dataset.type, b.dataset.id);
-      if (!unlocked(it)) { if (onChange) onChange("locked"); return; }
+      if (!isOpen(b.dataset.type, it)) { if (onChange) onChange("locked"); return; }
       C.gear[b.dataset.type] = it.id;
+      if (b.dataset.type !== "riff") GL.set({ [b.dataset.type]: it.id });     // his look, in every game
       save();
       if (b.dataset.type === "riff" && window.MDR) MDR.preview(it.id);
       render(el, onChange);

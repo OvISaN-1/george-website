@@ -50,25 +50,12 @@
     { id: "flame", name: "Flame", need: { stars: 14 }, fill: "#ff7a1a", patch: "#7a0d20", glow: "#ff4d1a", trail: "#ff7a1a" },
     { id: "galaxy", name: "Galaxy", need: { stars: 18 }, fill: "#3b1d7a", patch: "#e9d5ff", glow: "#a264ff", trail: "#a264ff" },
   ];
-  const KITS = [
-    { id: "home", name: "Home red", need: null },
-    { id: "away", name: "Away white", need: { stars: 5 } },
-    { id: "retro", name: "1979 European Cup", need: { stars: 10 } },
-    { id: "legend", name: "Forest Legend gold", need: { stars: 16 } },
-  ];
-  const BOOTS = [
-    { id: "black", name: "Classic black", need: null, colour: "#15121a" },
-    { id: "red", name: "Red", need: { level: 2 }, colour: "#e1102c" },
-    { id: "neon", name: "Neon", need: { level: 4 }, colour: "#a3e635" },
-    { id: "gold", name: "Gold", need: { level: 6 }, colour: "#f5b942" },
-  ];
-  const CELEBRATIONS = [
-    { id: "armsup", name: "Arms up", need: null, pose: "up", anim: "cele-jump", shout: "GET IN!" },
-    { id: "slide", name: "Knee slide", need: { stars: 2 }, pose: "out", anim: "cele-slide", shout: "KNEE SLIDE!" },
-    { id: "siuuu", name: "SIUUU", need: { stars: 6 }, pose: "out", anim: "cele-siuuu", shout: "SIUUUU!" },
-    { id: "badge", name: "Point to the badge", need: { level: 3 }, pose: "point", anim: "cele-zoom", shout: "FOREST!" },
-    { id: "robot", name: "The Robot", need: { stars: 12 }, pose: "out", anim: "cele-robot", shout: "BEEP BOOP GOAL" },
-  ];
+  // Kits, boots and celebrations are shared with Matchday and Penalty Shootout (george-look.js):
+  // an item is open if it is unlocked in EITHER game.
+  const glNeed = (x) => (x.ach || x.need > 1 || x.fk ? (x.fk || { level: x.need }) : null);
+  const KITS = GL.CATALOG.kit.map((x) => ({ id: x.id, name: x.name, gl: "kit", need: glNeed(x), src: x }));
+  const BOOTS = GL.CATALOG.boots.map((x) => ({ id: x.id, name: x.name, colour: x.colour, gl: "boots", need: glNeed(x), src: x }));
+  const CELEBRATIONS = GL.CATALOG.cele.map((x) => ({ ...x, gl: "cele", need: glNeed(x), src: x }));
 
   const LEVELS = [0, 200, 500, 900, 1400, 2000, 2800, 3800, 5000, 6500];
 
@@ -108,19 +95,29 @@
   const totalStars = () => Object.values(SAVE.stars).reduce((a, b) => a + b, 0);
   function levelOf(xp) { let l = 1; LEVELS.forEach((t, i) => { if (xp >= t) l = i + 1; }); return l; }
   function isUnlocked(item) {
+    if (item.gl) return GL.unlocked(item.gl, item.id);
     if (!item.need) return true;
     if (item.need.stars != null) return totalStars() >= item.need.stars;
     if (item.need.level != null) return levelOf(SAVE.xp) >= item.need.level;
     return false;
   }
   const needText = (n) => !n ? "" : n.stars != null ? `${n.stars} ★` : `Level ${n.level}`;
+  // What a locked kit / boots / celebration needs, in words.
+  const needLabel = (it) => {
+    const x = it.src;
+    if (!x) return needText(it.need);
+    if (x.ach) return "🏆 " + x.how;
+    const alt = x.fk ? (x.fk.stars != null ? ` or ${x.fk.stars} ★` : ` or Free Kick level ${x.fk.level}`) : "";
+    return `Level ${x.need}${alt}`;
+  };
   const allUnlockables = () => [
     ...BALLS.map((x) => ({ ...x, type: "ball", label: "ball" })), ...KITS.map((x) => ({ ...x, type: "kit", label: "kit" })),
     ...BOOTS.map((x) => ({ ...x, type: "boots", label: "boots" })), ...CELEBRATIONS.map((x) => ({ ...x, type: "celebration", label: "celebration" })),
   ];
   const selectedBall = () => BALLS.find((b) => b.id === SAVE.selected.ball) || BALLS[0];
-  const selectedCele = () => CELEBRATIONS.find((c) => c.id === SAVE.selected.celebration) || CELEBRATIONS[0];
-  const selectedBoots = () => (BOOTS.find((b) => b.id === SAVE.selected.boots) || BOOTS[0]).colour;
+  const curKit = () => GL.pick("kit", SAVE.selected.kit);
+  const selectedCele = () => { const id = GL.pick("cele", SAVE.selected.celebration); return CELEBRATIONS.find((c) => c.id === id) || CELEBRATIONS[0]; };
+  const selectedBoots = () => { const id = GL.pick("boots", SAVE.selected.boots); return (BOOTS.find((b) => b.id === id) || BOOTS[0]).colour; };
 
   /* ================================================================
      Player card (FUT style)
@@ -145,7 +142,7 @@
       <div class="fut-top"><span class="fut-ovr">${ovr}</span><span class="fut-pos">ST</span>
         <span class="fut-badge" aria-hidden="true"><svg viewBox="0 0 20 22"><path d="M10 1 L19 5 V12 C19 17 14 20 10 21 C6 20 1 17 1 12 V5 Z" fill="#d7102b" stroke="#fff" stroke-width="1.2"/><g fill="#fff"><circle cx="10" cy="8" r="2.6"/><circle cx="7.6" cy="10.4" r="2.2"/><circle cx="12.4" cy="10.4" r="2.2"/><rect x="9.3" y="11" width="1.4" height="4"/></g><path d="M5 16 Q7.5 15 10 16 T15 16" stroke="#fff" stroke-width=".9" fill="none"/></svg></span>
       </div>
-      <div class="fut-face">${GK.avatar({ pose: "idle", kit: SAVE.selected.kit })}</div>
+      <div class="fut-face">${GK.avatar({ pose: "idle", kit: curKit() })}</div>
       <div class="fut-name">GEORGE</div>
       <div class="fut-stats">${stats.map(([k, v]) => `<span><b>${v}</b> ${k}</span>`).join("")}</div>
       <div class="fut-tier">${tier.name} · LVL ${lvl}</div>
@@ -302,7 +299,7 @@
     keeperG.innerHTML = PitchFX.idle(GK.keeper(m.keeperKit, false), "pace");
     setKeeper(L.keeperX, L.gy, L.k * 1.05, 0, 0, 0);
     // striker + ball
-    strikerG.innerHTML = PitchFX.idle(GK.georgeStriker(SAVE.selected.kit, selectedBoots()), "breathe", 0);
+    strikerG.innerHTML = PitchFX.idle(GK.georgeStriker(curKit(), selectedBoots()), "breathe", 0);
     setStriker(STRIKER_HOME.x, STRIKER_HOME.y, STRIKER_HOME.s);
     setKickLeg(0);
     ballG.innerHTML = ballMarkup();
@@ -322,7 +319,7 @@
     const w = Math.round(Math.abs(K.wind));
     $("cond-wind").textContent = w === 0 ? "No wind" : `Wind ${w} mph ${K.wind > 0 ? "→" : "←"}`;
     $("cond-weather").textContent = [m.night ? "🌙 Night" : "☀️ Day", m.rain ? "🌧️ Rain" : ""].filter(Boolean).join(" · ");
-    $("stage-desc").textContent = `Free kick ${Math.round(K.dist)} yards out. George, in Forest ${SAVE.selected.kit} kit with GEORGE 10 on his back, stands over the ball. A wall of ${K.wallN} ${m.opp} players and their keeper stand between him and the goal.`;
+    $("stage-desc").textContent = `Free kick ${Math.round(K.dist)} yards out. George, in Forest ${curKit()} kit with GEORGE ${GL.number()} on his back, stands over the ball. A wall of ${K.wallN} ${m.opp} players and their keeper stand between him and the goal.`;
   }
 
   /* ================================================================
@@ -401,14 +398,14 @@
       <section class="fk-locker-sec"><h3>${title}</h3><div class="fk-items">
         ${items.map((it) => {
           const open = isUnlocked(it);
-          const sel = SAVE.selected[key] === it.id;
+          const sel = (key === "kit" ? curKit() : key === "boots" ? GL.pick("boots", SAVE.selected.boots) : key === "celebration" ? selectedCele().id : SAVE.selected[key]) === it.id;
           const preview = type === "ball" ? `<svg viewBox="-14 -14 28 28" class="fk-item-art" aria-hidden="true">${(() => { const b = it; return `${b.glow ? `<circle r="13" fill="${b.glow}" opacity=".35"/>` : ""}<circle r="9" fill="${b.fill}" stroke="#1b1720"/><path d="M0 -3.5 L3.3 -1 L2 3 L-2 3 L-3.3 -1 Z" fill="${b.patch}"/>`; })()}</svg>`
-            : type === "kit" ? `<span class="fk-item-art kit" style="background:${GK.KITS[it.id].shirt};color:${GK.KITS[it.id].text}">10</span>`
+            : type === "kit" ? `<span class="fk-item-art kit" style="background:${GK.KITS[it.id].shirt};color:${GK.KITS[it.id].text}">${GL.number()}</span>`
             : type === "boots" ? `<span class="fk-item-art boot" style="background:${it.colour}"></span>`
-            : `<span class="fk-item-art cele">${{ armsup: "🙌", slide: "🦵", siuuu: "🌀", badge: "🌳", robot: "🤖" }[it.id]}</span>`;
+            : `<span class="fk-item-art cele">${it.icon || "🎉"}</span>`;
           return `<button type="button" class="fk-item ${sel ? "selected" : ""} ${open ? "" : "locked"}" data-type="${key}" data-id="${it.id}" ${open ? "" : "aria-disabled=\"true\""} aria-pressed="${sel}">
             ${preview}<span class="fk-item-name">${escapeHtml(it.name)}</span>
-            <span class="fk-item-need">${sel ? "Selected" : open ? "Tap to use" : "🔒 " + needText(it.need)}</span>
+            <span class="fk-item-need">${sel ? "Selected" : open ? "Tap to use" : "🔒 " + needLabel(it)}</span>
           </button>`;
         }).join("")}
       </div></section>`;
@@ -775,8 +772,10 @@
   async function celebrate() {
     const c = selectedCele();
     const box = $("celebration");
-    $("cele-avatar").innerHTML = GK.avatar({ pose: c.pose, kit: SAVE.selected.kit, happy: true });
+    $("cele-avatar").innerHTML = GK.avatar({ pose: c.pose, kit: curKit(), happy: true });
     $("cele-avatar").className = "fk-cele-avatar " + (reduced ? "" : c.anim);
+    $("cele-fx").innerHTML = c.fx && !reduced ? Array.from({ length: 14 }, () =>
+      `<span style="left:${Math.round(rand() * 94)}%;animation-delay:${(rand() * 1).toFixed(2)}s;font-size:${Math.round(22 + rand() * 20)}px">${c.fx}</span>`).join("") : "";
     $("cele-text").textContent = c.shout;
     box.hidden = false;
     let skip;
@@ -886,7 +885,7 @@
     }
 
     if (stars > 0) { sfx.fanfare(); GK.confetti(confettiCanvas, 200); crowdJump(); } else sfx.aww();
-    $("r-avatar").innerHTML = GK.avatar({ pose: stars > 0 ? "up" : "idle", kit: SAVE.selected.kit, happy: stars > 0 });
+    $("r-avatar").innerHTML = GK.avatar({ pose: stars > 0 ? "up" : "idle", kit: curKit(), happy: stars > 0 });
     $("r-title").textContent = headline;
     $("r-text").textContent = text;
     $("r-stars").innerHTML = S.mode === "practice" ? "" : [0, 1, 2].map((i) => `<span class="fk-big-star ${i < stars ? "on" : ""}" style="animation-delay:${0.25 + i * 0.35}s">★</span>`).join("");
@@ -999,6 +998,9 @@
     const b = e.target.closest(".fk-item");
     if (!b || b.classList.contains("locked")) { if (b) sfx.buzz(); return; }
     SAVE.selected[b.dataset.type] = b.dataset.id;
+    // Kits, boots and celebrations are George's in every game, not just this one.
+    if (b.dataset.type === "kit" || b.dataset.type === "boots") GL.set({ [b.dataset.type]: b.dataset.id });
+    else if (b.dataset.type === "celebration") GL.set({ cele: b.dataset.id });
     persist();
     sfx.ding();
     renderLocker();

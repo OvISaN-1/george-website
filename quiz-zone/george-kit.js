@@ -57,6 +57,10 @@
     pink:   { name: "Pink away", shirt: "#f7a8c4", trim: "#15121a", text: "#15121a", shorts: "#15121a", socks: "#f7a8c4", sockTop: "#15121a" },
   };
 
+  // George's usual hair, used when the look module (george-look.js) is not on the page.
+  const PLAIN_FRONT = { behind: "", over:
+    `<path d="M56 98 C50 56 72 34 100 34 C130 34 152 56 144 98 C142 88 140 80 137 75 L131 81 L125 73 L118 82 L111 73 L104 82 L97 73 L90 82 L83 73 L76 82 L69 74 C63 80 59 88 56 98 Z" fill="${C.HAIR}"/>
+     <path d="M72 50 C84 44 96 42 110 44 M78 60 C90 54 110 54 124 60 M66 66 C72 62 76 60 80 60" stroke="${C.HAIR_LIGHT}" stroke-width="2.5" fill="none" stroke-linecap="round"/>` };
   let avatarCount = 0;
   /* Front-facing George. opts.pose: "idle" | "up" (both arms up) |
      "out" (arms wide, the SIUUU landing) | "point" (points at the badge).
@@ -71,6 +75,12 @@
       `<circle cx="20" cy="112" r="12" fill="${C.SKIN}"/><circle cx="180" cy="112" r="12" fill="${C.SKIN}"/>`;
     if (o.pose === "out") arms = sleeve("M52 196 L6 180") + sleeve("M148 196 L194 180") +
       `<circle cx="2" cy="179" r="11" fill="${C.SKIN}"/><circle cx="198" cy="179" r="11" fill="${C.SKIN}"/>`;
+    if (o.pose === "flex") arms = sleeve("M52 196 L22 178 L30 142") + sleeve("M148 196 L178 178 L170 142") +
+      `<circle cx="30" cy="134" r="12" fill="${C.SKIN}"/><circle cx="170" cy="134" r="12" fill="${C.SKIN}"/>`;
+    // A finger to the lips (drawn last, so it is in front of the face).
+    const shushHand = o.pose === "shush"
+      ? `<path d="M146 214 C150 180 138 150 112 134" stroke="${k.shirt}" stroke-width="20" stroke-linecap="round" fill="none"/><circle cx="106" cy="130" r="9" fill="${C.SKIN}"/><rect x="99" y="112" width="8" height="22" rx="4" fill="${C.SKIN}"/>` : "";
+    const hair = window.GL ? GL.hairFront(o.look) : PLAIN_FRONT;
     const pointArm = o.pose === "point"
       ? sleeve("M58 206 L108 214") + `<circle cx="118" cy="212" r="10" fill="${C.SKIN}"/><path d="M122 207 L134 200" stroke="${C.SKIN}" stroke-width="6" stroke-linecap="round"/>` : "";
     const grin = o.happy || o.pose !== "idle";
@@ -101,10 +111,10 @@
       </g>
       <path d="M56 170 C80 186 120 186 144 170 L146 186 C122 202 78 202 54 186 Z M62 184 L70 230 L90 230 L82 190 Z" fill="none" stroke="#8e0a1c" stroke-width="2"/>
       ${pointArm}
+      ${hair.behind}
       <ellipse cx="58" cy="100" rx="8" ry="12" fill="${C.SKIN}"/><ellipse cx="142" cy="100" rx="8" ry="12" fill="${C.SKIN}"/>
       <ellipse cx="100" cy="96" rx="42" ry="50" fill="${C.SKIN}"/>
-      <path d="M56 98 C50 56 72 34 100 34 C130 34 152 56 144 98 C142 88 140 80 137 75 L131 81 L125 73 L118 82 L111 73 L104 82 L97 73 L90 82 L83 73 L76 82 L69 74 C63 80 59 88 56 98 Z" fill="${C.HAIR}"/>
-      <path d="M72 50 C84 44 96 42 110 44 M78 60 C90 54 110 54 124 60 M66 66 C72 62 76 60 80 60" stroke="${C.HAIR_LIGHT}" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      ${hair.over}
       <path d="M74 89 C79 86 86 86 91 88 M109 88 C114 86 121 86 126 89" stroke="#7a5a3a" stroke-width="3" fill="none" stroke-linecap="round"/>
       <ellipse cx="82" cy="101" rx="8.5" ry="5.8" fill="#fff"/><ellipse cx="118" cy="101" rx="8.5" ry="5.8" fill="#fff"/>
       <circle cx="83" cy="101" r="4.3" fill="${C.EYES}"/><circle cx="117" cy="101" r="4.3" fill="${C.EYES}"/>
@@ -113,6 +123,7 @@
       <path d="M100 104 C98 111 96 115 99 117 C102 118 104 117 105 116" stroke="#d99a72" stroke-width="2.4" fill="none" stroke-linecap="round"/>
       <circle cx="74" cy="116" r="7" fill="#f29a8a" opacity=".35"/><circle cx="126" cy="116" r="7" fill="#f29a8a" opacity=".35"/>
       ${mouth}
+      ${shushHand}
     </svg>`;
   }
 
@@ -140,20 +151,25 @@
       <rect x="-5" y="-117" width="10" height="8" fill="${C.SKIN_SHADE}"/>
       <ellipse cx="-15" cy="-126" rx="3.5" ry="5" fill="${C.SKIN}"/><ellipse cx="15" cy="-126" rx="3.5" ry="5" fill="${C.SKIN}"/>
       <circle cx="0" cy="-127" r="15" fill="${C.SKIN}"/>
-      <path d="M-15.5 -123 C-18 -141 -8 -145 0 -145 C9 -145 18 -141 15.5 -123 L12 -119 L9 -122 L6 -118 L3 -121 L0 -117 L-3 -121 L-6 -118 L-9 -122 L-12 -119 Z" fill="${o.hair}"/>
-      ${o.hairLight ? `<path d="M-9 -139 C-4 -142 4 -142 9 -139 M-11 -131 C-5 -134 5 -134 11 -131" stroke="${o.hairLight}" stroke-width="1.6" fill="none" stroke-linecap="round"/>` : ""}`;
+      ${o.hairSvg || `<path d="M-15.5 -123 C-18 -141 -8 -145 0 -145 C9 -145 18 -141 15.5 -123 L12 -119 L9 -122 L6 -118 L3 -121 L0 -117 L-3 -121 L-6 -118 L-9 -122 L-12 -119 Z" fill="${o.hair}"/>
+      ${o.hairLight ? `<path d="M-9 -139 C-4 -142 4 -142 9 -139 M-11 -131 C-5 -134 5 -134 11 -131" stroke="${o.hairLight}" stroke-width="1.6" fill="none" stroke-linecap="round"/>` : ""}`}`;
   }
 
-  function georgeStriker(kitKey, boots) {
+  // How George is drawn from behind: his kit, boots, hair and shirt number.
+  function georgeStrikerOpts(kitKey, boots) {
     const k = KITS[kitKey] || KITS.home;
-    return striker({ shirt: k.shirt, shorts: k.shorts, socks: k.socks, sockTop: k.sockTop, hair: C.HAIR, hairLight: C.HAIR_LIGHT, text: k.text, name: "GEORGE", number: "10", boots });
+    return { shirt: k.shirt, shorts: k.shorts, socks: k.socks, sockTop: k.sockTop, hair: C.HAIR, hairLight: C.HAIR_LIGHT,
+      hairSvg: window.GL ? GL.hairBack() : "", text: k.text, name: "GEORGE", number: String(window.GL ? GL.number() : 10), boots };
   }
+  function georgeStriker(kitKey, boots) { return striker(georgeStrikerOpts(kitKey, boots)); }
 
   // Keeper facing us, feet at (0,0). ~72 units tall.
   function keeper(kit, isGeorge) {
+    const kh = isGeorge && window.GL ? GL.hairKeeper() : null;
     const face = isGeorge ? `
+      ${kh ? kh.behind : ""}
       <circle cx="0" cy="-64" r="9.5" fill="${C.SKIN}"/>
-      <path d="M-9.6 -63 C-11 -76 -4 -78 0 -78 C5 -78 11 -76 9.6 -63 L7.5 -67 L5.5 -65 L3.5 -68 L1 -65 L-1.5 -68 L-4 -65 L-6 -68 Z" fill="${C.HAIR}"/>
+      ${kh ? kh.over : `<path d="M-9.6 -63 C-11 -76 -4 -78 0 -78 C5 -78 11 -76 9.6 -63 L7.5 -67 L5.5 -65 L3.5 -68 L1 -65 L-1.5 -68 L-4 -65 L-6 -68 Z" fill="${C.HAIR}"/>`}
       <circle cx="-3.3" cy="-63" r="1.4" fill="${C.EYES}"/><circle cx="3.3" cy="-63" r="1.4" fill="${C.EYES}"/>
       <path d="M-3 -58.5 C-1 -57 1 -57 3 -58.5" stroke="#b5534f" stroke-width="1.2" fill="none"/>`
       : `
@@ -303,6 +319,7 @@
   GK.avatar = avatar;
   GK.striker = striker;
   GK.georgeStriker = georgeStriker;
+  GK.georgeStrikerOpts = georgeStrikerOpts;
   GK.keeper = keeper;
   GK.defender = defender;
   GK.createSound = createSound;

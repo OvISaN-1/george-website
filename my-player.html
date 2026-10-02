@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>document.documentElement.classList.add('js');</script>
+  <title>My Player | George's Game Zone</title>
+  <meta name="description" content="Make your own George: choose his hair, shirt number, kit, boots and goal celebration for every game.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="https://georgeneagu.win/my-player.html">
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/shell.css">
+  <link rel="stylesheet" href="quiz-zone/george-look.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121014'/%3E%3Ctext x='16' y='23' font-family='Arial, sans-serif' font-weight='700' font-size='19' fill='%23e1102c' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E">
+  <style>
+    :root{--navy:#121014;--navy-light:#1c1820;--cream:#f1ede9;--muted:#b9b2ac;--faint:#8a857e;--gold:#f5b942;--accent:#9d5cff;--good:#3DCC7C;--bad:#FF5D5D;--line:rgba(241,237,233,0.10);}
+    *{box-sizing:border-box;}
+    body{margin:0;min-height:100vh;font-family:'Manrope',sans-serif;color:var(--cream);background:var(--navy);}
+    h1,h2,h3{font-family:'Rajdhani',sans-serif;margin:0;}
+    button{font-family:'Rajdhani',sans-serif;cursor:pointer;border:none;font-weight:700;color:var(--cream);}
+    button:focus-visible,input:focus-visible{outline:2px solid var(--cream);outline-offset:3px;}
+    main#main{display:flex;flex-direction:column;align-items:center;padding:24px 16px 60px;
+      background:radial-gradient(circle at 15% 0%, rgba(157,92,255,0.12), transparent 45%), radial-gradient(circle at 90% 30%, rgba(225,16,44,0.10), transparent 40%);}
+    .wrap{width:100%;max-width:980px;}
+    .eyebrow{display:block;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#a264ff;margin:0 0 2px;}
+    .title h1{font-size:34px;line-height:1.05;margin-bottom:8px;}
+    .title p{color:var(--muted);line-height:1.5;margin:0 0 18px;max-width:62ch;}
+    .layout{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:18px;align-items:start;}
+    @media (max-width:820px){.layout{grid-template-columns:1fr;}}
+    .card{background:var(--navy-light);border-radius:20px;padding:20px;border:1px solid var(--line);margin-bottom:16px;}
+    .card h2{font-size:22px;margin-bottom:4px;}
+    .card .sub{color:var(--muted);font-size:14px;margin:0 0 12px;line-height:1.45;}
+
+    /* preview */
+    .preview{position:sticky;top:76px;overflow:hidden;}
+    @media (max-width:820px){.preview{position:static;}}
+    .pv-stage{position:relative;border-radius:16px;overflow:hidden;background:radial-gradient(circle at 50% 30%,rgba(225,16,44,.45),transparent 70%),#2a1a22;border:1px solid rgba(241,237,233,.12);padding:14px 10px 8px;}
+    .pv-row{display:flex;align-items:flex-end;justify-content:center;gap:10px;}
+    #pv-front{width:min(200px,52%);}
+    #pv-front svg{width:100%;height:auto;display:block;}
+    #pv-back{width:min(130px,34%);background:linear-gradient(#2e7d3a,#3a8f46);border-radius:12px;}
+    #pv-back svg{width:100%;height:auto;display:block;}
+    .pv-name{display:flex;justify-content:center;gap:10px;align-items:center;margin-top:10px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:22px;letter-spacing:.06em;}
+    .pv-num{background:var(--gold);color:#241f29;border-radius:10px;padding:0 10px;min-width:44px;text-align:center;}
+    .pv-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+    .btn{background:var(--accent);color:#121014;border-radius:999px;min-height:46px;padding:0 20px;font-size:16px;text-transform:uppercase;letter-spacing:.03em;}
+    .btn.alt{background:transparent;color:var(--cream);border:1px solid rgba(241,237,233,.25);text-transform:none;letter-spacing:0;font-size:15px;}
+
+    /* options */
+    .opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;}
+    .opt{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border-radius:14px;background:rgba(255,255,255,.05);border:2px solid rgba(241,237,233,.10);min-height:84px;text-align:center;line-height:1.1;}
+    .opt .e{font-size:26px;line-height:1;}
+    .opt .n{font-size:15px;}
+    .opt .need{font-family:'Manrope',sans-serif;font-weight:600;font-size:11px;color:var(--muted);}
+    .opt:hover{border-color:var(--gold);}
+    .opt[aria-pressed="true"]{border-color:var(--gold);background:rgba(245,185,66,.14);}
+    .opt.locked{opacity:.5;}
+    .art{width:46px;height:34px;border-radius:8px 8px 12px 12px;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:17px;border:2px solid rgba(255,255,255,.35);}
+    .art.boot{height:16px;width:52px;border-radius:12px 18px 6px 6px;margin:9px 0;}
+    .swatches{display:flex;flex-wrap:wrap;gap:10px;}
+    .sw{width:44px;height:44px;border-radius:50%;border:3px solid rgba(255,255,255,.2);padding:0;}
+    .sw[aria-pressed="true"]{border-color:#fff;box-shadow:0 0 0 3px var(--accent);}
+    .num-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+    .num-row input{width:96px;min-height:52px;border-radius:14px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--cream);text-align:center;font:700 28px 'Rajdhani',sans-serif;}
+    .step{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.08);font-size:26px;line-height:1;}
+    .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+    .chip{border-radius:999px;padding:8px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(241,237,233,.14);font-size:15px;min-height:40px;}
+    .chip[aria-pressed="true"]{border-color:var(--gold);background:rgba(245,185,66,.14);}
+    .msg{min-height:1.4em;margin:6px 0 0;color:var(--muted);font-size:14px;}
+    .prog{font-size:13px;color:var(--faint);margin:0 0 10px;}
+    .links{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;}
+    .links a{color:var(--gold);}
+    .pv-cele-host{position:absolute;inset:0;z-index:5;pointer-events:none;}
+    .pv-cele-host .gl-cele{pointer-events:auto;}
+  </style>
+</head>
+<body data-page="quiz-game">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <nav class="nav-bar" aria-label="Main">
+      <a class="logo" href="index.html">GEORGE<span>.</span></a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="football.html">Football</a></li>
+        <li><a href="games.html">Video Games</a></li>
+        <li><a href="quiz-zone.html" aria-current="page">Game Zone</a></li>
+        <li><a href="school.html">School Zone</a></li>
+        <li><a href="about.html">About Me</a></li>
+      </ul>
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </nav>
+    <div class="mobile-nav" id="mobile-nav">
+      <a href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/></svg>Home</a>
+      <a href="football.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/></svg>Football</a>
+      <a href="games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="10" rx="4"/></svg>Video Games</a>
+      <a href="quiz-zone.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>Game Zone</a>
+      <a href="school.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4l9 4-9 4-9-4z"/></svg>School Zone</a>
+      <a href="about.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>About Me</a>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="wrap">
+      <div class="title">
+        <span class="eyebrow">Game Zone</span>
+        <h1>My Player</h1>
+        <p>Make George look the way you want. Pick his hair, shirt number, kit, boots and goal celebration. It changes him in every game: Matchday, Free Kick Masters and Penalty Shootout.</p>
+      </div>
+
+      <div class="layout">
+        <section class="card preview" aria-labelledby="pv-h">
+          <h2 id="pv-h">George</h2>
+          <div class="pv-stage" id="pv-stage">
+            <div class="pv-row"><div id="pv-front" aria-hidden="true"></div><div id="pv-back" aria-hidden="true"></div></div>
+            <div class="pv-name"><span>GEORGE</span><span class="pv-num" id="pv-num">10</span></div>
+            <div class="pv-cele-host" id="pv-host"></div>
+          </div>
+          <div class="pv-actions">
+            <button type="button" class="btn" id="pv-play">▶ Celebrate!</button>
+            <button type="button" class="btn alt" id="pv-reset">Back to normal George</button>
+          </div>
+          <p class="msg" id="msg" role="status"></p>
+        </section>
+
+        <div>
+          <p class="prog" id="prog"></p>
+
+          <section class="card" aria-labelledby="h-hair">
+            <h2 id="h-hair">Hair</h2>
+            <p class="sub">Free for everyone.</p>
+            <div class="opts" id="hair-styles" role="group" aria-label="Hair style"></div>
+            <h3 style="font-size:17px;margin:16px 0 8px">Hair colour</h3>
+            <div class="swatches" id="hair-colours" role="group" aria-label="Hair colour"></div>
+          </section>
+
+          <section class="card" aria-labelledby="h-num">
+            <h2 id="h-num">Shirt number</h2>
+            <p class="sub">Any number from 1 to 99. It shows on his back and in the team sheets.</p>
+            <div class="num-row">
+              <button type="button" class="step" id="num-down" aria-label="Number down">−</button>
+              <input id="num" type="number" min="1" max="99" inputmode="numeric" aria-label="Shirt number">
+              <button type="button" class="step" id="num-up" aria-label="Number up">+</button>
+            </div>
+            <div class="chips" id="num-chips"></div>
+          </section>
+
+          <section class="card" aria-labelledby="h-kit">
+            <h2 id="h-kit">Shirt</h2>
+            <p class="sub">Win more to unlock more.</p>
+            <div class="opts" id="kits"></div>
+          </section>
+
+          <section class="card" aria-labelledby="h-boots">
+            <h2 id="h-boots">Boots</h2>
+            <div class="opts" id="boots"></div>
+          </section>
+
+          <section class="card" aria-labelledby="h-cele">
+            <h2 id="h-cele">Goal celebration</h2>
+            <p class="sub">Tap one to choose it and see it. It plays whenever George scores. Level up in Matchday or Free Kick Masters to unlock more, and some are special rewards.</p>
+            <div class="opts" id="celes"></div>
+          </section>
+
+          <p class="links"><a href="quiz-zone.html">← Back to the Game Zone</a> <a href="progress.html">💾 Save my progress</a></p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-row">
+      <span>Built with ♥ by Dad, for George.</span>
+      <a href="quiz-zone.html">Game Zone</a>
+    </div>
+  </footer>
+
+  <script src="js/content.js"></script>
+  <script src="js/main.js"></script>
+  <script src="quiz-zone/george-look.js"></script>
+  <script src="quiz-zone/george-kit.js"></script>
+  <script src="js/my-player.js"></script>
+</body>
+</html>

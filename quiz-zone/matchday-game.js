@@ -237,6 +237,7 @@
       S.players.push(Object.assign({}, pl, { id: "o" + i, team: "o", idx: i, base: { x: PW - x, y: PH - y }, x: PW - x, y: PH - y, line: lineOf(pl.pos), gk: i === 0, seed: rand() * 10, cards: 0, goals: 0, assists: 0, on: true }));
     });
     S.george = S.players.find((p) => p.george);
+    if (S.george) S.george.num = GL.number();          // the number he chose in My Player
     S.benchF = MD.FOREST.subs.map((s) => Object.assign({}, s));
   }
 
