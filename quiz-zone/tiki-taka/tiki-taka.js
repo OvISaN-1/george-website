@@ -24,7 +24,7 @@
   const I = { PHASE: 0, SCORE: 1, LEFT: 2, NO: 3, CHAIN: 4, RESULT: 5, PHASE_T: 6, TIME: 7, GOALS: 8, OWNER: 9, N_ATT: 10, N_DEF: 11,
     AIM: 12, AIM_LEN: 13, AIM_DX: 14, AIM_DY: 15, AIM_TARGET: 16, AIM_EX: 17, AIM_EY: 18, INTRO: 19, SHIELD: 20, SHOT: 21,
     BEST_CHAIN: 22, PASSES: 23, PRESSURE: 24, BX: 25, BY: 26, BVX: 27, BVY: 28, RECEIVER: 29, CAN_SHOOT: 30, BONUS: 31, LEVEL: 32,
-    METER: 33, FREEZE: 34, CINE_T: 35, SKILL: 36, CINE_KIND: 37, SUPER_SHOT: 38, P0: 40, STRIDE: 8 };
+    METER: 33, FREEZE: 34, CINE_T: 35, SKILL: 36, CINE_KIND: 37, SUPER_SHOT: 38, SLOW_LEFT: 39, P0: 40, STRIDE: 8 };
   const PH = { PLAY: 1, RESULT: 2, OVER: 3, CINE: 4 };
   const R = { NONE: 0, GOAL: 1, SAVED: 2, MISS: 3, BLOCKED: 4, TACKLED: 5, POST: 6, OUT: 7 };
   const E = { KICK: 1, PASS: 2, SHOT: 3, TACKLE: 4, SAVE: 5, POST: 6, GOAL: 7, MISS: 8, BLOCK: 9, START: 11, OVER: 12, SUPER: 13, FREEZE: 14, METER_FULL: 15 };
@@ -185,6 +185,16 @@
         const x = (i * 97 + t * 8) % W, y = (i * 211 + t * 24 * (1 + (i % 3))) % H;
         ctx.fillRect(x, y, 3, 3);
       }
+    }
+    if (S[I.AIM] === 1 && S[I.SLOW_LEFT] > 0 && owner >= 0 && phase === PH.PLAY) { // aiming: time has almost stopped
+      const o2 = I.P0 + owner * I.STRIDE, ax = S[o2], ay = S[o2 + 1];
+      const v = ctx.createRadialGradient(ax, ay, 120, ax, ay, 560);
+      v.addColorStop(0, "rgba(120,170,255,0)"); v.addColorStop(1, "rgba(40,70,160,.38)");
+      ctx.fillStyle = v; ctx.fillRect(0, -TOP, W, H + TOP);
+      // a ring that drains as the slow-motion runs out
+      const frac = Math.min(1, S[I.SLOW_LEFT] / 1.2);
+      ctx.strokeStyle = "rgba(160,205,255,.95)"; ctx.lineWidth = 4; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.arc(ax, ay, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * frac); ctx.stroke(); ctx.lineCap = "butt";
     }
     if (S[I.SUPER_SHOT]) { // a ball of fire
       const bx = S[I.BX], by = S[I.BY];
@@ -443,8 +453,8 @@
         const pr = S[I.PRESSURE];
         if (S[I.INTRO] > 0) say("Get ready...");
         else if (pr < 70) say("Defender closing in! Pass or shoot!");
-        else say((S[I.CHAIN] | 0) === 0 ? "Drag to pass. Further drag, longer pass." : "Keep it moving, or shoot when you are ready.");
-      } else if (S[I.AIM] === 1) say(S[I.AIM_TARGET] >= 0 ? "Locked on. Let go to pass!" : "Let go to pass.");
+        else say((S[I.CHAIN] | 0) === 0 ? "Drag to pass. Time slows while you aim." : "Keep it moving, or shoot when you are ready.");
+      } else if (S[I.AIM] === 1) say(S[I.SLOW_LEFT] > 0 ? (S[I.AIM_TARGET] >= 0 ? "Locked on. Let go to pass!" : "Time is slowed. Line it up!") : (S[I.AIM_TARGET] >= 0 ? "Locked on. Let go to pass!" : "Let go to pass."));
     } else if (phase === PH.CINE) {
       say("");
     } else if (phase === PH.RESULT && lastResult !== result + 100) {
