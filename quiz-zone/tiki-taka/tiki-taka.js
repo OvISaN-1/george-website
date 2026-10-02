@@ -155,11 +155,6 @@
 
   function drawBall(x, y, vx, vy, t) {
     ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.beginPath(); ctx.ellipse(x + 2, y + 4, 8, 5, 0, 0, 7); ctx.fill();
-    const sp = Math.hypot(vx, vy);
-    if (sp > 260) { // a little streak behind a fast ball
-      ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 6; ctx.lineCap = "round";
-      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - vx * 0.035, y - vy * 0.035); ctx.stroke(); ctx.lineCap = "butt";
-    }
     ctx.fillStyle = "#fff"; ctx.strokeStyle = "#1b1720"; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.arc(x, y, 7, 0, 7); ctx.fill(); ctx.stroke();
     ctx.fillStyle = "#1b1720"; ctx.beginPath(); ctx.arc(x + Math.cos(t * 6 + x * 0.1) * 2, y + Math.sin(t * 6 + y * 0.1) * 2, 2.4, 0, 7); ctx.fill();
@@ -261,15 +256,6 @@
       if (q.k === "ring") q.r += dt * 220;
     }
     if (FX.p.length > 600) FX.p.splice(0, FX.p.length - 600);
-    // the ball leaves a trail: fire for a rocket, rainbow for a long chain, white for a hard pass
-    if (S && (S[I.PHASE] | 0) === PH.PLAY && (S[I.OWNER] | 0) < 0 && !reduced) {
-      const sp = Math.hypot(S[I.BVX], S[I.BVY]);
-      if (sp > 140) {
-        const sup = S[I.SUPER_SHOT] === 1, chain = S[I.CHAIN] | 0;
-        const col = sup ? pickOne(["#ffd23f", "#ff8a2a", "#ff4b2b"]) : chain >= 3 ? `hsl(${(clock * 500) % 360},95%,62%)` : "rgba(255,255,255,.7)";
-        FX.p.push({ k: "dot", x: S[I.BX] + rnd(-3, 3), y: S[I.BY] + rnd(-3, 3), vx: rnd(-20, 20), vy: rnd(-20, 20), g: 0, life: sup ? 0.6 : 0.4, max: sup ? 0.6 : 0.4, c: col, s: sup ? 9 : chain >= 3 ? 7 : 4, r: 0 });
-      }
-    }
   }
   function drawFx() {
     for (const q of FX.p) {
@@ -733,7 +719,10 @@
   }
   function replayFrame(dt) {
     const r = replay;
-    r.pos += dt * REPLAY_SPEED; r.el += dt;
+    // in the last moments (the shot, the save, the goal) it slows right down
+    const left = r.len - r.pos;
+    const ease = left > 0 && left < 0.45 ? 0.25 + 0.75 * (left / 0.45) : 1;
+    r.pos += dt * REPLAY_SPEED * ease; r.el += dt;
     if (r.pos >= r.len + 0.35) { skipReplay(); return; }      // hold the last picture for a moment
     const target = r.t0 + Math.min(r.pos, r.len);
     while (r.i < r.frames.length - 1 && r.frames[r.i + 1].t <= target) r.i++;
