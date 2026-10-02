@@ -347,6 +347,7 @@
   cv.addEventListener("pointerdown", (ev) => {
     if (!running) return;
     ev.preventDefault();
+    if (replay) { skipReplay(); return; }
     SOUND.wake();
     refresh();
     if (S[I.PHASE] !== PH.PLAY || (S[I.OWNER] | 0) < 0) return;
@@ -404,6 +405,7 @@
   const keys = { x: 0, y: 0, held: false, len: 0 };
   document.addEventListener("keydown", (e) => {
     if (!running || e.target.tagName === "INPUT" || e.target.tagName === "BUTTON" && e.key !== " " && e.key !== "Enter") return;
+    if (replay) { e.preventDefault(); skipReplay(); return; }
     const map = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1], a: [-1, 0], d: [1, 0], w: [0, -1], s: [0, 1] };
     if (map[e.key]) {
       e.preventDefault();
@@ -432,14 +434,59 @@
 
   /* ---------------- The game loop ---------------- */
   let running = false, raf = 0, last = 0, clock = 0, finished = false;
+  /* ---------------- Replay: the end of every attack, shown again ---------------- */
+  const REPLAY_SECS = 2.2;       // how much of the attack to show
+  const REPLAY_SPEED = 0.9;      // a little slower than real life
+  const REPLAY_DELAY = 0.9;      // let the result sink in first
+  let rec = [], recNo = -1, resultFor = 0, replayDone = false, replay = null;
+
+  function record() {
+    const no = S[I.NO] | 0, phase = S[I.PHASE] | 0;
+    if (no !== recNo) { rec = []; recNo = no; replayDone = false; resultFor = 0; }
+    if (phase !== PH.PLAY && phase !== PH.RESULT) return;
+    rec.push({ t: clock, s: S.slice() });
+    while (rec.length > 2 && rec[0].t < clock - 4.5) rec.shift();
+  }
+  function startReplay() {
+    if (rec.length < 20) { replayDone = true; return; }
+    const end = rec[rec.length - 1].t;
+    const frames = rec.filter((f) => f.t >= end - REPLAY_SECS);
+    replay = { frames, t0: frames[0].t, len: end - frames[0].t, pos: 0, i: 0 };
+    replayDone = true;
+    popEl.className = "tt-pop";
+    say("");
+  }
+  function skipReplay() { if (replay) { replay = null; last = performance.now(); refresh(); } }
+  function replayFrame(dt) {
+    const r = replay;
+    r.pos += dt * REPLAY_SPEED;
+    if (r.pos >= r.len + 0.35) { skipReplay(); return; }      // hold the last picture for a moment
+    const target = r.t0 + Math.min(r.pos, r.len);
+    while (r.i < r.frames.length - 1 && r.frames[r.i + 1].t <= target) r.i++;
+    S = r.frames[r.i].s.slice();
+    S[I.AIM] = 0; S[I.PHASE] = PH.PLAY; S[I.INTRO] = 0;
+    draw(clock);
+    // broadcast look: bars, a REPLAY tag, and a hint
+    ctx.fillStyle = "rgba(0,0,0,.62)";
+    ctx.fillRect(0, -TOP, W, TOP + 30); ctx.fillRect(0, H - 30, W, 30);
+    ctx.fillStyle = "#ff3b4e"; ctx.globalAlpha = 0.6 + 0.4 * Math.sin(clock * 8);
+    ctx.beginPath(); ctx.arc(34, -TOP / 2 + 6, 8, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+    ctx.fillStyle = "#fff"; ctx.font = "700 30px Rajdhani, sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillText("REPLAY", 52, -TOP / 2 + 7);
+    ctx.textAlign = "right"; ctx.font = "600 17px Manrope, sans-serif"; ctx.fillStyle = "rgba(255,255,255,.8)";
+    ctx.fillText("Tap to skip", W - 22, H - 14);
+  }
+
   function frame(now) {
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.1, (now - last) / 1000 || 0.016);
     last = now; clock += dt;
+    if (replay) { replayFrame(dt); return; }
     keyAimStep(dt);
     wasm.tick(dt * 1000);
     refresh();
     handleEvents();
+    record();
     draw(clock);
     updateHud();
     const phase = S[I.PHASE] | 0, result = S[I.RESULT] | 0;
@@ -466,6 +513,10 @@
       pop(txt, result === R.GOAL ? `+${bonus} points` : "", cls);
       if (result === R.GOAL) { GK.confetti(confettiCanvas, 120); }
       say("");
+    }
+    if (phase === PH.RESULT) {
+      resultFor += dt;
+      if (!replayDone && resultFor >= REPLAY_DELAY) startReplay();
     }
     if (phase === PH.OVER && !finished) { finished = true; finish(); }
   }
@@ -551,7 +602,7 @@
     SOUND.wake();
     const r = rpgLoad();
     wasm.new_game((Math.random() * 4294967295) >>> 0, r.stats.speed, r.stats.power, r.stats.technique, r.stats.composure, r.skill === "freeze" ? 1 : 0);
-    pipState = []; lastHud = ""; finished = false; lastResult = 0; flash = 0;
+    pipState = []; lastHud = ""; finished = false; lastResult = 0; flash = 0; rec = []; recNo = -1; replay = null; replayDone = false; resultFor = 0;
     $("screen-start").hidden = true; $("screen-end").hidden = true; $("screen-game").hidden = false;
     fit();
     running = true;
