@@ -176,7 +176,7 @@
   /* ---------------- Hear it + what it means (spelling and word meanings) ----
      🔊 uses the device's own British voice; 📖 looks the word up in the free
      Dictionary API (dictionaryapi.dev). Only for real words, not prefixes. */
-  const WORD_TOPICS = ['spelling', 'words'];
+  const WORD_TOPICS = ['spelling', 'homophones', 'words'];
   function theWord(q) {
     if (!WORD_TOPICS.includes(q.topic)) return null;
     const w = String(q.a).trim();
