@@ -65,6 +65,8 @@
   let soundOn = SOUND.isOn();
   const audio = () => SOUND.wake();
   const sfx = SOUND.sfx;
+  const MUSIC = GZMusic.attach(SOUND);      // walk-out tune, goal song, chants (gz-music.js)
+  GZMusic.mountToggle($("btn-music"));
   const confettiCanvas = $("confetti");
   function confetti(amount) { GK.confetti(confettiCanvas, amount); }
 
@@ -118,7 +120,8 @@
   }
   window.addEventListener("resize", fitView);
 
-  const GEORGE_KIT = { shirt: FOREST_RED, shorts: "#f4f1ee", socks: FOREST_RED, sockTop: "#ffffff", hair: HAIR, hairLight: HAIR_LIGHT, text: "#ffffff", name: "GEORGE", number: "10" };
+  // George as he looks now (My Player): his kit, boots, hair and shirt number.
+  const georgeKit = () => GK.georgeStrikerOpts(GL.pick("kit", "home"), GL.bootsColour(GL.pick("boots", "black")));
   function oppKit(r) {
     const light = r.shirt === "#f4f4f4" || r.shirt === "#6cabdd";
     return { shirt: r.shirt, shorts: r.shorts, socks: r.socks, sockTop: r.socks, hair: r.hair, text: light ? "#132257" : "#ffffff", name: "", number: "9" };
@@ -149,7 +152,7 @@
 
   function resetScene(forestShooting) {
     const r = ROUNDS[S.round];
-    strikerEl.innerHTML = PitchFX.idle(strikerMarkup(forestShooting ? GEORGE_KIT : oppKit(r)), "breathe", 0);
+    strikerEl.innerHTML = PitchFX.idle(strikerMarkup(forestShooting ? georgeKit() : oppKit(r)), "breathe", 0);
     keeperEl.innerHTML = PitchFX.idle(keeperMarkup(forestShooting ? r.keeperKit : "#1f9d55", !forestShooting), forestShooting ? "pace" : "bounce");
     setStriker(STRIKER_HOME.x, STRIKER_HOME.y, STRIKER_HOME.s);
     setBall(BALL_HOME.x, BALL_HOME.y, 1); setShadow(200, 364, 1);
@@ -302,10 +305,13 @@
       rippleNet();
       sfx.roar(); crowdJump(); confetti(topBins ? 170 : 110);
       PitchFX.goal(topBins);
+      MUSIC.goalSong({ short: true });
       georgeCelebrates();
       pop(topBins ? "TOP BINS!" : pick(["GOAL!", "GOAL!", "WHAT A PEN!", "GET IN!"]), topBins ? "gold" : "");
       say(topBins ? "Right in the top corner. Unstoppable!" : pick(["Back of the net!", "The City Ground goes wild!", "Cool as you like, George!"]));
-      await sleep(1700);
+      await sleep(650);
+      await GL.celebrate(stage, { ms: 1500 });      // his chosen celebration (My Player)
+      await sleep(250);
       nextTurn();
     } else {
       sfx.aww();
@@ -470,6 +476,7 @@
         S.cup.saves++; S.matchSaves++;
         sfx.roar(); crowdJump(); confetti(90);
         PitchFX.goal(true);
+        MUSIC.chant("forest");
         pop(pick(["WHAT A SAVE!", "GEORGE SAVES!", "BRICK WALL!"]), "gold");
         say("Unbelievable save from George!");
       } else {
@@ -541,6 +548,7 @@
     S.forest = []; S.opp = []; S.retakeUsed = false; S.matchSaves = 0;
     S.roundStart = { goals: S.cup.goals, saves: S.cup.saves, retakes: S.cup.retakes, topBins: S.cup.topBins, maxSaves: S.cup.maxSaves, roundsWon: S.cup.roundsWon };
     const r = ROUNDS[S.round];
+    MUSIC.walkOut({ ms: 5500 });
     renderScoreboard();
     pop(`${r.stage.toUpperCase()}`, "gold");
     sfx.whistle();
@@ -604,6 +612,7 @@
     if (window.GZWake) GZWake.off();
     const c = S.cup;
     const score = c.goals + c.saves;
+    if (c.won) MUSIC.winTune({ ms: 6500 }); else MUSIC.fadeOut(500);
     $("screen-game").hidden = true;
     $("screen-end").hidden = false;
     $("avatar-end").innerHTML = georgeAvatar(c.won);

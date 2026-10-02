@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="../css/fonts.css">
 <link rel="stylesheet" href="../css/shell.css">
 <link rel="stylesheet" href="stats.css">
+<link rel="stylesheet" href="george-look.css">
 <link rel="stylesheet" href="pitch-fx.css">
 <style>
   :root{
@@ -574,6 +575,7 @@
       <button class="md-mode primary" id="btn-week" type="button"><span class="t">📅 This week's match</span><span class="s" id="week-sub"></span></button>
       <button class="md-mode" id="btn-season" type="button"><span class="t">🏆 Season 2026/27</span><span class="s" id="season-sub"></span></button>
       <button class="md-mode" id="btn-friendly" type="button"><span class="t">🤝 Friendly</span><span class="s">Pick any team, home or away</span></button>
+      <a class="md-mode" href="../my-player.html" style="text-decoration:none"><span class="t">🧑‍🎤 My Player</span><span class="s">Hair, number, kit, boots, celebrations</span></a>
       <button class="md-mode gold" id="btn-career" type="button"><span class="t">⭐ George's card</span><span class="s" id="career-sub"></span></button>
     </div>
     <div class="md-box">
@@ -584,6 +586,7 @@
     <div class="md-toggles">
       <button class="ps-sound" id="btn-sound" type="button" aria-pressed="true">🔊 Sound on</button>
       <button class="ps-sound" id="btn-voice" type="button" aria-pressed="true">🎙️ Commentary on</button>
+      <button class="ps-sound" id="btn-music" type="button" aria-pressed="true">🎶 Music: Loud</button>
     </div>
     <p class="md-small" id="menu-record"></p>
     <div class="md-box"><h3>Top scores</h3><div id="menu-board">Loading...</div></div>
@@ -708,7 +711,9 @@
 <script src="../js/main.js"></script>
 <script src="../js/db.js"></script>
 <script src="stats.js"></script>
+<script src="george-look.js"></script>
 <script src="george-kit.js"></script>
+<script src="gz-music.js"></script>
 <script src="forest-questions.js"></script>
 <script src="pitch-fx.js"></script>
 <script src="free-kick-physics.js"></script>

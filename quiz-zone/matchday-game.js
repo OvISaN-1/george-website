@@ -22,6 +22,8 @@
   const SOUND = GK.createSound("gz_matchday_sound");
   const sfx = SOUND.sfx;
   const VOICE = GK.createVoice("gz_matchday_voice");
+  const MUSIC = GZMusic.attach(SOUND);      // walk-out tune, goal song, chants (gz-music.js)
+  GZMusic.mountToggle(document.getElementById("btn-music"));
   if (window.MDR) MDR.ctx = () => (SOUND.isOn() && SOUND.wake ? SOUND.wake() : null);
 
   /* ---------------- Extra match sounds ----------------
@@ -237,6 +239,7 @@
       S.players.push(Object.assign({}, pl, { id: "o" + i, team: "o", idx: i, base: { x: PW - x, y: PH - y }, x: PW - x, y: PH - y, line: lineOf(pl.pos), gk: i === 0, seed: rand() * 10, cards: 0, goals: 0, assists: 0, on: true }));
     });
     S.george = S.players.find((p) => p.george);
+    if (S.george) S.george.num = GL.number();          // the number he chose in My Player
     S.benchF = MD.FOREST.subs.map((s) => Object.assign({}, s));
   }
 
@@ -918,6 +921,7 @@
   /* Things that just happen: fouls, cards, offsides, corners, subs. */
   async function ambient() {
     const m = S.min;
+    if (S.phase === "play" && rand() < 0.1) MUSIC.maybeChant(35000);
     const near = S.schedule.some((x) => !x.done && Math.abs(x.min - m) <= 1);
     if (S.half === 2 && S.subsDone < 2 && ((m >= 61 && S.subsDone === 0) || (m >= 73 && S.subsDone === 1))) return forestSubs();
     if (near) return;
@@ -1338,6 +1342,7 @@
       `<span style="left:${Math.round(rand() * 94)}%;animation-delay:${(rand() * 1.2).toFixed(2)}s;font-size:${Math.round(22 + rand() * 22)}px">${c.fx}</span>`).join("") : "";
     cele.hidden = false;
     // Rock Anthem Goals: George's riff, or the classic fanfare.
+    if (S.gear.riff && S.gear.riff !== "none" && window.MDR) MUSIC.fadeOut(700);
     const riff = S.gear.riff && S.gear.riff !== "none" && window.MDR ? MDR.play(MDR.ctx(), S.gear.riff) : null;
     if (riff && riff.duration) crowd.swell(0.1, riff.duration); else sfx.fanfare();
     const gen = GEN;
@@ -1417,6 +1422,7 @@
       bounceCrowd();
       pop("GOAL!");
       MDFX.goal(scorer.george);
+      MUSIC.goalSong();
       MDFX.ring(scorer.x * U, scorer.y * U, { r0: 12, r1: 110, ms: 900, color: "#f5b942", w: 3 });
       MDFX.ring(scorer.x * U, scorer.y * U, { r0: 8, r1: 70, ms: 700, color: "#ffffff", w: 2 });
       GK.confetti($("confetti"), 140);
@@ -1507,6 +1513,7 @@
      ================================================================ */
   async function runMoment(m) {
     stopClock();
+    MUSIC.fadeOut(600);
     if (m.type === "attack") await attackMoment();
     else if (m.type === "defend") await defendMoment();
     else if (m.type === "penalty") await penaltyMoment();
@@ -2167,7 +2174,8 @@
         p.el.setAttribute("transform", `translate(${(p.x * U).toFixed(1)} ${(p.y * U).toFixed(1)})`);
       });
     }
-    await wait(reduced ? 300 : 3400);
+    MUSIC.walkOut({ ms: 8500 });
+    await wait(reduced ? 300 : 5500);
     if (S.quit) return;
     await restart("f");
     logEvent("whistle", "Kick-off!", "");
@@ -2255,7 +2263,7 @@
     sfx.whistle(); await wait(180); sfx.whistle(); await wait(180); sfx.whistle();
     const won = S.score.f > S.score.o, draw = S.score.f === S.score.o;
     say(`Full-time! Forest ${S.score.f}-${S.score.o} ${S.opp.name}.`, { icon: "whistle", log: true, voice: true, excited: won });
-    if (won) { sfx.fanfare(); GK.confetti($("confetti"), 240); }
+    if (won) { sfx.fanfare(); GK.confetti($("confetti"), 240); MUSIC.winTune({ ms: 7000 }); } else MUSIC.fadeOut(500);
     await wait(reduced ? 300 : 1400);
     S.over = true;
     const { ratings, motm } = computeRatings();
@@ -2729,6 +2737,7 @@
   $("btn-quit").addEventListener("click", () => {
     if (!S) return;
     if (!confirm("Leave this match? It won't count.")) return;
+    MUSIC.fadeOut(300);
     S.quit = true; S.over = true;
     if (window.GZWake) GZWake.off();
     if (S.riffAudio) { S.riffAudio.pause(); S.riffAudio = null; }

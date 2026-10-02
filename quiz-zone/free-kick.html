@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="../css/fonts.css">
 <link rel="stylesheet" href="../css/shell.css">
 <link rel="stylesheet" href="stats.css">
+<link rel="stylesheet" href="george-look.css">
 <link rel="stylesheet" href="pitch-fx.css">
 <style>
   :root{
@@ -420,11 +421,13 @@
       <button class="fk-mode primary" id="btn-season" type="button"><span class="t">⚽ Season</span><span class="s" id="season-progress"></span></button>
       <button class="fk-mode" id="btn-daily" type="button"><span class="t">📅 Daily Challenge</span><span class="s" id="daily-status"></span></button>
       <button class="fk-mode" id="btn-practice" type="button"><span class="t">🎯 Practice</span><span class="s" id="practice-status"></span></button>
+      <a class="fk-mode" href="../my-player.html" style="text-decoration:none"><span class="t">🧑‍🎤 My Player</span><span class="s">Hair, number, kit, boots, celebrations</span></a>
       <button class="fk-mode" id="btn-locker" type="button"><span class="t">👕 Locker Room</span><span class="s">Kits, balls, boots, celebrations</span></button>
     </div>
     <div class="fk-toggles">
       <button class="ps-sound" id="btn-sound" type="button" aria-pressed="true">🔊 Sound on</button>
       <button class="ps-sound" id="btn-voice" type="button" aria-pressed="true">🎙️ Commentary on</button>
+      <button class="ps-sound" id="btn-music" type="button" aria-pressed="true">🎶 Music: Loud</button>
     </div>
     <p class="fk-small" id="menu-stats"></p>
     <div class="fk-board"><h3>Top scores (best match)</h3><div id="menu-board">Loading...</div></div>
@@ -521,6 +524,7 @@
       <div class="ps-pop" id="pop" aria-hidden="true"></div>
 
       <div class="fk-cele" id="celebration" hidden aria-live="polite">
+        <div class="cele-fx" id="cele-fx" aria-hidden="true"></div>
         <div class="fk-cele-avatar" id="cele-avatar" aria-hidden="true"></div>
         <div class="fk-cele-text" id="cele-text">GET IN!</div>
       </div>
@@ -588,7 +592,9 @@
 
 <script src="../js/main.js"></script>
 <script src="stats.js"></script>
+<script src="george-look.js"></script>
 <script src="george-kit.js"></script>
+<script src="gz-music.js"></script>
 <script src="pitch-fx.js"></script>
 <script src="forest-questions.js"></script>
 <script src="free-kick-physics.js"></script>
