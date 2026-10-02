@@ -65,6 +65,8 @@
   let soundOn = SOUND.isOn();
   const audio = () => SOUND.wake();
   const sfx = SOUND.sfx;
+  const MUSIC = GZMusic.attach(SOUND);      // walk-out tune, goal song, chants (gz-music.js)
+  GZMusic.mountToggle($("btn-music"));
   const confettiCanvas = $("confetti");
   function confetti(amount) { GK.confetti(confettiCanvas, amount); }
 
@@ -303,6 +305,7 @@
       rippleNet();
       sfx.roar(); crowdJump(); confetti(topBins ? 170 : 110);
       PitchFX.goal(topBins);
+      MUSIC.goalSong({ short: true });
       georgeCelebrates();
       pop(topBins ? "TOP BINS!" : pick(["GOAL!", "GOAL!", "WHAT A PEN!", "GET IN!"]), topBins ? "gold" : "");
       say(topBins ? "Right in the top corner. Unstoppable!" : pick(["Back of the net!", "The City Ground goes wild!", "Cool as you like, George!"]));
@@ -473,6 +476,7 @@
         S.cup.saves++; S.matchSaves++;
         sfx.roar(); crowdJump(); confetti(90);
         PitchFX.goal(true);
+        MUSIC.chant("forest");
         pop(pick(["WHAT A SAVE!", "GEORGE SAVES!", "BRICK WALL!"]), "gold");
         say("Unbelievable save from George!");
       } else {
@@ -544,6 +548,7 @@
     S.forest = []; S.opp = []; S.retakeUsed = false; S.matchSaves = 0;
     S.roundStart = { goals: S.cup.goals, saves: S.cup.saves, retakes: S.cup.retakes, topBins: S.cup.topBins, maxSaves: S.cup.maxSaves, roundsWon: S.cup.roundsWon };
     const r = ROUNDS[S.round];
+    MUSIC.walkOut({ ms: 5500 });
     renderScoreboard();
     pop(`${r.stage.toUpperCase()}`, "gold");
     sfx.whistle();
@@ -607,6 +612,7 @@
     if (window.GZWake) GZWake.off();
     const c = S.cup;
     const score = c.goals + c.saves;
+    if (c.won) MUSIC.winTune({ ms: 6500 }); else MUSIC.fadeOut(500);
     $("screen-game").hidden = true;
     $("screen-end").hidden = false;
     $("avatar-end").innerHTML = georgeAvatar(c.won);

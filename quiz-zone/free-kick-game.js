@@ -154,6 +154,8 @@
      ================================================================ */
   const SOUND = GK.createSound("gz_freekick_sound");
   const sfx = SOUND.sfx;
+  const MUSIC = GZMusic.attach(SOUND);      // walk-out tune, goal song, chants (gz-music.js)
+  GZMusic.mountToggle($("btn-music"));
   const VOICE = GK.createVoice("gz_freekick_voice");
   const confettiCanvas = $("confetti");
   const rainCanvas = $("rain");
@@ -443,6 +445,7 @@
   function beginMatch() {
     S.kickIndex = 0; S.results = []; S.points = 0; S.goals = 0; S.streak = 0; S.bestStreak = 0;
     S.bonus = { topBins: 0, banana: 0, worldie: 0, targets: 0 };
+    MUSIC.walkOut({ ms: 6500 });
     show("screen-game");
     fitView();
     drawCrowd(S.match);
@@ -486,6 +489,7 @@
 
   /* ---------------- The kick: aim → curl → power ---------------- */
   function setupKick(isRetake) {
+    if (!isRetake && S.kickIndex > 0) MUSIC.maybeChant(30000);       // a chant from the stands every so often
     if (S.mode === "practice") { if (!isRetake) S.kick = makeKick(S.match); }
     else if (!isRetake) S.kick = S.kicks[S.kickIndex];
     if (!isRetake) S.retakeUsed = false;
@@ -692,6 +696,7 @@
       S.lastGoal = { pts, tags, shot };
       renderHud();
       sfx.roar(); crowdJump(); GK.confetti(confettiCanvas, shot.topBins || hitTarget ? 180 : 110);
+      MUSIC.goalSong({ short: true });
       PitchFX.goal(shot.topBins || hitTarget);
       const key = shot.result === "post-in" ? "postin" : shot.topBins ? "topbins" : Math.abs(shot.curl) > 0.6 ? "banana" : S.kick.dist >= 26 ? "long" : "goal";
       commentate(key, S.kick, true);
@@ -884,7 +889,7 @@
       GZ.announceBadges(newBadges);
     }
 
-    if (stars > 0) { sfx.fanfare(); GK.confetti(confettiCanvas, 200); crowdJump(); } else sfx.aww();
+    if (stars > 0) { sfx.fanfare(); GK.confetti(confettiCanvas, 200); crowdJump(); MUSIC.winTune({ ms: 6000 }); } else sfx.aww();
     $("r-avatar").innerHTML = GK.avatar({ pose: stars > 0 ? "up" : "idle", kit: curKit(), happy: stars > 0 });
     $("r-title").textContent = headline;
     $("r-text").textContent = text;
@@ -974,7 +979,7 @@
   $("btn-shoot").addEventListener("click", shoot);
   $("btn-next").addEventListener("click", nextKick);
   $("btn-replay").addEventListener("click", replay);
-  $("btn-quit").addEventListener("click", () => { cancelAnimationFrame(S.raf); S.phase = "idle"; $("question").hidden = true; renderMenu(); show("screen-menu"); });
+  $("btn-quit").addEventListener("click", () => { MUSIC.fadeOut(400); cancelAnimationFrame(S.raf); S.phase = "idle"; $("question").hidden = true; renderMenu(); show("screen-menu"); });
   document.addEventListener("keydown", (e) => {
     if (e.target.tagName === "INPUT" || $("screen-game").hidden) return;
     if (S.phase === "aim") {
