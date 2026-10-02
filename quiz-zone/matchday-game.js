@@ -680,6 +680,7 @@
     S.carrier = p;
     S.poss = p.team;
     S.stats[p.team].passes += 1;
+    if (p.team === "f") MDFX.ring(p.x * U, p.y * U, { r0: 10, r1: 30, ms: 420, color: "#f5b942", w: 1.5 });
   }
   async function ballTo(x, y, ms, lift) {
     const from = { x: S.ball.x, y: S.ball.y };
@@ -848,7 +849,7 @@
   function pop(text, cls) {
     const el = $("pop");
     el.className = "ps-pop" + (cls ? " " + cls : "");
-    el.textContent = text;
+    PitchFX.popText(el, text);
     void el.offsetWidth;
     el.classList.add("show");
   }
@@ -1416,6 +1417,8 @@
       bounceCrowd();
       pop("GOAL!");
       MDFX.goal(scorer.george);
+      MDFX.ring(scorer.x * U, scorer.y * U, { r0: 12, r1: 110, ms: 900, color: "#f5b942", w: 3 });
+      MDFX.ring(scorer.x * U, scorer.y * U, { r0: 8, r1: 70, ms: 700, color: "#ffffff", w: 2 });
       GK.confetti($("confetti"), 140);
       const line = scorer.george
         ? pick([`GEORGE! What a finish! ${S.score.f}-${S.score.o} Forest!`, scorer.goals > 1 ? `It's George! Again! ${S.home ? "The City Ground erupts!" : "The away end is bouncing!"}` : `It's George! ${S.home ? "The City Ground erupts!" : "The away end goes wild!"}`, `George, you beauty! That is top class.`, `GOAL! George with the finish, cool as you like.`])
@@ -2156,7 +2159,15 @@
     S.kickoffTeam = "f";
     S.phase = "kickoff";
     S.carrier = null;
-    await wait(reduced ? 300 : 1800);
+    if (!reduced) {
+      // Both teams walk out of the tunnel (top centre) and jog to their places.
+      S.players.forEach((p, i) => {
+        p.x = PW / 2 + (p.team === "f" ? -3.5 : 3.5) + ((i % 6) - 2.5) * 0.7;
+        p.y = -4 - (i % 11) * 0.45;
+        p.el.setAttribute("transform", `translate(${(p.x * U).toFixed(1)} ${(p.y * U).toFixed(1)})`);
+      });
+    }
+    await wait(reduced ? 300 : 3400);
     if (S.quit) return;
     await restart("f");
     logEvent("whistle", "Kick-off!", "");

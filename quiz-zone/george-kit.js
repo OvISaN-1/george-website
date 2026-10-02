@@ -121,7 +121,7 @@
   function striker(o) {
     const boots = o.boots || "#15121a";
     const leg = (x, id) => `
-      <g ${id ? `id="${id}"` : ""}>
+      <g ${id ? `id="${id}"` : `class="s-leg"`}>
         <rect x="${x - 4}" y="-42" width="9" height="14" fill="${C.SKIN}"/>
         <rect x="${x - 5}" y="-30" width="11" height="25" rx="2" fill="${o.socks}"/>
         <rect x="${x - 5}" y="-30" width="11" height="4" fill="${o.sockTop}"/>
@@ -132,9 +132,8 @@
       ${leg(-9)}
       ${leg(9, "kick-leg")}
       <path d="M-21 -62 L21 -62 L23 -40 L3 -40 L0 -46 L-3 -40 L-23 -40 Z" fill="${o.shorts}"/>
-      <path d="M-24 -104 L-38 -86 L-30 -80 L-22 -90 Z" fill="${o.shirt}"/>
-      <path d="M24 -104 L38 -86 L30 -80 L22 -90 Z" fill="${o.shirt}"/>
-      <path d="M-35 -83 L-33 -60 M35 -83 L33 -60" stroke="${C.SKIN}" stroke-width="7" stroke-linecap="round"/>
+      <g class="s-arm l"><path d="M-24 -104 L-38 -86 L-30 -80 L-22 -90 Z" fill="${o.shirt}"/><path d="M-35 -83 L-33 -60" stroke="${C.SKIN}" stroke-width="7" stroke-linecap="round"/></g>
+      <g class="s-arm r"><path d="M24 -104 L38 -86 L30 -80 L22 -90 Z" fill="${o.shirt}"/><path d="M35 -83 L33 -60" stroke="${C.SKIN}" stroke-width="7" stroke-linecap="round"/></g>
       <path d="M-22 -60 L-24 -100 C-24 -106 -18 -110 -10 -111 L10 -111 C18 -110 24 -106 24 -100 L22 -60 Z" fill="${o.shirt}"/>
       ${o.name ? `<text x="0" y="-95" text-anchor="middle" font-family="Rajdhani, Arial Narrow, sans-serif" font-weight="700" font-size="8.5" letter-spacing="1" fill="${o.text}">${o.name}</text>` : ""}
       <text x="0" y="-67" text-anchor="middle" font-family="Rajdhani, Arial Narrow, sans-serif" font-weight="700" font-size="25" fill="${o.text}">${o.number}</text>
