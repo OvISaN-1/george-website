@@ -71,12 +71,19 @@ pub const E_MISS: u8 = 8;
 pub const E_BLOCK: u8 = 9;
 pub const E_START: u8 = 11;
 pub const E_OVER: u8 = 12;
+pub const E_SUPER: u8 = 13;
+pub const E_FREEZE: u8 = 14;
+pub const E_METER_FULL: u8 = 15;
 
 // ---------------------------------------------------------------- phases
 pub const PH_MENU: u8 = 0;
 pub const PH_PLAY: u8 = 1;
 pub const PH_RESULT: u8 = 2;
 pub const PH_OVER: u8 = 3;
+pub const PH_CINE: u8 = 4; // the slow-motion cinematic before a super skill
+
+pub const SK_ROCKET: u8 = 0; // super shot
+pub const SK_FREEZE: u8 = 1; // time stop
 
 // ---------------------------------------------------------------- the list of numbers handed to the page
 pub const IDX_PHASE: usize = 0;
@@ -112,6 +119,12 @@ pub const IDX_RECEIVER: usize = 29;
 pub const IDX_CAN_SHOOT: usize = 30;
 pub const IDX_LAST_BONUS: usize = 31;
 pub const IDX_LEVEL: usize = 32;
+pub const IDX_METER: usize = 33;
+pub const IDX_FREEZE: usize = 34;
+pub const IDX_CINE_T: usize = 35;
+pub const IDX_SKILL: usize = 36;
+pub const IDX_CINE_KIND: usize = 37;
+pub const IDX_SUPER_SHOT: usize = 38;
 /// Players start here, PLAYER_STRIDE numbers each: x, y, vx, vy, facing, kind (0 attacker, 1 defender, 2 keeper), number, pressure/tackle
 pub const PLAYER_BASE: usize = 40;
 pub const PLAYER_STRIDE: usize = 8;
@@ -173,8 +186,20 @@ impl Pl {
     }
 }
 
+/// Upgrades the player has bought (each 0 to 10).
+#[derive(Clone, Copy, Default)]
+pub struct Stats { pub speed: f32, pub power: f32, pub technique: f32, pub composure: f32 }
+impl Stats { fn total(&self) -> f32 { self.speed + self.power + self.technique + self.composure } }
+
 // ================================================================ the game
 pub struct Game {
+    stats: Stats,
+    skill: u8,
+    meter: f32,
+    cine_t: f32,
+    cine_kind: u8,
+    freeze_t: f32,
+    shot_super: bool,
     rng: Rng,
     att: Vec<Pl>,
     def: Vec<Pl>,
@@ -217,8 +242,11 @@ pub struct Game {
 struct Aim { len: f32, dx: f32, dy: f32, target: i32, ex: f32, ey: f32 }
 
 impl Game {
-    pub fn new(seed: u32) -> Game {
+    pub fn new(seed: u32) -> Game { Game::with(seed, Stats::default(), SK_ROCKET) }
+
+    pub fn with(seed: u32, stats: Stats, skill: u8) -> Game {
         let mut g = Game {
+            stats, skill, meter: 0.0, cine_t: 0.0, cine_kind: 0, freeze_t: 0.0, shot_super: false,
             rng: Rng(0x9E37_79B9_7F4A_7C15 ^ ((seed as u64) << 17) ^ (seed as u64) | 1),
             att: Vec::new(), def: Vec::new(), gk: Pl::at(GOAL_C, 16.0), gk_react: 0.0,
             bx: 0.0, by: 0.0, bvx: 0.0, bvy: 0.0, owner: -1, passer: -1, nopick: 0.0, receiver: -1,
@@ -236,6 +264,10 @@ impl Game {
     }
 
     fn level(&self) -> f32 { self.attack_no.min(5) as f32 }
+    fn max_pass(&self) -> f32 { MAX_PASS + 6.0 * self.stats.power }
+    fn assist_cos(&self) -> f32 { ASSIST_COS - 0.006 * self.stats.technique }
+    fn att_speed(&self) -> f32 { ATT_SPEED * (1.0 + 0.04 * self.stats.speed) }
+    fn tackle_time(&self) -> f32 { TACKLE_TIME + 0.02 * self.stats.composure }
 
     /// Put everybody in place for the next attack. Each one is a bit harder.
     fn setup_attack(&mut self) {
@@ -260,6 +292,8 @@ impl Game {
         self.nopick = 0.0;
         self.receiver = -1;
         self.shot_live = false;
+        self.shot_super = false;
+        self.freeze_t = 0.0;
         self.chain = 0;
         self.result = R_NONE;
         self.last_bonus = 0;
@@ -311,7 +345,7 @@ impl Game {
         let raw = hyp(self.aim_dx, self.aim_dy);
         if raw < 1.0 { return Aim { len: 0.0, dx: 0.0, dy: -1.0, target: -1, ex: o.x, ey: o.y }; }
         let (dx, dy) = (self.aim_dx / raw, self.aim_dy / raw);
-        let mut len = clamp(raw, 0.0, MAX_PASS);
+        let mut len = clamp(raw, 0.0, self.max_pass());
         let mut target = -1;
         let mut best = f32::MAX;
         for (j, t) in self.att.iter().enumerate() {
@@ -320,7 +354,7 @@ impl Game {
             let d = hyp(vx, vy);
             if d < 25.0 { continue; }
             let cos = (vx * dx + vy * dy) / d;
-            if cos < ASSIST_COS { continue; }
+            if cos < self.assist_cos() { continue; }
             if (d - len).abs() > 0.45 * len + 30.0 { continue; }
             let score = (1.0 - cos) * 10.0 + (d - len).abs() / len.max(60.0);
             if score < best { best = score; target = j as i32; }
@@ -334,7 +368,7 @@ impl Game {
             let d = dist(o.x, o.y, px, py).max(1.0);
             ddx = (px - o.x) / d;
             ddy = (py - o.y) / d;
-            len = clamp(d + 16.0, MIN_PASS, MAX_PASS);
+            len = clamp(d + 16.0, MIN_PASS, self.max_pass());
             ex = o.x + ddx * len;
             ey = o.y + ddy * len;
         }
@@ -367,7 +401,9 @@ impl Game {
     }
 
     /// Shoot. `tx` is where in the goal to aim (an x along the goal line), or NaN to pick a corner away from the keeper.
-    pub fn shoot(&mut self, tx: f32) -> bool {
+    pub fn shoot(&mut self, tx: f32) -> bool { self.shoot_inner(tx, false) }
+
+    fn shoot_inner(&mut self, tx: f32, sup: bool) -> bool {
         if self.phase != PH_PLAY || self.owner < 0 { return false; }
         self.aim_active = false;
         self.sync_ball_to_owner();
@@ -382,17 +418,19 @@ impl Game {
         // the nearer a defender is, and the further out you are, the less accurate you are
         let mut near = f32::MAX;
         for d in &self.def { near = near.min(dist(d.x, d.y, o.x, o.y)); }
-        let sigma = 0.010 + d_goal * 0.00006 + if near < 60.0 { 0.02 } else { 0.0 };
+        let sigma = if sup { 0.002 } else { (0.010 + d_goal * 0.00006 + if near < 60.0 { 0.02 } else { 0.0 }) * (1.0 - 0.05 * self.stats.technique) };
+        let speed = SHOT_SPEED * (1.0 + 0.03 * self.stats.power) * if sup { 1.3 } else { 1.0 };
         let ang = (0.0 - o.y).atan2(target_x - o.x) + self.rng.gauss() * sigma;
-        self.bvx = ang.cos() * SHOT_SPEED;
-        self.bvy = ang.sin() * SHOT_SPEED;
+        self.bvx = ang.cos() * speed;
+        self.bvy = ang.sin() * speed;
         self.passer = self.owner;
         self.owner = -1;
         self.nopick = 0.6;
         self.receiver = -1;
         self.shot_live = true;
         self.shot_from = d_goal;
-        self.gk_react = clamp(0.24 - 0.025 * self.level(), 0.08, 0.3);
+        self.shot_super = sup;
+        self.gk_react = if sup { 0.5 } else { clamp(0.24 - 0.025 * self.level() + 0.008 * self.stats.power, 0.08, 0.34) };
         self.events.push(E_KICK);
         self.events.push(E_SHOT);
         true
@@ -414,19 +452,45 @@ impl Game {
         match self.phase {
             PH_PLAY => self.step_play(dt),
             PH_RESULT => self.step_result(dt),
+            PH_CINE => self.step_cine(dt),
             _ => {}
         }
     }
 
+    /// Time is frozen for the cinematic; then the skill happens.
+    fn step_cine(&mut self, dt: f32) {
+        self.cine_t -= dt;
+        if self.cine_t > 0.0 { return; }
+        self.phase = PH_PLAY;
+        if self.cine_kind == SK_ROCKET {
+            if self.owner >= 0 { self.shoot_inner(f32::NAN, true); }
+        } else {
+            self.freeze_t = 4.5;
+            self.events.push(E_FREEZE);
+        }
+    }
+
+    /// Fire the super skill (needs a full meter and the ball).
+    pub fn use_super(&mut self) -> bool {
+        if self.phase != PH_PLAY || self.owner < 0 || self.meter < 1.0 { return false; }
+        self.aim_active = false;
+        self.meter = 0.0;
+        self.phase = PH_CINE;
+        self.cine_kind = self.skill;
+        self.cine_t = if self.skill == SK_ROCKET { 1.5 } else { 1.1 };
+        self.events.push(E_SUPER);
+        true
+    }
+
     fn step_play(&mut self, dt: f32) {
+        self.freeze_t = (self.freeze_t - dt).max(0.0);
         self.intro = (self.intro - dt).max(0.0);
         self.shield = (self.shield - dt).max(0.0);
         self.nopick = (self.nopick - dt).max(0.0);
         self.update_ball(dt);
         if self.phase != PH_PLAY { return; }
         self.update_attackers(dt);
-        self.update_defenders(dt);
-        self.update_keeper(dt);
+        if self.freeze_t <= 0.0 { self.update_defenders(dt); self.update_keeper(dt); } else { self.hold_still(dt); }
         self.separate();
         self.sync_ball_to_owner();
         self.check_pickups(dt);
@@ -563,7 +627,7 @@ impl Game {
             let (mut tx, mut ty) = (p.tx, p.ty);
             if self.owner < 0 && !self.shot_live && self.receiver == i as i32 {
                 // go and meet the pass
-                let (ix, iy) = self.intercept_point(p.x, p.y, ATT_SPEED * 1.25).unwrap_or(stop);
+                let (ix, iy) = self.intercept_point(p.x, p.y, self.att_speed() * 1.25).unwrap_or(stop);
                 tx = ix;
                 ty = iy;
             } else if self.owner < 0 && !self.shot_live && self.receiver < 0 {
@@ -573,7 +637,7 @@ impl Game {
                 for (k, q) in self.att.iter().enumerate() { let d = dist(q.x, q.y, stop.0, stop.1); if d < nd { nd = d; nearest = k; } }
                 if nearest == i { tx = stop.0; ty = stop.1; }
             }
-            let sp = if self.receiver == i as i32 && self.owner < 0 { ATT_SPEED * 1.25 } else { ATT_SPEED };
+            let sp = if self.receiver == i as i32 && self.owner < 0 { self.att_speed() * 1.25 } else { self.att_speed() };
             p.run(tx, ty, sp, dt);
             self.att[i] = p;
         }
@@ -618,7 +682,7 @@ impl Game {
     // ------------------------------------------------------------ the defenders
     fn update_defenders(&mut self, dt: f32) {
         let lvl = self.level();
-        let base = 72.0 + 9.0 * lvl;
+        let base = 72.0 + 9.0 * lvl + 0.25 * self.stats.total();
         // slow to react at the very start, so you can get going
         let eager = 0.45 + 0.55 * (1.0 - self.intro.min(1.0));
         let speed = base * eager;
@@ -701,6 +765,13 @@ impl Game {
     }
 
     // ------------------------------------------------------------ the goalkeeper
+    /// While time is stopped the defenders and keeper stand like statues.
+    fn hold_still(&mut self, dt: f32) {
+        for d in self.def.iter_mut() { d.vx = 0.0; d.vy = 0.0; d.tackle = 0.0; }
+        self.gk.vx = 0.0; self.gk.vy = 0.0;
+        let _ = dt;
+    }
+
     fn update_keeper(&mut self, dt: f32) {
         let lvl = self.level();
         let mut k = self.gk;
@@ -711,7 +782,7 @@ impl Game {
             let t = self.by.max(0.0) / (-self.bvy);
             let xg = self.bx + self.bvx * t;
             if self.gk_react > 0.0 { self.gk_react -= dt; target_x = k.x; } else { target_x = clamp(xg, GOAL_L + 8.0, GOAL_R - 8.0); }
-            speed = 250.0 + 38.0 * lvl;
+            speed = (250.0 + 38.0 * lvl) * if self.shot_super { 0.4 } else { 1.0 };
         } else {
             // stand between the ball and the middle of the goal
             let (rx, _) = if self.owner >= 0 { let o = self.att[self.owner as usize]; (o.x, o.y) } else { (self.bx, self.by) };
@@ -759,10 +830,11 @@ impl Game {
         if self.owner >= 0 {
             let c = self.att[self.owner as usize];
             let mut tackled = false;
+            let tt = self.tackle_time();
             for d in self.def.iter_mut() {
-                if dist(d.x, d.y, c.x, c.y) < TACKLE_R && self.shield <= 0.0 && self.intro <= 0.0 {
+                if dist(d.x, d.y, c.x, c.y) < TACKLE_R && self.shield <= 0.0 && self.intro <= 0.0 && self.freeze_t <= 0.0 {
                     d.tackle += dt;
-                    if d.tackle >= TACKLE_TIME { tackled = true; }
+                    if d.tackle >= tt { tackled = true; }
                 } else {
                     d.tackle = (d.tackle - dt * 2.0).max(0.0);
                 }
@@ -778,6 +850,7 @@ impl Game {
         let sp = hyp(self.bvx, self.bvy);
         // a defender in the way of a shot blocks it
         if self.shot_live {
+            if self.shot_super || self.freeze_t > 0.0 { return; }
             for d in &self.def {
                 if dist(d.x, d.y, self.bx, self.by) < PLAYER_R + BALL_R + 2.0 {
                     self.bvx *= 0.15;
@@ -799,7 +872,7 @@ impl Game {
         let mut best_def: Option<(usize, f32)> = None;
         for (i, d) in self.def.iter().enumerate() {
             let dd = dist(d.x, d.y, self.bx, self.by);
-            if dd < PLAYER_R + BALL_R + 3.0 && sp < MAX_RECEIVE && best_def.map_or(true, |b| dd < b.1) { best_def = Some((i, dd)); }
+            if self.freeze_t <= 0.0 && dd < PLAYER_R + BALL_R + 3.0 && sp < MAX_RECEIVE && best_def.map_or(true, |b| dd < b.1) { best_def = Some((i, dd)); }
         }
         match (best_att, best_def) {
             (Some((i, da)), Some((_, dd))) if dd < da => { let _ = i; self.cut_out(); }
@@ -808,10 +881,13 @@ impl Game {
                 self.bvx = 0.0;
                 self.bvy = 0.0;
                 self.receiver = -1;
-                self.shield = 0.8;
+                self.shield = 0.8 + 0.06 * self.stats.composure;
                 if self.passer >= 0 && self.passer != i as i32 {
                     self.chain += 1;
                     self.passes_total += 1;
+                    let was = self.meter;
+                    self.meter = (self.meter + 0.25 + 0.01 * self.stats.technique).min(1.0);
+                    if was < 1.0 && self.meter >= 1.0 { self.events.push(E_METER_FULL); }
                     self.score += 10;
                     self.events.push(E_PASS);
                 }
@@ -838,6 +914,8 @@ impl Game {
             if self.aim_active { aim = self.compute_aim(); }
         }
         let lvl = self.level();
+        let ttime = self.tackle_time();
+        let (meter, freeze, cine_t, skill, cine_kind, sup) = (self.meter, self.freeze_t, self.cine_t.max(0.0), self.skill as f32, self.cine_kind as f32, self.shot_super);
         let o = &mut self.out;
         for v in o.iter_mut() { *v = 0.0; }
         o[IDX_PHASE] = self.phase as f32;
@@ -873,6 +951,12 @@ impl Game {
         o[IDX_CAN_SHOOT] = if self.phase == PH_PLAY && self.owner >= 0 { 1.0 } else { 0.0 };
         o[IDX_LAST_BONUS] = self.last_bonus as f32;
         o[IDX_LEVEL] = lvl;
+        o[IDX_METER] = meter;
+        o[IDX_FREEZE] = freeze;
+        o[IDX_CINE_T] = cine_t;
+        o[IDX_SKILL] = skill;
+        o[IDX_CINE_KIND] = cine_kind;
+        o[IDX_SUPER_SHOT] = if sup && self.shot_live { 1.0 } else { 0.0 };
         let mut k = PLAYER_BASE;
         let nums = [8.0, 7.0, 11.0, 9.0, 10.0];
         for (i, p) in self.att.iter().enumerate() {
@@ -882,7 +966,7 @@ impl Game {
         }
         for (i, p) in self.def.iter().enumerate() {
             o[k] = p.x; o[k + 1] = p.y; o[k + 2] = p.vx; o[k + 3] = p.vy; o[k + 4] = p.face;
-            o[k + 5] = 1.0; o[k + 6] = (i + 2) as f32; o[k + 7] = p.tackle / TACKLE_TIME;
+            o[k + 5] = 1.0; o[k + 6] = (i + 2) as f32; o[k + 7] = p.tackle / ttime;
             k += PLAYER_STRIDE;
         }
         let p = self.gk;
@@ -902,7 +986,11 @@ fn game() -> &'static mut Game {
     }
 }
 
-#[no_mangle] pub extern "C" fn new_game(seed: u32) { unsafe { let slot = &raw mut GAME; *slot = Some(Game::new(seed)); } }
+#[no_mangle] pub extern "C" fn new_game(seed: u32, speed: f32, power: f32, technique: f32, composure: f32, skill: u32) {
+    let st = Stats { speed: clamp(speed, 0.0, 10.0), power: clamp(power, 0.0, 10.0), technique: clamp(technique, 0.0, 10.0), composure: clamp(composure, 0.0, 10.0) };
+    unsafe { let slot = &raw mut GAME; *slot = Some(Game::with(seed, st, if skill == 1 { SK_FREEZE } else { SK_ROCKET })); }
+}
+#[no_mangle] pub extern "C" fn use_super() -> u32 { let g = game(); let r = g.use_super(); g.export(); r as u32 }
 #[no_mangle] pub extern "C" fn tick(dt_ms: f32) { game().tick(dt_ms); }
 #[no_mangle] pub extern "C" fn aim_begin() { let g = game(); g.aim_begin(); g.export(); }
 #[no_mangle] pub extern "C" fn aim_update(dx: f32, dy: f32) { let g = game(); g.aim_update(dx, dy); g.export(); }
@@ -1040,11 +1128,60 @@ mod tests {
         assert_eq!(g.attack_no, ATTACKS);
     }
 
+    #[test]
+    fn passing_charges_the_meter_and_a_super_shot_scores() {
+        for seed in 0..30u32 {
+            let mut g = Game::new(seed + 100);
+            g.def.truncate(3);
+            g.intro = 0.0;
+            assert!(!g.use_super(), "meter is empty at the start");
+            g.meter = 1.0;
+            g.att[0] = Pl::at(340.0, 420.0);
+            g.sync_ball_to_owner();
+            g.owner = 0;
+            g.shield = 5.0;
+            assert!(g.use_super());
+            assert_eq!(g.phase, PH_CINE);
+            run(&mut g, 3.0);
+            assert_eq!(g.result, R_GOAL, "seed {seed}: super shot should always go in");
+            assert_eq!(g.meter, 0.0);
+        }
+    }
+
+    #[test]
+    fn time_stop_freezes_the_defenders() {
+        let mut g = Game::with(4, Stats::default(), SK_FREEZE);
+        g.intro = 0.0;
+        g.shield = 0.0;
+        g.meter = 1.0;
+        assert!(g.use_super());
+        run(&mut g, 1.3);
+        assert!(g.freeze_t > 3.0, "freeze {}", g.freeze_t);
+        let before: Vec<(f32, f32)> = g.def.iter().map(|d| (d.x, d.y)).collect();
+        run(&mut g, 2.0);
+        for (d, b) in g.def.iter().zip(before) { assert!(dist(d.x, d.y, b.0, b.1) < 1.0, "defender moved while frozen"); }
+        assert_eq!(g.phase, PH_PLAY, "nobody can tackle while time is stopped");
+    }
+
+    #[test]
+    fn upgrades_help() {
+        let tough = Stats { speed: 10.0, power: 10.0, technique: 10.0, composure: 10.0 };
+        let mut g = Game::with(1, tough, SK_ROCKET);
+        assert!(g.max_pass() > MAX_PASS + 50.0 && g.assist_cos() < ASSIST_COS && g.att_speed() > ATT_SPEED * 1.3);
+        g.intro = 0.0;
+        g.shield = 0.0;
+        g.att[0] = Pl::at(340.0, 400.0);
+        g.sync_ball_to_owner();
+        g.shoot(340.0);
+        assert!(hyp(g.bvx, g.bvy) > SHOT_SPEED * 1.25);
+    }
+
     // ---- a simple computer player, to check the game is fair: not impossible, not a pushover
     pub fn bot_pub(g: &mut Game) { bot(g, true); }
     fn bot(g: &mut Game, smart: bool) {
         if g.phase != PH_PLAY || g.owner < 0 || g.shield > 0.25 { return; }
         let o = g.att[g.owner as usize];
+        if smart && g.meter >= 1.0 && o.y < 520.0 { g.use_super(); return; }
         let mut near = f32::MAX;
         for d in &g.def { near = near.min(dist(d.x, d.y, o.x, o.y)); }
         if !smart {
@@ -1081,10 +1218,12 @@ mod tests {
         }
     }
 
-    fn average_score(smart: bool, games: u32) -> (f32, f32) {
+    fn average_score(smart: bool, games: u32) -> (f32, f32) { average_with(smart, games, Stats::default(), SK_ROCKET) }
+
+    fn average_with(smart: bool, games: u32, st: Stats, skill: u8) -> (f32, f32) {
         let (mut total, mut goals) = (0.0, 0.0);
         for seed in 0..games {
-            let mut g = Game::new(seed * 7 + 1);
+            let mut g = Game::with(seed * 7 + 1, st, skill);
             let mut guard = 0;
             while g.phase != PH_OVER && guard < 60 * 400 {
                 if guard % 10 == 0 { bot(&mut g, smart); }
@@ -1099,6 +1238,17 @@ mod tests {
             goals += g.goals as f32;
         }
         (total / games as f32, goals / games as f32)
+    }
+
+    #[test]
+    fn upgrades_make_it_easier_but_never_a_walkover() {
+        let (_, base) = average_with(true, 100, Stats::default(), SK_ROCKET);
+        let maxed = Stats { speed: 10.0, power: 10.0, technique: 10.0, composure: 10.0 };
+        let (_, rocket) = average_with(true, 100, maxed, SK_ROCKET);
+        let (_, freeze) = average_with(true, 100, maxed, SK_FREEZE);
+        println!("goals a game: no upgrades {base:.2}, maxed + rocket {rocket:.2}, maxed + time stop {freeze:.2}");
+        assert!(rocket > base && freeze > base, "upgrades should help");
+        assert!(rocket < 4.6 && freeze < 4.6, "a maxed player must still miss sometimes");
     }
 
     #[test]
