@@ -24,10 +24,10 @@
   const I = { PHASE: 0, SCORE: 1, LEFT: 2, NO: 3, CHAIN: 4, RESULT: 5, PHASE_T: 6, TIME: 7, GOALS: 8, OWNER: 9, N_ATT: 10, N_DEF: 11,
     AIM: 12, AIM_LEN: 13, AIM_DX: 14, AIM_DY: 15, AIM_TARGET: 16, AIM_EX: 17, AIM_EY: 18, INTRO: 19, SHIELD: 20, SHOT: 21,
     BEST_CHAIN: 22, PASSES: 23, PRESSURE: 24, BX: 25, BY: 26, BVX: 27, BVY: 28, RECEIVER: 29, CAN_SHOOT: 30, BONUS: 31, LEVEL: 32,
-    P0: 40, STRIDE: 8 };
-  const PH = { PLAY: 1, RESULT: 2, OVER: 3 };
+    METER: 33, FREEZE: 34, CINE_T: 35, SKILL: 36, CINE_KIND: 37, SUPER_SHOT: 38, P0: 40, STRIDE: 8 };
+  const PH = { PLAY: 1, RESULT: 2, OVER: 3, CINE: 4 };
   const R = { NONE: 0, GOAL: 1, SAVED: 2, MISS: 3, BLOCKED: 4, TACKLED: 5, POST: 6, OUT: 7 };
-  const E = { KICK: 1, PASS: 2, SHOT: 3, TACKLE: 4, SAVE: 5, POST: 6, GOAL: 7, MISS: 8, BLOCK: 9, START: 11, OVER: 12 };
+  const E = { KICK: 1, PASS: 2, SHOT: 3, TACKLE: 4, SAVE: 5, POST: 6, GOAL: 7, MISS: 8, BLOCK: 9, START: 11, OVER: 12, SUPER: 13, FREEZE: 14, METER_FULL: 15 };
   const ATTACKS = 5;
   const TOP = 46;                // room above the goal line to show the net
   const DRAG_K = 1.5;            // finger distance on the pitch x this = how far the ball goes
@@ -173,6 +173,63 @@
     // the target team-mate lights up (drawn in drawPlayers via the ring)
   }
 
+  /* ---- super skills: the cinematic, the time-stop tint, the fire trail ---- */
+  function drawEffects(t, owner) {
+    const phase = S[I.PHASE] | 0;
+    const freeze = S[I.FREEZE];
+    if (freeze > 0) {
+      const a = Math.min(1, freeze * 2) * 0.22;
+      ctx.fillStyle = `rgba(110,170,255,${a})`; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "rgba(255,255,255,.75)";
+      for (let i = 0; i < 26; i++) { // slow-falling ice specks
+        const x = (i * 97 + t * 8) % W, y = (i * 211 + t * 24 * (1 + (i % 3))) % H;
+        ctx.fillRect(x, y, 3, 3);
+      }
+    }
+    if (S[I.SUPER_SHOT]) { // a ball of fire
+      const bx = S[I.BX], by = S[I.BY];
+      const g = ctx.createRadialGradient(bx, by, 2, bx, by, 34);
+      g.addColorStop(0, "rgba(255,240,170,.95)"); g.addColorStop(0.4, "rgba(255,150,40,.7)"); g.addColorStop(1, "rgba(255,60,0,0)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(bx, by, 34, 0, 7); ctx.fill();
+    }
+    if (phase !== PH.CINE) return;
+    const kind = S[I.CINE_KIND] | 0;
+    const total = kind === 0 ? 1.5 : 1.1;
+    const p = Math.max(0, Math.min(1, 1 - S[I.CINE_T] / total));
+    const o = I.P0 + owner * I.STRIDE, cx = S[o], cy = S[o + 1];
+    const col = kind === 0 ? "255,170,40" : "120,190,255";
+    // everything goes dark except a spotlight on George
+    const dark = Math.min(1, p * 5) * 0.72;
+    const sp = ctx.createRadialGradient(cx, cy, 30, cx, cy, 520);
+    sp.addColorStop(0, "rgba(0,0,0,0)"); sp.addColorStop(0.35, `rgba(8,6,16,${dark * 0.7})`); sp.addColorStop(1, `rgba(8,6,16,${dark})`);
+    ctx.fillStyle = sp; ctx.fillRect(0, -TOP, W, H + TOP);
+    // speed lines
+    ctx.strokeStyle = `rgba(${col},${0.55 * Math.min(1, p * 4)})`; ctx.lineWidth = 3;
+    for (let i = 0; i < 34; i++) {
+      const a = (i / 34) * Math.PI * 2 + 0.07 * Math.sin(i * 12.9);
+      const r0 = 70 + ((i * 53) % 90) + p * 120, r1 = r0 + 160 + ((i * 31) % 200);
+      ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0); ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); ctx.stroke();
+    }
+    // glow behind George, and George again on top
+    const gl = ctx.createRadialGradient(cx, cy, 4, cx, cy, 70 + 20 * Math.sin(t * 14));
+    gl.addColorStop(0, `rgba(${col},.9)`); gl.addColorStop(1, `rgba(${col},0)`);
+    ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(cx, cy, 90, 0, 7); ctx.fill();
+    const k = kit();
+    drawPlayer(cx, cy, S[o + 4], k.shirt, k.trim, String(look().number), { hair: hairColour(), text: k.text, ring: `rgb(${col})`, pulse: 4 });
+    drawBall(S[I.BX], S[I.BY], 0, 0, t);
+    // the name of the skill slams in
+    const pop = p < 0.18 ? 2.4 - 1.4 * (p / 0.18) : 1 + 0.05 * Math.sin(t * 10);
+    ctx.save();
+    ctx.translate(W / 2, H * 0.34); ctx.rotate(-0.07); ctx.scale(pop, pop);
+    ctx.globalAlpha = Math.min(1, p * 8);
+    ctx.font = "700 74px Rajdhani, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.lineWidth = 12; ctx.strokeStyle = kind === 0 ? "#7a2d00" : "#10346b"; ctx.lineJoin = "round";
+    const txt = kind === 0 ? "ROCKET SHOT!" : "TIME STOP!";
+    ctx.strokeText(txt, 0, 0);
+    ctx.fillStyle = kind === 0 ? "#ffd66b" : "#d6ecff"; ctx.fillText(txt, 0, 0);
+    ctx.restore();
+  }
+
   let flash = 0;      // brief white flash on a goal
   function draw(t) {
     const sc = cv.width / W;
@@ -210,6 +267,7 @@
     const bx = S[I.BX], by = S[I.BY];
     drawAim(bx, by, t);
     drawBall(bx, by, S[I.BVX], S[I.BVY], t);
+    drawEffects(t, owner);
     // goal flash
     if (flash > 0) { ctx.fillStyle = `rgba(255,255,255,${flash * 0.35})`; ctx.fillRect(0, 0, W, H); flash = Math.max(0, flash - 0.03); }
   }
@@ -263,6 +321,9 @@
       else if (e === E.MISS) sfx.aww();
       else if (e === E.GOAL) { sfx.roar(); MUSIC.goalSong({ short: true }); }
       else if (e === E.OVER) sfx.whistle();
+      else if (e === E.SUPER) { sfx.unlock(); sfx.roar(); }
+      else if (e === E.FREEZE) sfx.buzz();
+      else if (e === E.METER_FULL) sfx.unlock();
       if (e === E.GOAL) flash = 1;
     }
   }
@@ -309,6 +370,25 @@
     say("");
   }
   $("btn-shoot").addEventListener("click", () => { SOUND.wake(); doShoot(); });
+  function doSuper() {
+    refresh();
+    if (S[I.PHASE] !== PH.PLAY || (S[I.OWNER] | 0) < 0 || S[I.METER] < 1) return;
+    wasm.use_super();
+  }
+  $("btn-super").addEventListener("click", () => { SOUND.wake(); doSuper(); });
+  let superShown = "";
+  function updateSuper(canUse) {
+    const m = Math.max(0, Math.min(1, S[I.METER]));
+    const ready = m >= 1 && canUse;
+    const name = (S[I.SKILL] | 0) === 1 ? "Time Stop" : "Rocket Shot";
+    const key = [Math.round(m * 100), ready, name, m >= 1].join();
+    if (key === superShown) return;
+    superShown = key;
+    $("super-fill").style.width = (m * 100) + "%";
+    $("super-lbl").textContent = m >= 1 ? `⚡ ${name}!` : `⚡ ${name}`;
+    $("btn-super").disabled = !ready;
+    $("btn-super").classList.toggle("ready", ready);
+  }
 
   // Keyboard: arrows aim a pass from the ball (hold to lengthen, let go to pass); Space or Enter shoots.
   const keys = { x: 0, y: 0, held: false, len: 0 };
@@ -320,6 +400,8 @@
       if (!keys.held) { refresh(); if (S[I.PHASE] !== PH.PLAY || (S[I.OWNER] | 0) < 0) return; keys.held = true; keys.len = 0; wasm.aim_begin(); }
       keys.x += map[e.key][0] * 0.0001; keys.y += map[e.key][1] * 0.0001;
       keys.dirs = keys.dirs || {}; keys.dirs[e.key] = map[e.key];
+    } else if ((e.key === "Shift" || e.key === "e" || e.key === "E") && e.target.tagName !== "BUTTON") {
+      e.preventDefault(); SOUND.wake(); doSuper();
     } else if ((e.key === " " || e.key === "Enter") && e.target.tagName !== "BUTTON") {
       e.preventDefault(); SOUND.wake(); doShoot();
     }
@@ -353,6 +435,7 @@
     const phase = S[I.PHASE] | 0, result = S[I.RESULT] | 0;
     const canShoot = S[I.CAN_SHOOT] === 1;
     $("btn-shoot").disabled = !canShoot;
+    updateSuper(canShoot);
     if (phase === PH.PLAY) {
       lastResult = 0;
       const owner = S[I.OWNER] | 0;
@@ -362,6 +445,8 @@
         else if (pr < 70) say("Defender closing in! Pass or shoot!");
         else say((S[I.CHAIN] | 0) === 0 ? "Drag to pass. Further drag, longer pass." : "Keep it moving, or shoot when you are ready.");
       } else if (S[I.AIM] === 1) say(S[I.AIM_TARGET] >= 0 ? "Locked on. Let go to pass!" : "Let go to pass.");
+    } else if (phase === PH.CINE) {
+      say("");
     } else if (phase === PH.RESULT && lastResult !== result + 100) {
       lastResult = result + 100;
       const no = S[I.NO] | 0;
@@ -375,6 +460,76 @@
     if (phase === PH.OVER && !finished) { finished = true; finish(); }
   }
 
+  /* ---------------- Training ground: coins, upgrades, super skill ---------------- */
+  const RPG_KEY = "gz_tikitaka_rpg";
+  const MAX_LEVEL = 10;
+  const STATS = [
+    { id: "speed", icon: "🏃", name: "Speed", desc: "Team-mates run faster to meet your passes." },
+    { id: "power", icon: "💪", name: "Power", desc: "Longer passes and harder shots." },
+    { id: "technique", icon: "🎯", name: "Technique", desc: "Straighter shots, passes lock on easier, super bar charges faster." },
+    { id: "composure", icon: "🧠", name: "Composure", desc: "More time on the ball before a defender can tackle." },
+  ];
+  const SKILLS = [
+    { id: "rocket", icon: "🚀", name: "Rocket Shot", desc: "A screaming shot into the corner. The keeper has no chance.", cost: 0 },
+    { id: "freeze", icon: "❄️", name: "Time Stop", desc: "Defenders and the keeper freeze for 4 seconds. Pass or shoot freely.", cost: 200 },
+  ];
+  const upgradeCost = (lvl) => 40 + 30 * lvl;
+  function rpgLoad() {
+    let r = null;
+    try { r = JSON.parse(localStorage.getItem(RPG_KEY) || "null"); } catch (e) {}
+    r = r && typeof r === "object" ? r : {};
+    const out = { coins: Math.max(0, +r.coins || 0), stats: {}, skills: Array.isArray(r.skills) ? r.skills.filter((x) => typeof x === "string") : ["rocket"], skill: r.skill === "freeze" ? "freeze" : "rocket" };
+    for (const st of STATS) out.stats[st.id] = Math.max(0, Math.min(MAX_LEVEL, Math.floor(+(r.stats && r.stats[st.id]) || 0)));
+    if (!out.skills.includes("rocket")) out.skills.push("rocket");
+    if (!out.skills.includes(out.skill)) out.skill = "rocket";
+    return out;
+  }
+  function rpgSave(r) { try { localStorage.setItem(RPG_KEY, JSON.stringify(r)); } catch (e) {} }
+  function rpgAward(score, goals) {
+    const r = rpgLoad();
+    const earned = Math.round(score / 8) + goals * 10 + 5;
+    r.coins += earned;
+    rpgSave(r);
+    return earned;
+  }
+  function trainMsg(t) { $("train-msg").textContent = t || ""; }
+  function renderTraining() {
+    const r = rpgLoad();
+    $("coins").textContent = `🪙 ${r.coins} coins`;
+    $("stat-rows").innerHTML = STATS.map((st) => {
+      const lvl = r.stats[st.id], max = lvl >= MAX_LEVEL, cost = upgradeCost(lvl), can = !max && r.coins >= cost;
+      const bar = Array.from({ length: MAX_LEVEL }, (_, i) => `<i class="${i < lvl ? "on" : ""}"></i>`).join("");
+      return `<div class="tt-stat-row"><span class="ico" aria-hidden="true">${st.icon}</span>
+        <div><div class="nm">${st.name} <span class="tt-sub">level ${lvl}</span></div><div class="ds">${st.desc}</div><div class="bar" aria-hidden="true">${bar}</div></div>
+        <button class="tt-buy" type="button" data-stat="${st.id}" ${can ? "" : 'aria-disabled="true"'} aria-label="Upgrade ${st.name}">${max ? "MAX" : "🪙 " + cost}</button></div>`;
+    }).join("");
+    $("skill-row").innerHTML = SKILLS.map((k) => {
+      const owned = r.skills.includes(k.id), on = r.skill === k.id;
+      return `<button class="tt-skill" type="button" data-skill="${k.id}" aria-pressed="${on}"><b>${k.icon} ${k.name}</b>${k.desc}<br><span class="tag">${on ? "✓ Equipped" : owned ? "Tap to equip" : "🔒 Unlock for 🪙 " + k.cost}</span></button>`;
+    }).join("");
+  }
+  $("train").addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    const r = rpgLoad();
+    if (b.dataset.stat) {
+      const id = b.dataset.stat, lvl = r.stats[id], cost = upgradeCost(lvl);
+      if (lvl >= MAX_LEVEL) { trainMsg("Already at the top level."); return; }
+      if (r.coins < cost) { trainMsg(`You need ${cost - r.coins} more coins. Play a match to earn them!`); return; }
+      r.coins -= cost; r.stats[id] = lvl + 1; rpgSave(r);
+      renderTraining(); trainMsg(`${STATS.find((x) => x.id === id).name} is now level ${lvl + 1}!`);
+      if (soundOn) { SOUND.wake(); sfx.unlock(); }
+    } else if (b.dataset.skill) {
+      const k = SKILLS.find((x) => x.id === b.dataset.skill);
+      if (!r.skills.includes(k.id)) {
+        if (r.coins < k.cost) { trainMsg(`${k.name} costs ${k.cost} coins. You need ${k.cost - r.coins} more.`); return; }
+        r.coins -= k.cost; r.skills.push(k.id);
+        if (soundOn) { SOUND.wake(); sfx.unlock(); }
+      }
+      r.skill = k.id; rpgSave(r); renderTraining(); trainMsg(`${k.name} equipped.`);
+    }
+  });
+
   /* ---------------- Start / end ---------------- */
   function bestScore() { try { return parseInt(localStorage.getItem(BEST_KEY) || "0", 10) || 0; } catch (e) { return 0; } }
   function showBest() {
@@ -384,7 +539,8 @@
 
   function start() {
     SOUND.wake();
-    wasm.new_game((Math.random() * 4294967295) >>> 0);
+    const r = rpgLoad();
+    wasm.new_game((Math.random() * 4294967295) >>> 0, r.stats.speed, r.stats.power, r.stats.technique, r.stats.composure, r.skill === "freeze" ? 1 : 0);
     pipState = []; lastHud = ""; finished = false; lastResult = 0; flash = 0;
     $("screen-start").hidden = true; $("screen-end").hidden = true; $("screen-game").hidden = false;
     fit();
@@ -419,7 +575,10 @@
     $("name-form").hidden = score === 0;
     $("saved-msg").textContent = "";
     if (goals >= 2 && soundOn) { sfx.fanfare(); setTimeout(() => GK.confetti(confettiCanvas, 160), 200); }
+    const earned = rpgAward(score, goals);
+    $("end-text").textContent += ` You earned ${earned} coins.`;
     showBest();
+    renderTraining();
     renderLeaderboard();
     $("screen-end").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
   }
@@ -464,6 +623,7 @@
   $("btn-again").addEventListener("click", start);
 
   showBest();
+  renderTraining();
   loadEngine().then(() => {
     $("btn-start").disabled = false;
     $("btn-start").textContent = "Kick off";

@@ -76,6 +76,35 @@
   .tt-shoot:disabled{opacity:.35;box-shadow:none;cursor:default;}
   .tt-keys{font-size:12px;color:#8a857e;text-align:center;margin:10px 0 0;}
 
+  /* Training ground */
+  .tt-train{margin-top:22px;border-top:1px solid rgba(241,237,233,.10);padding-top:16px;}
+  .tt-train-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;}
+  .tt-coins{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;color:#241f29;background:var(--gold);border-radius:999px;padding:4px 14px;}
+  .tt-sub{font-family:'Manrope',sans-serif;font-weight:500;font-size:12px;color:#8a857e;}
+  .tt-stat-row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);}
+  .tt-stat-row .ico{font-size:22px;width:30px;text-align:center;}
+  .tt-stat-row .nm{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;}
+  .tt-stat-row .ds{font-size:12px;color:#8a857e;line-height:1.3;}
+  .tt-stat-row .bar{display:flex;gap:3px;margin-top:5px;}
+  .tt-stat-row .bar i{flex:1;height:7px;border-radius:3px;background:rgba(255,255,255,.12);}
+  .tt-stat-row .bar i.on{background:linear-gradient(90deg,#ffd66b,#f5b942);}
+  .tt-buy{min-height:44px;min-width:92px;border-radius:999px;background:#ca0e28;color:#fff;font-size:15px;padding:0 14px;}
+  .tt-buy:disabled,.tt-buy[aria-disabled="true"]{background:rgba(255,255,255,.08);color:#8a857e;cursor:default;}
+  .tt-buy:focus-visible,.tt-skill:focus-visible,.tt-super:focus-visible{outline:2px solid var(--cream);outline-offset:3px;}
+  .tt-skills{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:8px;}
+  .tt-skill{text-align:left;background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.12);border-radius:14px;padding:12px;color:var(--cream);font-family:'Manrope',sans-serif;font-weight:500;font-size:13px;line-height:1.35;min-height:44px;}
+  .tt-skill b{display:block;font-family:'Rajdhani',sans-serif;font-size:17px;}
+  .tt-skill[aria-pressed="true"]{border-color:var(--gold);background:rgba(245,185,66,.12);}
+  .tt-skill .tag{display:inline-block;margin-top:6px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;color:var(--gold);}
+  .tt-train-msg{min-height:1.2em;margin:8px 0 0;font-size:13px;color:#8ef0b8;font-weight:700;}
+  .tt-super{position:relative;overflow:hidden;min-width:150px;min-height:48px;border-radius:999px;background:#2a2433;color:#b9b2ac;border:2px solid rgba(255,255,255,.18);font-size:18px;padding:0 22px;}
+  .tt-super .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#9d5cff,#ffd66b);transition:width .25s ease;}
+  .tt-super .lbl{position:relative;z-index:1;text-shadow:0 1px 2px rgba(0,0,0,.6);color:#fff;}
+  .tt-super:disabled{cursor:default;}
+  .tt-super.ready{border-color:#ffd66b;color:#241f29;animation:superPulse .9s ease-in-out infinite;}
+  .tt-super.ready .lbl{color:#241f29;text-shadow:none;}
+  @keyframes superPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,214,107,.7);}50%{box-shadow:0 0 0 10px rgba(255,214,107,0);}}
+
   /* End */
   #screen-end{text-align:center;}
   #screen-end .tt-lede{margin:0 auto;max-width:48ch;}
@@ -145,6 +174,18 @@
       <li><span class="tt-num">4</span><span><strong>Be quick.</strong> A defender who reaches you wins the ball. Long chains of passes score extra.</span></li>
     </ol>
     <p class="tt-best" id="best-line"></p>
+
+    <div class="tt-train" id="train">
+      <div class="tt-train-head">
+        <h3 class="tt-h3" style="margin:0">Training ground</h3>
+        <span class="tt-coins" id="coins" aria-live="polite">0 coins</span>
+      </div>
+      <p class="tt-lede" style="font-size:14px">Earn coins every match, then spend them to make George better. Upgrades make the defenders a little quicker too.</p>
+      <div class="tt-stats-list" id="stat-rows"></div>
+      <h3 class="tt-h3" style="font-size:16px;margin-top:16px">Super skill <span class="tt-sub">(charges as you pass)</span></h3>
+      <div class="tt-skills" id="skill-row"></div>
+      <p class="tt-train-msg" id="train-msg" role="status"></p>
+    </div>
     <div class="tt-actions">
       <button class="btn-primary tt-go" id="btn-start" type="button" disabled>Loading...</button>
       <button class="tt-pill" id="btn-sound" type="button" aria-pressed="true">🔊 Sound on</button>
@@ -165,8 +206,11 @@
       <div class="tt-pop" id="pop" aria-hidden="true"></div>
     </div>
     <p class="tt-hint" id="hint" aria-live="polite">Drag to pass.</p>
-    <div class="tt-bar"><button class="btn-primary tt-shoot" id="btn-shoot" type="button" disabled>⚽ Shoot!</button></div>
-    <p class="tt-keys">Drag from anywhere to pass. Tap the goal to aim a shot. Space or Enter shoots. On a keyboard, hold the arrow keys then let go to pass.</p>
+    <div class="tt-bar">
+      <button class="btn-primary tt-shoot" id="btn-shoot" type="button" disabled>⚽ Shoot!</button>
+      <button class="tt-super" id="btn-super" type="button" disabled aria-label="Super skill"><span class="fill" id="super-fill"></span><span class="lbl" id="super-lbl">⚡ Super</span></button>
+    </div>
+    <p class="tt-keys">Drag from anywhere to pass. Tap the goal to aim a shot. Space or Enter shoots. E or Shift fires your super skill when the bar is full. On a keyboard, hold the arrow keys then let go to pass.</p>
   </section>
 
   <section class="tt-card" id="screen-end" hidden>
