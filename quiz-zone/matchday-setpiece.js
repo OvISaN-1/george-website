@@ -308,8 +308,11 @@
       const bob = Math.abs(Math.sin(t * Math.PI * 4)) * 3;
       setStriker(lerp(HOME.x, KICK.x, t), lerp(HOME.y, KICK.y, t) - bob, lerp(HOME.s, KICK.s, t));
       setKickLeg(t > 0.7 ? lerp(0, 38, (t - 0.7) / 0.3) : Math.sin(t * Math.PI * 4) * 12);
+      PitchFX.stride(q(".sp-striker"), t);
+      PitchFX.keeperReady(q(".sp-keeper"), t);
     }, (t) => t);
     await tween(st.reduced ? 60 : 110, (t) => setKickLeg(lerp(38, -30, t)));
+    tween(st.reduced ? 60 : 420, (t) => PitchFX.followThrough(q(".sp-striker"), t), (t) => t);
   }
 
   async function animateShot(shot, speed) {
@@ -336,6 +339,7 @@
       const high = shot.hEnd > 38;
       const rot = clamp(dx * 1.2, -80, 80);
       await tween(dur * 0.45, (t) => setKeeper(L.keeperX, L.gy, L.k * 1.05, dx * 0.55 * reach * t, (high ? -24 : -6) * Math.sin(t * Math.PI / 2), rot * t), util.easeOut);
+      PitchFX.keeperStretch(q(".sp-keeper"), 1);
     })();
     await tween(dur * stopTau, (t) => {
       const tau = t * stopTau;

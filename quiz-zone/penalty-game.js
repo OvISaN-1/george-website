@@ -72,7 +72,7 @@
     const el = $("pop");
     el.className = "ps-pop";
     void el.offsetWidth;
-    el.textContent = text;
+    PitchFX.popText(el, text);
     el.className = "ps-pop show " + (cls || "");
   }
 
@@ -338,8 +338,11 @@
       const bob = Math.abs(Math.sin(t * Math.PI * 4)) * 3;
       setStriker(lerp(from.x, to.x, t), lerp(from.y, to.y, t) - bob, lerp(from.s, to.s, t));
       setKickLeg(t > 0.7 ? lerp(0, 38, (t - 0.7) / 0.3) : Math.sin(t * Math.PI * 4) * 12);
+      PitchFX.stride(strikerEl, t);
+      PitchFX.keeperReady(keeperEl, t);
     }, (t) => t);
     await tween(reduced ? 60 : 110, (t) => setKickLeg(lerp(38, -30, t)));
+    tween(reduced ? 60 : 420, (t) => PitchFX.followThrough(strikerEl, t), (t) => t);
   }
 
   function ballFlight(tx, ty, outcome, power) {
@@ -389,7 +392,7 @@
     if (catchAt) { dx = Math.max(-60, Math.min(60, (catchAt.x - 200) * 0.55)); }
     return (async () => {
       await sleep(reduced ? 40 : 120);
-      await tween(reduced ? 220 : 380, (t) => setKeeperPose(dx * t, dy * Math.sin(t * Math.PI * 0.5), rot * t), easeOut);
+      await tween(reduced ? 220 : 380, (t) => { setKeeperPose(dx * t, dy * Math.sin(t * Math.PI * 0.5), rot * t); PitchFX.keeperStretch(keeperEl, t); }, easeOut);
       if (catchAt) sfx.save();
     })();
   }
@@ -398,8 +401,10 @@
   async function georgeCelebrates() {
     if (reduced) return;
     const from = STRIKER_KICK;
+    PitchFX.lean(strikerEl, 0);
     await tween(1100, (t) => {
       const hop = Math.abs(Math.sin(t * Math.PI * 3)) * 16 * (1 - t * 0.4);
+      PitchFX.armsUp(strikerEl, Math.min(1, t * 4));
       setStriker(from.x + (200 - from.x) * t * 0.6, from.y - hop + 24 * t, from.s + 0.22 * t);
     }, (t) => t);
   }
@@ -611,6 +616,7 @@
     $("end-stats").innerHTML = [
       ["Score", score], ["Goals", c.goals], ["Saves", c.saves], ["Top bins", c.topBins], ["Retakes won", c.retakes],
     ].map(([k, v]) => `<div class="ps-stat"><b>${v}</b><span>${k}</span></div>`).join("");
+    PitchFX.countUps($("end-stats"), ".ps-stat b");
     $("name-form").hidden = score === 0;
     $("saved-msg").textContent = "";
     if (c.won) { sfx.fanfare(); setTimeout(() => confetti(220), 200); }

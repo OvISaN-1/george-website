@@ -140,3 +140,30 @@ svg.fx-td.fx-cheer .wv{--amp:1px;}
   .ps-card,.fk-mode,.md-mode,.ps-how li,.md-team,.fk-season li,.md-fx,.ps-avatar svg,.md-avatar svg,.ps-chip.now,.fk-xp-track span,
   .ps-bump,.ps-dot.new,.ps-slide,.ps-lock,.k-arm,.fx-shuffle,#net > path,#goal-g path,.sp-goal path,.halo-ring,.md-flag,.md-tok > circle,.md-tok > text{animation:none !important;}
 }
+
+/* ================= Even more movement ================= */
+
+/* Score words pop in letter by letter. */
+.ps-pop .ch{display:inline-block;}
+.ps-pop.show .ch{animation:chIn .55s cubic-bezier(.2,1.7,.4,1) backwards;animation-delay:calc(var(--i, 0) * 55ms);}
+@keyframes chIn{from{opacity:0;transform:translateY(26px) scale(.3) rotate(-14deg);}}
+
+/* After a goal the wall hangs its head. */
+.fx-goalmoment .fx-shuffle{animation:fxSlump .7s ease-out forwards;}
+@keyframes fxSlump{to{transform:translateY(3px) scale(1.02,.91);}}
+
+@media (prefers-reduced-motion: reduce){ .ps-pop .ch,.fx-goalmoment .fx-shuffle{animation:none !important;} }
+
+/* Matchday: VAR banner has a scan line, cards flip in. */
+.md-banner.var{overflow:hidden;}
+.md-banner.var::after{content:"";position:absolute;left:0;right:0;top:-4px;height:3px;background:linear-gradient(90deg,transparent,#4db8ff,transparent);animation:varScan 1.4s linear infinite;}
+@keyframes varScan{to{top:100%;}}
+.md-card-pop.yellow .cardshape,.md-card-pop.red .cardshape{animation:cardFlip3d .8s cubic-bezier(.2,1.2,.4,1);}
+@keyframes cardFlip3d{
+  0%{transform:perspective(500px) translateY(-60px) rotateY(-100deg) scale(.5);opacity:0;}
+  55%{transform:perspective(500px) translateY(0) rotateY(14deg) scale(1.12);opacity:1;}
+  80%{transform:perspective(500px) rotateY(-6deg) scale(1);}
+  100%{transform:perspective(500px) rotateY(0) scale(1);}
+}
+.md-card-pop b,.md-card-pop span{animation:psSlide .45s .25s ease-out backwards;}
+@media (prefers-reduced-motion: reduce){ .md-banner.var::after,.md-card-pop .cardshape,.md-card-pop b,.md-card-pop span{animation:none !important;} }

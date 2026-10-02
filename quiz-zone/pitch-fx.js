@@ -356,6 +356,7 @@
     if (flash) flash.classList.add("on");
     if (rays) { rays.classList.toggle("gold", !!gold); rays.classList.add("on"); }
     api.cheer(2600);
+    stage.classList.add("fx-goalmoment");
     api.shake(gold ? 7 : 5);
     api.punch();
   };
@@ -364,7 +365,7 @@
   api.reset = function () {
     clearGhosts();
     if (stage) {
-      stage.classList.remove("fx-shot");
+      stage.classList.remove("fx-shot", "fx-goalmoment");
       stage.querySelectorAll(".fx-flash,.fx-rays").forEach((el) => el.classList.remove("on"));
     }
     if (svg) svg.classList.remove("fx-cheer", "fx-groan");
@@ -381,6 +382,81 @@
   FX.retrigger = function (el, cls) {
     if (!el || reduced) return;
     el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+  };
+
+  /* ---- Character movement. These set transform attributes on the parts drawn in george-kit.js,
+     so they only work while the CSS idle animations are paused (stage has .fx-shot). ---- */
+  const part = (root, sel, tf) => { const e = root && root.querySelector(sel); if (e) e.setAttribute("transform", tf); };
+  const swing = (root, side, deg) => part(root, ".s-arm." + side, `rotate(${deg.toFixed(1)} ${side === "l" ? -22 : 22} -100)`);
+
+  // The run-up: arms swing against the legs. t is 0 to 1.
+  FX.stride = function (root, t) {
+    if (reduced) return;
+    const s = Math.sin(t * Math.PI * 4);
+    swing(root, "l", s * 24); swing(root, "r", -s * 24);
+    part(root, ".s-leg", `rotate(${(-s * 15).toFixed(1)} -9 -42)`);
+  };
+  // After the boot hits the ball: arms fly out for balance and he leans through it. t is 0 to 1.
+  FX.followThrough = function (root, t) {
+    if (reduced) return;
+    const e = 1 - Math.pow(1 - t, 3);
+    swing(root, "l", -8 - 34 * e); swing(root, "r", 8 + 34 * e);
+    FX.lean(root, -5 * e);
+  };
+  // Tilt the whole figure from his feet (-ve leans forward/left).
+  FX.lean = function (root, deg) {
+    const w = root && root.querySelector(".fx-idle");
+    if (w) { w.style.animation = "none"; w.style.transform = deg ? `rotate(${deg.toFixed(1)}deg)` : ""; }
+  };
+  // Both arms up, for a celebration. k is 0 to 1.
+  FX.armsUp = function (root, k) {
+    if (reduced) return;
+    swing(root, "l", 160 * k); swing(root, "r", -160 * k);
+  };
+  FX.armsDown = function (root) { swing(root, "l", 0); swing(root, "r", 0); part(root, ".s-leg", ""); FX.lean(root, 0); };
+
+  // Keeper: gets low and ready as the striker runs up, then stretches in the dive.
+  FX.keeperReady = function (root, k) {
+    if (reduced) return;
+    const b = root && root.querySelector("#keeper-body");
+    if (b) b.setAttribute("transform", `translate(0 0) rotate(0) scale(${(1 + 0.03 * k).toFixed(3)} ${(1 - 0.07 * k).toFixed(3)})`);
+    ["l", "r"].forEach((s) => part(root, ".k-arm." + s, `rotate(${((s === "l" ? -1 : 1) * 14 * k).toFixed(1)} ${s === "l" ? -12 : 12} -52)`));
+  };
+  FX.keeperStretch = function (root, k) {
+    if (reduced) return;
+    ["l", "r"].forEach((s) => part(root, ".k-arm." + s, `rotate(${((s === "l" ? 1 : -1) * 22 * k).toFixed(1)} ${s === "l" ? -12 : 12} -52)`));
+  };
+
+  // Words pop in one letter at a time.
+  FX.popText = function (el, text) {
+    el.textContent = "";
+    String(text).split("").forEach((c, i) => {
+      const sp = document.createElement("span");
+      sp.className = "ch"; sp.style.setProperty("--i", i);
+      sp.textContent = c === " " ? "\u00a0" : c;
+      el.appendChild(sp);
+    });
+    el.setAttribute("aria-label", text);
+  };
+
+  // Numbers on a results screen count up to their value.
+  FX.countUps = function (root, sel) {
+    if (reduced || !root) return;
+    root.querySelectorAll(sel).forEach((el) => {
+      const raw = el.textContent.trim();
+      if (!/^\d[\d,]*$/.test(raw)) return;
+      const end = parseInt(raw.replace(/,/g, ""), 10);
+      if (!(end > 0)) return;
+      const fmt = raw.includes(",") ? (n) => n.toLocaleString("en-GB") : (n) => String(n);
+      const t0 = performance.now(), ms = Math.min(1100, 350 + end * 6);
+      el.textContent = fmt(0);
+      const step = (now) => {
+        const t = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - t, 3);
+        el.textContent = fmt(Math.round(end * e));
+        if (t < 1) requestAnimationFrame(step); else el.textContent = fmt(end);
+      };
+      requestAnimationFrame(step);
+    });
   };
 
   const def = make();

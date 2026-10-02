@@ -594,8 +594,11 @@
       const bob = Math.abs(Math.sin(t * Math.PI * 4)) * 3;
       setStriker(lerp(from.x, to.x, t), lerp(from.y, to.y, t) - bob, lerp(from.s, to.s, t));
       setKickLeg(t > 0.7 ? lerp(0, 38, (t - 0.7) / 0.3) : Math.sin(t * Math.PI * 4) * 12);
+      PitchFX.stride(strikerG, t);
+      PitchFX.keeperReady(keeperG, t);
     }, (t) => t);
     await tween(reduced ? 60 : 110, (t) => setKickLeg(lerp(38, -30, t)));
+    tween(reduced ? 60 : 420, (t) => PitchFX.followThrough(strikerG, t), (t) => t);
   }
 
   // Plays the flight. speed 1 = normal, 0.35 = slow-mo replay.
@@ -616,6 +619,7 @@
       const high = shot.hEnd > 38;
       const rot = clamp(dx * 1.2, -80, 80);
       await tween(dur * 0.45, (t) => setKeeper(L.keeperX, L.gy, L.k * 1.05, dx * 0.55 * reachFrac * t, (high ? -24 : -6) * Math.sin(t * Math.PI / 2), rot * t), util.easeOut);
+      PitchFX.keeperStretch(keeperG, 1);
     })();
     await tween(dur * stopTau, (t) => {
       const tau = t * stopTau;
@@ -671,7 +675,7 @@
   function pop(text, cls) {
     const el = $("pop");
     el.className = "ps-pop"; void el.offsetWidth;
-    el.textContent = text;
+    PitchFX.popText(el, text);
     el.className = "ps-pop show " + (cls || "");
   }
 
@@ -888,6 +892,7 @@
     $("r-stars").innerHTML = S.mode === "practice" ? "" : [0, 1, 2].map((i) => `<span class="fk-big-star ${i < stars ? "on" : ""}" style="animation-delay:${0.25 + i * 0.35}s">★</span>`).join("");
     $("r-stats").innerHTML = [["Goals", `${S.goals}/${S.results.length}`], ["Points", S.points], ["XP", `+${xp}`]]
       .map(([k, v]) => `<div class="ps-stat"><b>${v}</b><span>${k}</span></div>`).join("");
+    PitchFX.countUps($("r-stats"), ".ps-stat b");
     $("r-extra").innerHTML = [extra, levelUp ? `⬆️ LEVEL UP! Now level ${levelOf(SAVE.xp)}. Your card got better!` : "",
       ...unlocks.map((u) => `🔓 New ${u.label}: <strong>${escapeHtml(u.name)}</strong>`)].filter(Boolean).map((x) => `<p>${x}</p>`).join("");
     if (unlocks.length) setTimeout(() => sfx.unlock(), 900);
