@@ -60,7 +60,7 @@
   .tt-pip.now{border-color:var(--gold);background:rgba(245,185,66,.35);}
   .tt-pip.goal{background:var(--good);border-color:var(--good);} .tt-pip.fail{background:var(--bad);border-color:var(--bad);}
   .tt-stage{position:relative;border-radius:14px;overflow:hidden;background:#143d1c;margin:0 auto;user-select:none;-webkit-user-select:none;touch-action:none;
-    width:min(100%, calc((100vh - 250px) * 0.85));min-width:min(100%,300px);}
+    width:min(100%, calc((100vh - 250px) * 0.955));min-width:min(100%,300px);}
   .tt-stage canvas{display:block;width:100%;height:auto;cursor:crosshair;touch-action:none;}
   .tt-pop{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) scale(.4);opacity:0;pointer-events:none;text-align:center;
     font-family:'Rajdhani',sans-serif;font-weight:700;font-size:clamp(32px,9vw,58px);letter-spacing:.04em;white-space:nowrap;color:#fff;text-shadow:0 4px 0 #7a0d20,0 0 30px rgba(225,16,44,.8);}
@@ -69,12 +69,38 @@
   .tt-pop.gold{color:#ffd66b;text-shadow:0 4px 0 #6b4a0a,0 0 30px rgba(245,185,66,.8);}
   .tt-pop.soft{color:#f1ede9;text-shadow:0 3px 0 #241f29;}
   @keyframes ttPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(-6deg);}22%{opacity:1;transform:translate(-50%,-50%) scale(1.1) rotate(2deg);}75%{opacity:1;transform:translate(-50%,-50%) scale(1);}100%{opacity:0;transform:translate(-50%,-62%) scale(1);}}
-  .tt-confetti{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+  .tt-confetti{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:7;}
   .tt-hint{text-align:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;margin:10px 0 4px;min-height:1.3em;color:var(--cream);}
   .tt-bar{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:6px;}
   .tt-shoot{font-size:20px;padding:12px 34px;min-width:200px;background:#ca0e28;color:#fff;box-shadow:0 0 0 1px rgba(255,90,110,.5),0 0 26px rgba(225,16,44,.5);}
   .tt-shoot:disabled{opacity:.35;box-shadow:none;cursor:default;}
   .tt-keys{font-size:12px;color:#8a857e;text-align:center;margin:10px 0 0;}
+
+  /* Commentary box: at the side on a wide screen, under the pitch on a phone */
+  .tt-game{display:grid;grid-template-columns:minmax(0,1fr);gap:0;}
+  .tt-game > *{min-width:0;}
+  .tt-comm{background:linear-gradient(180deg,#1a1520,#120f16);border:1px solid rgba(241,237,233,.12);border-radius:14px;padding:10px 12px;margin-top:10px;}
+  .tt-comm-head{display:flex;align-items:center;gap:8px;font-family:'Rajdhani',sans-serif;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#ff5a6e;margin-bottom:6px;}
+  .tt-comm-head b{font-weight:700;flex:1;}
+  .tt-comm .wave{display:inline-flex;gap:2px;align-items:center;height:16px;}
+  .tt-comm .wave i{width:3px;height:4px;border-radius:2px;background:#555;display:block;}
+  .tt-comm.talking .wave i{background:#ff5a6e;animation:ttWave .5s ease-in-out infinite;}
+  .tt-comm.talking .wave i:nth-child(2){animation-delay:.1s;} .tt-comm.talking .wave i:nth-child(3){animation-delay:.2s;} .tt-comm.talking .wave i:nth-child(4){animation-delay:.3s;} .tt-comm.talking .wave i:nth-child(5){animation-delay:.4s;}
+  @keyframes ttWave{0%,100%{height:4px;}50%{height:16px;}}
+  .tt-comm-list{list-style:none;margin:0;padding:0;min-height:3.4em;}
+  .tt-comm-list li{font-size:13px;line-height:1.35;color:#8a857e;padding:4px 0;border-top:1px solid rgba(255,255,255,.05);}
+  .tt-comm-list li:first-child{border-top:0;}
+  .tt-comm-list li.now{color:#f1ede9;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;line-height:1.2;animation:ttLine .35s ease-out;}
+  .tt-comm-list li.now.ex{color:#ffd66b;font-size:21px;}
+  @keyframes ttLine{from{opacity:0;transform:translateX(10px);}to{opacity:1;transform:none;}}
+  @media (min-width:900px){
+    .tt-game{max-width:980px;grid-template-columns:minmax(0,1fr) 250px;column-gap:14px;}
+    .tt-hud{grid-column:1 / -1;}
+    .tt-stage{grid-column:1;grid-row:2;}
+    .tt-comm{grid-column:2;grid-row:2;margin-top:0;align-self:stretch;display:flex;flex-direction:column;}
+    .tt-comm-list li.now{font-size:22px;} .tt-comm-list li.now.ex{font-size:26px;}
+    .tt-hint,.tt-bar,.tt-keys{grid-column:1 / -1;}
+  }
 
   /* Training ground */
   .tt-train{margin-top:22px;border-top:1px solid rgba(241,237,233,.10);padding-top:16px;}
@@ -189,6 +215,7 @@
     <div class="tt-actions">
       <button class="btn-primary tt-go" id="btn-start" type="button" disabled>Loading...</button>
       <button class="tt-pill" id="btn-sound" type="button" aria-pressed="true">🔊 Sound on</button>
+      <button class="tt-pill" id="btn-voice" type="button" aria-pressed="true">🎙️ Commentary: On</button>
       <button class="tt-pill" id="btn-music" type="button" aria-pressed="true">🎶 Music: Loud</button>
       <a class="tt-pill" href="../my-player.html">🧑‍🎤 My Player</a>
     </div>
@@ -201,10 +228,14 @@
       <div class="right"><small>Passes in a row</small><span class="big" id="hud-chain">0</span></div>
     </div>
     <div class="tt-stage" id="stage">
-      <canvas id="pitch" width="680" height="846" role="img" aria-label="A football pitch seen from above. Drag to pass the ball to a team-mate, then shoot."></canvas>
+      <canvas id="pitch" width="808" height="846" role="img" aria-label="A football pitch seen from above. Drag to pass the ball to a team-mate, then shoot."></canvas>
       <canvas class="tt-confetti" id="confetti" aria-hidden="true"></canvas>
       <div class="tt-pop" id="pop" aria-hidden="true"></div>
     </div>
+    <aside class="tt-comm" id="comm" aria-label="Live commentary">
+      <div class="tt-comm-head"><span aria-hidden="true">🎙️</span><b>Live commentary</b><span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></div>
+      <ol class="tt-comm-list" id="comm-list" aria-live="off"></ol>
+    </aside>
     <p class="tt-hint" id="hint" aria-live="polite">Drag to pass.</p>
     <div class="tt-bar">
       <button class="btn-primary tt-shoot" id="btn-shoot" type="button" disabled>⚽ Shoot!</button>
@@ -243,6 +274,7 @@
 <script src="george-look.js"></script>
 <script src="george-kit.js"></script>
 <script src="gz-music.js"></script>
+<script src="tiki-taka/commentary.js"></script>
 <script src="tiki-taka/tiki-taka.js"></script>
 </body>
 </html>
