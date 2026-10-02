@@ -48,6 +48,10 @@ const TACKLE_TIME: f32 = 0.30;
 const KEEPER_R: f32 = 27.0;
 const STEP: f32 = 1.0 / 60.0;
 pub const ATTACKS: u32 = 5;
+/// While you line up a pass, the game runs at this fraction of normal speed...
+const SLOW_FACTOR: f32 = 0.08;
+/// ...for up to this many real seconds each time you get the ball.
+pub const SLOW_BUDGET: f32 = 1.2;
 
 // ---------------------------------------------------------------- results
 pub const R_NONE: u8 = 0;
@@ -125,6 +129,7 @@ pub const IDX_CINE_T: usize = 35;
 pub const IDX_SKILL: usize = 36;
 pub const IDX_CINE_KIND: usize = 37;
 pub const IDX_SUPER_SHOT: usize = 38;
+pub const IDX_SLOW_LEFT: usize = 39;
 /// Players start here, PLAYER_STRIDE numbers each: x, y, vx, vy, facing, kind (0 attacker, 1 defender, 2 keeper), number, pressure/tackle
 pub const PLAYER_BASE: usize = 40;
 pub const PLAYER_STRIDE: usize = 8;
@@ -200,6 +205,8 @@ pub struct Game {
     cine_kind: u8,
     freeze_t: f32,
     shot_super: bool,
+    /// Real seconds of slow motion left while lining up the current pass.
+    slow_left: f32,
     rng: Rng,
     att: Vec<Pl>,
     def: Vec<Pl>,
@@ -246,7 +253,7 @@ impl Game {
 
     pub fn with(seed: u32, stats: Stats, skill: u8) -> Game {
         let mut g = Game {
-            stats, skill, meter: 0.0, cine_t: 0.0, cine_kind: 0, freeze_t: 0.0, shot_super: false,
+            stats, skill, meter: 0.0, cine_t: 0.0, cine_kind: 0, freeze_t: 0.0, shot_super: false, slow_left: SLOW_BUDGET,
             rng: Rng(0x9E37_79B9_7F4A_7C15 ^ ((seed as u64) << 17) ^ (seed as u64) | 1),
             att: Vec::new(), def: Vec::new(), gk: Pl::at(GOAL_C, 16.0), gk_react: 0.0,
             bx: 0.0, by: 0.0, bvx: 0.0, bvy: 0.0, owner: -1, passer: -1, nopick: 0.0, receiver: -1,
@@ -293,6 +300,7 @@ impl Game {
         self.receiver = -1;
         self.shot_live = false;
         self.shot_super = false;
+        self.slow_left = SLOW_BUDGET;
         self.freeze_t = 0.0;
         self.chain = 0;
         self.result = R_NONE;
@@ -439,7 +447,11 @@ impl Game {
     // ------------------------------------------------------------ the simulation
     /// Advance by `dt_ms` milliseconds of real time (done in fixed steps).
     pub fn tick(&mut self, dt_ms: f32) {
-        self.acc += clamp(dt_ms, 0.0, 100.0) / 1000.0;
+        let real = clamp(dt_ms, 0.0, 100.0) / 1000.0;
+        // lining up a pass: time almost stops, for a limited time
+        let slow = self.aim_active && self.phase == PH_PLAY && self.owner >= 0 && self.slow_left > 0.0;
+        if slow { self.slow_left = (self.slow_left - real).max(0.0); }
+        self.acc += if slow { real * SLOW_FACTOR } else { real };
         while self.acc >= STEP {
             self.acc -= STEP;
             self.step(STEP);
@@ -878,6 +890,7 @@ impl Game {
             (Some((i, da)), Some((_, dd))) if dd < da => { let _ = i; self.cut_out(); }
             (Some((i, _)), _) => {
                 self.owner = i as i32;
+                self.slow_left = SLOW_BUDGET;
                 self.bvx = 0.0;
                 self.bvy = 0.0;
                 self.receiver = -1;
@@ -915,6 +928,7 @@ impl Game {
         }
         let lvl = self.level();
         let ttime = self.tackle_time();
+        let slow_left = self.slow_left;
         let (meter, freeze, cine_t, skill, cine_kind, sup) = (self.meter, self.freeze_t, self.cine_t.max(0.0), self.skill as f32, self.cine_kind as f32, self.shot_super);
         let o = &mut self.out;
         for v in o.iter_mut() { *v = 0.0; }
@@ -951,6 +965,7 @@ impl Game {
         o[IDX_CAN_SHOOT] = if self.phase == PH_PLAY && self.owner >= 0 { 1.0 } else { 0.0 };
         o[IDX_LAST_BONUS] = self.last_bonus as f32;
         o[IDX_LEVEL] = lvl;
+        o[IDX_SLOW_LEFT] = slow_left;
         o[IDX_METER] = meter;
         o[IDX_FREEZE] = freeze;
         o[IDX_CINE_T] = cine_t;
@@ -1146,6 +1161,28 @@ mod tests {
             assert_eq!(g.result, R_GOAL, "seed {seed}: super shot should always go in");
             assert_eq!(g.meter, 0.0);
         }
+    }
+
+    #[test]
+    fn lining_up_a_pass_slows_time_for_a_moment() {
+        let mut g = Game::new(8);
+        g.intro = 0.0;
+        g.shield = 0.0;
+        let before = g.def[0].y;
+        // 0.5s of real time while aiming: almost nothing happens
+        g.aim_begin();
+        for _ in 0..30 { g.tick(16.7); }
+        let slowed = (g.def[0].y - before).abs();
+        assert!(g.slow_left < SLOW_BUDGET - 0.4 && g.slow_left > 0.4, "left {}", g.slow_left);
+        // once the budget is used up, time runs normally again
+        for _ in 0..120 { g.tick(16.7); }
+        assert_eq!(g.slow_left, 0.0);
+        let mut h = Game::new(8);
+        h.intro = 0.0;
+        h.shield = 0.0;
+        for _ in 0..30 { h.tick(16.7); }
+        let normal = (h.def[0].y - before).abs();
+        assert!(slowed < normal * 0.4, "slowed {slowed} vs normal {normal}");
     }
 
     #[test]
