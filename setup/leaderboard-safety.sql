@@ -41,6 +41,7 @@ begin
     when 'free-kick' then 50000
     when 'keepy-uppy' then 100000
     when 'penalty-shootout' then 500
+    when 'tiki-taka' then 3000
     when 'football-frenzy' then 1000
     when 'capital-quest' then 1000
     when 'flag-quest' then 1000

@@ -1,0 +1,17 @@
+[package]
+name = "tiki_taka"
+version = "0.1.0"
+edition = "2021"
+description = "Tiki-Taka: pass, pass, pass, shoot. The game engine for George's website, written in Rust and compiled to WebAssembly."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+
+[profile.release]
+opt-level = 3
+lto = true
+panic = "abort"
+codegen-units = 1
+strip = true
