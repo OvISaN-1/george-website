@@ -216,7 +216,9 @@
   function fxOn(e) {
     if (reduced) return;
     const [bx, by] = ballPos();
-    if (e === E.PASS) {
+    if (e === E.KICK) fxBurst(bx, by, 6, ["#e9e2c8", "#cfe8b0"], 90, 0.45, 3);
+    else if (e === E.SHOT) { fxText("WHOOSH!", bx, by - 24, "#ffffff", 34); fxRing(bx, by, "#ffffff", 10); }
+    else if (e === E.PASS) {
       const chain = S[I.CHAIN] | 0, [ox, oy] = ownerPos();
       fxRing(ox, oy, "#ffd23f", 14);
       fxBurst(ox, oy, 8, ["#ffd23f", "#ffffff"], 130, 0.6, 4, "star");
@@ -391,6 +393,12 @@
       const frac = Math.min(1, S[I.SLOW_LEFT] / 1.2);
       ctx.strokeStyle = "rgba(160,205,255,.95)"; ctx.lineWidth = 4; ctx.lineCap = "round";
       ctx.beginPath(); ctx.arc(ax, ay, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * frac); ctx.stroke(); ctx.lineCap = "butt";
+    }
+    if (S[I.SUPER_SHOT]) { // a ball of fire
+      const bx = S[I.BX], by = S[I.BY];
+      const g = ctx.createRadialGradient(bx, by, 2, bx, by, 34);
+      g.addColorStop(0, "rgba(255,240,170,.95)"); g.addColorStop(0.4, "rgba(255,150,40,.7)"); g.addColorStop(1, "rgba(255,60,0,0)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(bx, by, 34, 0, 7); ctx.fill();
     }
     if (phase !== PH.CINE) return;
     const kind = S[I.CINE_KIND] | 0;
