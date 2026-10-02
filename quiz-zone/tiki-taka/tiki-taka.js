@@ -155,11 +155,6 @@
 
   function drawBall(x, y, vx, vy, t) {
     ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.beginPath(); ctx.ellipse(x + 2, y + 4, 8, 5, 0, 0, 7); ctx.fill();
-    const sp = Math.hypot(vx, vy);
-    if (sp > 260) { // a little streak behind a fast ball
-      ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 6; ctx.lineCap = "round";
-      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - vx * 0.035, y - vy * 0.035); ctx.stroke(); ctx.lineCap = "butt";
-    }
     ctx.fillStyle = "#fff"; ctx.strokeStyle = "#1b1720"; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.arc(x, y, 7, 0, 7); ctx.fill(); ctx.stroke();
     ctx.fillStyle = "#1b1720"; ctx.beginPath(); ctx.arc(x + Math.cos(t * 6 + x * 0.1) * 2, y + Math.sin(t * 6 + y * 0.1) * 2, 2.4, 0, 7); ctx.fill();
@@ -221,9 +216,7 @@
   function fxOn(e) {
     if (reduced) return;
     const [bx, by] = ballPos();
-    if (e === E.KICK) fxBurst(bx, by, 6, ["#e9e2c8", "#cfe8b0"], 90, 0.45, 3);
-    else if (e === E.SHOT) { fxText("WHOOSH!", bx, by - 24, "#ffffff", 34); fxRing(bx, by, "#ffffff", 10); }
-    else if (e === E.PASS) {
+    if (e === E.PASS) {
       const chain = S[I.CHAIN] | 0, [ox, oy] = ownerPos();
       fxRing(ox, oy, "#ffd23f", 14);
       fxBurst(ox, oy, 8, ["#ffd23f", "#ffffff"], 130, 0.6, 4, "star");
@@ -261,15 +254,6 @@
       if (q.k === "ring") q.r += dt * 220;
     }
     if (FX.p.length > 600) FX.p.splice(0, FX.p.length - 600);
-    // the ball leaves a trail: fire for a rocket, rainbow for a long chain, white for a hard pass
-    if (S && (S[I.PHASE] | 0) === PH.PLAY && (S[I.OWNER] | 0) < 0 && !reduced) {
-      const sp = Math.hypot(S[I.BVX], S[I.BVY]);
-      if (sp > 140) {
-        const sup = S[I.SUPER_SHOT] === 1, chain = S[I.CHAIN] | 0;
-        const col = sup ? pickOne(["#ffd23f", "#ff8a2a", "#ff4b2b"]) : chain >= 3 ? `hsl(${(clock * 500) % 360},95%,62%)` : "rgba(255,255,255,.7)";
-        FX.p.push({ k: "dot", x: S[I.BX] + rnd(-3, 3), y: S[I.BY] + rnd(-3, 3), vx: rnd(-20, 20), vy: rnd(-20, 20), g: 0, life: sup ? 0.6 : 0.4, max: sup ? 0.6 : 0.4, c: col, s: sup ? 9 : chain >= 3 ? 7 : 4, r: 0 });
-      }
-    }
   }
   function drawFx() {
     for (const q of FX.p) {
@@ -407,12 +391,6 @@
       const frac = Math.min(1, S[I.SLOW_LEFT] / 1.2);
       ctx.strokeStyle = "rgba(160,205,255,.95)"; ctx.lineWidth = 4; ctx.lineCap = "round";
       ctx.beginPath(); ctx.arc(ax, ay, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * frac); ctx.stroke(); ctx.lineCap = "butt";
-    }
-    if (S[I.SUPER_SHOT]) { // a ball of fire
-      const bx = S[I.BX], by = S[I.BY];
-      const g = ctx.createRadialGradient(bx, by, 2, bx, by, 34);
-      g.addColorStop(0, "rgba(255,240,170,.95)"); g.addColorStop(0.4, "rgba(255,150,40,.7)"); g.addColorStop(1, "rgba(255,60,0,0)");
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(bx, by, 34, 0, 7); ctx.fill();
     }
     if (phase !== PH.CINE) return;
     const kind = S[I.CINE_KIND] | 0;
