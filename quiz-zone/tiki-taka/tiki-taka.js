@@ -711,7 +711,10 @@
   }
   function replayFrame(dt) {
     const r = replay;
-    r.pos += dt * REPLAY_SPEED; r.el += dt;
+    // in the last moments (the shot, the save, the goal) it slows right down
+    const left = r.len - r.pos;
+    const ease = left > 0 && left < 0.45 ? 0.25 + 0.75 * (left / 0.45) : 1;
+    r.pos += dt * REPLAY_SPEED * ease; r.el += dt;
     if (r.pos >= r.len + 0.35) { skipReplay(); return; }      // hold the last picture for a moment
     const target = r.t0 + Math.min(r.pos, r.len);
     while (r.i < r.frames.length - 1 && r.frames[r.i + 1].t <= target) r.i++;
