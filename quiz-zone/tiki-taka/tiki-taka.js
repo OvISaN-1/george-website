@@ -130,14 +130,35 @@
   window.addEventListener("resize", () => { if (wasm) fit(); });
 
   const STRIPES = 10;
+  // a faint pattern of grass blades, drawn once and re-used
+  let grassTex = null;
+  function makeGrass() {
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d");
+    let seed = 7; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let i = 0; i < 2600; i++) {
+      g.strokeStyle = r() < 0.5 ? "rgba(255,255,255,.035)" : "rgba(0,0,0,.05)";
+      g.lineWidth = 1.2; const x = r() * W, y = r() * H;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + (r() - 0.5) * 4, y - 3 - r() * 4); g.stroke();
+    }
+    return c;
+  }
   function drawPitch(t) {
     // grass with mowing stripes
+    if (!grassTex) grassTex = makeGrass();
     for (let i = 0; i < STRIPES; i++) {
       ctx.fillStyle = i % 2 ? "#2f7a3a" : "#348640";
       ctx.fillRect(0, (H / STRIPES) * i, W, H / STRIPES + 1);
     }
+    ctx.drawImage(grassTex, 0, 0);
+    // a soft pool of light in the middle, darker at the edges
+    const vg = ctx.createRadialGradient(W / 2, H * 0.45, 120, W / 2, H * 0.45, 560);
+    vg.addColorStop(0, "rgba(255,255,220,.05)"); vg.addColorStop(1, "rgba(0,20,0,.22)");
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
     ctx.strokeStyle = "rgba(255,255,255,.8)"; ctx.lineWidth = 3; ctx.fillStyle = "rgba(255,255,255,.8)";
     ctx.strokeRect(14, 14, W - 28, H - 28);
+    // corner arcs
+    for (const [cx, cy, a0] of [[14, 14, 0], [W - 14, 14, 0.5], [14, H - 14, 1.5], [W - 14, H - 14, 1]]) { ctx.beginPath(); ctx.arc(cx, cy, 14, a0 * Math.PI, (a0 + 0.5) * Math.PI); ctx.stroke(); }
     // box and six-yard box at the top (the goal we attack)
     ctx.strokeRect(150, 14, W - 300, 130);
     ctx.strokeRect(232, 14, W - 464, 52);
@@ -173,8 +194,21 @@
       ctx.strokeStyle = o.ring; ctx.lineWidth = 3; ctx.globalAlpha = 0.9;
       ctx.beginPath(); ctx.arc(0, 0, 22 + (o.pulse || 0), 0, 7); ctx.stroke(); ctx.globalAlpha = 1;
     }
-    // body
-    ctx.fillStyle = shirt; ctx.strokeStyle = trim; ctx.lineWidth = 3;
+    // feet that step when he runs
+    const spd = Math.hypot(o.vx || 0, o.vy || 0);
+    if (spd > 15) {
+      const ph = clock * (6 + spd / 14), fx = Math.cos(face), fy = Math.sin(face);
+      ctx.fillStyle = "#1b1720";
+      for (const sd of [-1, 1]) {
+        const step = Math.sin(ph + (sd > 0 ? 0 : Math.PI)) * 6;
+        ctx.beginPath(); ctx.ellipse(fx * step - fy * sd * 6, fy * step + fx * sd * 6, 4.5, 3.2, face, 0, 7); ctx.fill();
+      }
+    }
+    if (o.gloves) { ctx.fillStyle = "#ffd23f"; for (const sd of [-1, 1]) { ctx.beginPath(); ctx.arc(sd * 17, 3, 4.2, 0, 7); ctx.fill(); } }
+    // body, lit from the top left
+    const bg = ctx.createRadialGradient(-5, -5, 2, 0, 0, 16);
+    bg.addColorStop(0, shade(shirt.startsWith("#") ? shirt : "#888888", 1.22)); bg.addColorStop(1, shirt);
+    ctx.fillStyle = bg; ctx.strokeStyle = trim; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(0, 0, 14, 0, 7); ctx.fill(); ctx.stroke();
     // head, on the side he is facing
     ctx.fillStyle = o.hair || "#3b2616";
@@ -188,9 +222,19 @@
 
   function drawBall(x, y, vx, vy, t) {
     ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.beginPath(); ctx.ellipse(x + 2, y + 4, 8, 5, 0, 0, 7); ctx.fill();
-    ctx.fillStyle = "#fff"; ctx.strokeStyle = "#1b1720"; ctx.lineWidth = 1.5;
+    const g = ctx.createRadialGradient(x - 2.5, y - 2.5, 1, x, y, 8);
+    g.addColorStop(0, "#ffffff"); g.addColorStop(1, "#d9d9e0");
+    ctx.fillStyle = g; ctx.strokeStyle = "#1b1720"; ctx.lineWidth = 1.4;
     ctx.beginPath(); ctx.arc(x, y, 7, 0, 7); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = "#1b1720"; ctx.beginPath(); ctx.arc(x + Math.cos(t * 6 + x * 0.1) * 2, y + Math.sin(t * 6 + y * 0.1) * 2, 2.4, 0, 7); ctx.fill();
+    // panels that turn as it rolls
+    const ang = (x + y) * 0.06;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+    ctx.fillStyle = "#1b1720"; ctx.beginPath();
+    for (let i = 0; i < 5; i++) { const a = i * 1.2566 - 1.5708; ctx.lineTo(Math.cos(a) * 2.6, Math.sin(a) * 2.6); }
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "#1b1720"; ctx.lineWidth = 0.9; ctx.beginPath();
+    for (let i = 0; i < 5; i++) { const a = i * 1.2566 - 1.5708; ctx.moveTo(Math.cos(a) * 2.6, Math.sin(a) * 2.6); ctx.lineTo(Math.cos(a) * 6.4, Math.sin(a) * 6.4); }
+    ctx.stroke(); ctx.restore();
   }
 
   function drawAim(ox, oy, t) {
@@ -487,7 +531,7 @@
     const players = [];
     for (let i = 0; i < nA + nD + 1; i++) {
       const b = I.P0 + i * I.STRIDE;
-      players.push({ x: S[b], y: S[b + 1], face: S[b + 4], kind: S[b + 5], no: S[b + 6], extra: S[b + 7], i });
+      players.push({ x: S[b], y: S[b + 1], vx: S[b + 2], vy: S[b + 3], face: S[b + 4], kind: S[b + 5], no: S[b + 6], extra: S[b + 7], i });
     }
     players.sort((a, b) => a.y - b.y);
     // defenders in a pale blue away kit, the keeper in green
@@ -496,12 +540,12 @@
         const mine = p.i === 4; // the striker is George
         const isOwner = p.i === owner;
         const ring = isOwner ? "#ffd66b" : (p.i === aimTarget || (p.i === recv && S[I.AIM] === 0)) ? "#ffffff" : null;
-        drawPlayer(p.x, p.y, p.face, k.shirt, k.trim, mine ? String(num) : "", { hair: mine ? hair : "#3b2616", text: k.text, ring, pulse: isOwner ? pulse : 0 });
+        drawPlayer(p.x, p.y, p.face, k.shirt, k.trim, mine ? String(num) : "", { hair: mine ? hair : "#3b2616", text: k.text, ring, pulse: isOwner ? pulse : 0, vx: p.vx, vy: p.vy });
       } else if (p.kind === 1) {
         const danger = Math.min(1, p.extra);   // how close to a tackle
-        drawPlayer(p.x, p.y, p.face, "#7fb3ff", danger > 0.05 ? "#ff5d5d" : "#1a3a73", "", { hair: "#1a1a1a", ring: danger > 0.05 ? "rgba(255,93,93," + (0.4 + danger * 0.6) + ")" : null });
+        drawPlayer(p.x, p.y, p.face, "#7fb3ff", danger > 0.05 ? "#ff5d5d" : "#1a3a73", "", { hair: "#1a1a1a", vx: p.vx, vy: p.vy, ring: danger > 0.05 ? "rgba(255,93,93," + (0.4 + danger * 0.6) + ")" : null });
       } else {
-        drawPlayer(p.x, p.y, Math.PI / 2, "#1f9d55", "#0e5a30", "1", { hair: "#222", text: "#fff" });
+        drawPlayer(p.x, p.y, Math.PI / 2, "#1f9d55", "#0e5a30", "1", { hair: "#222", text: "#fff", gloves: true, vx: p.vx, vy: p.vy });
       }
     }
     // pass preview and the ball on top
