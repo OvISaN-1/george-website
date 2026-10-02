@@ -44,10 +44,51 @@
     return c ? c.base : "#a57d52";
   };
   const SOUND = GK.createSound("gz_tikitaka_sound");
-  const VOICE = GK.createVoice("gz_tikitaka_voice");
   let soundOn = SOUND.isOn();
   const sfx = SOUND.sfx;
   const MUSIC = GZMusic.attach(SOUND);
+
+  /* ---- extra sound effects, made from scratch with the Web Audio API ---- */
+  function tone(freq, dur, type, vol, when, to) {
+    const a = soundOn ? SOUND.wake() : null; if (!a) return;
+    const t0 = a.currentTime + (when || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type || "sine"; o.frequency.setValueAtTime(freq, t0);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t0 + dur);
+    g.gain.setValueAtTime(vol || 0.12, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+    o.connect(g); g.connect(a.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+  function noise(dur, vol, f0, when, f1, q) {
+    const a = soundOn ? SOUND.wake() : null; if (!a) return;
+    const t0 = a.currentTime + (when || 0), len = Math.floor(a.sampleRate * dur), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / len);
+    const src = a.createBufferSource(); src.buffer = buf;
+    const f = a.createBiquadFilter(); f.type = "bandpass"; f.Q.value = q || 0.8; f.frequency.setValueAtTime(f0, t0);
+    if (f1) f.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
+    const g = a.createGain(); g.gain.value = vol;
+    src.connect(f); f.connect(g); g.connect(a.destination); src.start(t0);
+  }
+  const snd = {
+    pass(chain) { const k = Math.min(chain, 6); tone(520 + k * 70, 0.09, "triangle", 0.15); tone(780 + k * 100, 0.12, "sine", 0.1, 0.07); },
+    combo(chain) { const base = 392; [0, 4, 7, 12, 16].slice(0, Math.min(5, chain)).forEach((st, i) => tone(base * Math.pow(2, st / 12), 0.16, "triangle", 0.12, i * 0.07)); },
+    whoosh() { noise(0.4, 0.3, 300, 0, 3200, 0.5); },
+    slap() { noise(0.12, 0.45, 1400, 0, 500); tone(240, 0.12, "square", 0.08, 0, 90); },
+    clang() { [1568, 2349, 3136, 4186].forEach((f, i) => tone(f, 0.5 - i * 0.07, "triangle", 0.1 - i * 0.015)); noise(0.06, 0.3, 4000); },
+    ooh() { tone(620, 0.7, "sine", 0.1, 0, 300); tone(630, 0.7, "triangle", 0.05, 0.02, 310); noise(0.7, 0.12, 500); },
+    thump() { tone(120, 0.18, "sine", 0.4, 0, 45); noise(0.1, 0.25, 250); },
+    charge() { tone(300, 0.7, "sawtooth", 0.06, 0, 1500); tone(450, 0.7, "triangle", 0.08, 0.05, 2200); },
+    ready() { [880, 1175, 1568].forEach((f, i) => tone(f, 0.14, "triangle", 0.12, i * 0.08)); },
+    rocket() { noise(1.1, 0.4, 200, 0, 4000, 0.4); tone(180, 1.0, "sawtooth", 0.1, 0, 1800); tone(90, 0.5, "square", 0.1); for (let i = 0; i < 5; i++) noise(0.05, 0.4, 3000 + i * 400, 0.2 + i * 0.13); },
+    timestop() { tone(1100, 0.8, "sine", 0.14, 0, 70); tone(550, 0.8, "triangle", 0.08, 0, 35); for (let i = 0; i < 4; i++) tone(1400, 0.04, "square", 0.05, 0.9 + i * 0.5); },
+    thaw() { tone(300, 0.4, "sine", 0.1, 0, 1200); },
+    slowIn() { tone(260, 0.35, "sine", 0.1, 0, 70); noise(0.35, 0.1, 1200, 0, 200); },
+    slowOut() { tone(90, 0.25, "sine", 0.1, 0, 420); noise(0.2, 0.15, 300, 0, 2400); },
+    replayIn() { noise(0.5, 0.3, 4000, 0, 300, 0.4); tone(180, 0.4, "sawtooth", 0.06, 0, 700); },
+    replayOut() { noise(0.35, 0.25, 300, 0, 4000, 0.4); },
+    celebrate() { [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => tone(f, 0.2, "triangle", 0.12, i * 0.1)); for (let i = 0; i < 6; i++) noise(0.08, 0.3, 2500 + Math.random() * 3000, 0.1 + i * 0.22); },
+    firework() { tone(900, 0.25, "sine", 0.06, 0, 2200); noise(0.35, 0.3, 1800, 0.25, 500); },
+    crowd() { noise(1.0, 0.18, 700, 0, 900, 0.3); },
+    pop() { tone(700, 0.08, "sine", 0.1, 0, 1400); },
+  };
   GZMusic.mountToggle($("btn-music"));
   const confettiCanvas = $("confetti");
 
@@ -55,14 +96,6 @@
     $("btn-sound").textContent = soundOn ? "🔊 Sound on" : "🔇 Sound off";
     $("btn-sound").setAttribute("aria-pressed", String(soundOn));
   }
-  function showVoice() {
-    const b = $("btn-voice");
-    if (!VOICE.supported) { b.hidden = true; return; }
-    b.textContent = VOICE.isOn() ? "🎙️ Commentary: On" : "🎙️ Commentary: Off";
-    b.setAttribute("aria-pressed", String(VOICE.isOn()));
-  }
-  $("btn-voice").addEventListener("click", () => { VOICE.set(!VOICE.isOn()); showVoice(); if (VOICE.isOn()) VOICE.say("Welcome to Tiki-Taka!", true); });
-  showVoice();
   $("btn-sound").addEventListener("click", () => { soundOn = !soundOn; SOUND.set(soundOn); showSound(); if (soundOn) { SOUND.wake(); sfx.ding(); } });
   showSound();
 
@@ -220,10 +253,8 @@
     else if (e === E.SHOT) { fxText("WHOOSH!", bx, by - 24, "#ffffff", 34); fxRing(bx, by, "#ffffff", 10); }
     else if (e === E.PASS) {
       const chain = S[I.CHAIN] | 0, [ox, oy] = ownerPos();
-      fxRing(ox, oy, "#ffd23f", 14);
-      fxBurst(ox, oy, 8, ["#ffd23f", "#ffffff"], 130, 0.6, 4, "star");
       const c = COMBO[Math.min(chain, 5)];
-      if (c) { fxText(c[0], ox, oy - 34, c[1], 34 + chain * 3); fxBurst(ox, oy, 8 + chain * 4, PARTY, 170, 0.9, 4, "star"); }
+      if (c) fxText(c[0], ox, oy - 34, c[1], 34 + chain * 3);
     }
     else if (e === E.TACKLE) { FX.shake = Math.max(FX.shake, 9); fxText("OOF!", bx, by - 22, "#ff5d5d", 44); fxBurst(bx, by, 14, ["#ffffff", "#ff9b9b"], 190, 0.5, 4); }
     else if (e === E.BLOCK) { FX.shake = Math.max(FX.shake, 7); fxText("THUD!", bx, by - 22, "#ffb347", 42); fxBurst(bx, by, 12, ["#ffb347", "#ffffff"], 170, 0.5, 4); }
@@ -518,7 +549,7 @@
   /* ---------------- Commentary: a box at the side, and a voice if the device has one ---------------- */
   const commList = $("comm-list");
   const commHistory = [];
-  let lastLineAt = 0, lastVoiceAt = 0, waveTimer = 0, lastPassLen = 0, lastLocked = false, lastShotFrom = 0, lastShotSuper = false, pressedKey = "";
+  let lastLineAt = 0, waveTimer = 0, lastPassLen = 0, lastLocked = false, lastShotFrom = 0, lastShotSuper = false, pressedKey = "";
   function comment(text, prio, excited) {
     if (!text) return;
     const now = performance.now();
@@ -529,7 +560,6 @@
     commList.innerHTML = commHistory.map((h, i) => `<li class="${i === 0 ? "now" : ""}${h.ex ? " ex" : ""}">${h.t.replace(/[&<>]/g, "")}</li>`).join("");
     $("comm").classList.add("talking");
     clearTimeout(waveTimer); waveTimer = setTimeout(() => $("comm").classList.remove("talking"), Math.min(4200, 900 + text.length * 55));
-    if (VOICE.isOn() && (prio || now - lastVoiceAt > 2600)) { VOICE.say(text, excited); lastVoiceAt = now; }
   }
   const C = (key, vars) => TTCommentary.say(key, vars);
   function commentOn(e) {
@@ -573,17 +603,18 @@
       if (!soundOn) { if (e === E.GOAL) flash = 1; continue; }
       if (e === E.START) sfx.whistle();
       else if (e === E.KICK) sfx.kick();
-      else if (e === E.PASS) sfx.ding();
-      else if (e === E.TACKLE) sfx.thud();
-      else if (e === E.BLOCK) sfx.thud();
-      else if (e === E.SAVE) sfx.save();
-      else if (e === E.POST) sfx.post();
-      else if (e === E.MISS) sfx.aww();
-      else if (e === E.GOAL) { sfx.roar(); MUSIC.goalSong({ short: true }); }
+      else if (e === E.SHOT) { snd.whoosh(); }
+      else if (e === E.PASS) { const ch = S[I.CHAIN] | 0; snd.pass(ch); if (ch >= 2) snd.combo(ch); if (ch >= 3) snd.crowd(); }
+      else if (e === E.TACKLE) { snd.thump(); sfx.aww(); }
+      else if (e === E.BLOCK) { snd.thump(); }
+      else if (e === E.SAVE) { snd.slap(); sfx.save(); }
+      else if (e === E.POST) { snd.clang(); snd.ooh(); }
+      else if (e === E.MISS) { snd.ooh(); }
+      else if (e === E.GOAL) { sfx.roar(); snd.celebrate(); MUSIC.goalSong({ short: true }); for (let i = 0; i < 4; i++) setTimeout(snd.firework, 400 + i * 330); }
       else if (e === E.OVER) sfx.whistle();
-      else if (e === E.SUPER) { sfx.unlock(); sfx.roar(); }
-      else if (e === E.FREEZE) sfx.buzz();
-      else if (e === E.METER_FULL) sfx.unlock();
+      else if (e === E.SUPER) { if ((S[I.SKILL] | 0) === 1) snd.timestop(); else snd.rocket(); }
+      else if (e === E.FREEZE) { snd.thaw(); }
+      else if (e === E.METER_FULL) { snd.ready(); snd.charge(); }
       if (e === E.GOAL) flash = 1;
     }
   }
@@ -688,6 +719,7 @@
   const REPLAY_SECS = 3.4;       // how much of the attack to show
   const REPLAY_SPEED = 0.6;      // a little slower than real life
   const REPLAY_DELAY = 0.9;      // let the result sink in first
+  let wasSlow = false;
   let rec = [], recNo = -1, resultFor = 0, replayDone = false, replay = null, celebrated = false, celebrating = false;
 
   function record() {
@@ -705,9 +737,9 @@
     replayDone = true;
     popEl.className = "tt-pop";
     say("⏪ REPLAY: tap to skip");
-    if (soundOn) sfx.tick();
+    snd.replayIn();
   }
-  function skipReplay() { if (replay) { replay = null; last = performance.now(); refresh(); say(""); maybeCelebrate(); } }
+  function skipReplay() { if (replay) { replay = null; last = performance.now(); refresh(); say(""); snd.replayOut(); maybeCelebrate(); } }
   // After a goal, George does his chosen celebration (My Player), with the crowd going wild.
   function maybeCelebrate() {
     if (celebrated || (S[I.RESULT] | 0) !== R.GOAL || !window.GL || !GL.celebrate) return;
@@ -769,6 +801,8 @@
     const canShoot = S[I.CAN_SHOOT] === 1;
     $("btn-shoot").disabled = !canShoot;
     updateSuper(canShoot);
+    const slowNow = S[I.AIM] === 1 && S[I.SLOW_LEFT] > 0 && phase === PH.PLAY;
+    if (slowNow !== wasSlow) { wasSlow = slowNow; if (slowNow) snd.slowIn(); else snd.slowOut(); }
     if (phase === PH.PLAY) {
       lastResult = 0;
       const owner = S[I.OWNER] | 0;
