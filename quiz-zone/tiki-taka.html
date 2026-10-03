@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tiki-Taka | George's Game Zone</title>
 <meta name="description" content="Pass, pass, pass and shoot. Drag to pass the ball through the defence. The game engine is written in Rust and runs as WebAssembly.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://georgeneagu.win/quiz-zone/tiki-taka.html">
+<meta property="og:title" content="Tiki-Taka | George's Game Zone">
+<meta property="og:description" content="Pass, pass, pass... shoot! Drag to pass the ball through the defence, charge a super skill and score. The engine is written in Rust.">
+<meta property="og:image" content="https://georgeneagu.win/assets/images/share/tiki-taka.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://georgeneagu.win/assets/images/share/tiki-taka.png">
 <meta name="robots" content="noindex, nofollow">
 <link rel="canonical" href="https://georgeneagu.win/quiz-zone/tiki-taka.html">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121014'/%3E%3Ctext x='16' y='23' font-family='Arial, sans-serif' font-weight='700' font-size='19' fill='%23e1102c' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E">
@@ -80,7 +89,10 @@
   .tt-game{display:grid;grid-template-columns:minmax(0,1fr);gap:0;}
   .tt-game > *{min-width:0;}
   .tt-comm{background:linear-gradient(180deg,#1a1520,#120f16);border:1px solid rgba(241,237,233,.12);border-radius:14px;padding:10px 12px;margin-top:10px;}
-  .tt-comm-head{display:flex;align-items:center;gap:8px;font-family:'Rajdhani',sans-serif;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#ff5a6e;margin-bottom:6px;}
+  .tt-comm-head{display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;padding:4px 0;min-height:40px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#ff5a6e;margin-bottom:2px;text-align:left;}
+  .tt-comm-head:focus-visible{outline:2px solid #f1ede9;outline-offset:2px;border-radius:8px;}
+  .tt-comm-head .chev{transition:transform .2s;} .tt-comm.collapsed .chev{transform:rotate(-90deg);} .tt-comm.collapsed .tt-comm-list{display:none;}
+  .tt-comm.collapsed{padding-bottom:4px;}
   .tt-comm-head b{font-weight:700;flex:1;}
   .tt-comm .wave{display:inline-flex;gap:2px;align-items:center;height:16px;}
   .tt-comm .wave i{width:3px;height:4px;border-radius:2px;background:#555;display:block;}
@@ -149,6 +161,13 @@
   td{font-weight:600;}
   #btn-again{margin-top:18px;width:100%;}
   @media (max-width:520px){.tt-card{padding:16px;}.tt-game{padding:8px;}.tt-shoot{min-width:0;flex:1;}}
+  @media (max-width:700px){
+    .tt-bar{position:sticky;bottom:calc(72px + env(safe-area-inset-bottom,0px));z-index:6;gap:8px;padding:10px 4px 6px;margin-top:0;background:linear-gradient(to top,rgba(28,24,32,.96) 62%,rgba(28,24,32,0));}
+    .tt-bar .tt-shoot{min-height:60px;font-size:23px;flex:1.3;}
+    .tt-bar .tt-super{min-height:60px;min-width:0;flex:1;font-size:17px;padding:0 10px;}
+    .tt-bar .tt-super .lbl{white-space:nowrap;}
+    .tt-keys{display:none;}
+  }
   @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;}}
 </style>
 </head>
@@ -232,7 +251,7 @@
       <div class="tt-pop" id="pop" aria-hidden="true"></div>
     </div>
     <aside class="tt-comm" id="comm" aria-label="Live commentary">
-      <div class="tt-comm-head"><span aria-hidden="true">🎙️</span><b>Live commentary</b><span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></div>
+      <button type="button" class="tt-comm-head" id="comm-toggle" aria-expanded="true" aria-controls="comm-list"><span aria-hidden="true">🎙️</span><b>Live commentary</b><span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="chev" aria-hidden="true">▾</span></button>
       <ol class="tt-comm-list" id="comm-list" aria-live="off"></ol>
     </aside>
     <p class="tt-hint" id="hint" aria-live="polite">Drag to pass.</p>

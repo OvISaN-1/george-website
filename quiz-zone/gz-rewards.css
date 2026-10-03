@@ -22,8 +22,41 @@
 .gzr-btn{display:inline-flex;align-items:center;min-height:46px;padding:0 22px;border-radius:999px;background:#ca0e28;color:#fff !important;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:17px;text-decoration:none;text-transform:uppercase;letter-spacing:.03em;}
 .gzr-btn:hover{filter:brightness(1.1);} .gzr-btn:focus-visible{outline:2px solid #f1ede9;outline-offset:3px;}
 .gzr-sats{border-color:rgba(245,185,66,.35);background:linear-gradient(135deg,rgba(245,185,66,.10),rgba(28,24,32,1) 60%);}
-@media (max-width:520px){.gzr-list li{grid-template-columns:30px 1fr;}.gzr-pay{grid-column:2;}}
+@media (max-width:520px){
+  .gzr-card{padding:12px 14px;}
+  .gzr-list{gap:6px;}
+  .gzr-list li{grid-template-columns:26px 1fr auto;gap:8px;padding:8px 10px;}
+  .gzr-ico{font-size:19px;}
+  .gzr-txt{font-size:13.5px;line-height:1.3;}
+  .gzr-pay{font-size:13.5px;}
+  .gzr-foot{margin-top:8px;}
+}
 
 .gzr-today{display:grid;gap:16px;grid-template-columns:1fr;padding-block:8px;}
 @media (min-width:860px){.gzr-today{grid-template-columns:1fr 1fr;align-items:stretch;}}
 .gzr-today .gzr-card{height:100%;max-width:none;}
+
+/* The cards fill in a moment after the page loads. Holding their space stops the page jumping. */
+[data-gzr="level"]{min-height:42px;}
+[data-gzr="missions"]{min-height:230px;}
+[data-gzr="missions"][data-collapse]{min-height:58px;}
+[data-gzr="sats"]{min-height:230px;}
+@media (max-width:520px){[data-gzr="missions"]{min-height:300px;}[data-gzr="missions"][data-collapse]{min-height:52px;}}
+.gzr-fold summary{list-style:none;cursor:pointer;min-height:44px;display:flex;align-items:center;margin:0;}
+.gzr-fold summary::-webkit-details-marker{display:none;}
+.gzr-fold summary h2{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;font-size:19px;}
+.gzr-fold summary h2::after{content:"▾";margin-left:auto;color:#b9b2ac;transition:transform .2s;}
+.gzr-fold details[open] summary h2::after{transform:rotate(180deg);}
+.gzr-fold summary:focus-visible{outline:2px solid #f1ede9;outline-offset:3px;border-radius:8px;}
+.gzr-fold .gzr-list{margin-top:6px;}
+.gzr-fold .gzr-sub{margin-left:8px;font-weight:600;}
+
+/* A little "+5 coins" that floats up, and a bump on the level bar */
+.gzr-float{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);z-index:9999;pointer-events:none;
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:26px;color:#ffd66b;text-shadow:0 2px 0 #6b4a0a,0 0 18px rgba(245,185,66,.7);
+  animation:gzrFloat 1.6s ease-out forwards;white-space:nowrap;}
+.gzr-float.lv{font-size:32px;color:#fff;text-shadow:0 3px 0 #7a0d20,0 0 24px rgba(255,214,107,.9);}
+@keyframes gzrFloat{0%{opacity:0;transform:translate(-50%,16px) scale(.7);}15%{opacity:1;transform:translate(-50%,0) scale(1.1);}30%{transform:translate(-50%,-6px) scale(1);}100%{opacity:0;transform:translate(-50%,-70px) scale(1);}}
+.gzr-level.bump{animation:gzrBump .6s ease-out;}
+@keyframes gzrBump{0%{transform:scale(1);}30%{transform:scale(1.12);box-shadow:0 0 18px rgba(245,185,66,.7);}100%{transform:scale(1);}}
+@media (prefers-reduced-motion: reduce){.gzr-float,.gzr-level.bump{animation:none !important;}}
