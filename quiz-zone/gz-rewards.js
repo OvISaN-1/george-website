@@ -61,6 +61,25 @@
     toasting = true; toast(t); setTimeout(next, 3300);
   }
 
+  /* ---------------- a small "+5 🪙" that floats up when you earn ---------------- */
+  const reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let popCoins = 0, popLevel = false, popTimer = 0;
+  function pop(coins, xp, levelUp) {
+    if (reduced || (!coins && !levelUp)) return;
+    popCoins += coins; popLevel = popLevel || levelUp;
+    clearTimeout(popTimer);                      // several rewards in one moment show as one pop
+    popTimer = setTimeout(() => {
+      const el = document.createElement("div");
+      el.className = "gzr-float" + (popLevel ? " lv" : "");
+      el.setAttribute("aria-hidden", "true");
+      el.textContent = (popLevel ? "⭐ LEVEL UP!  " : "") + (popCoins ? `+${popCoins} 🪙` : "");
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1700);
+      document.querySelectorAll(".gzr-level").forEach((c) => { c.classList.remove("bump"); void c.offsetWidth; c.classList.add("bump"); });
+      popCoins = 0; popLevel = false;
+    }, 350);
+  }
+
   /* ---------------- earning and spending ---------------- */
   function earn(o, quiet) {
     const s = readSave();
@@ -71,6 +90,7 @@
     const after = levelOf(s.xp);
     if (after > before) say(`⭐ Level ${after}! Well played, George!`);
     changed();
+    pop(coins, xp, after > before);
     return { coins, xp, level: after };
   }
   function spend(n) {
@@ -187,13 +207,18 @@
   function renderMissions(el) {
     if (!el) return;
     const ms = missions(), s = readSave(), all = ms.every((m) => m.done);
-    el.innerHTML = `<section class="gzr-card" aria-label="Today's missions">
-      <div class="gzr-head"><h2>🎯 Today's missions</h2><span class="gzr-sub">${all ? "All done! 🎉" : `${ms.filter((m) => m.done).length} of 3 done`}</span></div>
+    const fold = el.hasAttribute("data-collapse");
+    // A folded card keeps its open/closed state when it redraws; on a phone it starts closed.
+    const old = el.querySelector("details");
+    const open = old ? old.open : window.innerWidth >= 700;
+    const summary = `🎯 Today's missions <span class="gzr-sub">${all ? "All done! 🎉" : `${ms.filter((m) => m.done).length} of 3 done`}</span>`;
+    el.innerHTML = `<section class="gzr-card${fold ? " gzr-fold" : ""}" aria-label="Today's missions">
+      ${fold ? `<details${open ? " open" : ""}><summary class="gzr-head"><h2>${summary}</h2></summary>` : `<div class="gzr-head"><h2>🎯 Today's missions</h2><span class="gzr-sub">${all ? "All done! 🎉" : `${ms.filter((m) => m.done).length} of 3 done`}</span></div>`}
       <ul class="gzr-list">${ms.map((m) => `<li class="${m.done ? "done" : ""}">
         <span class="gzr-ico" aria-hidden="true">${m.done ? "✅" : m.icon}</span>
         <span class="gzr-txt">${esc(m.text)}<span class="gzr-bar" aria-label="${m.got} of ${m.target}"><i style="width:${Math.round((m.got / m.target) * 100)}%"></i></span></span>
         <span class="gzr-pay">+${REWARD.coins} 🪙</span></li>`).join("")}</ul>
-      <p class="gzr-foot">${s.bonus ? "Bonus collected today. See you tomorrow!" : `Do all three for a bonus of ${BONUS.coins} 🪙. New missions every day.`}</p></section>`;
+      <p class="gzr-foot">${s.bonus ? "Bonus collected today. See you tomorrow!" : `Do all three for a bonus of ${BONUS.coins} 🪙. New missions every day.`}</p>${fold ? "</details>" : ""}</section>`;
   }
   function renderSats(el, o) {
     if (!el) return;

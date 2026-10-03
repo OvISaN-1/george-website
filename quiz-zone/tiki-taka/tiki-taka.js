@@ -592,6 +592,14 @@
   let lastResult = 0;
   /* ---------------- Commentary: a box at the side, and a voice if the device has one ---------------- */
   const commList = $("comm-list");
+  // The commentary box can be folded away to give the pitch more room (remembered).
+  (function () {
+    const box = $("comm"), btn = $("comm-toggle");
+    let folded = false; try { folded = localStorage.getItem("gz_tt_comm") === "off"; } catch (e) {}
+    const apply = () => { box.classList.toggle("collapsed", folded); btn.setAttribute("aria-expanded", String(!folded)); };
+    apply();
+    btn.addEventListener("click", () => { folded = !folded; apply(); try { localStorage.setItem("gz_tt_comm", folded ? "off" : "on"); } catch (e) {} });
+  })();
   const commHistory = [];
   let lastLineAt = 0, waveTimer = 0, lastPassLen = 0, lastLocked = false, lastShotFrom = 0, lastShotSuper = false, pressedKey = "";
   function comment(text, prio, excited) {

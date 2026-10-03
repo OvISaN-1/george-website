@@ -274,3 +274,7 @@ body[data-page="quiz-zone"], body[data-page="quiz-game"]{
   .page-banner::after, .hero::after, .match-card { animation: none; }
 }
 .footer-row .footer-progress { margin-left: var(--s4); }
+
+/* Links in the footer and in the "back / save my progress" rows are easy to hit with a thumb */
+.footer-row a, p.links a { display: inline-flex; align-items: center; min-height: 44px; padding-block: 6px; }
+p.links { display: flex; flex-wrap: wrap; gap: 0 20px; }
