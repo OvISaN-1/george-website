@@ -1,0 +1,29 @@
+/* Cards from gz-rewards.js: level chip, daily missions, SATs countdown. */
+.gzr-level{display:inline-flex;align-items:center;gap:10px;background:rgba(18,16,20,.72);border:1px solid rgba(241,237,233,.16);border-radius:999px;padding:6px 14px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;color:#f1ede9;}
+.gzr-xp{display:block;width:90px;height:8px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden;}
+.gzr-xp i{display:block;height:100%;background:linear-gradient(90deg,#f5b942,#ffd66b);border-radius:99px;transition:width .4s;}
+.gzr-coins{color:#ffd66b;}
+.gzr-card{background:var(--navy-light,#1c1820);border:1px solid rgba(241,237,233,.12);border-radius:18px;padding:16px 18px;color:#f1ede9;max-width:760px;margin:0 auto;}
+.gzr-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px;}
+.gzr-head h2{font-family:'Rajdhani',sans-serif;font-size:22px;margin:0;color:#f1ede9;}
+.gzr-sub{font-size:13px;color:#b9b2ac;}
+.gzr-list{list-style:none;margin:0;padding:0;display:grid;gap:8px;}
+.gzr-list li{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;background:rgba(255,255,255,.05);border-radius:12px;padding:10px 12px;}
+.gzr-list li.done{background:rgba(61,204,124,.12);}
+.gzr-ico{font-size:22px;text-align:center;}
+.gzr-txt{font-size:14px;line-height:1.35;color:#e6e0da;}
+.gzr-bar{display:block;height:6px;border-radius:99px;background:rgba(255,255,255,.14);margin-top:6px;overflow:hidden;}
+.gzr-bar i{display:block;height:100%;background:#3ddc97;border-radius:99px;transition:width .4s;}
+.gzr-pay{font-family:'Rajdhani',sans-serif;font-weight:700;color:#ffd66b;font-size:15px;white-space:nowrap;}
+.gzr-foot{margin:10px 0 0;font-size:12.5px;color:#9a948d;}
+.gzr-big{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:clamp(30px,8vw,42px);line-height:1.05;margin:2px 0 4px;color:#ffd66b;}
+.gzr-big small{font-size:.45em;color:#b9b2ac;margin-left:8px;}
+.gzr-note{margin:6px 0 12px;font-size:14.5px;line-height:1.45;color:#e6e0da;}
+.gzr-btn{display:inline-flex;align-items:center;min-height:46px;padding:0 22px;border-radius:999px;background:#ca0e28;color:#fff !important;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:17px;text-decoration:none;text-transform:uppercase;letter-spacing:.03em;}
+.gzr-btn:hover{filter:brightness(1.1);} .gzr-btn:focus-visible{outline:2px solid #f1ede9;outline-offset:3px;}
+.gzr-sats{border-color:rgba(245,185,66,.35);background:linear-gradient(135deg,rgba(245,185,66,.10),rgba(28,24,32,1) 60%);}
+@media (max-width:520px){.gzr-list li{grid-template-columns:30px 1fr;}.gzr-pay{grid-column:2;}}
+
+.gzr-today{display:grid;gap:16px;grid-template-columns:1fr;padding-block:8px;}
+@media (min-width:860px){.gzr-today{grid-template-columns:1fr 1fr;align-items:stretch;}}
+.gzr-today .gzr-card{height:100%;max-width:none;}

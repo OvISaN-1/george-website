@@ -31,6 +31,7 @@
   function record(topicId, right, total) {
     const t = SAVE.topics[topicId] || (SAVE.topics[topicId] = { best: 0, bestOf: total, plays: 0, right: 0, total: 0 });
     t.plays += 1; t.right += right; t.total += total; t.last = Date.now();
+    t.name = topicName(topicId).name || topicId;
     if (right / total >= t.best / (t.bestOf || total)) { t.best = right; t.bestOf = total; }
     persist();
   }
@@ -278,6 +279,7 @@
   function finish() {
     const n = Q.qs.length, p = Q.right / n;
     record(Q.topicId, Q.right, n);
+    if (window.GZR && GZR.satsRound) GZR.satsRound(Q.right, n);
     const msg = p === 1 ? '🏆 Perfect score! World class.' : p >= 0.8 ? '🔥 Brilliant! Nearly perfect.' : p >= 0.6 ? '👍 Good work. Look at the ones you missed below.' : p >= 0.4 ? '💪 Getting there. Read how to work out the ones you missed, then try again.' : '📚 This one needs practice. Read the explanations below, then have another go.';
     $('sats-quiz').innerHTML = `
       <div class="sats-card sats-end">

@@ -27,6 +27,7 @@
 <script>document.documentElement.classList.add('js');</script>
   <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="quiz-zone/stats.css">
+<link rel="stylesheet" href="quiz-zone/gz-rewards.css">
 <style>
   :root{
     --navy:#121014;
@@ -115,6 +116,18 @@
   .gz-cats{ list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; flex-wrap: wrap; }
   .gz-cats li{ font-size: .85rem; color: var(--chalk-dim); padding: 5px 11px; border-radius: 999px;
     background: rgba(255,255,255,0.05); border: 1px solid var(--line); backdrop-filter: blur(6px); }
+  .gz-top{display:grid;gap:14px;margin-top:var(--s5);}
+  .gz-top-level{text-align:center;}
+  .gz-tools{display:grid;gap:12px;justify-items:center;}
+  .gz-filter{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+  .gz-chip{font:700 .95rem var(--font-display);min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line-strong);background:rgba(18,16,20,.6);color:var(--chalk,#f1ede9);cursor:pointer;}
+  .gz-chip[aria-pressed="true"]{background:var(--gold,#f5b942);color:#241f29;border-color:var(--gold,#f5b942);}
+  .gz-chip:focus-visible,.gz-surprise:focus-visible,.gz-jump:focus-visible{outline:2px solid #f1ede9;outline-offset:3px;}
+  .gz-surprise{font:700 1rem var(--font-display);min-height:46px;padding:0 22px;border-radius:999px;border:0;background:#9d5cff;color:#14101a;cursor:pointer;text-transform:uppercase;letter-spacing:.03em;}
+  .gz-jump{display:inline-flex;align-items:center;min-height:46px;padding:0 22px;border-radius:999px;background:#ca0e28;color:#fff !important;text-decoration:none;font:700 1rem var(--font-display);}
+  .gz-none{color:var(--chalk-dim,#b9b2ac);margin:0;}
+  a.game-card.gz-pick{outline:3px solid var(--gold,#f5b942);outline-offset:3px;transform:translateY(-4px);}
+  .gz-group[hidden],a.game-card[hidden]{display:none !important;}
   .gz-hud{ display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
   @container (max-width: 640px){ .gz-hud{ justify-content: center; } }
   .gz-hud div{ padding: 8px 14px; border-radius: 12px; background: rgba(18,16,20,0.6); border: 1px solid var(--line-strong); backdrop-filter: blur(8px); }
@@ -350,33 +363,51 @@
     </section>
 
     <div class="qz-wrap">
+      <!-- Level, daily missions, and ways to pick a game -->
+      <div class="gz-top">
+        <div data-gzr="level" class="gz-top-level"></div>
+        <div data-gzr="missions"></div>
+        <div class="gz-tools">
+          <a class="gz-jump" id="gz-jump" hidden href="#"></a>
+          <div class="gz-filter" role="group" aria-label="Show games about">
+            <button type="button" class="gz-chip" data-f="all" aria-pressed="true">All</button>
+            <button type="button" class="gz-chip" data-f="football" aria-pressed="false">⚽ Football</button>
+            <button type="button" class="gz-chip" data-f="school" aria-pressed="false">🎓 School</button>
+            <button type="button" class="gz-chip" data-f="music" aria-pressed="false">🎸 Music</button>
+            <button type="button" class="gz-chip" data-f="fun" aria-pressed="false">📦 Fun</button>
+          </div>
+          <button type="button" class="gz-surprise" id="gz-surprise">🎲 Surprise me!</button>
+          <p class="gz-none" id="gz-none" hidden>Nothing here yet. Try another filter!</p>
+        </div>
+      </div>
+
       <!-- Games you play, then quizzes (question-and-answer), each in its own group -->
       <section class="gz-group gz-games" aria-labelledby="gz-games-title">
         <h2 class="gz-group-title" id="gz-games-title">🎮 Games</h2>
         <p class="gz-group-sub">Take the shots, run the match, rip open packs.</p>
         <div class="grid">
-          <a class="game-card" href="quiz-zone/matchday.html">
+          <a class="game-card" data-cat="football school" href="quiz-zone/matchday.html">
             <div class="emoji-badge" aria-hidden="true">🏟️</div>
             <h3 style="view-transition-name:t-matchday">Matchday</h3>
             <p>A full Forest match where every big moment is a question. Level up George's FC-style card, unlock kits and climb the Premier League table.</p>
           </a>
-          <a class="game-card" href="quiz-zone/free-kick.html">
+          <a class="game-card" data-cat="football" href="quiz-zone/free-kick.html">
             <div class="emoji-badge" aria-hidden="true">🎯</div>
             <h3 style="view-transition-name:t-freekick">Free Kick Masters</h3>
             <p>Bend it round the wall. Season, daily challenge, unlockable kits and celebrations.</p>
           </a>
-          <a class="game-card" href="quiz-zone/penalty-shootout.html">
+          <a class="game-card" data-cat="football" href="quiz-zone/penalty-shootout.html">
             <div class="emoji-badge" aria-hidden="true">🥅</div>
             <h3 style="view-transition-name:t-penalty">Penalty Shootout</h3>
             <p>George steps up for Forest in the George Cup. Score, save and lift the trophy.</p>
           </a>
-          <a class="game-card" href="quiz-zone/tiki-taka.html">
+          <a class="game-card" data-cat="football" href="quiz-zone/tiki-taka.html">
             <span class="new-chip">NEW</span>
             <div class="emoji-badge" aria-hidden="true">🔁</div>
             <h3 style="view-transition-name:t-tikitaka">Tiki-Taka</h3>
             <p>Pass, pass, pass... shoot! Drag to pass the ball through the defence. Built in Rust.</p>
           </a>
-          <a class="game-card" href="quiz-zone/pack-opener.html">
+          <a class="game-card" data-cat="football fun" href="quiz-zone/pack-opener.html">
             <span class="new-chip">NEW</span>
             <div class="emoji-badge" aria-hidden="true">📦</div>
             <h3 style="view-transition-name:t-pack-opener">Pack Opener</h3>
@@ -388,40 +419,40 @@
         <h2 class="gz-group-title" id="gz-quizzes-title">🧠 Quizzes</h2>
         <p class="gz-group-sub">60 seconds, as many right answers as you can.</p>
         <div class="grid">
-          <a class="game-card" href="quiz-zone/geography-quiz.html">
+          <a class="game-card" data-cat="school" href="quiz-zone/geography-quiz.html">
             <span class="new-chip">NEW: FLAGS</span>
             <div class="emoji-badge" aria-hidden="true">🌍</div>
             <h3 style="view-transition-name:t-capital">Capital Quest</h3>
             <p>Guess the capital city from the country shape, or name the country from its flag.</p>
           </a>
-          <a class="game-card" href="quiz-zone/quickfire-quiz.html">
+          <a class="game-card" data-cat="school fun" href="quiz-zone/quickfire-quiz.html">
             <div class="emoji-badge" aria-hidden="true">🧠</div>
             <h3 style="view-transition-name:t-quickfire">Quickfire Quiz</h3>
             <p>Fresh general knowledge questions every time you play: science, sport, geography and animals.</p>
           </a>
-          <a class="game-card" href="quiz-zone/mountain-quiz.html">
+          <a class="game-card" data-cat="school" href="quiz-zone/mountain-quiz.html">
             <div class="emoji-badge" aria-hidden="true">🏔️</div>
             <h3 style="view-transition-name:t-peak">Peak Challenge</h3>
             <p>Name each country's highest mountain, and how tall it is.</p>
           </a>
-          <a class="game-card" href="quiz-zone/name-that-riff.html">
+          <a class="game-card" data-cat="music" href="quiz-zone/name-that-riff.html">
             <div class="emoji-badge" aria-hidden="true">🎸</div>
             <h3 style="view-transition-name:t-riff">Name That Riff</h3>
             <p>A rock classic starts playing. Name the song before the timer runs out. Over 200 songs: Queen, AC/DC, Linkin Park, The Police, Springsteen and loads more.</p>
           </a>
-          <a class="game-card" href="quiz-zone/guess-the-player.html">
+          <a class="game-card" data-cat="football" href="quiz-zone/guess-the-player.html">
             <span class="new-chip">NEW</span>
             <div class="emoji-badge" aria-hidden="true">📸</div>
             <h3 style="view-transition-name:t-guess-player">Guess the Player</h3>
             <p>A photo, a nationality and a club. Name the footballer. World stars and a few Forest faces too.</p>
           </a>
-          <a class="game-card" href="quiz-zone/football-quiz.html">
+          <a class="game-card" data-cat="football" href="quiz-zone/football-quiz.html">
             <span class="fan-chip">🌳 NFFC</span>
             <div class="emoji-badge" aria-hidden="true">⚽</div>
             <h3 style="view-transition-name:t-frenzy">Football Frenzy</h3>
             <p>Legends, Premier League, Champions League and a whole Forest Corner.</p>
           </a>
-          <a class="game-card" href="quiz-zone/times-tables-quiz.html">
+          <a class="game-card" data-cat="school" href="quiz-zone/times-tables-quiz.html">
             <div class="emoji-badge" aria-hidden="true">✖️</div>
             <h3 style="view-transition-name:t-tt">Times Tables Blitz</h3>
             <p>2x to 12x, as fast as you can. Gold badge practice.</p>
@@ -504,6 +535,7 @@
 
   <script src="js/main.js"></script>
   <script src="js/db.js"></script>
+  <script src="quiz-zone/gz-rewards.js"></script>
   <script src="quiz-zone/stats.js"></script>
 <script>
   // Extras tabs (Keepy-Uppy, trophies, top scores, facts), arrow keys too.
@@ -534,6 +566,54 @@
     if (!hud || (!played && !got)) return;
     hud.innerHTML = `<div><b>${played}</b><span>games played</span></div><div><b>${got}/${all}</b><span>badges</span></div>`;
     hud.hidden = false;
+  })();
+
+  /* ---------- Pick a game: filter chips, "Jump back in", "Surprise me" ---------- */
+  (function () {
+    const PAGES = {
+      "matchday": ["Matchday", "quiz-zone/matchday.html"], "free-kick": ["Free Kick Masters", "quiz-zone/free-kick.html"],
+      "penalty-shootout": ["Penalty Shootout", "quiz-zone/penalty-shootout.html"], "tiki-taka": ["Tiki-Taka", "quiz-zone/tiki-taka.html"],
+      "pack-opener": ["Pack Opener", "quiz-zone/pack-opener.html"], "capital-quest": ["Capital Quest", "quiz-zone/geography-quiz.html"],
+      "flag-quest": ["Capital Quest", "quiz-zone/geography-quiz.html"], "quickfire-quiz": ["Quickfire Quiz", "quiz-zone/quickfire-quiz.html"],
+      "mountain-peaks": ["Peak Challenge", "quiz-zone/mountain-quiz.html"], "name-that-riff": ["Name That Riff", "quiz-zone/name-that-riff.html"],
+      "guess-the-player": ["Guess the Player", "quiz-zone/guess-the-player.html"], "football-frenzy": ["Football Frenzy", "quiz-zone/football-quiz.html"],
+      "times-tables": ["Times Tables Blitz", "quiz-zone/times-tables-quiz.html"]
+    };
+    const cards = [...document.querySelectorAll("a.game-card[data-cat]")];
+    const groups = [...document.querySelectorAll(".gz-group")];
+    const chips = [...document.querySelectorAll(".gz-chip")];
+    const none = document.getElementById("gz-none");
+    function apply(f) {
+      chips.forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.f === f)));
+      cards.forEach((c) => { c.hidden = !(f === "all" || c.dataset.cat.split(" ").includes(f)); });
+      groups.forEach((g) => { g.hidden = !g.querySelector("a.game-card:not([hidden])"); });
+      none.hidden = cards.some((c) => !c.hidden);
+      try { localStorage.setItem("gz_hub_filter", f); } catch (e) {}
+    }
+    chips.forEach((c) => c.addEventListener("click", () => apply(c.dataset.f)));
+    let saved = "all"; try { saved = localStorage.getItem("gz_hub_filter") || "all"; } catch (e) {}
+    apply(chips.some((c) => c.dataset.f === saved) ? saved : "all");
+    // Jump back in: the game he played last
+    const last = (window.GZ && GZ.load().lastGame) || "";
+    const jump = document.getElementById("gz-jump");
+    if (PAGES[last]) { jump.href = PAGES[last][1]; jump.textContent = "▶ Jump back in: " + PAGES[last][0]; jump.hidden = false; }
+    // Surprise me: a quick spin along the cards, then off we go
+    const reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById("gz-surprise").addEventListener("click", () => {
+      const pool = cards.filter((c) => !c.hidden);
+      if (!pool.length) return;
+      const choice = pool[Math.floor(Math.random() * pool.length)];
+      if (reduced) { location.href = choice.href; return; }
+      let i = 0, n = 0; const total = 10 + Math.floor(Math.random() * 4);
+      const tick = () => {
+        pool.forEach((c) => c.classList.remove("gz-pick"));
+        const c = n >= total ? choice : pool[i++ % pool.length];
+        c.classList.add("gz-pick"); c.scrollIntoView({ block: "center", behavior: "smooth" });
+        if (n++ >= total) { setTimeout(() => { location.href = choice.href; }, 900); return; }
+        setTimeout(tick, 90 + n * 22);
+      };
+      tick();
+    });
   })();
 
   /* ---------- Top scores, live from the Supabase leaderboard ---------- */

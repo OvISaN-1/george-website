@@ -606,8 +606,10 @@
     clearTimeout(waveTimer); waveTimer = setTimeout(() => $("comm").classList.remove("talking"), Math.min(4200, 900 + text.length * 55));
   }
   const C = (key, vars) => TTCommentary.say(key, vars);
+  let usedSuper = false;
   function commentOn(e) {
     const chain = S[I.CHAIN] | 0;
+    if (e === E.SUPER) usedSuper = true;
     if (e === E.START) {
       const no = S[I.NO] | 0;
       pressedKey = "";
@@ -893,18 +895,29 @@
     let r = null;
     try { r = JSON.parse(localStorage.getItem(RPG_KEY) || "null"); } catch (e) {}
     r = r && typeof r === "object" ? r : {};
-    const out = { coins: Math.max(0, +r.coins || 0), stats: {}, skills: Array.isArray(r.skills) ? r.skills.filter((x) => typeof x === "string") : ["rocket"], skill: r.skill === "freeze" ? "freeze" : "rocket" };
+    const shared = !!(window.GZR && GZR.ready);
+    // Coins used to belong to this game alone. They now live in the shared wallet (gz-rewards.js).
+    if (shared && +r.coins > 0) { GZR.earn({ coins: Math.floor(+r.coins) }); r.coins = 0; try { localStorage.setItem(RPG_KEY, JSON.stringify(r)); } catch (e) {} }
+    const out = { coins: shared ? GZR.coins() : Math.max(0, +r.coins || 0), stats: {}, skills: Array.isArray(r.skills) ? r.skills.filter((x) => typeof x === "string") : ["rocket"], skill: r.skill === "freeze" ? "freeze" : "rocket" };
     for (const st of STATS) out.stats[st.id] = Math.max(0, Math.min(MAX_LEVEL, Math.floor(+(r.stats && r.stats[st.id]) || 0)));
     if (!out.skills.includes("rocket")) out.skills.push("rocket");
     if (!out.skills.includes(out.skill)) out.skill = "rocket";
     return out;
   }
-  function rpgSave(r) { try { localStorage.setItem(RPG_KEY, JSON.stringify(r)); } catch (e) {} }
+  function rpgSave(r) {
+    const shared = !!(window.GZR && GZR.ready);
+    try { localStorage.setItem(RPG_KEY, JSON.stringify(Object.assign({}, r, { coins: shared ? 0 : r.coins }))); } catch (e) {}
+  }
+  // Pay from the shared wallet (or this game's own coins if the wallet could not load).
+  function spendCoins(r, n) {
+    if (window.GZR && GZR.ready) return GZR.spend(n);
+    if (r.coins < n) return false;
+    r.coins -= n; return true;
+  }
   function rpgAward(score, goals) {
     const r = rpgLoad();
     const earned = Math.round(score / 8) + goals * 10 + 5;
-    r.coins += earned;
-    rpgSave(r);
+    if (window.GZR && GZR.ready) GZR.earn({ coins: earned }); else { r.coins += earned; rpgSave(r); }
     return earned;
   }
   function trainMsg(t) { $("train-msg").textContent = t || ""; }
@@ -931,14 +944,17 @@
       const id = b.dataset.stat, lvl = r.stats[id], cost = upgradeCost(lvl);
       if (lvl >= MAX_LEVEL) { trainMsg("Already at the top level."); return; }
       if (r.coins < cost) { trainMsg(`You need ${cost - r.coins} more coins. Play a match to earn them!`); return; }
-      r.coins -= cost; r.stats[id] = lvl + 1; rpgSave(r);
+      if (!spendCoins(r, cost)) return;
+      r.stats[id] = lvl + 1; rpgSave(r);
+      if (window.GZ && GZ.awardBadge) GZ.announceBadges(GZ.awardBadge("tt-upgrade"));
       renderTraining(); trainMsg(`${STATS.find((x) => x.id === id).name} is now level ${lvl + 1}!`);
       if (soundOn) { SOUND.wake(); sfx.unlock(); }
     } else if (b.dataset.skill) {
       const k = SKILLS.find((x) => x.id === b.dataset.skill);
       if (!r.skills.includes(k.id)) {
         if (r.coins < k.cost) { trainMsg(`${k.name} costs ${k.cost} coins. You need ${k.cost - r.coins} more.`); return; }
-        r.coins -= k.cost; r.skills.push(k.id);
+        if (!spendCoins(r, k.cost)) return;
+        r.skills.push(k.id);
         if (soundOn) { SOUND.wake(); sfx.unlock(); }
       }
       r.skill = k.id; rpgSave(r); renderTraining(); trainMsg(`${k.name} equipped.`);
@@ -957,7 +973,7 @@
     const r = rpgLoad();
     wasm.new_game((Math.random() * 4294967295) >>> 0, r.stats.speed, r.stats.power, r.stats.technique, r.stats.composure, r.skill === "freeze" ? 1 : 0);
     pipState = []; lastHud = ""; finished = false; lastResult = 0; flash = 0; rec = []; recNo = -1; replay = null; replayDone = false; resultFor = 0; celebrated = false; celebrating = false;
-    FX.p.length = 0; FX.later.length = 0; FX.shake = 0; commHistory.length = 0; commList.innerHTML = ""; crowd.cheer = crowd.groan = crowd.tension = 0; lastLineAt = 0;
+    FX.p.length = 0; FX.later.length = 0; FX.shake = 0; usedSuper = false; commHistory.length = 0; commList.innerHTML = ""; crowd.cheer = crowd.groan = crowd.tension = 0; lastLineAt = 0;
     $("screen-start").hidden = true; $("screen-end").hidden = true; $("screen-game").hidden = false;
     fit();
     running = true;
@@ -992,6 +1008,7 @@
     $("saved-msg").textContent = "";
     if (goals >= 2 && soundOn) { sfx.fanfare(); setTimeout(() => GK.confetti(confettiCanvas, 160), 200); }
     comment(C(goals === 0 ? "end0" : goals === 1 ? "end1" : goals >= 4 ? "end4" : "end3", { g: goals }), true, goals >= 3);
+    if (window.GZ && GZ.recordTikiTaka) { const rec = GZ.recordTikiTaka({ score, goals, bestChain: chain, superUsed: usedSuper }); GZ.announceBadges(rec.newBadges); }
     const earned = rpgAward(score, goals);
     $("end-text").textContent += ` You earned ${earned} coins.`;
     showBest();
@@ -1041,6 +1058,7 @@
 
   showBest();
   renderTraining();
+  window.addEventListener("gz-rewards", renderTraining);
   loadEngine().then(() => {
     $("btn-start").disabled = false;
     $("btn-start").textContent = "Kick off";
