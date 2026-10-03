@@ -12,6 +12,7 @@
   if (!window.GL || !window.GK) return;
 
   const msg = (t) => { $("msg").textContent = t || ""; };
+  const msgHtml = (h) => { $("msg").innerHTML = h; };
   const QUICK = [7, 9, 10, 11, 14, 17, 19, 21, 23, 99];
 
   // What a locked item needs, in words.
@@ -26,7 +27,8 @@
     const kit = GL.pick("kit", "home"), bootsId = GL.pick("boots", "black"), celeId = GL.pick("cele", "armsup");
     const P = GL.progress();
 
-    $("prog").textContent = `You are level ${P.mdLevel} in Matchday and level ${P.fkLevel} in Free Kick Masters (${P.fkStars} ★). Either one unlocks things.`;
+    const wallet = window.GZR ? ` You have 🪙 ${GZR.coins()} coins to spend on anything locked.` : "";
+    $("prog").textContent = `You are level ${P.mdLevel} in Matchday and level ${P.fkLevel} in Free Kick Masters (${P.fkStars} ★). Either one unlocks things.${wallet}`;
 
     // The preview: face on, and from behind in his kit.
     $("pv-front").innerHTML = GK.avatar({ pose: "idle", kit, happy: true });
@@ -48,8 +50,9 @@
     // Kits, boots, celebrations
     const opt = (type, x, art, selected) => {
       const open = GL.unlocked(type, x.id);
+      const pr = !open && window.GZR ? GL.price(type, x.id) : null;
       return `<button type="button" class="opt${open ? "" : " locked"}" data-${type}="${x.id}" aria-pressed="${selected}" ${open ? "" : 'aria-disabled="true"'}>
-        ${art}<span class="n">${esc(x.name)}</span><span class="need">${selected ? "✓ Chosen" : open ? "Tap to choose" : "🔒 " + esc(needOf(x))}</span></button>`;
+        ${art}<span class="n">${esc(x.name)}</span><span class="need">${selected ? "✓ Chosen" : open ? "Tap to choose" : "🔒 " + esc(needOf(x)) + (pr ? ` or 🪙 ${pr}` : "")}</span></button>`;
     };
     $("kits").innerHTML = GL.CATALOG.kit.map((x) => {
       const k = GK.KITS[x.id];
@@ -80,10 +83,22 @@
     if (b.dataset.hair) { GL.set({ hair: b.dataset.hair }); render(); msg(""); return; }
     if (b.dataset.colour) { GL.set({ hairColour: b.dataset.colour }); render(); msg(""); return; }
     if (b.dataset.n) { setNumber(b.dataset.n); msg(""); return; }
+    if (b.dataset.buy) {
+      const [bt, bid] = b.dataset.buy.split(":");
+      if (GL.buy(bt, bid)) { GL.set({ [bt]: bid }); render(); msg("Bought and equipped!"); if (bt === "cele") play(); }
+      else msg("Not enough coins yet. Play some games to earn more!");
+      return;
+    }
     for (const type of ["kit", "boots", "cele"]) {
       if (!b.dataset[type]) continue;
       const x = GL.find(type, b.dataset[type]);
-      if (!GL.unlocked(type, x.id)) { msg(`Locked: ${x.name} needs ${needOf(x)}.`); return; }
+      if (!GL.unlocked(type, x.id)) {
+        const pr = window.GZR ? GL.price(type, x.id) : null;
+        if (pr && GZR.coins() >= pr) msgHtml(`Locked: ${esc(x.name)} needs ${esc(needOf(x))}. <button type="button" class="chip" data-buy="${type}:${x.id}">Buy it for 🪙 ${pr}</button>`);
+        else if (pr) msg(`Locked: ${x.name} needs ${needOf(x)}. Or save up 🪙 ${pr} (you have ${GZR.coins()}).`);
+        else msg(`Locked: ${x.name} needs ${needOf(x)}.`);
+        return;
+      }
       GL.set({ [type]: x.id });
       render(); msg("");
       if (type === "cele") play();
@@ -96,6 +111,7 @@
   $("pv-play").addEventListener("click", play);
   $("pv-reset").addEventListener("click", () => { GL.reset(); render(); msg("Back to the normal George. Your unlocks are still safe."); });
   window.addEventListener("storage", (e) => { if (e.key === GL.KEY) render(); });
+  window.addEventListener("gz-rewards", render);
 
   render();
 })();

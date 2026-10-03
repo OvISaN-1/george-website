@@ -43,7 +43,26 @@
     { id: "red-mist",          emoji: "🟥", name: "Seeing Red",      desc: "Get an opposition player sent off in Matchday" },
     { id: "pack-icon",         emoji: "🌟", name: "Icon Pulled",     desc: "Pull an Icon card from a pack" },
     { id: "pack-regular",      emoji: "📦", name: "Pack Regular",    desc: "Open 10 packs" },
+    { id: "tt-first-goal",     emoji: "⚽", name: "Tiki-Taka Goal",  desc: "Score a goal in Tiki-Taka" },
+    { id: "tt-hattrick",       emoji: "🎩", name: "Tiki-Taka Hat-trick", desc: "Score 3 goals in one game of Tiki-Taka" },
+    { id: "tt-chain5",         emoji: "🔁", name: "Pass Master",     desc: "Make 5 passes in a row in Tiki-Taka" },
+    { id: "tt-super",          emoji: "⚡", name: "Super Skill",     desc: "Use a super skill in Tiki-Taka" },
+    { id: "tt-upgrade",        emoji: "💪", name: "In Training",     desc: "Buy your first Tiki-Taka upgrade" },
   ];
+
+  // Coins, level and daily missions live in gz-rewards.js. It is loaded for us if the page did not.
+  function gzr(fn) {
+    const args = Array.prototype.slice.call(arguments, 1);
+    if (window.GZR && GZR.ready) { try { GZR[fn].apply(GZR, args); } catch (e) {} return; }
+    (window.__gzrQueue = window.__gzrQueue || []).push([fn, args]);
+    if (!gzr.loading) {
+      gzr.loading = true;
+      const el = document.createElement("script");
+      el.src = SCRIPT_DIR + "gz-rewards.js";
+      document.head.appendChild(el);
+    }
+  }
+  const SCRIPT_DIR = (document.currentScript && document.currentScript.src ? document.currentScript.src : location.href).replace(/[^\/]*$/, "");
 
   function defaultStats() {
     return {
@@ -82,6 +101,8 @@
     return x;
   }
 
+  function touch(s, id) { s.lastGame = id; }
+
   function updateStreak(s) {
     const today = midnight(new Date());
     if (!s.lastPlayed) {
@@ -105,7 +126,7 @@
     s.gamesPlayed[gameId] = (s.gamesPlayed[gameId] || 0) + 1;
     s.totalGames = (s.totalGames || 0) + 1;
     if (correctCount > (s.bestScore[gameId] || 0)) s.bestScore[gameId] = correctCount;
-    updateStreak(s);
+    updateStreak(s); touch(s, gameId);
 
     const newlyAwarded = [];
     function award(id) {
@@ -132,6 +153,7 @@
     }
 
     save(s);
+    gzr("gameFinished", gameId, { correct: correctCount });
     return {
       stats: s,
       newBadges: newlyAwarded.map(id => BADGES.find(b => b.id === id)).filter(Boolean)
@@ -142,6 +164,7 @@
     const s = load();
     const isNewBest = score > (s.keepyUppyBest || 0);
     if (isNewBest) s.keepyUppyBest = score;
+    touch(s, "keepy-uppy");
 
     const newlyAwarded = [];
     function award(id) {
@@ -153,6 +176,7 @@
     if (score >= 25) award("keepy-uppy-king");
 
     save(s);
+    gzr("gameFinished", "keepy-uppy");
     return {
       stats: s,
       isNewBest,
@@ -167,7 +191,7 @@
     s.gamesPlayed[id] = (s.gamesPlayed[id] || 0) + 1;
     s.totalGames = (s.totalGames || 0) + 1;
     if (r.score > (s.bestScore[id] || 0)) s.bestScore[id] = r.score;
-    updateStreak(s);
+    updateStreak(s); touch(s, id);
     const newlyAwarded = [];
     function award(bid) {
       if (!s.badges.includes(bid)) { s.badges.push(bid); newlyAwarded.push(bid); }
@@ -179,6 +203,7 @@
     if (r.maxSaves >= 2) award("safe-hands");
     if ((s.streak || 0) >= 3) award("three-day-streak");
     save(s);
+    gzr("gameFinished", id);
     return { stats: s, newBadges: newlyAwarded.map(bid => BADGES.find(b => b.id === bid)).filter(Boolean) };
   }
 
@@ -189,7 +214,7 @@
     s.gamesPlayed[id] = (s.gamesPlayed[id] || 0) + 1;
     s.totalGames = (s.totalGames || 0) + 1;
     if (r.score > (s.bestScore[id] || 0)) s.bestScore[id] = r.score;
-    updateStreak(s);
+    updateStreak(s); touch(s, id);
     const newlyAwarded = [];
     function award(bid) {
       if (!s.badges.includes(bid)) { s.badges.push(bid); newlyAwarded.push(bid); }
@@ -202,6 +227,7 @@
     if ((r.dailyStreak || 0) >= 3) award("daily-grinder");
     if ((s.streak || 0) >= 3) award("three-day-streak");
     save(s);
+    gzr("gameFinished", id, { goals: r.goals || 0 });
     return { stats: s, newBadges: newlyAwarded.map(bid => BADGES.find(b => b.id === bid)).filter(Boolean) };
   }
 
@@ -209,7 +235,7 @@
   function recordPackOpener(r) {
     const s = load();
     s.packsOpened = (s.packsOpened || 0) + 1;
-    updateStreak(s);
+    updateStreak(s); touch(s, "pack-opener");
     const newlyAwarded = [];
     function award(bid) {
       if (!s.badges.includes(bid)) { s.badges.push(bid); newlyAwarded.push(bid); }
@@ -219,6 +245,7 @@
     if (s.packsOpened >= 10) award("pack-regular");
     if ((s.streak || 0) >= 3) award("three-day-streak");
     save(s);
+    gzr("gameFinished", "pack-opener");
     return { stats: s, newBadges: newlyAwarded.map(bid => BADGES.find(b => b.id === bid)).filter(Boolean) };
   }
 
@@ -229,7 +256,7 @@
     s.gamesPlayed[id] = (s.gamesPlayed[id] || 0) + 1;
     s.totalGames = (s.totalGames || 0) + 1;
     if (r.score > (s.bestScore[id] || 0)) s.bestScore[id] = r.score;
-    updateStreak(s);
+    updateStreak(s); touch(s, id);
     const newlyAwarded = [];
     function award(bid) {
       if (!s.badges.includes(bid)) { s.badges.push(bid); newlyAwarded.push(bid); }
@@ -244,7 +271,40 @@
     if (r.oppReds > 0) award("red-mist");
     if ((s.streak || 0) >= 3) award("three-day-streak");
     save(s);
+    gzr("gameFinished", id);
     return { stats: s, newBadges: newlyAwarded.map(bid => BADGES.find(b => b.id === bid)).filter(Boolean) };
+  }
+
+  /* Tiki-Taka: r = { score, goals, bestChain, superUsed } */
+  function recordTikiTaka(r) {
+    const s = load();
+    const id = "tiki-taka";
+    s.gamesPlayed[id] = (s.gamesPlayed[id] || 0) + 1;
+    s.totalGames = (s.totalGames || 0) + 1;
+    if (r.score > (s.bestScore[id] || 0)) s.bestScore[id] = r.score;
+    updateStreak(s); touch(s, id);
+    const newlyAwarded = [];
+    function award(bid) {
+      if (!s.badges.includes(bid)) { s.badges.push(bid); newlyAwarded.push(bid); }
+    }
+    award("first-whistle");
+    if (r.goals >= 1) award("tt-first-goal");
+    if (r.goals >= 3) award("tt-hattrick");
+    if (r.bestChain >= 5) award("tt-chain5");
+    if (r.superUsed) award("tt-super");
+    if ((s.streak || 0) >= 3) award("three-day-streak");
+    save(s);
+    gzr("gameFinished", id, { goals: r.goals || 0 });
+    return { stats: s, newBadges: newlyAwarded.map(bid => BADGES.find(b => b.id === bid)).filter(Boolean) };
+  }
+
+  /* Hand out one badge on its own (for things that are not the end of a game). */
+  function awardBadge(bid) {
+    const s = load();
+    if (s.badges.includes(bid)) return [];
+    s.badges.push(bid);
+    save(s);
+    return [BADGES.find(b => b.id === bid)].filter(Boolean);
   }
 
   function randomNickname() {
@@ -326,13 +386,14 @@
       { id: "name-that-riff", label: "Name That Riff (songs right)", emoji: "🎸" },
       { id: "quickfire-quiz", label: "Quickfire Quiz", emoji: "🧠" },
       { id: "guess-the-player", label: "Guess the Player", emoji: "📸" },
-      { id: "times-tables", label: "Times Tables Blitz", emoji: "✖️" }
+      { id: "times-tables", label: "Times Tables Blitz", emoji: "✖️" },
+      { id: "tiki-taka", label: "Tiki-Taka", emoji: "🔁", scale: 600 }
     ];
     const scale = 30; // nominal "great score" ceiling for the bar fill
     let html = '<div class="gz-chart">';
     games.forEach(g => {
       const best = s.bestScore[g.id] || 0;
-      const pct = Math.max(best > 0 ? 6 : 0, Math.min(100, Math.round((best / scale) * 100)));
+      const pct = Math.max(best > 0 ? 6 : 0, Math.min(100, Math.round((best / (g.scale || scale)) * 100)));
       html += `
         <div class="gz-chart-row">
           <div class="gz-chart-label">${g.emoji} ${escapeHtml(g.label)}</div>
@@ -360,6 +421,8 @@
   GZ.recordFreeKick = recordFreeKick;
   GZ.recordMatchday = recordMatchday;
   GZ.recordPackOpener = recordPackOpener;
+  GZ.recordTikiTaka = recordTikiTaka;
+  GZ.awardBadge = awardBadge;
   GZ.randomNickname = randomNickname;
   GZ.showToast = showToast;
   GZ.announceBadges = announceBadges;

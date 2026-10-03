@@ -23,7 +23,7 @@
 (function (GL) {
   "use strict";
   const KEY = "gz_look_v1";
-  const DEFAULT = { hair: "fringe", hairColour: "brown", number: 10, kit: null, boots: null, cele: null };
+  const DEFAULT = { hair: "fringe", hairColour: "brown", number: 10, kit: null, boots: null, cele: null, bought: [] };
 
   /* ---------------- hair colours ---------------- */
   const HAIR_COLOURS = [
@@ -129,7 +129,7 @@
     try { window.dispatchEvent(new CustomEvent("gz-look", { detail: next })); } catch (e) {}
     return next;
   }
-  function reset() { try { localStorage.removeItem(KEY); } catch (e) {} LOOK = load(); try { window.dispatchEvent(new CustomEvent("gz-look", { detail: LOOK })); } catch (e) {} return LOOK; }
+  function reset() { const keep = load().bought || []; try { localStorage.removeItem(KEY); if (keep.length) localStorage.setItem(KEY, JSON.stringify({ bought: keep })); } catch (e) {} LOOK = load(); try { window.dispatchEvent(new CustomEvent("gz-look", { detail: LOOK })); } catch (e) {} return LOOK; }
 
   /* ---------------- what can be worn / done ----------------
      need = the Matchday level (also the Free Kick Masters level, up to 10).
@@ -203,6 +203,7 @@
   function unlocked(type, id) {
     const it = find(type, id);
     if (!it) return false;
+    if ((get().bought || []).includes(type + ":" + id)) return true;      // bought with coins
     const P = progress();
     if (it.ach) return !!P.mdAch[it.ach];
     if (P.mdLevel >= it.need) return true;
@@ -213,6 +214,19 @@
   function pick(type, fallbackId) {
     const v = get()[type];
     return v && unlocked(type, v) ? v : fallbackId;
+  }
+  /* Coins can buy anything that is not an achievement reward. */
+  function price(type, id) {
+    const it = find(type, id);
+    if (!it || it.ach || it.need <= 1) return null;
+    return 40 + 35 * (it.need - 1);
+  }
+  function buy(type, id) {
+    if (unlocked(type, id)) return true;
+    const p = price(type, id);
+    if (!p || !window.GZR || !GZR.spend(p)) return false;
+    set({ bought: (get().bought || []).concat(type + ":" + id) });
+    return true;
   }
   const celeData = (id) => find("cele", id) || find("cele", "armsup");
   const bootsColour = (id) => (find("boots", id) || find("boots", "black")).colour;
@@ -277,4 +291,6 @@
   GL.hairColour = colours;
   GL.number = number;
   GL.celebrate = celebrate;
+  GL.price = price;
+  GL.buy = buy;
 })(window.GL = window.GL || {});
