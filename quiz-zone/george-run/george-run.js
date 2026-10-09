@@ -43,7 +43,7 @@ const SAVE = Object.assign({}, SAVE_DEFAULT, readJSON(RUN_KEY, {})); SAVE.ach = 
 const achQueue = []; let achShowing = false, newAch = [];
 function ach(id) {
   if (SAVE.ach[id]) return; const a = ACH.find((x) => x[0] === id); if (!a) return;
-  SAVE.ach[id] = true; writeJSON(RUN_KEY, SAVE); newAch.push(a); try { burst(px, 1.6, 0, 0xd7102b, 12); burst(px, 1.6, 0, 0xffffff, 12); burst(px, 1.6, 0, 0xffd84a, 8); } catch (e) {} achQueue.push(a); showAch(); renderAchList();
+  SAVE.ach[id] = true; writeJSON(RUN_KEY, SAVE); newAch.push(a); achQueue.push(a); showAch(); renderAchList();
 }
 function flash(kind) { const f = $("flash"); if (!f) return; f.className = "gr-flash"; void f.offsetWidth; f.className = "gr-flash " + kind; }
 let paused = false;
@@ -128,12 +128,6 @@ for (let i = 0; i < 12; i++) {
   const rack = new THREE.Mesh(new THREE.BoxGeometry(6, 3.2, 0.5), new THREE.MeshLambertMaterial({ color: 0x555a66 })); rack.position.y = 20.5; rack.rotation.y = sd * 0.5; g.add(rack);
   const lamps = new THREE.Mesh(new THREE.BoxGeometry(5.5, 2.7, 0.2), lampMat); lamps.position.set(0, 20.5, sd * -0.0 + 0.3); lamps.rotation.y = sd * 0.5; g.add(lamps);
   g.userData = { side: sd }; g.position.set(sd * 13, 0, -i * 19); scene.add(g); trees.push(g);
-}
-// cones and footballs on the grass beside the touchline
-const dots = [];
-for (let i = 0; i < 50; i++) {
-  const cone = i % 3 === 0, m = new THREE.Mesh(cone ? new THREE.ConeGeometry(0.22, 0.5, 8) : new THREE.SphereGeometry(0.22, 8, 6), new THREE.MeshLambertMaterial({ color: cone ? 0xff7a1a : 0xffffff }));
-  m.position.set((i % 2 ? 1 : -1) * rand(5, 7.4), cone ? 0.25 : 0.22, -rand(0, 230)); scene.add(m); dots.push(m);
 }
 // move the boards and the crowd past as George runs
 function scrollWorld(d) {
@@ -403,31 +397,20 @@ function makeChunk(z0) {
 function fillAhead() { while (spawnFront > -160) { makeChunk(spawnFront); spawnFront -= CHUNK; } }
 
 /* ---------------- floating text and bursts ---------------- */
-const popEl = $("pop");
-let popT = 0;
-function pop(text, sub, cls) { popEl.className = "gr-pop"; void popEl.offsetWidth; popEl.innerHTML = text + (sub ? "<small>" + sub + "</small>" : ""); popEl.className = "gr-pop show " + (cls || ""); }
 const sparks = [];
 const sparkGeo = new THREE.SphereGeometry(0.06, 5, 4);
 function burst(x, y, z, col, n) {
   if (reduced) return;
   for (let i = 0; i < n; i++) { const m = new THREE.Mesh(sparkGeo, new THREE.MeshBasicMaterial({ color: col, transparent: true })); m.position.set(x, y, z); scene.add(m); sparks.push({ m, vx: rand(-3, 3), vy: rand(1, 5), vz: rand(-3, 3), life: rand(0.4, 0.8), max: 0.8 }); }
 }
-// speed lines near the camera, grass kicked up behind George, and a wider view the faster he goes
-const streaks = []; const streakMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
-for (let i = 0; i < 18; i++) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 2.4), streakMat.clone()); m.visible = false; scene.add(m); streaks.push(m); }
-function placeStreak(m, far) { const sd = Math.random() < 0.5 ? -1 : 1; m.position.set(sd * rand(1.4, 4.2), rand(0.3, 3.6), far ? rand(-35, 6) : -40); }
-streaks.forEach((m) => placeStreak(m, true));
-let dustT = 0;
+// grass kicked up when he slides
 function dust(x) {
   if (reduced) return;
   const m = new THREE.Mesh(sparkGeo, new THREE.MeshBasicMaterial({ color: 0xa9d88f, transparent: true })); m.scale.setScalar(0.55); m.position.set(x + rand(-0.25, 0.25), 0.08, 0.5); scene.add(m);
   sparks.push({ m, vx: rand(-1.2, 1.2), vy: rand(0.4, 1.6), vz: rand(0.5, 2), life: rand(0.35, 0.6), max: 0.6 });
 }
-function updateFx(dt, sp) {
-  const f = clamp((sp - 21) / 18, 0, 1);
-  for (const m of streaks) { m.visible = f > 0.05; if (!m.visible) continue; m.position.z += sp * 1.7 * dt; m.material.opacity = f * 0.45; if (m.position.z > 8) placeStreak(m, false); }
+function updateFx() {
   if (sliding > 0 && grounded && Math.random() < 0.7) dust(px);
-  dustT -= dt; if (dustT <= 0 && grounded && sliding <= 0 && P.rocket <= 0) { dustT = 0.09 - f * 0.04; dust(px); }
 }
 function updateSparks(dt) {
   for (let i = sparks.length - 1; i >= 0; i--) { const s = sparks[i]; s.life -= dt; s.m.position.x += s.vx * dt; s.m.position.y += s.vy * dt; s.m.position.z += s.vz * dt + G.speed * dt; s.vy -= 9 * dt; s.m.material.opacity = Math.max(0, s.life / s.max); if (s.life <= 0) { scene.remove(s.m); s.m.material.dispose(); sparks.splice(i, 1); } }
@@ -448,18 +431,12 @@ function feedItem(icon, text, sub, cls) {
   const kill = () => { li.classList.add("out"); setTimeout(() => li.remove(), 400); }; li._timer = setTimeout(kill, 3000); li._kill = kill;
   return li;
 }
-let coinFeed = null;
-function coinFeedAdd(points) {
-  const now = performance.now();
-  if (coinFeed && coinFeed.li.isConnected && now - coinFeed.t < 1100) { coinFeed.total += points; coinFeed.t = now; coinFeed.li.querySelector("b").textContent = "+" + coinFeed.total; clearTimeout(coinFeed.li._timer); coinFeed.li._timer = setTimeout(coinFeed.li._kill, 2200); }
-  else { const li = feedItem("🪙", "+" + points, "", "coin"); coinFeed = { li, total: points, t: now }; }
-}
 function setNum(n) { G.num = clamp(Math.round(n), george.baseNum, 99); george.drawNumber(G.num); G.maxNum = Math.max(G.maxNum, G.num); }
 function setAct(type, dur) { act = { type, t: dur, dur }; }
 const AM = { ball: "topbins", boots: "bootroom", whistle: "fairplay", gloves: "safehands", medal: "motm", spray: "invisible", trophy: "champions", rocket: "moon", scarf: "fan" };
 function givePower(type) {
   const T = TOYS[type]; if (AM[type]) ach(AM[type]); G.usedPower++; sfx.power(); burst(px, 1.2, 0, T.col, 14);
-  if (type === "ball") { feedItem(T.icon, T.name, T.sub, "power"); kickT = 0.45; G.kicks++; sfx.kick(); ballFly = { z: -1.5, t: 0, last: -1.5, got: 0 }; pop("KICK!", "The ball collects every coin ahead", "gold"); return; }
+  if (type === "ball") { feedItem(T.icon, T.name, T.sub, "power"); kickT = 0.45; G.kicks++; sfx.kick(); ballFly = { z: -1.5, t: 0, last: -1.5, got: 0 }; return; }
   if (type === "boots") { P.boots = 6; setAct("flex", 0.6); }
   else if (type === "whistle") { P.whistle = 3; setAct("whistle", 0.9); }
   else if (type === "gloves") { G.shield = true; setAct("gloves", 0.9); }
@@ -477,7 +454,7 @@ function givePower(type) {
 function takeCoin(it, bonus) {
   it.gone = true; G.streak++;
   const n = P.medal > 0 ? 2 : 1, value = G.num * n * (bonus || 1);
-  G.coins += n; G.score += value; reachT = 0.22; ach("firsttouch"); if (G.streak >= 3) ach("hattrick"); if (G.streak >= 11) ach("fullteam"); if (G.streak >= 25) ach("goldenboot"); if (G.streak >= 50) ach("unplayable"); if (G.streak >= 100) ach("invincibles"); sfx.coin(G.streak); burst(it.mesh.position.x, it.mesh.position.y, it.mesh.position.z, 0xffd84a, 3); coinFeedAdd(value);
+  G.coins += n; G.score += value; reachT = 0.22; ach("firsttouch"); if (G.streak >= 3) ach("hattrick"); if (G.streak >= 11) ach("fullteam"); if (G.streak >= 25) ach("goldenboot"); if (G.streak >= 50) ach("unplayable"); if (G.streak >= 100) ach("invincibles"); sfx.coin(G.streak); burst(it.mesh.position.x, it.mesh.position.y, it.mesh.position.z, 0xffd84a, 3);
   if (G.streak === 25 || G.streak === 50 || G.streak === 100 || G.streak === 200) feedItem("🔥", "COIN FEVER!", G.streak + " coins without a card", "big");
 }
 
@@ -627,7 +604,7 @@ function setHud() {
 }
 let bestShown = false;
 function reset() {
-  for (const it of items) scene.remove(it.mesh); items.length = 0; feedEl.innerHTML = ""; coinFeed = null;
+  for (const it of items) scene.remove(it.mesh); items.length = 0; feedEl.innerHTML = "";
   G.speed = 15; G.dist = 0; G.coins = 0; G.score = 0; G.lives = 4; G.t = 0; G.streak = 0; G.invuln = 0; G.shield = false; G.nextMile = 500; G.usedPower = 0; G.kicks = 0; G.noHit = true; G.jumps = G.slides = G.lanes = 0; G.achT = 0; jumpBuf = coyote = 0; newAch = []; landT = reachT = 0;
   P.magnet = P.medal = P.spray = P.rocket = P.boots = P.whistle = 0; setGhost(false); ballFly = null; laneIdx = 1; px = 0; py = 0; vy = 0; sliding = 0; grounded = true; stumble = kickT = celeT = 0; act.t = 0; tempoBoost = 0;
   G.num = george.baseNum; G.maxNum = G.num; george.drawNumber(G.num);
@@ -662,7 +639,6 @@ function update(dt) {
   // the world comes towards him
   roadScroll += sp * dt; scrollWorld(sp * dt); const shim = 0.4 + 0.3 * Math.sin(clock * 6); coinCap.emissiveIntensity = shim; rimMat.emissiveIntensity = shim; roadTex.offset.y = (roadScroll / 16) % 1; grassTex.offset.y = (roadScroll / 16) % 1;
   for (const t of trees) { t.position.z += sp * dt; if (t.position.z > 14) t.position.z -= 228; }
-  for (const d of dots) { d.position.z += sp * dt; if (d.position.z > 12) { d.position.z -= 230; d.position.x = (Math.random() < 0.5 ? 1 : -1) * rand(5, 7.4); } }
   spawnFront += sp * dt; fillAhead(); applySky();
   if (ballFly) { ballFly.last = ballFly.z; ballFly.z -= (sp + 85) * dt; ballFly.t += dt; if (ballFly.z < -140) { feedItem("⚽", "BALL BONUS!", "+" + ballFly.got + " coins collected", "big"); ballFly = null; } }
   for (let i = items.length - 1; i >= 0; i--) {
@@ -693,7 +669,7 @@ function update(dt) {
   // rocket flames
   if (P.rocket > 0 && !reduced) { for (let k = 0; k < 2; k++) { const f = flame[flameIdx++ % flame.length]; f.m.position.set(px + rand(-0.15, 0.15), py + 0.7 + rand(-0.1, 0.1), 0.9); f.life = 0.35; f.m.visible = true; } }
   for (const f of flame) { if (f.life > 0) { f.life -= dt; f.m.position.z += (sp * 0.9) * dt; f.m.material.opacity = Math.max(0, f.life / 0.35); const sc = 0.6 + (1 - f.life / 0.35); f.m.scale.setScalar(sc); if (f.life <= 0) f.m.visible = false; } }
-  updateSparks(dt); updateFx(dt, sp);
+  updateSparks(dt); updateFx();
   // the figure
   george.root.position.set(px, py, 0);
   george.root.visible = !(G.invuln > 0 && P.spray <= 0 && Math.floor(clock * 14) % 2 === 0 && G.phase === "play" && stumble <= 0);
@@ -707,10 +683,9 @@ function cameraStep(dt) {
   const tx = px * 0.55, ty = (P.rocket > 0 ? 5.4 : 3.7) + py * 0.3, tz = 6.7;
   camPos.x = lerp(camPos.x, tx, 1 - Math.exp(-6 * dt)); camPos.y = lerp(camPos.y, ty, 1 - Math.exp(-4 * dt)); camPos.z = lerp(camPos.z, tz + clamp((G.speed - 15) * 0.05, 0, 1.4) + (P.boots > 0 ? 0.8 : 0), 1 - Math.exp(-3 * dt));
   let sxk = 0, syk = 0; if (shake > 0 && !reduced) { shake -= dt; sxk = rand(-0.15, 0.15) * shake * 2; syk = rand(-0.1, 0.1) * shake * 2; }
-  const bob = G.phase === "play" && grounded ? Math.sin(phase * 2) * 0.025 * clamp((G.speed - 12) / 20, 0, 1) : 0;
   const wantFov = baseFov + clamp((G.speed - 15) * 0.3, 0, 8) + (P.boots > 0 ? 4 : 0) + (P.rocket > 0 ? 6 : 0);
   if (Math.abs(camera.fov - wantFov) > 0.05) { camera.fov = lerp(camera.fov, wantFov, 1 - Math.exp(-3 * dt)); camera.updateProjectionMatrix(); }
-  camera.position.set(camPos.x + sxk, camPos.y + syk + bob, camPos.z); camera.lookAt(px * 0.35, 1.5 + py * 0.3, -14);
+  camera.position.set(camPos.x + sxk, camPos.y + syk, camPos.z); camera.lookAt(px * 0.35, 1.5 + py * 0.3, -14);
 }
 function setPause(on) {
   if (on === paused || (on && G.phase !== "play")) return;

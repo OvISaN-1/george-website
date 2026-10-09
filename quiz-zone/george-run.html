@@ -137,6 +137,7 @@
       <li><span class="gr-ico">👇</span><span><strong>Swipe down</strong> to slide under bars. (Down arrow or S.)</span></li>
       <li><span class="gr-ico">🔟</span><span><strong>Your shirt number is your coin value.</strong> Every coin is worth your number, so pick up number boosts. A card knocks it down by 5.</span></li>
     </ul>
+    <details class="gr-achlist"><summary>⚽ Power-ups and cards</summary>
     <ul class="gr-toys" aria-label="Football power-ups">
       <li><b>🟨 Yellow cards:</b> jump over them. <b>🟥 Red cards:</b> go round them.</li>
       <li><b>⚽ Football:</b> kicked ahead, it picks up every coin in front of you.</li>
@@ -149,7 +150,7 @@
       <li><b>🚀 Rocket boots:</b> fly over everything.</li>
       <li><b>🧣 Fan scarf:</b> an extra life.</li>
       <li><b>#️⃣ Number badges:</b> +5, +10 or double your shirt number.</li>
-    </ul>
+    </ul></details>
     <details class="gr-achlist"><summary>🏅 Achievements <span id="ach-count"></span></summary><ul id="ach-list"></ul></details>
     <h3 class="gr-h3">🎯 This run's goals</h3>
     <ul class="gr-missions" id="missions"></ul>
@@ -174,9 +175,8 @@
       <div id="hud-rank"></div>
       <button class="gr-pausebtn" id="btn-pause" type="button" aria-label="Pause">⏸</button>
       <div class="gr-pause" id="pause" hidden><div><h2>Paused</h2><p>Take a breather, George.</p><button class="btn-primary" id="btn-resume" type="button">Keep running</button></div></div>
-      <div class="gr-vignette" aria-hidden="true"></div><div class="gr-flash" id="flash" aria-hidden="true"></div>
+      <div class="gr-flash" id="flash" aria-hidden="true"></div>
       <div class="gr-ach" id="ach-banner" hidden role="status"><i id="ach-ico">🏆</i><span><small>ACHIEVEMENT UNLOCKED</small><b id="ach-name"></b><em id="ach-text"></em></span></div>
-      <div class="gr-pop" id="pop" aria-hidden="true"></div>
       <div class="gr-power" id="hud-power" aria-live="polite"></div>
     </div>
     <p class="gr-keys">Swipe left and right to change lane. Swipe up to jump. Swipe down to slide. Press P to pause.</p>
@@ -193,7 +193,6 @@
     <button class="btn-primary gr-go" id="btn-again" type="button">Run again</button>
   </section>
 
-  <p class="footer-note">Built with Three.js. Everything in the game, from George to the stadium and the music, is made in your browser. Your top three scores are saved on this device.</p>
   </main>
 
   <footer class="site-footer">
