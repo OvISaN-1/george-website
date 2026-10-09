@@ -120,17 +120,47 @@ stand(110, 0, 9, -24, 0, -0.62);
 stand(80, -48, 9, 22, Math.PI / 2, -0.62); stand(80, 48, 9, 22, -Math.PI / 2, -0.62);
 
 // the goal
+const nets = []; let netT = 99, netAmp = 1; const netAt = new THREE.Vector3();
+function netHit(x, y, amp) { netAt.set(clamp(x, -GOAL_HALF, GOAL_HALF), clamp(y, 0.2, GOAL_H), -2.2); netT = 0; netAmp = amp; sfx.net(); }
+function netUpdate(dt) {
+  if (netT > 3) return;
+  netT += dt;
+  const t = netT, done = t > 2.6;
+  for (const n of nets) {
+    for (let i = 0; i < n.base.length; i++) {
+      let z = 0;
+      if (!done) {
+        const d = n.base[i].distanceTo(netAt);
+        const bulge = Math.exp(-d * d / 2.4) * Math.exp(-t * 1.7);
+        const wave = 0.35 * Math.exp(-t * 2.1) * Math.cos(16 * t - 5.5 * d) * Math.exp(-d * d / 13.5) * Math.min(1, t * 8);
+        z = n.sgn * n.amp * netAmp * 1.1 * (bulge + wave);
+        if (n.back) { n.pos.setX(i, n.bx[i] + ((netAt.x - n.m.position.x) - n.bx[i]) * 0.45 * bulge * Math.min(1, netAmp) + 0.25 * wave); n.pos.setY(i, n.by[i] + ((netAt.y - n.m.position.y) - n.by[i]) * 0.45 * bulge * Math.min(1, netAmp) + 0.2 * wave); }
+      } else if (n.back) { n.pos.setX(i, n.bx[i]); n.pos.setY(i, n.by[i]); }
+      n.pos.setZ(i, z);
+    }
+    n.pos.needsUpdate = true;
+  }
+  if (done) netT = 99;
+}
 {
   const white = new THREE.MeshLambertMaterial({ color: 0xffffff });
   const post = (x) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, GOAL_H, 10), white); m.position.set(x, GOAL_H / 2, 0); scene.add(m); };
   post(-GOAL_HALF); post(GOAL_HALF);
   const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, GOAL_HALF * 2 + 0.14, 10), white);
   bar.rotation.z = Math.PI / 2; bar.position.set(0, GOAL_H, 0); scene.add(bar);
-  const netTex = canvasTex(64, 64, (g) => { g.clearRect(0, 0, 64, 64); g.strokeStyle = "rgba(255,255,255,.75)"; g.lineWidth = 3; g.strokeRect(0, 0, 64, 64); }, [16, 6]);
+  const netTex = canvasTex(64, 64, (g) => { g.clearRect(0, 0, 64, 64); g.strokeStyle = "rgba(255,255,255,.9)"; g.lineWidth = 3; g.strokeRect(0, 0, 64, 64); }, [16, 6]);
   const nm = new THREE.MeshBasicMaterial({ map: netTex, transparent: true, side: THREE.DoubleSide, depthWrite: false });
-  const back = new THREE.Mesh(new THREE.PlaneGeometry(GOAL_HALF * 2, GOAL_H), nm); back.position.set(0, GOAL_H / 2, -2.2); scene.add(back);
-  const top = new THREE.Mesh(new THREE.PlaneGeometry(GOAL_HALF * 2, 2.3), nm); top.rotation.x = Math.PI / 2; top.position.set(0, GOAL_H, -1.1); scene.add(top);
-  for (const s of [-1, 1]) { const side = new THREE.Mesh(new THREE.PlaneGeometry(2.2, GOAL_H), nm); side.rotation.y = Math.PI / 2; side.position.set(s * GOAL_HALF, GOAL_H / 2, -1.1); scene.add(side); }
+  const addNet = (w, h, sx, sy, setup, sgn) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h, sx, sy), nm); setup(m); scene.add(m); m.updateMatrixWorld(true);
+    const pos = m.geometry.attributes.position, base = [];
+    for (let i = 0; i < pos.count; i++) base.push(m.localToWorld(new THREE.Vector3(pos.getX(i), pos.getY(i), 0)));
+    const isBack = sgn === -1 && m.position.z < -2, bx = [], by = [];
+    for (let i = 0; i < pos.count; i++) { bx.push(pos.getX(i)); by.push(pos.getY(i)); }
+    nets.push({ m, pos, base, sgn, bx, by, back: isBack, amp: isBack ? 1 : 0.45 });
+  };
+  addNet(GOAL_HALF * 2, GOAL_H, 24, 9, (m) => m.position.set(0, GOAL_H / 2, -2.2), -1);
+  addNet(GOAL_HALF * 2, 2.3, 24, 7, (m) => { m.rotation.x = Math.PI / 2; m.position.set(0, GOAL_H, -1.1); }, -1);
+  for (const sd of [-1, 1]) addNet(2.2, GOAL_H, 7, 9, (m) => { m.rotation.y = Math.PI / 2; m.position.set(sd * GOAL_HALF, GOAL_H / 2, -1.1); }, sd);
 }
 
 /* ---------------- players (built from simple shapes) ---------------- */
@@ -212,8 +242,41 @@ bin.visible = false; scene.add(bin);
 const ballTex = canvasTex(64, 32, (g, w, h) => { g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); g.fillStyle = "#222"; for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(5 + i * 11, (i % 2) ? 9 : 22, 4.5, 0, 7); g.fill(); } });
 const ball = { mesh: new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 12), new THREE.MeshLambertMaterial({ map: ballTex })), x: 0, y: 0.24, z: 0, spin: 0 };
 scene.add(ball.mesh);
-const glow = new THREE.Mesh(new THREE.SphereGeometry(0.55, 14, 10), new THREE.MeshBasicMaterial({ color: 0xff8a1f, transparent: true, opacity: 0.45, depthWrite: false }));
-glow.visible = false; ball.mesh.add(glow);
+// a burning ball: a trail of flame sprites behind it, and the ball itself glowing hot
+const fireTex = canvasTex(64, 64, (g) => {
+  const gr = g.createRadialGradient(32, 32, 2, 32, 32, 30);
+  gr.addColorStop(0, "rgba(255,255,235,1)"); gr.addColorStop(0.25, "rgba(255,205,70,0.9)"); gr.addColorStop(0.6, "rgba(255,90,10,0.5)"); gr.addColorStop(1, "rgba(120,10,0,0)");
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+});
+const fire = [];
+for (let i = 0; i < 44; i++) {
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: fireTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+  sp.visible = false; scene.add(sp); fire.push({ sp, life: 0, max: 0.4, vx: 0, vy: 0, vz: 0 });
+}
+let fireIdx = 0, lbx = 0, lby = 0.24, lbz = 0, burnT = 0;
+function fireUpdate(dt) {
+  const burning = !!(run && run.power && (run.state === "fly" || run.state === "goalmouth" || run.state === "end"));
+  if (burning) burnT = 0.6; else burnT = Math.max(0, burnT - dt);
+  if (burning && !reduced) {
+    for (let k = 1; k <= 3; k++) {
+      const f = fire[fireIdx++ % fire.length], t = k / 3;
+      f.sp.position.set(lerp(lbx, ball.x, t) + rand(-0.1, 0.1), lerp(lby, ball.y, t) + rand(-0.08, 0.16), lerp(lbz, ball.z, t) + rand(-0.1, 0.1));
+      f.life = f.max = rand(0.3, 0.5); f.vx = rand(-0.4, 0.4); f.vy = rand(0.6, 1.6); f.vz = rand(-0.4, 0.4); f.sp.visible = true;
+    }
+  }
+  lbx = ball.x; lby = ball.y; lbz = ball.z;
+  for (const f of fire) {
+    if (f.life <= 0) { f.sp.visible = false; continue; }
+    f.life -= dt; const u = clamp(1 - f.life / f.max, 0, 1);
+    f.sp.position.x += f.vx * dt; f.sp.position.y += f.vy * dt; f.sp.position.z += f.vz * dt;
+    const sc = (0.5 + 1.1 * Math.sin(Math.min(1, u * 1.6) * Math.PI / 2)) * (1 - u * 0.55);
+    f.sp.scale.set(sc, sc, 1);
+    f.sp.material.opacity = Math.pow(1 - u, 1.2);
+    f.sp.material.color.setRGB(1, 0.92 - 0.7 * u, 0.55 - 0.55 * u);
+  }
+  ball.mesh.material.emissive.setRGB(burnT > 0 ? 1.0 : 0, burnT > 0 ? 0.35 + 0.2 * Math.random() : 0, 0);
+  ball.mesh.material.emissiveIntensity = burnT > 0 ? 0.9 : 0;
+}
 const ballBlob = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), blobMat); ballBlob.rotation.x = -Math.PI / 2; ballBlob.position.y = 0.04; scene.add(ballBlob);
 
 // the drawn line (a flat ribbon on the grass)
@@ -265,6 +328,7 @@ const sfx = {
   save() { tone(220, 0.2, "square", 0.08, 110); noise(0.12, 0.15, 700); },
   post() { tone(900, 0.5, "sine", 0.12, 700); },
   lost() { tone(260, 0.3, "sawtooth", 0.07, 90); },
+  net() { noise(0.35, 0.16, 1800); tone(180, 0.25, "sine", 0.07, 80); },
   power() { tone(90, 0.5, "sawtooth", 0.14, 700); noise(0.4, 0.2, 3000); },
   goal() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.25, "triangle", 0.12, 0, i * 0.11)); noise(1.4, 0.2, 2200); },
 };
@@ -658,7 +722,7 @@ function stepLoose(dt) {
   run.nearAtt = rank(att).slice(0, 2).map((u) => u[1]);
   run.nearDef = rank(defs.slice(0, G.nDef)).slice(0, 2).map((u) => u[1]);
   // a rebound that goes in counts
-  if (ball.z < 0.3 && ball.z > -2.4 && Math.abs(ball.x) < GOAL_HALF - 0.1 && ball.y < GOAL_H) { run.topBins = false; run.outcome = "goal"; run.state = "end"; run.bvx = run.bvz = 0; finishAttack("goal"); sfx.goal(); return; }
+  if (ball.z < 0.3 && ball.z > -2.4 && Math.abs(ball.x) < GOAL_HALF - 0.1 && ball.y < GOAL_H) { run.topBins = false; run.outcome = "goal"; run.state = "end"; run.bvx = run.bvz = 0; finishAttack("goal"); sfx.goal(); netHit(ball.x, ball.y, 0.8); return; }
   if (Math.abs(ball.x) > 35 || ball.z > 53 || ball.z < -8) { run.state = "end"; finishAttack("wide"); sfx.lost(); return; }
   if (run.lt > 0.4) {
     for (let k = 0; k < att.length; k++) if (!(att[k].stun > 0) && hyp(att[k].x - ball.x, att[k].z - ball.z) < 1.0) {
@@ -806,6 +870,7 @@ function stepRun(dt) {
       const k = Math.min(1, run.gt / 0.25);
       ball.x = p.x + dx / l * 2 * k; ball.z = p.z + dz / l * 2.1 * k; ball.y = Math.max(0.24, ball.y * (1 - 0.6 * k));
       if (!run.done) { run.done = true; finishAttack("goal"); }
+      if (!run.netDone && run.gt > 0.18) { run.netDone = true; netHit(ball.x, ball.y, run.power ? 1.5 : 0.8 + 0.7 * run.pw); }
     } else if (o === "catch") {
       if (!run.done) { run.done = true; run.state = "end"; finishAttack("save"); sfx.save(); }
     } else if (o === "parry") {
@@ -943,7 +1008,6 @@ function syncMeshes(dt) {
   keeper.p.body.position.y = dv * 0.35 + (keeper.jump || 0) * 0.5;
   keeper.p.armL.rotation.x = keeper.p.armR.rotation.x = -Math.PI * 0.85 * dv;
   ball.mesh.position.set(ball.x, ball.y, ball.z);
-  glow.visible = !!(run && run.power && (run.state === "fly" || run.state === "goalmouth"));
   ballBlob.position.set(ball.x, 0.04, ball.z); ballBlob.scale.setScalar(1 + ball.y * 0.4);
   if (run && run.state === "fly") ball.mesh.rotation.x -= 0.5; else if (run && run.state === "goalmouth") ball.mesh.rotation.x -= 0.2;
   if (bin.visible) { const sc = 1 + Math.sin(clock * 6) * 0.12; bin.scale.set(sc, sc, sc); }
@@ -1002,6 +1066,7 @@ function frame(now) {
   const vk = 1 - Math.exp(-8 * real); view.yaw = lerp(view.yaw, view.yawT, vk); view.zoom = lerp(view.zoom, view.zoomT, vk);
   if (G.phase !== "menu") { syncMeshes(real); camStep(real); }
   crowdTex.offset.y = Math.sin(clock * 2) * 0.004;
+  netUpdate(real); fireUpdate(real);
   renderer.render(scene, camera);
 }
 
@@ -1033,4 +1098,4 @@ $("btn-again").addEventListener("click", start);
 showBest();
 
 // handy for testing
-window.__ls = { G, att, defs, keeper, ball, get run() { return run; }, release, startRun, camera, THREE };
+window.__ls = { nets, G, att, defs, keeper, ball, get run() { return run; }, release, startRun, camera, THREE };
