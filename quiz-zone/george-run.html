@@ -31,7 +31,7 @@
   .gr-kicker{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#ff5a6e;margin:0 0 4px;}
   .gr-h2{font-size:clamp(26px,5vw,34px);line-height:1.05;margin-bottom:8px;}
   .gr-lede{color:#b9b2ac;margin:0;line-height:1.5;}
-  .gr-how{list-style:none;margin:20px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+  .gr-how{list-style:none;margin:20px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;}
   .gr-how li{display:flex;gap:10px;align-items:flex-start;background:rgba(255,255,255,0.05);border-radius:14px;padding:12px;font-size:14px;line-height:1.4;color:#d9d3cd;}
   .gr-how strong{color:var(--cream);} .gr-ico{font-size:22px;line-height:1;}
   .gr-toys{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:14px 0 0;padding:0;list-style:none;font-size:13.5px;color:#d9d3cd;}
@@ -81,6 +81,10 @@
   @keyframes grAch{0%{transform:translate(-50%,-90px);opacity:0;}10%{transform:translate(-50%,0);opacity:1;}88%{transform:translate(-50%,0);opacity:1;}100%{transform:translate(-50%,-90px);opacity:0;}}
   .gr-achlist{margin-top:14px;background:rgba(255,255,255,.05);border-radius:12px;padding:6px 12px;} .gr-achlist summary{cursor:pointer;min-height:40px;display:flex;align-items:center;gap:8px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;color:var(--gold);}
   .gr-achlist ul{list-style:none;margin:6px 0 4px;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px;} .gr-achlist li{display:flex;gap:10px;align-items:center;background:rgba(255,255,255,.05);border-radius:10px;padding:6px 10px;opacity:.6;} .gr-achlist li.got{opacity:1;background:rgba(245,185,66,.12);} .gr-achlist li i{font-style:normal;font-size:22px;} .gr-achlist li b{display:block;font-size:14px;} .gr-achlist li small{display:block;font-size:12px;color:#b9b2ac;}
+  .gr-feed{transition:transform .3s ease;} .gr-stage.ach-on .gr-feed{transform:translateY(74px);}
+  .gr-top li.empty{display:block;font-size:15px;} .gr-top li.empty span{display:block;}
+  .gr-pausebtn{position:absolute;right:10px;bottom:10px;z-index:7;width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.5);background:rgba(13,11,16,.6);color:#fff;font-size:18px;cursor:pointer;}
+  .gr-pause{position:absolute;inset:0;z-index:8;display:grid;place-items:center;text-align:center;background:rgba(10,8,14,.72);backdrop-filter:blur(3px);} .gr-pause[hidden]{display:none;} .gr-pause h2{font-family:'Rajdhani',sans-serif;font-size:40px;margin:0;color:#fff;} .gr-pause p{color:#d9d3cd;margin:4px 0 16px;}
   .gr-keys{font-size:12px;color:#8a857e;text-align:center;margin:10px 0 0;}
   .gr-bar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px;}
   @media (prefers-reduced-motion: reduce){.gr-pop.show{animation:none;opacity:1;}}
@@ -168,12 +172,14 @@
       <ul class="gr-feed" id="feed" aria-live="polite"></ul>
       <div class="gr-board"><h3>🏆 Top three</h3><ol class="gr-top" id="hud-top"></ol></div>
       <div id="hud-rank"></div>
+      <button class="gr-pausebtn" id="btn-pause" type="button" aria-label="Pause">⏸</button>
+      <div class="gr-pause" id="pause" hidden><div><h2>Paused</h2><p>Take a breather, George.</p><button class="btn-primary" id="btn-resume" type="button">Keep running</button></div></div>
       <div class="gr-vignette" aria-hidden="true"></div><div class="gr-flash" id="flash" aria-hidden="true"></div>
       <div class="gr-ach" id="ach-banner" hidden role="status"><i id="ach-ico">🏆</i><span><small>ACHIEVEMENT UNLOCKED</small><b id="ach-name"></b><em id="ach-text"></em></span></div>
       <div class="gr-pop" id="pop" aria-hidden="true"></div>
       <div class="gr-power" id="hud-power" aria-live="polite"></div>
     </div>
-    <p class="gr-keys">Swipe left and right to change lane. Swipe up to jump. Swipe down to slide.</p>
+    <p class="gr-keys">Swipe left and right to change lane. Swipe up to jump. Swipe down to slide. Press P to pause.</p>
   </section>
 
   <section class="gr-card" id="screen-end" hidden>
