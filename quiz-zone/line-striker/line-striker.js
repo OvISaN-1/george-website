@@ -19,7 +19,9 @@ const reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce
 
 const GOAL_HALF = 3.66, GOAL_H = 2.44;
 const PASS_V = 21, SHOT_V = 30;
-const BEST_KEY = "gz_linestriker_best";
+const BEST_KEY = "gz_linestriker_best2";
+const PASS_HALF = 80 * Math.PI / 180;   // a pass must start within 80 degrees either side of the way the player faces
+const BIN_X = 2.6, BIN_Y = 2.05;
 const MAX_LIVES = 3;
 
 /* ---------------- renderer, scene, camera ---------------- */
@@ -47,7 +49,7 @@ function resize() {
   const w = stage.clientWidth || 360, h = stage.clientHeight || 600;
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
-  camera.fov = w / h < 0.75 ? 64 : 54;
+  camera.fov = w / h < 0.75 ? 70 : 56;
   camera.updateProjectionMatrix();
 }
 window.addEventListener("resize", resize);
@@ -146,22 +148,23 @@ function box(w, h, d, c, x, y, z) { const m = new THREE.Mesh(new THREE.BoxGeomet
 function makePlayer(o) {
   const g = new THREE.Group();
   const leg = (sx) => {
-    const p = new THREE.Group(); p.position.set(sx * 0.13, 0.95, 0);
-    p.add(box(0.21, 0.36, 0.23, o.shorts, 0, -0.17, 0), box(0.17, 0.48, 0.19, o.socks, 0, -0.58, 0), box(0.2, 0.1, 0.32, 0x111111, 0, -0.86, 0.05));
+    const p = new THREE.Group(); p.position.set(sx * 0.1, 1.08, 0);
+    p.add(box(0.17, 0.4, 0.19, o.shorts, 0, -0.19, 0), box(0.13, 0.56, 0.15, o.socks, 0, -0.66, 0), box(0.15, 0.09, 0.27, 0x111111, 0, -1.0, 0.04));
     g.add(p); return p;
   };
   const arm = (sx) => {
-    const p = new THREE.Group(); p.position.set(sx * 0.35, 1.56, 0);
-    p.add(box(0.15, 0.26, 0.17, o.shirt, 0, -0.12, 0), box(0.12, 0.34, 0.14, o.keeper ? 0xffe14d : o.skin, 0, -0.43, 0));
+    const p = new THREE.Group(); p.position.set(sx * 0.29, 1.72, 0);
+    p.add(box(0.11, 0.3, 0.13, o.shirt, 0, -0.14, 0), box(0.09, 0.36, 0.11, o.keeper ? 0xffe14d : o.skin, 0, -0.47, 0));
     g.add(p); return p;
   };
   const legL = leg(-1), legR = leg(1), armL = arm(-1), armR = arm(1);
-  g.add(box(0.52, 0.62, 0.3, o.shirt, 0, 1.28, 0), box(0.5, 0.2, 0.3, o.shorts, 0, 0.98, 0));
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 14, 10), mat(o.skin)); head.position.set(0, 1.82, 0); g.add(head);
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.19, 14, 10), mat(o.hair)); hair.scale.set(1, 0.78, 1.02); hair.position.set(0, 1.9, -0.025); g.add(hair);
-  const num = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.34), new THREE.MeshBasicMaterial({ map: numberTex(o.number, o.numCol || "#fff"), transparent: true }));
-  num.position.set(0, 1.3, -0.153); num.rotation.y = Math.PI; g.add(num);
-  const blob = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5), blobMat); blob.rotation.x = -Math.PI / 2; blob.position.y = 0.03;
+  g.add(box(0.42, 0.64, 0.25, o.shirt, 0, 1.44, 0), box(0.4, 0.2, 0.25, o.shorts, 0, 1.14, 0));
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 10), mat(o.skin)); head.position.set(0, 2.0, 0); g.add(head);
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.168, 14, 10), mat(o.hair)); hair.scale.set(1, 0.78, 1.02); hair.position.set(0, 2.07, -0.022); g.add(hair);
+  const num = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 0.28), new THREE.MeshBasicMaterial({ map: numberTex(o.number, o.numCol || "#fff"), transparent: true }));
+  num.position.set(0, 1.46, -0.128); num.rotation.y = Math.PI; g.add(num);
+  g.scale.setScalar(0.9);
+  const blob = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.4), blobMat); blob.rotation.x = -Math.PI / 2; blob.position.y = 0.03;
   const root = new THREE.Group(); root.add(g, blob);
   return { root, body: g, legL, legR, armL, armR, phase: Math.random() * 6 };
 }
@@ -191,6 +194,14 @@ keeper.dive = 0; keeper.diveDir = 0;
 const ringGeo = new THREE.RingGeometry(0.8, 1.05, 32);
 const ringMat = new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0.9, side: THREE.DoubleSide });
 for (const a of att) { a.ring = new THREE.Mesh(ringGeo, ringMat); a.ring.rotation.x = -Math.PI / 2; a.ring.position.y = 0.06; scene.add(a.ring); }
+
+// the arc a pass must start inside
+const cone = new THREE.Mesh(new THREE.CircleGeometry(15, 40, Math.PI / 2 - PASS_HALF, PASS_HALF * 2), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2, side: THREE.DoubleSide, depthWrite: false }));
+cone.rotation.x = -Math.PI / 2; cone.position.y = 0.05; cone.renderOrder = 2; scene.add(cone);
+// the glowing "top bins" target in the corner of the goal
+const bin = new THREE.Group();
+bin.add(new THREE.Mesh(new THREE.RingGeometry(0.5, 0.72, 28), new THREE.MeshBasicMaterial({ color: 0xffd23f, side: THREE.DoubleSide })), new THREE.Mesh(new THREE.CircleGeometry(0.45, 24), new THREE.MeshBasicMaterial({ color: 0xff4d5e, transparent: true, opacity: 0.85, side: THREE.DoubleSide })));
+bin.visible = false; scene.add(bin);
 
 // ball
 const ballTex = canvasTex(64, 32, (g, w, h) => { g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); g.fillStyle = "#222"; for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(5 + i * 11, (i % 2) ? 9 : 22, 4.5, 0, 7); g.fill(); } });
@@ -251,13 +262,13 @@ const sfx = {
 };
 
 /* ---------------- game state ---------------- */
-const G = { phase: "menu", level: 0, lives: MAX_LIVES, goals: 0, chain: 0, carrier: 0, timeScale: 1, nDef: 3, defSpeed: 4.8 };
-let route = null, run = null, drawPts = [], drawing = false, resultTimer = 0;
+const G = { phase: "menu", level: 0, lives: MAX_LIVES, goals: 0, score: 0, bonus: 0, chain: 0, carrier: 0, timeScale: 1, nDef: 3, defSpeed: 4.8 };
+let lastLevelShown = 0, route = null, run = null, drawPts = [], drawing = false, resultTimer = 0;
 const cam = { x: 0, z: 40, tx: 0, tz: 28, lx: 0, lz: 20 };
 
 function setHud() {
   $("hud-goals").textContent = G.goals;
-  $("hud-level").textContent = G.level + 1;
+  $("hud-score").textContent = G.score;
   $("hud-lives").textContent = "❤".repeat(G.lives) + "♡".repeat(MAX_LIVES - G.lives);
   $("hud-lives").setAttribute("aria-label", G.lives + " lives left");
 }
@@ -274,6 +285,8 @@ function newAttack() {
   G.nDef = Math.min(3 + (G.level >> 1), 7);
   G.defSpeed = Math.min(4.6 + G.level * 0.22, 6.8);
   G.chain = 0; G.carrier = 0;
+  G.bonus = Math.random() < 0.4 ? (Math.random() < 0.5 ? -1 : 1) : 0;
+  bin.visible = G.bonus !== 0; if (G.bonus) bin.position.set(G.bonus * BIN_X, BIN_Y, 0.3);
   place(att[0], rand(-7, 7), rand(33, 38));
   place(att[1], rand(-17, -10), rand(22, 29));
   place(att[2], rand(10, 17), rand(21, 28));
@@ -297,15 +310,19 @@ function newAttack() {
   planStart();
   syncMeshes(0);
   snapCamera();
+  if (G.level > 0 && G.level !== lastLevelShown) pop("LEVEL " + (G.level + 1), "Defenders are quicker now", "soft");
+  lastLevelShown = G.level;
 }
 
 function planStart() {
   G.phase = "plan"; ribbon.visible = false; timeScaleReset();
   const c = att[G.carrier];
+  c.face = Math.PI;
+  cone.visible = true; cone.position.set(c.x, 0.05, c.z);
   // Give the player a little room: nudge any defender that is right on top of the ball.
   for (const d of defs) if (d.p.root.visible) { const dd = hyp(d.x - c.x, d.z - c.z); if (dd < 3) { const k = 3.2 / (dd || 1); d.x = c.x + (d.x - c.x) * k; d.z = c.z + (d.z - c.z) * k; } }
   ball.x = c.x + Math.sin(c.face) * 0.5; ball.z = c.z + Math.cos(c.face) * 0.5; ball.y = 0.24;
-  setHint(G.chain ? "Pass or shoot! Draw a line." : "Time is frozen. Draw a line from George to a team-mate or into the goal.");
+  setHint(G.chain ? "Pass or shoot! Draw a line." : G.bonus ? "Time is frozen. Hit the glowing corner for bonus points!" : "Time is frozen. Draw a line to a team-mate or into the goal.");
   buildQuick();
 }
 
@@ -322,14 +339,25 @@ function lineSafety(pts) {
   for (const d of defs) { if (!d.p.root.visible) continue; for (let i = 1; i < pts.length; i += 2) min = Math.min(min, hyp(pts[i].x - d.x, pts[i].z - d.z)); }
   return min;
 }
+function angDiff(a, b) { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return Math.abs(d); }
+function behindCarrier(pts) {
+  const c = att[G.carrier];
+  if (pts.some((p) => p.z <= 0.3)) return false;           // shots are always fine
+  const q = pts.find((p) => hyp(p.x - c.x, p.z - c.z) > 2.2); if (!q) return false;
+  return angDiff(Math.atan2(q.x - c.x, q.z - c.z), c.face) > PASS_HALF;
+}
 function colourFor(pts) {
+  if (behindCarrier(pts)) { ribbonMat.color.set(0xff4d5e); setHint("Too far behind. Pass inside the glowing arc."); return; }
   const m = lineSafety(pts);
   ribbonMat.color.set(m < 1.9 ? 0xff4d5e : m < 3.4 ? 0xffc23d : 0xffffff);
+  setHint("Let go to play it. Drop it in the red strip to cancel.");
 }
+const cancelEl = $("cancelzone");
+function overCancel(ev) { const r = cancelEl.getBoundingClientRect(); return ev.clientY >= r.top && ev.clientX >= r.left && ev.clientX <= r.right; }
 canvas.addEventListener("pointerdown", (ev) => {
   if (G.phase !== "plan") return;
   const p = groundAt(ev); if (!p) return;
-  drawing = true; canvas.setPointerCapture(ev.pointerId);
+  drawing = true; canvas.setPointerCapture(ev.pointerId); cancelEl.hidden = false;
   const c = att[G.carrier];
   drawPts = [{ x: c.x, z: c.z }];
   addDrawPoint(p); sfx.draw(0);
@@ -347,15 +375,22 @@ function addDrawPoint(p) {
   drawPts.push({ x: p.x, z: p.z });
   setRibbon(drawPts, 0.28); colourFor(drawPts);
 }
+function cancelDraw(msg) {
+  drawing = false; drawPts = []; ribbon.visible = false; cancelEl.hidden = true;
+  if (G.phase === "plan") setHint(msg || "Cancelled. Draw again.");
+}
 function endDraw(ev) {
   if (!drawing) return;
-  drawing = false;
-  const pts = drawPts; drawPts = [];
+  const pts = drawPts, cancel = overCancel(ev);
+  drawing = false; drawPts = []; cancelEl.hidden = true;
+  if (cancel) { ribbon.visible = false; setHint("Cancelled. Draw again."); return; }
   if (pts.length < 3) { ribbon.visible = false; return; }
+  if (behindCarrier(pts)) { ribbon.visible = false; setHint("Too far behind. Pass inside the glowing arc, or draw to the goal."); return; }
   release(pts);
 }
+window.addEventListener("keydown", (e) => { if (e.key === "Escape" && drawing) cancelDraw(); });
 canvas.addEventListener("pointerup", endDraw);
-canvas.addEventListener("pointercancel", () => { drawing = false; ribbon.visible = false; });
+canvas.addEventListener("pointercancel", () => cancelDraw());
 
 /* ---------------- turning a line into a pass or a shot ---------------- */
 function smooth(pts) {
@@ -414,7 +449,7 @@ function startRun(pts, kind, recv) {
   const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + hyp(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));
   run = { pts, cum, L, kind, recv, s: 0, v: kind === "shot" ? SHOT_V : PASS_V, state: "fly", t: 0, outcome: null, wait: 0, dist0: att[G.carrier].z };
   if (kind === "shot") planShot();
-  G.phase = "run"; $("quick").innerHTML = "";
+  G.phase = "run"; $("quick").innerHTML = ""; cone.visible = false;
   setHint(kind === "shot" ? "" : "");
   ribbonMat.color.set(0xffffff);
   att[G.carrier].kickT = 0.25;
@@ -436,7 +471,8 @@ function planShot() {
   if (Math.abs(xc) <= GOAL_HALF - 0.08) outcome = Math.abs(kFinal - xc) < reach ? "save" : "goal";
   else if (Math.abs(xc) < GOAL_HALF + 0.35) outcome = "post";
   else outcome = "wide";
-  Object.assign(run, { xc, react, kspeed, kFinal, kStart: keeper.x, tGoal, outcome, hG: 0.55 + Math.min(run.dist0, 36) / 36 * 1.0 });
+  const topBins = G.bonus !== 0 && Math.abs(xc - G.bonus * BIN_X) < 1.1;
+  Object.assign(run, { xc, react, kspeed, kFinal, kStart: keeper.x, tGoal, outcome, topBins, hG: topBins ? BIN_Y : 0.55 + Math.min(run.dist0, 36) / 36 * 1.0 });
   keeper.diveDir = Math.sign(kFinal - keeper.x) || 0;
 }
 
@@ -524,10 +560,13 @@ function stepRun(dt) {
   // ---- everyone else moves ----
   // team-mates run forward; the receiver runs to the ball
   att.forEach((a, i) => {
-    if (a === c && run.state === "fly") { a.speed = 0; return; }
-    if (run.recv === i && run.state !== "end") { moveTo(a, run.pts[run.pts.length - 1].x, run.pts[run.pts.length - 1].z, 7.6, dt); return; }
-    if (i === G.carrier) { a.speed = 0; return; }
-    if (a.z > 13) moveTo(a, a.x, a.z - 6, 4.2, dt); else a.speed = 0;
+    if (i === G.carrier) {
+      // after a pass the passer keeps running forward; after a shot he stands and watches
+      if (run.kind === "pass" && run.state !== "end" && a.z > 9) moveTo(a, a.x * 0.97, a.z - 5, 6, dt); else a.speed = 0;
+      return;
+    }
+    if (run.recv === i && run.state !== "end") { moveTo(a, run.pts[run.pts.length - 1].x, run.pts[run.pts.length - 1].z, 8, dt); return; }
+    if (a.z > 8) moveTo(a, a.x * 0.98, a.z - 6, 6, dt); else a.speed = 0;
   });
   // defenders
   for (let i = 0; i < G.nDef; i++) {
@@ -568,8 +607,12 @@ function finishAttack(kind) {
   const dist = run && run.dist0;
   if (kind === "goal") {
     G.goals++; sfx.goal();
-    const far = dist > 30, ch = G.chain;
-    pop(far ? "IMPOSSIBLE!" : "GOAL!", far ? "from " + Math.round(dist) + " metres" : ch > 1 ? ch - 1 + " passes first" : "", "gold");
+    const far = dist > 30, ch = G.chain, tb = run.topBins;
+    const pts = 10 + (far ? 10 : 0) + (tb ? 15 : 0) + Math.max(0, ch - 1) * 3;
+    G.score += pts;
+    for (const a of att) a.cele = 1.8;
+    const why = [tb ? "top corner +15" : "", far ? "long range +10" : "", ch > 1 ? ch - 1 + " passes +" + (ch - 1) * 3 : ""].filter(Boolean).join(" · ");
+    pop(tb ? "TOP BINS!" : far ? "IMPOSSIBLE!" : "GOAL!", "+" + pts + (why ? " · " + why : ""), "gold");
   } else {
     G.lives--;
     const t = { save: ["SAVED!", "The keeper got there"], post: ["OFF THE POST!", "So close"], wide: ["WIDE!", "Just missed"], blocked: ["BLOCKED!", "A defender got in the way"], stolen: ["LOST IT!", "A defender won the ball"] }[kind];
@@ -589,14 +632,17 @@ function afterResult() {
 /* ---------------- placing the 3D things each frame ---------------- */
 let clock = 0;
 function animateLimbs(e, dt) {
-  const p = e.p, sp = e.speed;
-  p.phase += sp * dt * 1.7;
-  const sw = Math.sin(p.phase) * Math.min(1, sp / 5) * 0.95;
+  const p = e.p, sp = e.speed, an = Math.max(sp, 1.4);
+  p.phase += an * dt * 1.9;
+  const amp = Math.min(1, an / 4.5), sw = Math.sin(p.phase) * amp * 1.2;
   p.legL.rotation.x = sw; p.legR.rotation.x = -sw;
-  p.armL.rotation.x = -sw * 0.8; p.armR.rotation.x = sw * 0.8;
-  p.body.position.y = Math.abs(Math.sin(p.phase)) * 0.06 * Math.min(1, sp / 5);
-  p.body.rotation.x = Math.min(0.2, sp * 0.03);
-  if (e.kickT > 0) { e.kickT -= dt; p.legR.rotation.x = -1.1 * Math.min(1, e.kickT / 0.12); }
+  p.armL.rotation.x = -sw * 1.1; p.armR.rotation.x = sw * 1.1;
+  p.body.position.y = Math.abs(Math.sin(p.phase)) * 0.1 * amp;
+  p.body.rotation.x = Math.min(0.28, sp * 0.045);
+  p.body.rotation.z = Math.sin(p.phase) * 0.05 * amp;
+  if (e.kickT > 0) { e.kickT -= dt; p.legR.rotation.x = -1.2 * Math.min(1, e.kickT / 0.12); }
+  if (e.cele > 0) { e.cele -= dt; p.armL.rotation.x = p.armR.rotation.x = -Math.PI * 0.92; p.armL.rotation.z = 0.35; p.armR.rotation.z = -0.35; p.body.position.y = Math.abs(Math.sin(clock * 11)) * 0.35; }
+  else { p.armL.rotation.z = 0; p.armR.rotation.z = 0; }
 }
 function syncMeshes(dt) {
   for (const e of att) { e.p.root.position.set(e.x, 0, e.z); e.p.root.rotation.y = e.face; animateLimbs(e, dt); }
@@ -610,6 +656,7 @@ function syncMeshes(dt) {
   ball.mesh.position.set(ball.x, ball.y, ball.z);
   ballBlob.position.set(ball.x, 0.04, ball.z); ballBlob.scale.setScalar(1 + ball.y * 0.4);
   if (run && run.state === "fly") ball.mesh.rotation.x -= 0.5; else if (run && run.state === "goalmouth") ball.mesh.rotation.x -= 0.2;
+  if (bin.visible) { const sc = 1 + Math.sin(clock * 6) * 0.12; bin.scale.set(sc, sc, sc); }
   const planning = G.phase === "plan";
   att.forEach((a, i) => {
     a.ring.visible = planning;
@@ -673,24 +720,24 @@ function frame(now) {
 /* ---------------- screens ---------------- */
 function bestGet() { try { return +localStorage.getItem(BEST_KEY) || 0; } catch (e) { return 0; } }
 function bestSet(v) { try { localStorage.setItem(BEST_KEY, String(v)); } catch (e) {} }
-function showBest() { const b = bestGet(); $("best-line").innerHTML = b ? "Your best: <b>" + b + " goals</b>" : ""; }
+function showBest() { const b = bestGet(); $("best-line").innerHTML = b ? "Your best: <b>" + b + " points</b>" : ""; }
 function start() {
   audio();
-  G.level = 0; G.lives = MAX_LIVES; G.goals = 0;
+  G.level = 0; G.lives = MAX_LIVES; G.goals = 0; G.score = 0; lastLevelShown = 0;
   $("screen-start").hidden = true; $("screen-end").hidden = true; $("screen-game").hidden = false;
   resize(); setHud(); newAttack();
   if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); }
   stage.scrollIntoView({ block: "center", behavior: reduced ? "auto" : "smooth" });
 }
 function gameOver() {
-  G.phase = "over"; run = null; ending = null;
-  const goals = G.goals, best = bestGet(), isBest = goals > best;
-  if (isBest) bestSet(goals);
+  G.phase = "over"; run = null; ending = null; cone.visible = false; bin.visible = false;
+  const goals = G.goals, score = G.score, best = bestGet(), isBest = score > best;
+  if (isBest) bestSet(score);
   let coins = 0;
-  if (goals > 0 && window.GZR && GZR.ready) { coins = goals * 8 + 4; try { GZR.earn({ coins, xp: goals * 6 }); } catch (e) {} }
+  if (goals > 0 && window.GZR && GZR.ready) { coins = Math.round(score / 4) + 4; try { GZR.earn({ coins, xp: goals * 6 }); } catch (e) {} }
   $("end-title").textContent = goals === 0 ? "Full time" : goals >= 5 ? "Superstar!" : "Nice one!";
-  $("end-text").textContent = goals === 0 ? "No goals this time. Try curving the line round the defenders and aiming for the corners." : "You scored " + goals + (goals === 1 ? " goal." : " goals.") + (isBest && goals > 1 ? " That is a new best!" : "");
-  $("end-stats").innerHTML = `<div><b>${goals}</b><span>Goals</span></div><div><b>${G.level + (goals ? 0 : 0) + 1}</b><span>Level reached</span></div><div><b>${Math.max(goals, best)}</b><span>Best</span></div>` + (coins ? `<div><b>+${coins}</b><span>Coins</span></div>` : "");
+  $("end-text").textContent = goals === 0 ? "No goals this time. Try curving the line round the defenders and aiming for the corners." : "You scored " + goals + (goals === 1 ? " goal" : " goals") + " and " + score + " points." + (isBest && score > 10 ? " That is a new best!" : "");
+  $("end-stats").innerHTML = `<div><b>${score}</b><span>Points</span></div><div><b>${goals}</b><span>Goals</span></div><div><b>${Math.max(score, best)}</b><span>Best points</span></div>` + (coins ? `<div><b>+${coins}</b><span>Coins</span></div>` : "");
   $("screen-game").hidden = true; $("screen-end").hidden = false; showBest();
 }
 $("btn-start").addEventListener("click", start);

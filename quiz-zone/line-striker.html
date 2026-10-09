@@ -59,6 +59,8 @@
   .ls-pop.gold{color:#ffd66b;text-shadow:0 4px 0 #6b4a0a,0 0 30px rgba(245,185,66,.8);}
   .ls-pop.soft{color:#f1ede9;text-shadow:0 3px 0 #241f29;}
   @keyframes lsPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(-6deg);}22%{opacity:1;transform:translate(-50%,-50%) scale(1.1) rotate(2deg);}75%{opacity:1;transform:translate(-50%,-50%) scale(1);}100%{opacity:0;transform:translate(-50%,-62%) scale(1);}}
+  .ls-cancel{position:absolute;left:0;right:0;bottom:0;height:62px;display:flex;align-items:center;justify-content:center;background:rgba(202,14,40,.55);border-top:2px solid #ff5a6e;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;letter-spacing:.06em;pointer-events:none;}
+  .ls-cancel[hidden]{display:none;}
   .ls-hint{text-align:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;margin:10px 0 6px;min-height:1.3em;}
   .ls-bar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
   .ls-pill{background:rgba(255,255,255,0.07);color:var(--cream);border:1px solid rgba(241,237,233,0.2);border-radius:999px;min-height:46px;padding:0 16px;font-size:16px;display:inline-flex;align-items:center;}
@@ -112,8 +114,8 @@
     <ul class="ls-how">
       <li><span class="ls-num">1</span><span><strong>Time freezes.</strong> Look at where everyone is.</span></li>
       <li><span class="ls-num">2</span><span><strong>Draw a line</strong> from George to a team-mate, or into the goal.</span></li>
-      <li><span class="ls-num">3</span><span><strong>Curve it</strong> round the defenders. The line turns red when one is in the way.</span></li>
-      <li><span class="ls-num">4</span><span><strong>Aim for the corners.</strong> The keeper cannot reach them as easily.</span></li>
+      <li><span class="ls-num">3</span><span><strong>Curve it</strong> round the defenders. Passes must start inside the glowing arc. The line turns red when a defender is in the way.</span></li>
+      <li><span class="ls-num">4</span><span><strong>Aim for the corners.</strong> Hit the glowing top corner for bonus points. Wrong line? Let go in the red strip to cancel.</span></li>
     </ul>
     <p class="ls-best" id="best-line"></p>
     <button class="btn-primary ls-go" id="btn-start" type="button">Kick off</button>
@@ -122,12 +124,13 @@
   <section class="ls-game" id="screen-game" hidden>
     <div class="ls-hud" aria-live="off">
       <div><small>Goals</small><span class="big" id="hud-goals">0</span></div>
-      <div class="mid"><small>Level</small><span class="big" id="hud-level">1</span></div>
+      <div class="mid"><small>Points</small><span class="big" id="hud-score">0</span></div>
       <div class="right"><small>Lives</small><span class="big" id="hud-lives" aria-label="3 lives">❤❤❤</span></div>
     </div>
     <div class="ls-stage" id="stage">
       <canvas id="gl" aria-label="3D football pitch. Draw a line from George to a team-mate or into the goal."></canvas>
       <div class="ls-pop" id="pop" aria-hidden="true"></div>
+      <div class="ls-cancel" id="cancelzone" hidden>✕ Let go here to cancel</div>
     </div>
     <p class="ls-hint" id="hint" role="status" aria-live="polite"></p>
     <div class="ls-bar" id="quick"></div>
