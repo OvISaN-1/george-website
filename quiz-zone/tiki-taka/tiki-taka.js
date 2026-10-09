@@ -382,7 +382,19 @@
     else if (e === E.PASS) {
       const chain = S[I.CHAIN] | 0, [ox, oy] = ownerPos();
       const c = COMBO[Math.min(chain, 5)];
-      if (c) fxText(c[0], ox, oy - 34, c[1], 34 + chain * 3);
+      if (c) {
+        // A team-mate shouts it, so the words never sit on top of the ball.
+        const nA = S[I.N_ATT] | 0, recv = S[I.RECEIVER] | 0, own = S[I.OWNER] | 0;
+        let best = -1, bd = 0;
+        for (let i = 0; i < nA; i++) {
+          if (i === recv || i === own) continue;
+          const o = I.P0 + i * I.STRIDE, d = Math.hypot(S[o] - bx, S[o + 1] - by);
+          if (d > 55 && (best < 0 || d < bd)) { best = i; bd = d; }
+        }
+        if (best >= 0) { const o = I.P0 + best * I.STRIDE; fxText(c[0], Math.max(60, Math.min(W - 60, S[o])), S[o + 1] - 44, c[1], 30 + chain * 2); }
+        else fxText(c[0], ox, oy - 70, c[1], 34 + chain * 3);
+        shoutT = Math.max(shoutT, 1.4);
+      }
     }
     else if (e === E.TACKLE) { FX.shake = Math.max(FX.shake, 9); fxText("OOF!", bx, by - 22, "#ff5d5d", 44); fxText("-2.5s", bx, by + 24, "#ffb3b3", 30); fxBurst(bx, by, 14, ["#ffffff", "#ff9b9b"], 190, 0.5, 4); }
     else if (e === E.BLOCK) { FX.shake = Math.max(FX.shake, 7); fxText("THUD!", bx, by - 22, "#ffb347", 42); fxBurst(bx, by, 12, ["#ffb347", "#ffffff"], 170, 0.5, 4); }
@@ -403,6 +415,21 @@
     }
     else if (e === E.METER_FULL) { const [ox, oy] = ownerPos(); fxText("SUPER READY!", ox, oy - 40, "#ffd66b", 36); fxBurst(ox, oy, 20, ["#ffd66b", "#b36bff", "#ffffff"], 180, 0.9, 4, "star"); }
     else if (e === E.FREEZE) { for (let i = 0; i < 5; i++) fxLater(i * 0.08, () => fxBolt(rnd(100, W - 100), rnd(100, 500))); }
+  }
+  // Open team-mates call for the ball now and then.
+  let shoutT = 2, lastShouter = -1;
+  const SHOUTS = ["PASS!", "HERE!", "OVER HERE!", "I'M FREE!", "ON ME!"];
+  function shoutUpdate(dt) {
+    shoutT -= dt;
+    if (shoutT > 0 || reduced) return;
+    shoutT = 2.4 + Math.random() * 1.6;
+    if ((S[I.PHASE] | 0) !== PH.PLAY || S[I.AIM] === 1 || S[I.SHOT_MODE] || (S[I.OWNER] | 0) < 0) return;
+    const nA = S[I.N_ATT] | 0, own = S[I.OWNER] | 0, free = [];
+    for (let i = 0; i < nA; i++) { const o = I.P0 + i * I.STRIDE; if (i !== own && i !== lastShouter && (S[o + 8] | 0) === 1) free.push(i); }
+    if (!free.length) return;
+    const i = free[Math.floor(Math.random() * free.length)], o = I.P0 + i * I.STRIDE;
+    lastShouter = i;
+    fxText(pickOne(SHOUTS), Math.max(60, Math.min(W - 60, S[o])), S[o + 1] - 40, "#ffffff", 24);
   }
   function fxUpdate(dt) {
     FX.shake = Math.max(0, FX.shake - dt * 36);
@@ -1010,6 +1037,7 @@
     wasm.tick(dt * 1000);
     refresh();
     fxUpdate(dt);
+    shoutUpdate(dt);
     handleEvents();
     record();
     draw(clock);
