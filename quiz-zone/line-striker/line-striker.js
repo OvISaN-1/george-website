@@ -239,6 +239,16 @@ const bin = new THREE.Group();
 bin.add(new THREE.Mesh(new THREE.RingGeometry(0.5, 0.72, 28), new THREE.MeshBasicMaterial({ color: 0xffd23f, side: THREE.DoubleSide })), new THREE.Mesh(new THREE.CircleGeometry(0.45, 24), new THREE.MeshBasicMaterial({ color: 0xff4d5e, transparent: true, opacity: 0.85, side: THREE.DoubleSide })));
 bin.visible = false; scene.add(bin);
 
+// a name tag so George is easy to spot
+const tagTex = canvasTex(256, 90, (g, w, h) => {
+  g.fillStyle = "#d7102b"; g.strokeStyle = "#fff"; g.lineWidth = 6;
+  g.beginPath(); if (g.roundRect) g.roundRect(8, 6, w - 16, 52, 24); else g.rect(8, 6, w - 16, 52); g.fill(); g.stroke();
+  g.fillStyle = "#fff"; g.font = "700 40px Rajdhani, Arial Black, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("GEORGE", w / 2, 33);
+  g.fillStyle = "#fff"; g.beginPath(); g.moveTo(w / 2 - 14, 60); g.lineTo(w / 2 + 14, 60); g.lineTo(w / 2, 84); g.closePath(); g.fill();
+});
+const georgeTag = new THREE.Sprite(new THREE.SpriteMaterial({ map: tagTex, transparent: true, depthTest: false }));
+georgeTag.scale.set(3.0, 1.05, 1); georgeTag.renderOrder = 20; scene.add(georgeTag);
+
 // ball
 const ballTex = canvasTex(64, 32, (g, w, h) => { g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); g.fillStyle = "#222"; for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(5 + i * 11, (i % 2) ? 9 : 22, 4.5, 0, 7); g.fill(); } });
 const ball = { mesh: new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 12), new THREE.MeshLambertMaterial({ map: ballTex })), x: 0, y: 0.24, z: 0, spin: 0 };
@@ -401,7 +411,7 @@ function planStart(aer) {
   // Give the player a little room: nudge any defender that is right on top of the ball.
   for (const d of defs) if (d.p.root.visible) { const dd = hyp(d.x - c.x, d.z - c.z); if (dd < 3) { const k = 3.2 / (dd || 1); d.x = c.x + (d.x - c.x) * k; d.z = c.z + (d.z - c.z) * k; } }
   ball.x = c.x + Math.sin(c.face) * 0.5; ball.z = c.z + Math.cos(c.face) * 0.5; ball.y = aer ? (aer.type === "bicycle" ? 2.5 : aer.type === "volley" ? 1.0 : 2.1) : 0.24;
-  if (aer) { pop(aer.type === "bicycle" ? "BICYCLE KICK!" : aer.type === "volley" ? "VOLLEY!" : "HEADER!", aer.type === "bicycle" ? "What a chance! Aim it!" : aer.type === "volley" ? "Hit it first time!" : "Aim it at the goal!", "gold"); sfx.pass(); }
+  if (aer) { pop(aer.special ? "GEORGE!" : (aer.type === "bicycle" ? "BICYCLE KICK!" : aer.type === "volley" ? "VOLLEY!" : "HEADER!"), aer.special ? "A spectacular " + (aer.type === "bicycle" ? "bicycle kick" : aer.type === "volley" ? "volley" : "header") + "! Aim it!" : aer.type === "bicycle" ? "What a chance! Aim it!" : aer.type === "volley" ? "Hit it first time!" : "Aim it at the goal!", "gold"); sfx.pass(); }
   setHint(!aer && goodSpot(c) ? "You are in the power zone! Shoot for a rocket." : aer ? (aer.type === "bicycle" ? "Overhead kick! Draw a line into the goal." : aer.type === "volley" ? "Volley! Draw a line into the goal." : "Header! Draw a line into the goal.") : G.chain ? "Pass or shoot! Draw a line." : G.bonus ? "Time is frozen. Hit the glowing corner for bonus points!" : "Time is frozen. Draw a line to a team-mate or into the goal.");
   buildQuick();
 }
@@ -613,7 +623,7 @@ function startRun(pts, kind, recv) {
     run.recv = bi;
   }
   if (kind === "shot") planShot();
-  if (run.aerial) { att[G.carrier].aer = 0.62; att[G.carrier].aerType = run.aerial.type; }
+  if (run.aerial) { att[G.carrier].aer = 0.62; att[G.carrier].aerType = run.aerial.type; run.special = !!run.aerial.special; }
   G.aerial = null; releaseHold = 0; zone.visible = false;
   if (run.power) sfx.power();
   G.phase = "run"; $("quick").innerHTML = ""; cone.visible = false;
@@ -628,7 +638,7 @@ function planShot() {
   const end = run.pts[run.pts.length - 1], xc = end.x, power = run.power;
   const lvl = G.level, tGoal = run.L / run.v;
   const react = Math.max(0.1, 0.32 - lvl * 0.016);
-  const sigma = Math.max(0.3, 2.3 - lvl * 0.28) * (1 + 0.3 * run.pw) * (power ? 1.5 : 1) * (run.aerial ? (run.aerial.type === "bicycle" ? 1.1 : run.aerial.type === "volley" ? 1.15 : 1.25) : 1);
+  const sigma = Math.max(0.3, 2.3 - lvl * 0.28) * (1 + 0.3 * run.pw) * (run.special ? 1.3 : 1) * (power ? 1.5 : 1) * (run.aerial ? (run.aerial.type === "bicycle" ? 1.1 : run.aerial.type === "volley" ? 1.15 : 1.25) : 1);
   const aim = clamp(xc + randn() * sigma, -4.2, 4.2);            // where the keeper guesses it is going
   const kspeed = 4.6 + lvl * 0.45;
   const dx = aim - keeper.x, move = Math.min(Math.abs(dx), kspeed * Math.max(0, tGoal - react));
@@ -642,6 +652,7 @@ function planShot() {
   reach *= 1 - 0.25 * run.pw; if (run.pw < 0.25) reach *= 1.15;   // a soft shot is easy to reach, a hard one is not
   if (power) reach *= 0.75;
   if (run.aerial && run.aerial.type === "bicycle") reach *= 0.8;
+  if (run.special) reach *= 0.6;               // George's spectacular finishes are very hard to stop
   const diff = Math.abs(kFinal - xc);
   let outcome;
   if (Math.abs(xc) <= GOAL_HALF - 0.08) {
@@ -752,6 +763,7 @@ function aerialFor(a, y) {
   return { type: "header" };
 }
 function receiveBall(a, aer) {
+  if (aer) aer.special = a === att[0];
   if (!aer && run.kind === "pass" && run.state !== "settle" && Math.random() < clamp((run.pw - 0.5) * 1.1, 0, 0.55)) {
     // a hard pass is hard to control: the ball runs on
     const e = run.pts[run.pts.length - 1], q = run.pts[Math.max(0, run.pts.length - 4)];
@@ -808,6 +820,24 @@ function tackle() {
   tryTackle(true);
 }
 
+// After a goal: the scorer runs towards the camera, then slides on his knees; the team runs to join him.
+function celebrate(dt) {
+  run.ct = (run.ct || 0) + dt;
+  const sc = att[run.scorer === undefined ? G.carrier : run.scorer];
+  if (!run.cs) run.cs = { side: sc.x >= 0 ? 1 : -1, z0: sc.z, x0: sc.x };
+  if (run.ct < 1.0) moveTo(sc, clamp(run.cs.x0 + run.cs.side * 9, -28, 28), Math.min(run.cs.z0 + 12, 40), 8.5, dt);
+  else if (run.ct < 1.9) {
+    if (!sc.slideT) sc.slideT = 0.9;
+    const u = Math.max(0, 1 - (run.ct - 1.0) / 0.9); sc.x += Math.sin(sc.face) * 6 * u * dt; sc.z += Math.cos(sc.face) * 6 * u * dt; sc.speed = 0;
+  } else sc.speed = 0;
+  att.forEach((a, i) => {
+    if (a === sc) return;
+    const ang = i * 1.25, d = run.ct < 1.0 ? 2.4 : 1.7;
+    moveTo(a, sc.x + Math.cos(ang) * d, sc.z + 1.2 + Math.sin(ang) * d * 0.7, 7.5, dt);
+  });
+  for (let i = 0; i < G.nDef; i++) defs[i].speed = 0;
+}
+
 function stepRun(dt) {
   run.t += dt;
   const c = att[G.carrier];
@@ -819,7 +849,7 @@ function stepRun(dt) {
     const p = pointAt(run.s); ball.x = p.x; ball.z = p.z;
     ball.y = run.kind === "shot" ? 0.24 + run.hG * Math.pow(run.s / run.L, 1.4) : run.lob ? 0.24 + run.apex * 4 * (run.s / run.L) * (1 - run.s / run.L) : 0.24;
     // a shot: slow motion for the last stretch
-    G.timeScale = run.kind === "shot" && run.L - run.s < 9 && run.outcome !== "wide" ? 0.38 : 1;
+    G.timeScale = run.special && run.s < 5 ? 0.3 : run.kind === "shot" && run.L - run.s < 9 && run.outcome !== "wide" ? 0.38 : 1;
     // defenders can cut it out
     for (let i = 0; i < G.nDef; i++) {
       const d = defs[i];
@@ -832,7 +862,7 @@ function stepRun(dt) {
     if (run.lob && run.s > run.L * 0.45 && ball.y > 0.6 && ball.y < 3.6) {
       if (ball.y > 1.1) for (let i = 0; i < G.nDef; i++) if (hyp(defs[i].x - ball.x, defs[i].z - ball.z) < 1.6) { startRecover(defs[i], "HEADED AWAY!"); return; }
       for (const a of att) {
-        if (a === c || hyp(a.x - ball.x, a.z - ball.z) > 2.0) continue;
+        if (a === c || hyp(a.x - ball.x, a.z - ball.z) > (a === att[0] ? 3.2 : 2.0)) continue;   // George gets first go at a cross
         const aer = aerialFor(a, ball.y);
         if (aer) { receiveBall(a, aer); return; }
       }
@@ -891,6 +921,7 @@ function stepRun(dt) {
   }
 
   if (!run) return;
+  if (ending && ending.kind === "goal") { celebrate(dt); return; }
   // ---- everyone else moves ----
   // team-mates run forward; the receiver runs to the ball
   att.forEach((a, i) => {
@@ -951,7 +982,7 @@ function stepRun(dt) {
 }
 
 function timeScaleReset() { G.timeScale = 1; }
-let ending = null;
+let ending = null, cheer = 0;
 function finishAttack(kind) {
   ending = { kind, t: 0 };
   setHint("");
@@ -959,12 +990,13 @@ function finishAttack(kind) {
   if (kind === "goal") {
     G.goals++; sfx.goal();
     const far = dist > 30, ch = G.chain, tb = run.topBins;
-    const ae = run.aerial ? run.aerial.type : null;
-    const pts = 10 + (far ? 10 : 0) + (tb ? 15 : 0) + (ae === "bicycle" ? 25 : ae === "volley" ? 15 : ae === "header" ? 10 : 0) + Math.max(0, ch - 1) * 3;
+    const ae = run.aerial ? run.aerial.type : null, sp = run.special ? 2 : 1;
+    const pts = 10 + (far ? 10 : 0) + (tb ? 15 : 0) + (ae === "bicycle" ? 25 * sp : ae === "volley" ? 15 * sp : ae === "header" ? 10 * sp : 0) + Math.max(0, ch - 1) * 3;
     G.score += pts;
     for (const a of att) a.cele = 1.8;
+    run.scorer = G.carrier; cheer = 1;
     const why = [ae === "bicycle" ? "bicycle kick +25" : ae === "volley" ? "volley +15" : ae === "header" ? "header +10" : "", tb ? "top corner +15" : "", far ? "long range +10" : "", ch > 1 ? ch - 1 + " passes +" + (ch - 1) * 3 : ""].filter(Boolean).join(" · ");
-    pop(ae === "bicycle" ? "WHAT A BICYCLE KICK!" : ae === "volley" ? "WHAT A VOLLEY!" : ae === "header" ? "GREAT HEADER!" : tb ? "TOP BINS!" : far ? "IMPOSSIBLE!" : "GOAL!", "+" + pts + (why ? " · " + why : ""), "gold");
+    pop(run.special && ae ? "SPECTACULAR!" : ae === "bicycle" ? "WHAT A BICYCLE KICK!" : ae === "volley" ? "WHAT A VOLLEY!" : ae === "header" ? "GREAT HEADER!" : tb ? "TOP BINS!" : far ? "IMPOSSIBLE!" : "GOAL!", "+" + pts + (why ? " · " + why : ""), "gold");
   } else {
     G.lives--;
     const t = { save: ["SAVED!", "The keeper got there"], post: ["OFF THE POST!", "So close"], wide: ["WIDE!", "Just missed"], blocked: ["BLOCKED!", "A defender got in the way"], stolen: ["LOST IT!", "A defender won the ball"] }[kind];
@@ -999,7 +1031,8 @@ function animateLimbs(e, dt) {
     else if (e.aerType === "bicycle") { p.body.position.y = 0.35 + Math.sin(u * Math.PI) * 1.0; p.body.rotation.x = -u * Math.PI * 1.15; p.legR.rotation.x = -2.2 * Math.sin(u * Math.PI); p.legL.rotation.x = 0.8; p.armL.rotation.x = p.armR.rotation.x = -1.2; }
     else { p.body.position.y = Math.sin(u * Math.PI) * 0.8; p.body.rotation.x = 0.45 * Math.sin(u * Math.PI); p.armL.rotation.x = p.armR.rotation.x = -2.2; p.legL.rotation.x = 0.5; p.legR.rotation.x = -0.4; }
   }
-  if (e.cele > 0) { e.cele -= dt; p.armL.rotation.x = p.armR.rotation.x = -Math.PI * 0.92; p.armL.rotation.z = 0.35; p.armR.rotation.z = -0.35; p.body.position.y = Math.abs(Math.sin(clock * 11)) * 0.35; }
+  if (e.slideT > 0) { e.slideT -= dt; p.body.position.y = -0.5; p.body.rotation.x = -0.45; p.armL.rotation.z = 1.4; p.armR.rotation.z = -1.4; p.armL.rotation.x = p.armR.rotation.x = -0.3; p.legL.rotation.x = p.legR.rotation.x = 0.5; }
+  else if (e.cele > 0) { e.cele -= dt; p.armL.rotation.x = p.armR.rotation.x = -Math.PI * 0.92; p.armL.rotation.z = 0.35; p.armR.rotation.z = -0.35; p.body.position.y = Math.abs(Math.sin(clock * 11)) * 0.35; }
   else { p.armL.rotation.z = 0; p.armR.rotation.z = 0; }
 }
 function syncMeshes(dt) {
@@ -1015,11 +1048,12 @@ function syncMeshes(dt) {
   ballBlob.position.set(ball.x, 0.04, ball.z); ballBlob.scale.setScalar(1 + ball.y * 0.4);
   if (run && run.state === "fly") ball.mesh.rotation.x -= 0.5; else if (run && run.state === "goalmouth") ball.mesh.rotation.x -= 0.2;
   if (bin.visible) { const sc = 1 + Math.sin(clock * 6) * 0.12; bin.scale.set(sc, sc, sc); }
+  georgeTag.position.set(att[0].x, 3.1, att[0].z);
   const planning = G.phase === "plan", rec = G.phase === "run" && run && run.state === "recover";
   att.forEach((a, i) => {
-    const show = planning || (rec && i === run.chaser);
+    const show = planning || (rec && i === run.chaser) || i === 0;
     a.ring.visible = show;
-    if (show) { a.ring.position.x = a.x; a.ring.position.z = a.z; const sc = 1 + Math.sin(clock * 5) * 0.08; a.ring.scale.set(sc, sc, sc); a.ring.material.color.set(planning ? (i === G.carrier ? 0xff4d5e : 0xffd23f) : (run.chaseDist <= 2.6 ? 0x3ddc7c : 0xffd23f)); }
+    if (show) { a.ring.position.x = a.x; a.ring.position.z = a.z; const sc = 1 + Math.sin(clock * 5) * 0.08; a.ring.scale.set(sc, sc, sc); a.ring.material.color.set(rec && i === run.chaser ? (run.chaseDist <= 2.6 ? 0x3ddc7c : 0xffd23f) : i === G.carrier && planning ? 0xff4d5e : i === 0 ? 0x4dd2ff : 0xffd23f); }
   });
   tackRing.visible = !!rec;
   if (rec) { tackRing.position.x = run.holder.x; tackRing.position.z = run.holder.z; const sc = 1 + Math.sin(clock * 9) * 0.12; tackRing.scale.set(sc, sc, sc); }
@@ -1029,17 +1063,19 @@ function syncMeshes(dt) {
 function snapCamera() { camStep(1, true); }
 function camStep(dt, snap) {
   const c = att[G.carrier];
-  let fx, fz, lookZ, height, back;
+  let fx, fz, lookZ, height, back, lookK = 0.6;
   if (G.phase === "plan" || !run) { fx = c.x * 0.85; fz = c.z + 13; lookZ = c.z - 10; height = 10.5; }
+  else if (ending && ending.kind === "goal" && run.scorer !== undefined) { const sc = att[run.scorer]; fx = sc.x; fz = sc.z + 8; lookZ = sc.z - 1; height = 4.8; lookK = 1; }
   else if (run.kind === "shot") { fx = ball.x * 0.5; fz = Math.max(ball.z + 12, 11); lookZ = Math.max(ball.z - 12, -2); height = 8.5; }
   else { fx = ball.x * 0.6; fz = ball.z + 13; lookZ = ball.z - 10; height = 10.5; }
   const k = snap ? 1 : 1 - Math.exp(-3.2 * dt);
   cam.x = lerp(cam.x, fx, k); cam.z = lerp(cam.z, fz, k);
-  const lx = lerp(cam.lx, fx * 0.6, snap ? 1 : k), lz = lerp(cam.lz, lookZ, snap ? 1 : k);
+  const lx = lerp(cam.lx, fx * lookK, snap ? 1 : k), lz = lerp(cam.lz, lookZ, snap ? 1 : k);
   cam.lx = lx; cam.lz = lz;
   const ox = cam.x - lx, oz = cam.z - lz, cy = Math.cos(view.yaw), sy = Math.sin(view.yaw);
   camera.position.set(lx + (ox * cy + oz * sy) * view.zoom, Math.max(2, height * Math.pow(view.zoom, 0.85)), lz + (-ox * sy + oz * cy) * view.zoom);
   camera.lookAt(lx, 0.6, lz);
+  if (run && run.special && run.kind === "shot" && run.state === "fly" && run.s < 5) { const sc = att[G.carrier]; camera.position.set(sc.x + 4.2, 2.3, sc.z + 4.2); camera.lookAt(sc.x, 1.5, sc.z - 1.5); }
 }
 
 /* ---------------- quick buttons (an easier way to play, and for keyboards) ---------------- */
@@ -1059,7 +1095,7 @@ function frame(now) {
   if (G.phase === "run" && run) {
     const dt = real * G.timeScale; let acc = dt;
     while (acc > 0 && G.phase === "run" && run) { const h = Math.min(acc, 1 / 60); stepRun(h); acc -= h; }
-    if (ending) { ending.t += real; if (ending.t > (ending.kind === "goal" ? 2.2 : 1.5)) { afterResult(); } }
+    if (ending) { ending.t += real; if (ending.t > (ending.kind === "goal" ? 3.4 : 1.5)) { afterResult(); } }
   } else if (G.phase === "plan") {
     for (const e of [...att, ...defs]) { e.speed = 0; }
     keeper.x += clamp(clamp(ball.x * 0.12, -2.4, 2.4) - keeper.x, -2 * real, 2 * real);
@@ -1072,7 +1108,8 @@ function frame(now) {
   view.zoomT = clamp(view.zoomT + (camHold.o - camHold.i) * real * 0.9, 0.6, 2.4);
   const vk = 1 - Math.exp(-8 * real); view.yaw = lerp(view.yaw, view.yawT, vk); view.zoom = lerp(view.zoom, view.zoomT, vk);
   if (G.phase !== "menu") { syncMeshes(real); camStep(real); }
-  crowdTex.offset.y = Math.sin(clock * 2) * 0.004;
+  cheer = Math.max(0, cheer - real * 0.35);
+  crowdTex.offset.y = Math.sin(clock * 2) * 0.004 + Math.sin(clock * 16) * 0.014 * cheer;
   netUpdate(real); fireUpdate(real);
   renderer.render(scene, camera);
 }
