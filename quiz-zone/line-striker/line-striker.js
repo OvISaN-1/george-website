@@ -20,7 +20,7 @@ const reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce
 const GOAL_HALF = 3.66, GOAL_H = 2.44;
 const PASS_V = 21, SHOT_V = 30;
 const BEST_KEY = "gz_linestriker_best2";
-const PASS_HALF = 80 * Math.PI / 180;   // a pass must start within 80 degrees either side of the way the player faces
+const PASS_HALF = 105 * Math.PI / 180;  // a pass must go within 105 degrees either side of the way the player faces (so sideways is fine)
 const BIN_X = 2.6, BIN_Y = 2.05;
 const MAX_LIVES = 3;
 
@@ -285,6 +285,7 @@ function newAttack() {
   G.nDef = Math.min(3 + (G.level >> 1), 7);
   G.defSpeed = Math.min(4.6 + G.level * 0.22, 6.8);
   G.chain = 0; G.carrier = 0;
+  G.markDist = clamp(3.0 - G.level * 0.2, 1.7, 3.0);
   G.bonus = Math.random() < 0.4 ? (Math.random() < 0.5 ? -1 : 1) : 0;
   bin.visible = G.bonus !== 0; if (G.bonus) bin.position.set(G.bonus * BIN_X, BIN_Y, 0.3);
   place(att[0], rand(-7, 7), rand(33, 38));
@@ -340,22 +341,51 @@ function lineSafety(pts) {
   return min;
 }
 function angDiff(a, b) { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return Math.abs(d); }
-function behindCarrier(pts) {
-  const c = att[G.carrier];
-  if (pts.some((p) => p.z <= 0.3)) return false;           // shots are always fine
-  const q = pts.find((p) => hyp(p.x - c.x, p.z - c.z) > 2.2); if (!q) return false;
-  return angDiff(Math.atan2(q.x - c.x, q.z - c.z), c.face) > PASS_HALF;
+function behindRoute(r) {
+  if (r.kind === "shot") return false;                       // shots are always fine
+  const c = att[G.carrier], e = r.pts[r.pts.length - 1];
+  return angDiff(Math.atan2(e.x - c.x, e.z - c.z), c.face) > PASS_HALF;
 }
-function colourFor(pts) {
-  if (behindCarrier(pts)) { ribbonMat.color.set(0xff4d5e); setHint("Too far behind. Pass inside the glowing arc."); return; }
-  const m = lineSafety(pts);
+function updatePreview() {
+  const r = drawPts.length >= 3 ? buildRoute(drawPts) : null;
+  setRibbon(r ? r.pts : drawPts, 0.28);          // show the path the ball will really take
+  if (!r) { ribbonMat.color.set(0xffffff); return; }
+  if (behindRoute(r)) { ribbonMat.color.set(0xff4d5e); setHint("Too far behind. Pass inside the glowing arc."); return; }
+  const m = lineSafety(r.pts);
   ribbonMat.color.set(m < 1.9 ? 0xff4d5e : m < 3.4 ? 0xffc23d : 0xffffff);
-  setHint("Let go to play it. Drop it in the red strip to cancel.");
+  setHint(r.kind === "shot" ? "Let go to shoot! (Red strip = cancel)" : "Let go to pass. (Red strip = cancel)");
 }
 const cancelEl = $("cancelzone");
 function overCancel(ev) { const r = cancelEl.getBoundingClientRect(); return ev.clientY >= r.top && ev.clientX >= r.left && ev.clientX <= r.right; }
+
+// camera: two fingers (turn + pinch), the mouse wheel, or the buttons
+const view = { yaw: 0, zoom: 1, yawT: 0, zoomT: 1 };
+const ptrs = new Map(); let gest = null;
+function startGesture() { const [a, b] = [...ptrs.values()]; gest = { d0: hyp(a.x - b.x, a.y - b.y) || 1, mx0: (a.x + b.x) / 2, yaw0: view.yawT, zoom0: view.zoomT }; }
+function updateGesture() {
+  const [a, b] = [...ptrs.values()], d = hyp(a.x - b.x, a.y - b.y) || 1;
+  view.zoomT = clamp(gest.zoom0 * gest.d0 / d, 0.6, 2.4);
+  view.yawT = clamp(gest.yaw0 - ((a.x + b.x) / 2 - gest.mx0) * 0.006, -1.6, 1.6);
+}
+canvas.addEventListener("wheel", (e) => { view.zoomT = clamp(view.zoomT * (1 + e.deltaY * 0.001), 0.6, 2.4); e.preventDefault(); }, { passive: false });
+const camHold = { l: 0, r: 0, i: 0, o: 0 };
+function bindCam(id, key, nudge) {
+  const el = $(id), off = () => { camHold[key] = 0; };
+  el.addEventListener("pointerdown", (e) => { camHold[key] = 1; e.preventDefault(); });
+  el.addEventListener("pointerup", off); el.addEventListener("pointerleave", off); el.addEventListener("pointercancel", off);
+  el.addEventListener("click", (e) => { if (e.detail === 0) nudge(); });   // keyboard
+}
+bindCam("cam-l", "l", () => { view.yawT = clamp(view.yawT + 0.3, -1.6, 1.6); });
+bindCam("cam-r", "r", () => { view.yawT = clamp(view.yawT - 0.3, -1.6, 1.6); });
+bindCam("cam-in", "i", () => { view.zoomT = clamp(view.zoomT * 0.85, 0.6, 2.4); });
+bindCam("cam-out", "o", () => { view.zoomT = clamp(view.zoomT * 1.18, 0.6, 2.4); });
+$("cam-reset").addEventListener("click", () => { view.yawT = 0; view.zoomT = 1; });
+
 canvas.addEventListener("pointerdown", (ev) => {
-  if (G.phase !== "plan") return;
+  ptrs.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+  if (ptrs.size === 2) { if (drawing) cancelDraw("Move the camera with two fingers. Draw with one."); startGesture(); return; }
+  if (G.phase === "run" && run && run.state === "recover") { tackle(); return; }
+  if (ptrs.size > 2 || G.phase !== "plan") return;
   const p = groundAt(ev); if (!p) return;
   drawing = true; canvas.setPointerCapture(ev.pointerId); cancelEl.hidden = false;
   const c = att[G.carrier];
@@ -364,6 +394,8 @@ canvas.addEventListener("pointerdown", (ev) => {
   ev.preventDefault();
 });
 canvas.addEventListener("pointermove", (ev) => {
+  if (ptrs.has(ev.pointerId)) ptrs.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+  if (gest && ptrs.size >= 2) { updateGesture(); return; }
   if (!drawing) return;
   const evs = ev.getCoalescedEvents ? ev.getCoalescedEvents() : [ev];
   for (const e of evs) { const p = groundAt(e); if (p) addDrawPoint(p); }
@@ -373,7 +405,7 @@ function addDrawPoint(p) {
   if (hyp(p.x - last.x, p.z - last.z) < 0.7) return;
   if (drawPts.length > 220) return;
   drawPts.push({ x: p.x, z: p.z });
-  setRibbon(drawPts, 0.28); colourFor(drawPts);
+  updatePreview();
 }
 function cancelDraw(msg) {
   drawing = false; drawPts = []; ribbon.visible = false; cancelEl.hidden = true;
@@ -385,12 +417,11 @@ function endDraw(ev) {
   drawing = false; drawPts = []; cancelEl.hidden = true;
   if (cancel) { ribbon.visible = false; setHint("Cancelled. Draw again."); return; }
   if (pts.length < 3) { ribbon.visible = false; return; }
-  if (behindCarrier(pts)) { ribbon.visible = false; setHint("Too far behind. Pass inside the glowing arc, or draw to the goal."); return; }
   release(pts);
 }
 window.addEventListener("keydown", (e) => { if (e.key === "Escape" && drawing) cancelDraw(); });
-canvas.addEventListener("pointerup", endDraw);
-canvas.addEventListener("pointercancel", () => cancelDraw());
+canvas.addEventListener("pointerup", (ev) => { ptrs.delete(ev.pointerId); if (ptrs.size < 2) gest = null; endDraw(ev); });
+canvas.addEventListener("pointercancel", (ev) => { ptrs.delete(ev.pointerId); gest = null; cancelDraw(); });
 
 /* ---------------- turning a line into a pass or a shot ---------------- */
 function smooth(pts) {
@@ -416,10 +447,27 @@ function resample(pts, step) {
   return out;
 }
 
-function release(raw) {
+// A real kick bends one way, gently. Take the start, the end and the biggest bend of what was
+// drawn, and turn that into a smooth curve. A zigzag becomes one sweeping curve.
+function fitCurve(raw) {
+  const p0 = raw[0], p2 = raw[raw.length - 1], dx = p2.x - p0.x, dz = p2.z - p0.z, L = hyp(dx, dz);
+  if (L < 0.5) return [p0, p2];
+  const nx = -dz / L, nz = dx / L;
+  let best = 0, bu = 0.5;
+  for (const q of raw) {
+    const off = (q.x - p0.x) * nx + (q.z - p0.z) * nz;
+    if (Math.abs(off) > Math.abs(best)) { best = off; bu = clamp(((q.x - p0.x) * dx + (q.z - p0.z) * dz) / (L * L), 0.3, 0.7); }
+  }
+  const h = clamp(best, -Math.min(0.3 * L, 10), Math.min(0.3 * L, 10));
+  const co = h / (2 * bu * (1 - bu));
+  const cx = p0.x + dx * bu + nx * co, cz = p0.z + dz * bu + nz * co, out = [];
+  for (let i = 0; i <= 40; i++) { const t = i / 40, a = (1 - t) * (1 - t), b = 2 * (1 - t) * t, c = t * t; out.push({ x: a * p0.x + b * cx + c * p2.x, z: a * p0.z + b * cz + c * p2.z }); }
+  return out;
+}
+function buildRoute(raw) {
   const c = att[G.carrier];
   let pts = resample(smooth(raw), 0.5);
-  if (pts.length < 8) { ribbon.visible = false; setHint("Too short. Draw a longer line."); return; }
+  if (pts.length < 8) return null;
   pts[0] = { x: c.x, z: c.z };
   // cut the line where it first crosses the goal line
   const gi = pts.findIndex((p) => p.z <= 0.3);
@@ -439,7 +487,15 @@ function release(raw) {
       }
     }
   }
-  startRun(pts, kind, recv);
+  const fitted = resample(fitCurve(pts), 0.5);
+  if (fitted.length < 4) return null;
+  return { pts: fitted, kind, recv };
+}
+function release(raw) {
+  const r = buildRoute(raw);
+  if (!r) { ribbon.visible = false; setHint("Too short. Draw a longer line."); return; }
+  if (behindRoute(r)) { ribbon.visible = false; setHint("Too far behind. Pass inside the glowing arc, or draw to the goal."); return; }
+  startRun(r.pts, r.kind, r.recv);
 }
 
 function routeLength(pts) { let l = 0; for (let i = 1; i < pts.length; i++) l += hyp(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z); return l; }
@@ -448,6 +504,11 @@ function startRun(pts, kind, recv) {
   const L = routeLength(pts);
   const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + hyp(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));
   run = { pts, cum, L, kind, recv, s: 0, v: kind === "shot" ? SHOT_V : PASS_V, state: "fly", t: 0, outcome: null, wait: 0, dist0: att[G.carrier].z };
+  if (kind === "pass" && recv === null) {
+    const e = pts[pts.length - 1]; let bi = null, bd = 18;
+    att.forEach((a, i) => { if (i === G.carrier) return; const d = hyp(a.x - e.x, a.z - e.z); if (d < bd) { bd = d; bi = i; } });
+    run.recv = bi;
+  }
   if (kind === "shot") planShot();
   G.phase = "run"; $("quick").innerHTML = ""; cone.visible = false;
   setHint(kind === "shot" ? "" : "");
@@ -495,13 +556,78 @@ function moveTo(e, tx, tz, sp, dt) {
   return d - st;
 }
 
+// Each defender picks the attacker he is closest to (nobody is marked twice). The rest cover the middle.
+function assignMarks() {
+  const marks = new Array(G.nDef).fill(-1), taken = new Set(), pairs = [];
+  for (let i = 0; i < G.nDef; i++) for (let a = 0; a < att.length; a++) pairs.push([hyp(defs[i].x - att[a].x, defs[i].z - att[a].z), i, a]);
+  pairs.sort((u, v) => u[0] - v[0]);
+  for (const [, i, a] of pairs) if (marks[i] < 0 && !taken.has(a)) { marks[i] = a; taken.add(a); }
+  run.marks = marks;
+}
+function markTarget(i) {
+  const a = run.marks[i];
+  if (a >= 0) {
+    const m = att[a], gx = -m.x, gz = 0.5 - m.z, l = hyp(gx, gz) || 1;
+    return { x: m.x + gx / l * G.markDist, z: m.z + gz / l * G.markDist };
+  }
+  return { x: ball.x * 0.4, z: Math.max(6, ball.z - 9) };       // cover between the ball and the goal
+}
+
+function interceptPoint(e, sp) {
+  for (let k = Math.floor(run.s / 0.5) + 1; k < run.pts.length; k += 2) {
+    const tb = (run.cum[k] - run.s) / (run.v * 0.8), dd = hyp(e.x - run.pts[k].x, e.z - run.pts[k].z);
+    if (dd <= sp * tb + 0.6) return run.pts[k];
+  }
+  return run.pts[run.pts.length - 1];
+}
+function receiveBall(a) {
+  G.carrier = att.indexOf(a); a.face = Math.PI;
+  sfx.pass();
+  const nice = G.chain;
+  if (nice >= 2) pop(["", "", "NICE!", "GREAT!", "AMAZING!", "UNREAL!"][Math.min(nice, 5)], nice + " passes in a row", "gold");
+  run = null; planStart();
+}
+// A defender has the ball. For a few seconds the attackers chase and you can try to tackle.
+function startRecover(d) {
+  run.state = "recover"; run.holder = d; run.rt = 0; run.maxT = 4.6; run.tackleCd = 0; run.chaser = -1; run.chaseDist = 99;
+  G.timeScale = 1; sfx.lost();
+  pop("INTERCEPTED!", "Chase it down!", "soft");
+  setHint("Win it back! Get close, then press TACKLE (or tap the pitch).");
+  const q = $("quick"); q.innerHTML = "";
+  const b = document.createElement("button"); b.type = "button"; b.className = "ls-pill shoot"; b.id = "tackle-btn"; b.textContent = "🦵 TACKLE";
+  b.addEventListener("click", tackle); q.appendChild(b);
+}
+function stepRecover(dt) {
+  const h = run.holder; run.rt += dt; run.tackleCd = Math.max(0, run.tackleCd - dt);
+  let bi = 0, bd = 1e9;
+  att.forEach((a, i) => { const d = hyp(a.x - h.x, a.z - h.z); if (d < bd) { bd = d; bi = i; } });
+  run.chaser = bi; run.chaseDist = bd;
+  const away = h.x - att[bi].x;
+  moveTo(h, clamp(h.x + (away >= 0 ? 4 : -4), -28, 28), Math.min(54, h.z + 8), G.defSpeed * 0.82, dt);
+  ball.x = h.x + Math.sin(h.face) * 0.5; ball.z = h.z + Math.cos(h.face) * 0.5; ball.y = 0.24;
+  if (run.rt > run.maxT) { run.state = "end"; finishAttack("stolen"); }
+}
+function tackle() {
+  if (!run || run.state !== "recover" || run.tackleCd > 0) return;
+  const a = att[run.chaser], h = run.holder, d = run.chaseDist;
+  run.tackleCd = 0.7;
+  if (d > 2.6) { setHint("Too far! Chase him first, then tackle."); return; }
+  a.kickT = 0.3;
+  const chance = clamp(0.95 - (d - 0.6) * 0.38 - G.level * 0.03, 0.2, 0.92);
+  if (Math.random() < chance) {
+    sfx.save(); pop("WON IT BACK!", "", "gold");
+    G.carrier = run.chaser; a.face = Math.PI;
+    run = null; planStart();
+  } else { a.stun = 0.9; sfx.lost(); setHint("Missed! Catch up and try again."); }
+}
+
 function stepRun(dt) {
   run.t += dt;
   const c = att[G.carrier];
   // ---- the ball ----
   if (run.state === "fly") {
     let v = run.v;
-    if (run.kind === "pass") { const left = run.L - run.s; if (left < 5) v = Math.max(6, run.v * (left / 5)); }
+    if (run.kind === "pass") { v = run.v * (1.12 - 0.5 * run.s / run.L); const left = run.L - run.s; if (left < 4) v = Math.max(5, v * (left / 4)); }
     run.s = Math.min(run.L, run.s + v * dt);
     const p = pointAt(run.s); ball.x = p.x; ball.z = p.z;
     ball.y = run.kind === "shot" ? 0.24 + run.hG * Math.pow(run.s / run.L, 1.4) : 0.24;
@@ -512,8 +638,13 @@ function stepRun(dt) {
       const d = defs[i];
       if (hyp(d.x - ball.x, d.z - ball.z) < 1.0 && ball.y < 1.9 && run.s > 1.5) {
         if (run.kind === "shot") { run.state = "end"; run.outcome = "blocked"; run.endT = 0; run.bvx = rand(-3, 3); run.bvz = rand(2, 5); sfx.save(); finishAttack("blocked"); return; }
-        run.state = "end"; run.outcome = "stolen"; ball.mesh.userData.holder = d; finishAttack("stolen"); sfx.lost(); return;
+        startRecover(d); return;
       }
+    }
+    // a team-mate can also reach the ball on its way (not the one who kicked it, and not straight away)
+    if (run.kind === "pass" && run.s > 1.2) for (const a of att) {
+      if (a === c) continue;
+      if (hyp(a.x - ball.x, a.z - ball.z) < 1.0) { receiveBall(a); return; }
     }
     if (run.s >= run.L - 1e-6) {
       if (run.kind === "shot") { run.state = "goalmouth"; run.gt = 0; }
@@ -527,14 +658,12 @@ function stepRun(dt) {
     for (const a of att) { if (a === c) continue; const d = hyp(a.x - end.x, a.z - end.z); if (d < wd) { wd = d; winner = a; } }
     for (let i = 0; i < G.nDef; i++) { const d = hyp(defs[i].x - end.x, defs[i].z - end.z); if (d < wd) { wd = d; winner = defs[i]; } }
     if (winner) {
-      if (winner.isDef) { run.state = "end"; finishAttack("stolen"); sfx.lost(); return; }
-      G.carrier = att.indexOf(winner); winner.face = Math.PI;
-      sfx.pass();
-      const nice = G.chain;
-      if (nice >= 2) pop(["", "", "NICE!", "GREAT!", "AMAZING!", "UNREAL!"][Math.min(nice, 5)], nice + " passes in a row", "gold");
-      run = null; planStart(); return;
+      if (winner.isDef) { startRecover(winner); return; }
+      receiveBall(winner); return;
     }
-    if (run.wait > 3.2) { run.state = "end"; finishAttack("stolen"); sfx.lost(); return; }
+    if (run.wait > 3.2) { const nd = defs.slice(0, G.nDef).sort((u, v) => hyp(u.x - ball.x, u.z - ball.z) - hyp(v.x - ball.x, v.z - ball.z))[0]; startRecover(nd); return; }
+  } else if (run.state === "recover") {
+    stepRecover(dt);
   } else if (run.state === "goalmouth") {
     run.gt += dt;
     const o = run.outcome;
@@ -560,28 +689,44 @@ function stepRun(dt) {
   // ---- everyone else moves ----
   // team-mates run forward; the receiver runs to the ball
   att.forEach((a, i) => {
+    if (a.stun > 0) { a.stun -= dt; a.speed = 0; return; }
+    if (run.state === "recover") { moveTo(a, run.holder.x, run.holder.z, i === run.chaser ? 8.2 : 6.6, dt); return; }
     if (i === G.carrier) {
       // after a pass the passer keeps running forward; after a shot he stands and watches
       if (run.kind === "pass" && run.state !== "end" && a.z > 9) moveTo(a, a.x * 0.97, a.z - 5, 6, dt); else a.speed = 0;
       return;
     }
-    if (run.recv === i && run.state !== "end") { moveTo(a, run.pts[run.pts.length - 1].x, run.pts[run.pts.length - 1].z, 8, dt); return; }
+    if (run.recv === i && (run.state === "fly" || run.state === "arrive")) {
+      // go and get the ball: meet it on its way if he can, otherwise run to where it will stop
+      const t = run.state === "arrive" ? ball : interceptPoint(a, 8);
+      moveTo(a, t.x, t.z, 8, dt); return;
+    }
     if (a.z > 8) moveTo(a, a.x * 0.98, a.z - 6, 6, dt); else a.speed = 0;
   });
-  // defenders
+  // defenders: try to cut the ball out, otherwise mark an attacker (standing goal-side of him)
+  if (!run.marks) assignMarks();
   for (let i = 0; i < G.nDef; i++) {
     const d = defs[i], sp = G.defSpeed * (1 + (i % 3) * 0.04);
     if (run.state === "fly" && run.s < run.L) {
-      // run to where they can meet the ball on its path
-      let tx = null, tz = null;
+      let tx = null, tz = null, spd = sp;
       for (let k = Math.floor(run.s / 0.5) + 1; k < run.pts.length; k += 3) {
-        const tb = (run.cum[k] - run.s) / run.v, dd = hyp(d.x - run.pts[k].x, d.z - run.pts[k].z);
+        const tb = (run.cum[k] - run.s) / (run.v * 0.8), dd = hyp(d.x - run.pts[k].x, d.z - run.pts[k].z);
         if (dd <= sp * tb + 0.9) { tx = run.pts[k].x; tz = run.pts[k].z; break; }
       }
-      if (tx === null) { const e = run.pts[run.pts.length - 1]; tx = e.x; tz = e.z; }
-      moveTo(d, tx, tz, sp, dt);
-    } else if (run.state === "arrive") moveTo(d, ball.x, ball.z, sp, dt);
-    else if (run.state === "goalmouth" || run.state === "end") d.speed = 0;
+      if (tx === null) { const m = markTarget(i); tx = m.x; tz = m.z; spd = sp * 0.92; }
+      moveTo(d, tx, tz, spd, dt);
+    } else if (run.state === "arrive") {
+      if (!run.press) run.press = defs.slice(0, G.nDef).map((e, k) => [hyp(e.x - ball.x, e.z - ball.z), k]).sort((u, v) => u[0] - v[0]).slice(0, 2).map((u) => u[1]);
+      if (run.press.includes(i)) moveTo(d, ball.x, ball.z, sp, dt);
+      else { const m = markTarget(i); moveTo(d, m.x, m.z, sp * 0.92, dt); }
+    } else if (run.state === "goalmouth") { const m = markTarget(i); moveTo(d, m.x, m.z, sp * 0.7, dt); }
+    else if (run.state === "recover") { if (d !== run.holder) { const m = markTarget(i); moveTo(d, m.x, m.z, sp * 0.9, dt); } }
+    else d.speed = 0;
+  }
+  // keep players from standing inside each other
+  for (let i = 0; i < G.nDef; i++) for (let j = i + 1; j < G.nDef; j++) {
+    const dx = defs[j].x - defs[i].x, dz = defs[j].z - defs[i].z, dd = hyp(dx, dz);
+    if (dd < 1.1 && dd > 0.001) { const k = (1.1 - dd) / 2 / dd; defs[i].x -= dx * k; defs[i].z -= dz * k; defs[j].x += dx * k; defs[j].z += dz * k; }
   }
   // the keeper
   if (run.kind === "shot") {
@@ -676,7 +821,8 @@ function camStep(dt, snap) {
   cam.x = lerp(cam.x, fx, k); cam.z = lerp(cam.z, fz, k);
   const lx = lerp(cam.lx, fx * 0.6, snap ? 1 : k), lz = lerp(cam.lz, lookZ, snap ? 1 : k);
   cam.lx = lx; cam.lz = lz;
-  camera.position.set(cam.x, height, cam.z);
+  const ox = cam.x - lx, oz = cam.z - lz, cy = Math.cos(view.yaw), sy = Math.sin(view.yaw);
+  camera.position.set(lx + (ox * cy + oz * sy) * view.zoom, Math.max(2, height * Math.pow(view.zoom, 0.85)), lz + (-ox * sy + oz * cy) * view.zoom);
   camera.lookAt(lx, 0.6, lz);
 }
 
@@ -712,6 +858,9 @@ function frame(now) {
   } else if (G.phase === "plan") {
     for (const e of [...att, ...defs]) { e.speed = 0; }
   }
+  view.yawT = clamp(view.yawT + (camHold.l - camHold.r) * real * 1.4, -1.6, 1.6);
+  view.zoomT = clamp(view.zoomT + (camHold.o - camHold.i) * real * 0.9, 0.6, 2.4);
+  const vk = 1 - Math.exp(-8 * real); view.yaw = lerp(view.yaw, view.yawT, vk); view.zoom = lerp(view.zoom, view.zoomT, vk);
   if (G.phase !== "menu") { syncMeshes(real); camStep(real); }
   crowdTex.offset.y = Math.sin(clock * 2) * 0.004;
   renderer.render(scene, camera);

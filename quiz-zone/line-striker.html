@@ -59,6 +59,9 @@
   .ls-pop.gold{color:#ffd66b;text-shadow:0 4px 0 #6b4a0a,0 0 30px rgba(245,185,66,.8);}
   .ls-pop.soft{color:#f1ede9;text-shadow:0 3px 0 #241f29;}
   @keyframes lsPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(-6deg);}22%{opacity:1;transform:translate(-50%,-50%) scale(1.1) rotate(2deg);}75%{opacity:1;transform:translate(-50%,-50%) scale(1);}100%{opacity:0;transform:translate(-50%,-62%) scale(1);}}
+  .ls-cam{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px;z-index:3;}
+  .ls-cam button{width:42px;height:42px;border-radius:50%;background:rgba(13,11,16,.62);border:1px solid rgba(241,237,233,.28);color:#f1ede9;font-size:20px;line-height:1;padding:0;touch-action:none;}
+  .ls-cam button:active{background:rgba(245,185,66,.5);} .ls-cam button:focus-visible{outline:2px solid #f1ede9;outline-offset:2px;}
   .ls-cancel{position:absolute;left:0;right:0;bottom:0;height:62px;display:flex;align-items:center;justify-content:center;background:rgba(202,14,40,.55);border-top:2px solid #ff5a6e;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;letter-spacing:.06em;pointer-events:none;}
   .ls-cancel[hidden]{display:none;}
   .ls-hint{text-align:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;margin:10px 0 6px;min-height:1.3em;}
@@ -112,7 +115,7 @@
     <h2 class="ls-h2">Draw the pass. Draw the shot.</h2>
     <p class="ls-lede">Time stops while you plan. Draw a line with your finger and the ball follows it. You have three lives. Every goal makes the defenders quicker and the keeper smarter.</p>
     <ul class="ls-how">
-      <li><span class="ls-num">1</span><span><strong>Time freezes.</strong> Look at where everyone is.</span></li>
+      <li><span class="ls-num">1</span><span><strong>Time freezes.</strong> Look at where everyone is. Two fingers or the round buttons turn and zoom the camera.</span></li>
       <li><span class="ls-num">2</span><span><strong>Draw a line</strong> from George to a team-mate, or into the goal.</span></li>
       <li><span class="ls-num">3</span><span><strong>Curve it</strong> round the defenders. Passes must start inside the glowing arc. The line turns red when a defender is in the way.</span></li>
       <li><span class="ls-num">4</span><span><strong>Aim for the corners.</strong> Hit the glowing top corner for bonus points. Wrong line? Let go in the red strip to cancel.</span></li>
@@ -130,6 +133,13 @@
     <div class="ls-stage" id="stage">
       <canvas id="gl" aria-label="3D football pitch. Draw a line from George to a team-mate or into the goal."></canvas>
       <div class="ls-pop" id="pop" aria-hidden="true"></div>
+      <div class="ls-cam" role="group" aria-label="Camera">
+        <button type="button" id="cam-l" aria-label="Turn camera left">⟲</button>
+        <button type="button" id="cam-r" aria-label="Turn camera right">⟳</button>
+        <button type="button" id="cam-in" aria-label="Zoom in">＋</button>
+        <button type="button" id="cam-out" aria-label="Zoom out">－</button>
+        <button type="button" id="cam-reset" aria-label="Reset camera">⌖</button>
+      </div>
       <div class="ls-cancel" id="cancelzone" hidden>✕ Let go here to cancel</div>
     </div>
     <p class="ls-hint" id="hint" role="status" aria-live="polite"></p>
