@@ -54,6 +54,10 @@
     // Matchday career unlocks
     third:  { name: "Third kit", shirt: "#15121a", trim: "#f5b942", text: "#f5b942", shorts: "#15121a", socks: "#15121a", sockTop: "#f5b942" },
     retro90:{ name: "1990 League Cup", shirt: "#c8102e", trim: "#f4f1ee", text: "#f4f1ee", shorts: "#f4f1ee", socks: "#c8102e", sockTop: "#f4f1ee", retro: true },
+    // won in George's Run
+    speedster:{ name: "Speedster", shirt: "#a3e635", trim: "#15121a", text: "#15121a", shorts: "#15121a", socks: "#a3e635", sockTop: "#15121a" },
+    goldrun:{ name: "Golden Runner", shirt: "#f5b942", trim: "#241f29", text: "#241f29", shorts: "#241f29", socks: "#f5b942", sockTop: "#241f29" },
+    phantom:{ name: "Phantom", shirt: "#7b4bd6", trim: "#ffffff", text: "#ffffff", shorts: "#2a1a55", socks: "#7b4bd6", sockTop: "#ffffff" },
     pink:   { name: "Pink away", shirt: "#f7a8c4", trim: "#15121a", text: "#15121a", shorts: "#15121a", socks: "#f7a8c4", sockTop: "#15121a" },
   };
 
