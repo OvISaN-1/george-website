@@ -19,6 +19,7 @@ const reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce
 
 const GOAL_HALF = 3.66, GOAL_H = 2.44;
 const PASS_V = 21, SHOT_V = 30, POWER_V = 54;
+const LOB_MIN = 22;                     // a pass longer than this (metres) is lobbed over the top
 const BEST_KEY = "gz_linestriker_best2";
 const PASS_HALF = 105 * Math.PI / 180;  // a pass must go within 105 degrees either side of the way the player faces (so sideways is fine)
 const BIN_X = 2.6, BIN_Y = 2.05;
@@ -198,6 +199,10 @@ for (const a of att) { a.ring = new THREE.Mesh(ringGeo, ringMat); a.ring.rotatio
 // the arc a pass must start inside
 const cone = new THREE.Mesh(new THREE.CircleGeometry(15, 40, Math.PI / 2 - PASS_HALF, PASS_HALF * 2), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2, side: THREE.DoubleSide, depthWrite: false }));
 cone.rotation.x = -Math.PI / 2; cone.position.y = 0.05; cone.renderOrder = 2; scene.add(cone);
+// the power-shot zone: shoot from here for a rocket
+function goodSpot(c) { return c.z >= 8 && c.z <= 23 && Math.abs(c.x) <= 13; }
+const zone = new THREE.Mesh(new THREE.PlaneGeometry(26, 15), new THREE.MeshBasicMaterial({ color: 0xff8a1f, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false }));
+zone.rotation.x = -Math.PI / 2; zone.position.set(0, 0.045, 15.5); zone.renderOrder = 1; scene.add(zone);
 // the glowing "top bins" target in the corner of the goal
 const bin = new THREE.Group();
 bin.add(new THREE.Mesh(new THREE.RingGeometry(0.5, 0.72, 28), new THREE.MeshBasicMaterial({ color: 0xffd23f, side: THREE.DoubleSide })), new THREE.Mesh(new THREE.CircleGeometry(0.45, 24), new THREE.MeshBasicMaterial({ color: 0xff4d5e, transparent: true, opacity: 0.85, side: THREE.DoubleSide })));
@@ -266,7 +271,7 @@ const sfx = {
 
 /* ---------------- game state ---------------- */
 const G = { air: false, aerial: null, power: 0, armed: false, phase: "menu", level: 0, lives: MAX_LIVES, goals: 0, score: 0, bonus: 0, chain: 0, carrier: 0, timeScale: 1, nDef: 3, defSpeed: 4.8 };
-let releaseHold = 0, releasePw = null, holdPower = 0, lastMove = 0;
+let releaseLob = false, releaseHold = 0, releasePw = null, holdPower = 0, lastMove = 0;
 let lastLevelShown = 0, route = null, run = null, drawPts = [], drawing = false, resultTimer = 0;
 const cam = { x: 0, z: 40, tx: 0, tz: 28, lx: 0, lz: 20 };
 
@@ -326,11 +331,12 @@ function planStart(aer) {
   const c = att[G.carrier];
   c.face = Math.PI; keeper.dive = 0; keeper.diveDir = 0; keeper.jump = 0;
   cone.visible = !aer; cone.position.set(c.x, 0.05, c.z);
+  zone.visible = !aer; zone.material.opacity = goodSpot(c) ? 0.3 : 0.12;
   // Give the player a little room: nudge any defender that is right on top of the ball.
   for (const d of defs) if (d.p.root.visible) { const dd = hyp(d.x - c.x, d.z - c.z); if (dd < 3) { const k = 3.2 / (dd || 1); d.x = c.x + (d.x - c.x) * k; d.z = c.z + (d.z - c.z) * k; } }
   ball.x = c.x + Math.sin(c.face) * 0.5; ball.z = c.z + Math.cos(c.face) * 0.5; ball.y = aer ? (aer.type === "bicycle" ? 2.5 : 2.1) : 0.24;
   if (aer) { pop(aer.type === "bicycle" ? "BICYCLE KICK!" : "HEADER!", aer.type === "bicycle" ? "What a chance! Aim it!" : "Aim it at the goal!", "gold"); sfx.pass(); }
-  setHint(aer ? (aer.type === "bicycle" ? "Overhead kick! Draw a line into the goal." : "Header! Draw a line into the goal.") : G.chain ? "Pass or shoot! Draw a line." : G.bonus ? "Time is frozen. Hit the glowing corner for bonus points!" : "Time is frozen. Draw a line to a team-mate or into the goal.");
+  setHint(!aer && goodSpot(c) ? "You are in the power zone! Shoot for a rocket." : aer ? (aer.type === "bicycle" ? "Overhead kick! Draw a line into the goal." : "Header! Draw a line into the goal.") : G.chain ? "Pass or shoot! Draw a line." : G.bonus ? "Time is frozen. Hit the glowing corner for bonus points!" : "Time is frozen. Draw a line to a team-mate or into the goal.");
   buildQuick();
 }
 
@@ -356,14 +362,14 @@ function behindRoute(r) {
 function updatePreview() {
   const r = drawPts.length >= 3 ? buildRoute(drawPts, holdPower) : null;
   setRibbon(r ? r.pts : drawPts, 0.2 + 0.2 * (r ? r.pw : 0));          // show the path the ball will really take (thicker = harder)
-  if (r) { $("holdbar").hidden = false; $("hold-label").textContent = "POWER " + Math.round(r.pw * 100) + "%" + (r.kind === "pass" ? (r.pw > 0.6 ? " · HARD PASS, HARDER TO CONTROL" : " · HOLD STILL = HARDER") : (r.pw > 0.6 ? " · HARD TO SAVE OR BLOCK" : " · DRAW LONGER = HARDER")); $("hold-fill").style.width = Math.round(r.pw * 100) + "%"; }
+  if (r) { $("holdbar").hidden = false; $("hold-label").textContent = "POWER " + Math.round(r.pw * 100) + "%" + (r.kind === "pass" ? (r.lob ? " · LOB / CROSS" : r.pw > 0.6 ? " · HARD PASS, HARDER TO CONTROL" : " · GROUND PASS") : (goodSpot(att[G.carrier]) ? " · POWER SHOT" : r.pw > 0.6 ? " · HARD TO SAVE OR BLOCK" : " · DRAW LONGER = HARDER")); $("hold-fill").style.width = Math.round(r.pw * 100) + "%"; }
   if (!r) { ribbonMat.color.set(0xffffff); return; }
   if (G.aerial && r.kind !== "shot") { ribbonMat.color.set(0xff4d5e); setHint("Header! Draw the line into the goal."); return; }
   if (behindRoute(r)) { ribbonMat.color.set(0xff4d5e); setHint("Too far behind. Pass inside the glowing arc."); return; }
   let m = lineSafety(r.pts);
-  if (G.air && r.kind === "pass") { const e = r.pts[r.pts.length - 1]; m = 99; for (let k = 0; k < G.nDef; k++) m = Math.min(m, hyp(defs[k].x - e.x, defs[k].z - e.z)); }   // a lob only needs a clear landing spot
-  ribbonMat.color.set(G.armed && r.kind === "shot" ? 0xff8a1f : G.air && r.kind === "pass" ? (m < 2 ? 0xff4d5e : 0x8fc4ff) : m < 1.9 ? 0xff4d5e : m < 3.4 ? 0xffc23d : 0xffffff);
-  setHint(r.kind === "shot" ? "Let go to shoot! (Red strip = cancel)" : holdPower > 0.08 ? "Holding... the ball will go further. Let go to play it." : (G.air ? "Let go to lob it. Hold still to hit it harder." : "Let go to pass. Hold still at the end to hit it harder."));
+  if (r.lob) { const e = r.pts[r.pts.length - 1]; m = 99; for (let k = 0; k < G.nDef; k++) m = Math.min(m, hyp(defs[k].x - e.x, defs[k].z - e.z)); }   // a lob only needs a clear landing spot
+  ribbonMat.color.set(r.kind === "shot" && goodSpot(att[G.carrier]) ? 0xff8a1f : r.lob ? (m < 2 ? 0xff4d5e : 0x8fc4ff) : m < 1.9 ? 0xff4d5e : m < 3.4 ? 0xffc23d : 0xffffff);
+  setHint(r.kind === "shot" ? (goodSpot(att[G.carrier]) ? "Power shot! Let go to fire. (Red strip = cancel)" : "Let go to shoot! (Red strip = cancel)") : r.lob ? "Long ball: it will be lobbed. Let go to play it." : holdPower > 0.08 ? "Holding... the ball will go further." : "Let go to pass. Draw it longer for a lob.");
 }
 const cancelEl = $("cancelzone");
 function overCancel(ev) { const r = cancelEl.getBoundingClientRect(); return ev.clientY >= r.top && ev.clientX >= r.left && ev.clientX <= r.right; }
@@ -432,7 +438,7 @@ function endDraw(ev) {
   if (pts.length < 3) { ribbon.visible = false; return; }
   release(pts);
 }
-window.addEventListener("keydown", (e) => { if (e.key === "Escape" && drawing) cancelDraw(); if ((e.key === "l" || e.key === "L") && G.phase === "plan" && !G.aerial) { const b = $("btn-air"); if (b) b.click(); } });
+window.addEventListener("keydown", (e) => { if (e.key === "Escape" && drawing) cancelDraw(); });
 canvas.addEventListener("pointerup", (ev) => { ptrs.delete(ev.pointerId); if (ptrs.size < 2) gest = null; endDraw(ev); });
 canvas.addEventListener("pointercancel", (ev) => { ptrs.delete(ev.pointerId); gest = null; cancelDraw(); });
 
@@ -471,7 +477,7 @@ function fitCurve(raw) {
     const off = (q.x - p0.x) * nx + (q.z - p0.z) * nz;
     if (Math.abs(off) > Math.abs(best)) { best = off; bu = clamp(((q.x - p0.x) * dx + (q.z - p0.z) * dz) / (L * L), 0.3, 0.7); }
   }
-  const h = clamp(best, -Math.min(0.3 * L, 10), Math.min(0.3 * L, 10));
+  const h = clamp(best, -Math.min(0.12 * L, 3.5), Math.min(0.12 * L, 3.5));   // a real kick only bends a little
   const co = h / (2 * bu * (1 - bu));
   const cx = p0.x + dx * bu + nx * co, cz = p0.z + dz * bu + nz * co, out = [];
   for (let i = 0; i <= 40; i++) { const t = i / 40, a = (1 - t) * (1 - t), b = 2 * (1 - t) * t, c = t * t; out.push({ x: a * p0.x + b * cx + c * p2.x, z: a * p0.z + b * cz + c * p2.z }); }
@@ -517,14 +523,14 @@ function buildRoute(raw, hold) {
   }
   // the longer the line you drew, the harder the ball is struck
   const pw = clamp((routeLength(raw) + (fitted.length > 0 ? Math.max(0, routeLength(fitted) - routeLength(pts)) : 0) - 4) / 32, 0, 1);
-  return { pts: fitted, kind, recv, pw };
+  return { pts: fitted, kind, recv, pw, lob: kind === "pass" && routeLength(fitted) > LOB_MIN };
 }
 function release(raw) {
   const r = buildRoute(raw, releaseHold);
   if (!r) { ribbon.visible = false; setHint("Too short. Draw a longer line."); return; }
   if (G.aerial && r.kind !== "shot") { ribbon.visible = false; setHint("Header! Draw the line into the goal."); return; }
   if (behindRoute(r)) { ribbon.visible = false; setHint("Too far behind. Pass inside the glowing arc, or draw to the goal."); return; }
-  releasePw = r.pw; startRun(r.pts, r.kind, r.recv);
+  releasePw = r.pw; releaseLob = r.lob; startRun(r.pts, r.kind, r.recv);
 }
 
 function routeLength(pts) { let l = 0; for (let i = 1; i < pts.length; i++) l += hyp(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z); return l; }
@@ -533,7 +539,9 @@ function startRun(pts, kind, recv) {
   const L = routeLength(pts);
   const pw = releasePw !== null ? releasePw : (kind === "shot" ? 0.55 : 0.4); releasePw = null;
   const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + hyp(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));
-  run = { pts, cum, L, kind, recv, s: 0, pw, v: kind === "shot" ? (G.armed ? POWER_V : G.aerial ? (G.aerial.type === "bicycle" ? 42 : 24) : lerp(20, 44, pw)) : (G.air ? lerp(13, 21, pw) : lerp(15, 30, pw)), lob: kind === "pass" && G.air, apex: clamp(L * 0.3, 2.6, 8.5), aerial: kind === "shot" ? G.aerial : null, power: kind === "shot" && G.armed, state: "fly", t: 0, outcome: null, wait: 0, dist0: att[G.carrier].z };
+  const lobbed = kind === "pass" && releaseLob; releaseLob = false;
+  const power = kind === "shot" && !G.aerial && goodSpot(att[G.carrier]);   // a shot from a good position is a power shot
+  run = { pts, cum, L, kind, recv, s: 0, pw, v: kind === "shot" ? (power ? POWER_V : G.aerial ? (G.aerial.type === "bicycle" ? 42 : 24) : lerp(20, 44, pw)) : (lobbed ? lerp(13, 21, pw) : lerp(15, 30, pw)), lob: lobbed, apex: clamp(L * 0.3, 2.6, 8.5), aerial: kind === "shot" ? G.aerial : null, power, state: "fly", t: 0, outcome: null, wait: 0, dist0: att[G.carrier].z };
   if (kind === "pass" && recv === null) {
     const e = pts[pts.length - 1]; let bi = null, bd = 18;
     att.forEach((a, i) => { if (i === G.carrier) return; const d = hyp(a.x - e.x, a.z - e.z); if (d < bd) { bd = d; bi = i; } });
@@ -541,13 +549,13 @@ function startRun(pts, kind, recv) {
   }
   if (kind === "shot") planShot();
   if (run.aerial) { att[G.carrier].aer = 0.62; att[G.carrier].aerType = run.aerial.type; }
-  G.aerial = null; G.air = false; releaseHold = 0;
-  if (run.power) { G.armed = false; G.power = 0; sfx.power(); }
+  G.aerial = null; releaseHold = 0; zone.visible = false;
+  if (run.power) sfx.power();
   G.phase = "run"; $("quick").innerHTML = ""; cone.visible = false;
   setHint(kind === "shot" ? "" : "");
   ribbonMat.color.set(0xffffff);
   att[G.carrier].kickT = 0.25;
-  sfx.kick(); updatePower();
+  sfx.kick();
   if (kind === "pass") G.chain++;
 }
 
@@ -685,7 +693,6 @@ function receiveBall(a, aer) {
   }
   G.carrier = att.indexOf(a); a.face = Math.PI;
   sfx.pass();
-  G.power = Math.min(1, G.power + 0.34);
   const nice = G.chain;
   if (nice >= 2) pop(["", "", "NICE!", "GREAT!", "AMAZING!", "UNREAL!"][Math.min(nice, 5)], nice + " passes in a row", "gold");
   if (aer) { run = null; planStart(aer); return; }
@@ -965,41 +972,13 @@ function camStep(dt, snap) {
 }
 
 /* ---------------- quick buttons (an easier way to play, and for keyboards) ---------------- */
-function updatePower() {
-  $("power-fill").style.width = Math.round(G.power * 100) + "%";
-  $("power-box").classList.toggle("full", G.power >= 1);
-  const b = $("btn-power");
-  if (b) { b.disabled = G.power < 1 && !G.armed; b.textContent = G.armed ? "🚀 POWER SHOT ARMED" : G.power >= 1 ? "🚀 Power shot ready!" : "🚀 Power shot (pass to charge)"; b.setAttribute("aria-pressed", String(G.armed)); }
-}
-function buildQuick() {
-  const q = $("quick"); q.innerHTML = "";
-  if (G.aerial) {
-    const s = document.createElement("button"); s.type = "button"; s.className = "ls-pill shoot"; s.textContent = G.aerial.type === "bicycle" ? "🚲 Overhead kick" : "🎯 Header at goal";
-    s.addEventListener("click", () => quickShoot()); q.appendChild(s);
-    return;
-  }
-  const lb = document.createElement("button"); lb.type = "button"; lb.className = "ls-pill air"; lb.id = "btn-air";
-  lb.addEventListener("click", () => { G.air = !G.air; lb.setAttribute("aria-pressed", String(G.air)); lb.textContent = G.air ? "⤴ Lob / cross: ON" : "⤴ Lob / cross"; });
-  lb.setAttribute("aria-pressed", String(G.air)); lb.textContent = G.air ? "⤴ Lob / cross: ON" : "⤴ Lob / cross"; q.appendChild(lb);
-  att.forEach((a, i) => {
-    if (i === G.carrier) return;
-    const b = document.createElement("button"); b.type = "button"; b.className = "ls-pill"; b.textContent = "Pass to #" + a.p.number;
-    b.addEventListener("click", () => quickRoute(a)); q.appendChild(b);
-  });
-  const s = document.createElement("button"); s.type = "button"; s.className = "ls-pill shoot"; s.textContent = "⚽ Shoot straight";
-  s.addEventListener("click", () => quickShoot()); q.appendChild(s);
-  const pw = document.createElement("button"); pw.type = "button"; pw.className = "ls-pill power"; pw.id = "btn-power";
-  pw.addEventListener("click", () => { if (G.power >= 1 || G.armed) { G.armed = !G.armed; updatePower(); } });
-  q.appendChild(pw); updatePower();
-}
+function buildQuick() { $("quick").innerHTML = ""; }
 att.forEach((a, i) => { a.p.number = [10, 7, 9, 11, 8, 6][i]; });
 function straight(from, tx, tz) {
   const pts = [], n = Math.max(2, Math.round(hyp(tx - from.x, tz - from.z) / 0.5));
   for (let i = 0; i <= n; i++) pts.push({ x: lerp(from.x, tx, i / n), z: lerp(from.z, tz, i / n) });
   return pts;
 }
-function quickRoute(a) { if (G.phase !== "plan") return; const c = att[G.carrier]; startRun(straight(c, a.x, a.z - 1.5), "pass", att.indexOf(a)); }
-function quickShoot() { if (G.phase !== "plan") return; const c = att[G.carrier]; startRun(straight(c, rand(-2, 2), 0), "shot", null); }
 
 /* ---------------- main loop ---------------- */
 let last = 0, raf = 0;
@@ -1032,7 +1011,7 @@ function bestSet(v) { try { localStorage.setItem(BEST_KEY, String(v)); } catch (
 function showBest() { const b = bestGet(); $("best-line").innerHTML = b ? "Your best: <b>" + b + " points</b>" : ""; }
 function start() {
   audio();
-  G.level = 0; G.lives = MAX_LIVES; G.goals = 0; G.score = 0; lastLevelShown = 0; G.power = 0; G.armed = false;
+  G.level = 0; G.lives = MAX_LIVES; G.goals = 0; G.score = 0; lastLevelShown = 0;
   $("screen-start").hidden = true; $("screen-end").hidden = true; $("screen-game").hidden = false;
   resize(); setHud(); newAttack();
   if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); }
