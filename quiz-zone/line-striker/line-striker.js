@@ -21,7 +21,7 @@ const GOAL_HALF = 3.66, GOAL_H = 2.44;
 const PASS_V = 21, SHOT_V = 30, POWER_V = 54;
 const LOB_MIN = 14;                     // a pass longer than this (metres), or one into the box, is lobbed over the top
 const BEST_KEY = "gz_linestriker_best2";
-const PASS_HALF = 105 * Math.PI / 180;  // a pass must go within 105 degrees either side of the way the player faces (so sideways is fine)
+const PASS_HALF = Math.PI;              // passes can go in any direction, including backwards
 const BIN_X = 2.6, BIN_Y = 2.05;
 const MAX_LIVES = 3;
 
@@ -229,13 +229,14 @@ for (const a of att) { a.ring = new THREE.Mesh(ringGeo, ringMat.clone()); a.ring
 
 // the arc a pass must start inside
 const cone = new THREE.Mesh(new THREE.CircleGeometry(15, 40, Math.PI / 2 - PASS_HALF, PASS_HALF * 2), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2, side: THREE.DoubleSide, depthWrite: false }));
-cone.rotation.x = -Math.PI / 2; cone.position.y = 0.05; cone.renderOrder = 2; scene.add(cone);
+cone.rotation.x = -Math.PI / 2; cone.position.y = 0.05; cone.renderOrder = 2; cone.visible = false; scene.add(cone);
 // offside: nobody may be nearer the goal than the last defender when the ball is played to him
 function offsideLine() { let z = 99; for (let k = 0; k < G.nDef; k++) z = Math.min(z, defs[k].z); return Math.max(z, 4); }
 function isOff(a, carrier) { return a !== carrier && a.z < offsideLine() - 0.25 && a.z < carrier.z - 0.5; }
 const offLine = new THREE.Mesh(new THREE.PlaneGeometry(76, 0.25), new THREE.MeshBasicMaterial({ color: 0xff4d5e, transparent: true, opacity: 0.6, depthWrite: false }));
 offLine.rotation.x = -Math.PI / 2; offLine.position.set(0, 0.055, 12); offLine.renderOrder = 3; scene.add(offLine);
 // the power-shot zone: shoot from here for a rocket
+function powerShotOk(c, pw, endX) { return goodSpot(c) && pw >= 0.55 && Math.abs(endX) <= GOAL_HALF; }   // in the zone, drawn hard, and on target
 function goodSpot(c) { return c.z >= 8 && c.z <= 23 && Math.abs(c.x) <= 13; }
 const zone = new THREE.Mesh(new THREE.PlaneGeometry(26, 15), new THREE.MeshBasicMaterial({ color: 0xff8a1f, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false }));
 zone.rotation.x = -Math.PI / 2; zone.position.set(0, 0.045, 15.5); zone.renderOrder = 1; scene.add(zone);
@@ -374,16 +375,16 @@ function newAttack() {
   frames.length = 0;
   G.nDef = Math.min(5 + (G.level >> 1), 8);
   G.defSpeed = Math.min(4.6 + G.level * 0.22, 6.8);
-  G.chain = 0; G.carrier = 0;
+  G.chain = 0; G.carrier = 5;           // a midfielder starts with the ball; George is the striker up front
   G.markDist = clamp(3.6 - G.level * 0.2, 2.2, 3.6);
   G.bonus = Math.random() < 0.4 ? (Math.random() < 0.5 ? -1 : 1) : 0;
   bin.visible = G.bonus !== 0; if (G.bonus) bin.position.set(G.bonus * BIN_X, BIN_Y, 0.3);
   place(att[1], rand(-27, -21), rand(24, 30));
   place(att[2], rand(21, 27), rand(24, 30));
-  place(att[3], rand(-12, -8), rand(18, 23));
-  place(att[4], rand(8, 12), rand(16, 21));
-  place(att[5], rand(-4, 4), rand(28, 32));
-  { let gx, gz, t = 0; do { gx = rand(-16, 16); gz = rand(33, 38); t++; } while (t < 40 && att.slice(1).some((a) => hyp(a.x - gx, a.z - gz) < 7.5)); place(att[0], gx, gz); }
+  place(att[3], rand(-12, -8), rand(28, 32));
+  place(att[4], rand(8, 12), rand(28, 32));
+  place(att[5], rand(-4, 4), rand(35, 39));
+  place(att[0], rand(-6, 6), rand(18, 22));
   const taken = att.map((a) => [a.x, a.z]), dTaken = [], lineZ = rand(11, 16);   // the back line holds roughly here
   defs.forEach((d, i) => {
     d.p.root.visible = i < G.nDef;
@@ -399,9 +400,9 @@ function newAttack() {
   });
   { const ln = offsideLine(); att.forEach((a) => { if (a.z < ln + 1.5) a.z = ln + 1.5; }); }   // nobody starts offside
   place(keeper, rand(-1, 1), 1.1, 0); keeper.dive = 0; keeper.diveDir = 0;
-  ball.x = att[0].x; ball.z = att[0].z - 0.6; ball.y = 0.24;
+  ball.x = att[G.carrier].x; ball.z = att[G.carrier].z - 0.6; ball.y = 0.24;
   run = null; route = null; ribbon.visible = false;
-  cam.x = att[0].x * 0.6; cam.tz = att[0].z + 13;
+  cam.x = att[G.carrier].x * 0.6; cam.tz = att[G.carrier].z + 13;
   planStart();
   syncMeshes(0);
   snapCamera();
@@ -413,13 +414,13 @@ function planStart(aer) {
   G.phase = "plan"; ribbon.visible = false; timeScaleReset(); G.aerial = aer || null;
   const c = att[G.carrier];
   c.face = Math.PI; keeper.dive = 0; keeper.diveDir = 0; keeper.jump = 0; keeper.hold = 0;
-  cone.visible = !aer; cone.position.set(c.x, 0.05, c.z);
+  cone.position.set(c.x, 0.05, c.z);
   zone.visible = !aer; zone.material.opacity = goodSpot(c) ? 0.3 : 0.12;
   // Give the player a little room: nudge any defender that is right on top of the ball.
   for (const d of defs) if (d.p.root.visible) { const dd = hyp(d.x - c.x, d.z - c.z); if (dd < 6.5) { const k = 6.8 / (dd || 1); d.x = c.x + (d.x - c.x) * k; d.z = c.z + (d.z - c.z) * k; } }
   ball.x = c.x + Math.sin(c.face) * 0.5; ball.z = c.z + Math.cos(c.face) * 0.5; ball.y = aer ? (aer.type === "bicycle" ? 2.5 : aer.type === "volley" ? 1.0 : 2.1) : 0.24;
   if (aer) { pop(aer.special ? "GEORGE!" : (aer.type === "bicycle" ? "BICYCLE KICK!" : aer.type === "volley" ? "VOLLEY!" : "HEADER!"), aer.special ? "A spectacular " + (aer.type === "bicycle" ? "bicycle kick" : aer.type === "volley" ? "volley" : "header") + "! Aim it!" : aer.type === "bicycle" ? "What a chance! Aim it!" : aer.type === "volley" ? "Hit it first time!" : "Aim it at the goal!", "gold"); sfx.pass(); }
-  setHint(!aer && goodSpot(c) ? "You are in the power zone! Shoot for a rocket." : aer ? (aer.type === "bicycle" ? "Overhead kick! Draw a line into the goal." : aer.type === "volley" ? "Volley! Draw a line into the goal." : "Header! Draw a line into the goal.") : G.chain ? "Pass or shoot! Draw a line. Stay onside." : G.bonus ? "Time is frozen. Hit the glowing corner for bonus points!" : "Time is frozen. Draw a line to a team-mate or into the goal.");
+  setHint(!aer && goodSpot(c) ? "Power zone! Draw a long, hard line at the goal for a rocket shot." : aer ? (aer.type === "bicycle" ? "Overhead kick! Draw a line into the goal." : aer.type === "volley" ? "Volley! Draw a line into the goal." : "Header! Draw a line into the goal.") : G.chain ? "Pass or shoot! Draw a line. Stay onside." : G.bonus ? "Time is frozen. Find George up front, or hit the glowing corner for bonus points!" : "Time is frozen. Pass forward to George, your striker, or draw into the goal.");
   buildQuick();
 }
 
@@ -445,15 +446,15 @@ function behindRoute(r) {
 function updatePreview() {
   const r = drawPts.length >= 3 ? buildRoute(drawPts, holdPower) : null;
   setRibbon(r ? r.pts : drawPts, 0.07 + 0.07 * (r ? r.pw : 0));          // show the path the ball will really take (thicker = harder)
-  if (r) { $("holdbar").hidden = false; $("hold-label").textContent = "POWER " + Math.round(r.pw * 100) + "%" + (r.kind === "pass" ? (r.lob ? " · LOB / CROSS" : r.pw > 0.6 ? " · HARD PASS, HARDER TO CONTROL" : " · GROUND PASS") : (goodSpot(att[G.carrier]) ? " · POWER SHOT" : r.pw > 0.6 ? " · HARD TO SAVE OR BLOCK" : " · DRAW LONGER = HARDER")); $("hold-fill").style.width = Math.round(r.pw * 100) + "%"; }
+  if (r) { $("holdbar").hidden = false; $("hold-label").textContent = "POWER " + Math.round(r.pw * 100) + "%" + (r.kind === "pass" ? (r.lob ? " · LOB / CROSS" : r.pw > 0.6 ? " · HARD PASS, HARDER TO CONTROL" : " · GROUND PASS") : (powerShotOk(att[G.carrier], r.pw, r.pts[r.pts.length - 1].x) ? " · POWER SHOT!" : goodSpot(att[G.carrier]) ? " · DRAW LONGER FOR A POWER SHOT" : r.pw > 0.6 ? " · HARD TO SAVE OR BLOCK" : " · DRAW LONGER = HARDER")); $("hold-fill").style.width = Math.round(r.pw * 100) + "%"; }
   if (!r) { ribbonMat.color.set(0xffffff); return; }
   if (G.aerial && r.kind !== "shot") { ribbonMat.color.set(0xff4d5e); setHint("Header! Draw the line into the goal."); return; }
   if (behindRoute(r)) { ribbonMat.color.set(0xff4d5e); setHint("Too far behind. Pass inside the glowing arc."); return; }
   if (r.kind === "pass" && r.recv !== null && isOff(att[r.recv], att[G.carrier])) { ribbonMat.color.set(0xb04dff); setHint("Offside! Pass to someone behind the red line."); return; }
   let m = lineSafety(r.pts);
   if (r.lob) { const e = r.pts[r.pts.length - 1]; m = 99; for (let k = 0; k < G.nDef; k++) m = Math.min(m, hyp(defs[k].x - e.x, defs[k].z - e.z)); }   // a lob only needs a clear landing spot
-  ribbonMat.color.set(r.kind === "shot" && goodSpot(att[G.carrier]) ? 0xff8a1f : r.lob ? (m < 2 ? 0xff4d5e : 0x8fc4ff) : m < 1.9 ? 0xff4d5e : m < 3.4 ? 0xffc23d : 0xffffff);
-  setHint(r.kind === "shot" ? (goodSpot(att[G.carrier]) ? "Power shot! Let go to fire. (Red strip = cancel)" : "Let go to shoot! (Red strip = cancel)") : r.lob ? "Long ball: it will be lobbed. Let go to play it." : holdPower > 0.08 ? "Holding... the ball will go further." : "Let go to pass. Draw it longer for a lob.");
+  ribbonMat.color.set(r.kind === "shot" && powerShotOk(att[G.carrier], r.pw, r.pts[r.pts.length - 1].x) ? 0xff8a1f : r.lob ? (m < 2 ? 0xff4d5e : 0x8fc4ff) : m < 1.9 ? 0xff4d5e : m < 3.4 ? 0xffc23d : 0xffffff);
+  setHint(r.kind === "shot" ? (powerShotOk(att[G.carrier], r.pw, r.pts[r.pts.length - 1].x) ? "Power shot! Let go to fire. (Red strip = cancel)" : "Let go to shoot! Draw longer and on target in the orange zone for a power shot.") : r.lob ? "Long ball: it will be lobbed. Let go to play it." : holdPower > 0.08 ? "Holding... the ball will go further." : "Let go to pass. Draw it longer for a lob.");
 }
 const cancelEl = $("cancelzone");
 function overCancel(ev) { const r = cancelEl.getBoundingClientRect(); return ev.clientY >= r.top && ev.clientX >= r.left && ev.clientX <= r.right; }
@@ -625,7 +626,7 @@ function startRun(pts, kind, recv) {
   const pw = releasePw !== null ? releasePw : (kind === "shot" ? 0.55 : 0.4); releasePw = null;
   const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + hyp(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));
   const lobbed = kind === "pass" && releaseLob; releaseLob = false;
-  const power = kind === "shot" && !G.aerial && goodSpot(att[G.carrier]);   // a shot from a good position is a power shot
+  const power = kind === "shot" && !G.aerial && powerShotOk(att[G.carrier], pw, pts[pts.length - 1].x);   // a hard shot on target from a good position is a power shot
   const offSet = new Set(); if (kind === "pass") att.forEach((a, i) => { if (isOff(a, att[G.carrier])) offSet.add(i); });
   run = { off: offSet, pts, cum, L, kind, recv, s: 0, pw, v: kind === "shot" ? (power ? POWER_V : G.aerial ? (G.aerial.type === "bicycle" ? 42 : G.aerial.type === "volley" ? 36 : 24) : lerp(20, 44, pw)) : (lobbed ? lerp(13, 21, pw) : lerp(15, 30, pw)), lob: lobbed, wing: lobbed && Math.abs(att[G.carrier].x) > 15, apex: clamp(L * 0.3, 2.6, 8.5), aerial: kind === "shot" ? G.aerial : null, power, state: "fly", t: 0, outcome: null, wait: 0, dist0: att[G.carrier].z };
   if (kind === "pass" && recv === null) {
@@ -725,10 +726,11 @@ function markTarget(i) {
 // diagonally towards the box, and the support player trails behind. Everyone slips away from a
 // marker who is too close and keeps clear of team-mates.
 function attackMove(a, i, dt) {
-  const role = i === 1 || i === 2 ? "wing" : i === 5 ? "support" : "cut";
+  const role = i === 0 ? "striker" : i === 1 || i === 2 ? "wing" : i === 5 ? "support" : "cut";
   const line = offsideLine();
   let tx = a.x, tz = Math.max(a.z - 6.5, line + 0.5), sp = 6;      // runs stop at the offside line
   if (role === "wing") { tx = a.x * (a.z < 14 ? 0.9 : 1.0); sp = 6.3; }
+  else if (role === "striker") { tx = clamp(a.x * 0.8, -9, 9); tz = line + 1.0; sp = 6; }   // George stays on the shoulder of the last defender
   else if (role === "cut") { tx = clamp(a.x * 0.6 + (i === 3 ? 2 : i === 4 ? -2 : 0), -9, 9); }
   else { const cc = att[G.carrier]; if (cc && cc !== a) { tx = cc.x + (a.x >= cc.x ? 8 : -8); tz = Math.max(cc.z + 2, line + 0.5); } else tz = a.z - 2.5; sp = 5; }   // the support player offers himself to the carrier
   let nr = 99, nd = null;
@@ -1136,6 +1138,7 @@ function syncMeshes(dt) {
   if (run && run.state === "fly") ball.mesh.rotation.x -= 0.5; else if (run && run.state === "goalmouth") ball.mesh.rotation.x -= 0.2;
   if (bin.visible) { const sc = 1 + Math.sin(clock * 6) * 0.12; bin.scale.set(sc, sc, sc); }
   georgeTag.position.set(att[0].x, 3.1, att[0].z);
+  { const dc = clamp(camera.position.distanceTo(georgeTag.position), 12, 45); georgeTag.scale.set(dc * 0.15, dc * 0.052, 1); }   // keep the tag readable from afar
   offLine.visible = G.phase === "plan" && !G.aerial; if (offLine.visible) offLine.position.z = offsideLine();
   const planning = G.phase === "plan", rec = G.phase === "run" && run && run.state === "recover";
   att.forEach((a, i) => {
