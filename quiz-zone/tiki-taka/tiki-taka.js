@@ -367,7 +367,7 @@
     fxRing(x, y, c[0], 20);
   }
   function fxRain() {
-    for (let i = 0; i < 42; i++) FX.p.push({ k: "emoji", e: pickOne(["⚽", "🎉", "🔥", "⭐", "🏆", "💥", "🎊"]), x: rnd(0, W), y: rnd(-TOP - 300, -TOP), vx: rnd(-40, 40), vy: rnd(160, 340), g: 0, life: 4, max: 4, s: rnd(24, 40), r: rnd(0, 6) });
+    for (let i = 0; i < 12; i++) FX.p.push({ k: "emoji", e: pickOne(["⚽", "🎉", "🔥", "⭐", "🏆", "💥", "🎊"]), x: rnd(0, W), y: rnd(-TOP - 300, -TOP), vx: rnd(-40, 40), vy: rnd(160, 340), g: 0, life: 2.5, max: 2.5, s: rnd(24, 40), r: rnd(0, 6) });
   }
   const fxLater = (delay, fn) => FX.later.push({ t: delay, fn });
   function ballPos() { return [S[I.BX], S[I.BY]]; }
@@ -942,13 +942,27 @@
     say("⏪ REPLAY: tap to skip");
     snd.replayIn();
   }
+  // A small, cheap confetti burst for the final whistle only (the old one lagged the game).
+  let confettiRaf = 0;
+  function lightConfetti() {
+    if (reduced || !confettiCanvas) return;
+    cancelAnimationFrame(confettiRaf);
+    const g = confettiCanvas.getContext("2d"), w = confettiCanvas.width, h = confettiCanvas.height;
+    const cols = ["#e1102c", "#ffffff", "#f5b942", "#ff5a6e"], sz = Math.max(4, w / 90);
+    const bits = Array.from({ length: 40 }, (_, i) => ({ x: w * (0.2 + 0.6 * Math.random()), y: h * 0.3, vx: (Math.random() - 0.5) * w / 60, vy: -Math.random() * h / 50 - 2, c: cols[i % 4] }));
+    const t0 = performance.now();
+    (function frame(now) {
+      g.clearRect(0, 0, w, h);
+      for (const b of bits) { b.vy += h / 2500; b.x += b.vx; b.y += b.vy; g.fillStyle = b.c; g.fillRect(b.x, b.y, sz, sz * 0.5); }
+      if (now - t0 < 1400) confettiRaf = requestAnimationFrame(frame); else g.clearRect(0, 0, w, h);
+    })(t0);
+  }
   function skipReplay() { if (replay) { replay = null; last = performance.now(); refresh(); say(""); snd.replayOut(); maybeCelebrate(); } }
   // After a goal, George does his chosen celebration (My Player), with the crowd going wild.
   function maybeCelebrate() {
     if (celebrated || (S[I.RESULT] | 0) !== R.GOAL || !window.GL || !GL.celebrate) return;
     celebrated = true; celebrating = true;
     crowd.cheer = 1.6;
-    GK.confetti(confettiCanvas, 170);
     if (!reduced) fxRain();
     GL.celebrate($("stage"), { ms: 2400, kit: kitId() }).then(() => { celebrating = false; last = performance.now(); });
   }
@@ -1026,7 +1040,6 @@
       const [txt, cls] = RESULT_TEXT[result] || ["", "soft"];
       const bonus = S[I.BONUS] | 0;
       pop(txt, result === R.GOAL ? `+${bonus} points` : result === R.TACKLED ? "-2.5 seconds" : "", cls);
-      if (result === R.GOAL) { GK.confetti(confettiCanvas, 120); }
       say("");
     }
     if (phase === PH.RESULT) {
@@ -1213,7 +1226,7 @@
       .map(([k, v]) => `<div class="tt-stat"><b>${v}</b><span>${k}</span></div>`).join("");
     $("name-form").hidden = score === 0;
     $("saved-msg").textContent = "";
-    if (goals >= 3 && soundOn) { sfx.fanfare(); setTimeout(() => GK.confetti(confettiCanvas, 160), 200); }
+    if (goals >= 3 && soundOn) { sfx.fanfare(); setTimeout(lightConfetti, 200); }
     comment(C(goals === 0 ? "end0" : goals === 1 ? "end1" : goals >= 6 ? "end4" : "end3", { g: goals }), true, goals >= 3);
     if (window.GZ && GZ.recordTikiTaka) { const rec = GZ.recordTikiTaka({ score, goals, bestChain: chain, superUsed: usedSuper, team, stars: st, lobGoal: lobGoals > 0 }); GZ.announceBadges(rec.newBadges); }
     const earned = rpgAward(score, goals);
