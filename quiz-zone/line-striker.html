@@ -70,6 +70,9 @@
   .ls-hold{position:absolute;left:16px;right:70px;bottom:74px;z-index:3;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;letter-spacing:.12em;color:#ffd23f;pointer-events:none;}
   .ls-hold[hidden]{display:none;} .ls-hold div{height:8px;border-radius:99px;background:rgba(255,255,255,.2);overflow:hidden;margin-top:3px;} .ls-hold i{display:block;height:100%;width:0;background:#ffd23f;}
   .ls-pill.air{background:rgba(143,196,255,.18);border-color:rgba(143,196,255,.6);} .ls-pill.air[aria-pressed="true"]{background:#8fc4ff;color:#241f29;}
+  .ls-badge{position:absolute;left:10px;top:10px;z-index:4;background:rgba(202,14,40,.85);color:#fff;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.1em;font-size:14px;padding:6px 12px;border-radius:999px;pointer-events:none;}
+  .ls-skip{position:absolute;right:10px;bottom:10px;z-index:5;min-height:46px;padding:0 18px;border-radius:999px;background:rgba(13,11,16,.78);border:1px solid rgba(241,237,233,.45);color:#f1ede9;font-size:16px;}
+  .ls-skip:focus-visible{outline:2px solid #f1ede9;outline-offset:2px;} .ls-badge[hidden],.ls-skip[hidden]{display:none;}
   .ls-cancel{position:absolute;left:0;right:0;bottom:0;height:62px;display:flex;align-items:center;justify-content:center;background:rgba(202,14,40,.55);border-top:2px solid #ff5a6e;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;letter-spacing:.06em;pointer-events:none;}
   .ls-cancel[hidden]{display:none;}
   .ls-hint{text-align:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;margin:10px 0 6px;min-height:1.3em;}
@@ -148,12 +151,14 @@
         <button type="button" id="cam-out" aria-label="Zoom out">－</button>
         <button type="button" id="cam-reset" aria-label="Reset camera">⌖</button>
       </div>
+      <div class="ls-badge" id="replay-badge" hidden>● REPLAY · SLOW MOTION</div>
+      <button class="ls-skip" id="replay-skip" type="button" hidden>Skip replay ⏭</button>
       <div class="ls-hold" id="holdbar" hidden><span id="hold-label">POWER</span><div><i id="hold-fill"></i></div></div>
       <div class="ls-cancel" id="cancelzone" hidden>✕ Let go here to cancel</div>
     </div>
     <p class="ls-hint" id="hint" role="status" aria-live="polite"></p>
     <div class="ls-bar" id="quick"></div>
-    <p class="ls-keys">Short line = ground pass. Long line = lob or cross. Shoot from the orange zone for a power shot.</p>
+    <p class="ls-keys">Short line = ground pass. A long line, or one into the box, is a cross (it turns blue). Stay onside: don't pass to anyone past the red line. Shoot from the orange zone for a power shot.</p>
   </section>
 
   <section class="ls-card" id="screen-end" hidden>
