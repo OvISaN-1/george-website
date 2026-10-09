@@ -109,8 +109,14 @@ function sideScenery(sd) {
     g.fillStyle = "#1c1a22"; g.fillRect(0, 0, w, h);
     for (let y = 0; y < h; y += 10) for (let x = 0; x < w; x += 9) { const r = Math.random(); g.fillStyle = r < 0.55 ? "#d7102b" : r < 0.8 ? "#ffffff" : r < 0.9 ? "#8a1220" : "#e8c9a8"; g.fillRect(x + (y / 10 % 2 ? 4 : 0), y, 7, 8); }
   }, [22, 1]);
+  // a proper stand: it climbs away from the pitch, so the top is further out than the bottom
   const cm = new THREE.MeshBasicMaterial({ map: ct, color: 0xffffff, side: THREE.DoubleSide });
-  const st = new THREE.Mesh(new THREE.PlaneGeometry(700, 26), cm); st.position.set(sd * 21, 10, -200); st.rotation.set(-0.62, sd * Math.PI / 2, 0, "YXZ"); scene.add(st); crowdMats.push(cm); crowdTexes.push(ct);
+  const stand = new THREE.Group(); stand.position.set(sd * 14.5, 0, -200); stand.rotation.y = -sd * Math.PI / 2; scene.add(stand);
+  const st = new THREE.Mesh(new THREE.PlaneGeometry(700, 13), cm); st.rotation.x = -1.0; st.position.set(0, 0.9 + 6.5 * Math.cos(1.0), -6.5 * Math.sin(1.0)); stand.add(st);
+  const wallM = new THREE.MeshLambertMaterial({ color: 0x7a0d20 }); crowdMats.push(cm); crowdTexes.push(ct);
+  const front = new THREE.Mesh(new THREE.BoxGeometry(700, 0.9, 0.4), wallM); front.position.set(0, 0.45, 0); stand.add(front);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(700, 9, 0.3), new THREE.MeshLambertMaterial({ color: 0x2a1218 })); back.position.set(0, 4.5, -13 * Math.sin(1.0) - 0.3); stand.add(back);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(700, 0.25, 5), new THREE.MeshLambertMaterial({ color: 0xcfd3da })); roof.position.set(0, 9.4, -13 * Math.sin(1.0) + 1.6); stand.add(roof);
 }
 sideScenery(-1); sideScenery(1);
 // floodlight towers
@@ -285,7 +291,8 @@ function cycleMusic() { const order = ["loud", "quiet", "off"], nx = order[(orde
 function showMusic() { const l = musicLevel(); $("btn-music").textContent = "🎵 Music: " + (l === "loud" ? "Loud" : l === "quiet" ? "Quiet" : "Off"); }
 
 /* ---------------- game state ---------------- */
-const G = { phase: "menu", speed: 0, dist: 0, coins: 0, score: 0, lives: 3, t: 0, streak: 0, num: 10, invuln: 0, shield: false, nextMile: 500, usedPower: 0, kicks: 0, maxNum: 10, noHit: true, jumps: 0, slides: 0, lanes: 0, achT: 0 };
+const MAXL = 4;
+const G = { phase: "menu", speed: 0, dist: 0, coins: 0, score: 0, lives: 4, t: 0, streak: 0, num: 10, invuln: 0, shield: false, nextMile: 500, usedPower: 0, kicks: 0, maxNum: 10, noHit: true, jumps: 0, slides: 0, lanes: 0, achT: 0 };
 let laneIdx = 1, px = 0, py = 0, vy = 0, sliding = 0, grounded = true, stumble = 0, kickT = 0, celeT = 0, shake = 0;
 let act = { type: "", t: 0, dur: 1 };   // a one-off pose when George picks something up
 const items = [];    // everything that comes towards George: { kind, mesh, z, x, ... }
@@ -388,7 +395,7 @@ function makeChunk(z0) {
   // a pick-up now and then: at most one per stretch of road, so it never gets crowded
   if (Math.random() < 0.5) {
     const bag = ["ball", "ball", "ball", "boots", "boots", "whistle", "whistle", "gloves", "gloves", "medal", "medal", "spray", "spray", "trophy", "trophy", "rocket", "rocket", "scarf", "num5", "num5", "num5", "num10", "numx2"], t = pick(bag);
-    if (t !== "scarf" || G.lives < 3) toy(t, Math.floor(Math.random() * 3), z0 - rand(10, 26));
+    if (t !== "scarf" || G.lives < MAXL) toy(t, Math.floor(Math.random() * 3), z0 - rand(10, 26));
   }
 }
 function fillAhead() { while (spawnFront > -160) { makeChunk(spawnFront); spawnFront -= CHUNK; } }
@@ -457,7 +464,7 @@ function givePower(type) {
   else if (type === "spray") { P.spray = 8; setGhost(true); setAct("spray", 0.8); }
   else if (type === "trophy") { P.magnet = 10; setAct("trophy", 0.9); }
   else if (type === "rocket") { P.rocket = 4.5; }
-  else if (type === "scarf") { if (G.lives < 3) G.lives++; sfx.life(); setAct("cheer", 0.8); }
+  else if (type === "scarf") { if (G.lives < MAXL) G.lives++; sfx.life(); setAct("cheer", 0.8); }
   else {
     const before = G.num; setNum(type === "num5" ? G.num + 5 : type === "num10" ? G.num + 10 : G.num * 2); setAct("flex", 0.8);
     feedItem("#", "#" + before + " → #" + G.num, "Every coin is now worth " + G.num, "num"); return;
@@ -473,7 +480,8 @@ function takeCoin(it, bonus) {
 
 /* ---------------- input ---------------- */
 function goLane(d) { if (paused) return; const n = clamp(laneIdx + d, 0, 2); if (n !== laneIdx) { laneIdx = n; G.lanes++; } }
-function jump() { if (G.phase !== "play" || paused) return; if (grounded && !(P.rocket > 0)) { vy = 10.2; grounded = false; sliding = 0; G.jumps++; sfx.jump(); } }
+let jumpBuf = 0, coyote = 0;
+function jump() { if (G.phase !== "play" || paused) return; if ((grounded || coyote > 0) && !(P.rocket > 0)) { coyote = 0; vy = 10.2; grounded = false; sliding = 0; G.jumps++; sfx.jump(); } else jumpBuf = 0.15; }
 function slide() { if (G.phase !== "play" || paused) return; if (!grounded) vy = Math.min(vy, -14); if (!(P.rocket > 0)) { sliding = 0.7; G.slides++; sfx.slide(); } }
 window.addEventListener("keydown", (e) => {
   if (G.phase !== "play") return;
@@ -586,7 +594,7 @@ function chips() {
 function setHud() {
   $("hud-score").textContent = Math.floor(G.score).toLocaleString("en-GB");
   $("hud-coins").textContent = G.coins; $("hud-dist").textContent = Math.floor(G.dist) + " m";
-  $("hud-lives").textContent = "❤".repeat(G.lives) + "♡".repeat(3 - G.lives);
+  $("hud-lives").textContent = "❤".repeat(G.lives) + "♡".repeat(Math.max(0, MAXL - G.lives));
   $("hud-mult").textContent = "#" + G.num;
   $("hud-power").textContent = chips();
   const t = top3(), n = t.filter((r) => r.s > G.score).length;
@@ -595,15 +603,15 @@ function setHud() {
 let bestShown = false;
 function reset() {
   for (const it of items) scene.remove(it.mesh); items.length = 0; feedEl.innerHTML = ""; coinFeed = null;
-  G.speed = 15; G.dist = 0; G.coins = 0; G.score = 0; G.lives = 3; G.t = 0; G.streak = 0; G.invuln = 0; G.shield = false; G.nextMile = 500; G.usedPower = 0; G.kicks = 0; G.noHit = true; G.jumps = G.slides = G.lanes = 0; G.achT = 0; newAch = []; landT = reachT = 0;
+  G.speed = 15; G.dist = 0; G.coins = 0; G.score = 0; G.lives = 4; G.t = 0; G.streak = 0; G.invuln = 0; G.shield = false; G.nextMile = 500; G.usedPower = 0; G.kicks = 0; G.noHit = true; G.jumps = G.slides = G.lanes = 0; G.achT = 0; jumpBuf = coyote = 0; newAch = []; landT = reachT = 0;
   P.magnet = P.medal = P.spray = P.rocket = P.boots = P.whistle = 0; setGhost(false); ballFly = null; laneIdx = 1; px = 0; py = 0; vy = 0; sliding = 0; grounded = true; stumble = kickT = celeT = 0; act.t = 0; tempoBoost = 0;
   G.num = george.baseNum; G.maxNum = G.num; george.drawNumber(G.num);
-  safeChunks = 2; bestShown = false; spawnFront = -30; fillAhead(); applySky();
+  safeChunks = 3; bestShown = false; spawnFront = -30; fillAhead(); applySky();
 }
 function hurt(it) {
   if (G.phase !== "play" || G.invuln > 0) return;
   if (G.shield) { G.shield = false; G.invuln = 1.2; burst(px, 1.2, 0, 0x9fe3ff, 18); sfx.power(); feedItem("🧤", "SAVED!", "The gloves stopped the card", "power"); it.gone = true; scene.remove(it.mesh); return; }
-  flash("hit"); G.lives--; G.noHit = false; G.invuln = 2.4; stumble = 0.9; G.streak = 0; shake = 0.5; G.speed = Math.max(14, G.speed * 0.78); sfx.hit(); burst(px, 1, 0, 0xff6b6b, 14);
+  flash("hit"); G.lives--; G.noHit = false; G.invuln = 3; stumble = 0.9; G.streak = 0; shake = 0.5; G.speed = Math.max(14, G.speed * 0.78); sfx.hit(); burst(px, 1, 0, 0xff6b6b, 14);
   const was = G.num; setNum(Math.max(george.baseNum, G.num - 5));
   if (G.lives <= 0) { gameOver(); return; }
   feedItem(it.type === "wall" ? "🟥" : "🟨", "CARD!", G.lives + (G.lives === 1 ? " life left" : " lives left") + (G.num < was ? " · shirt number #" + G.num : ""), "bad");
@@ -611,13 +619,13 @@ function hurt(it) {
 function update(dt) {
   G.t += dt;
   // faster and faster
-  G.speed = Math.min(44, G.speed + dt * (P.rocket > 0 ? 0 : 0.2 + difficulty() * 0.08));
+  G.speed = Math.min(40, G.speed + dt * (P.rocket > 0 ? 0 : 0.15 + difficulty() * 0.06));
   const sp = G.speed * (P.rocket > 0 ? 1.45 : P.boots > 0 ? 1.35 : 1);
   G.dist += sp * dt; G.score += sp * dt * 0.5 * (P.boots > 0 ? 2 : 1);
   tempoBoost = Math.min(34, (G.speed - 15) * 1.2);
   if (!bestShown && SAVE.best > 0 && G.score > SAVE.best) { bestShown = true; feedItem("🏆", "NEW PERSONAL BEST!", "Keep going!", "big"); sfx.milestone(); burst(px, 1.6, 0, 0xffd84a, 14); }
   G.achT -= dt; if (G.achT <= 0) { G.achT = 0.3; const d = G.dist; if (d >= 100) ach("warmup"); if (d >= 500) ach("halftime"); if (d >= 1000) ach("fulltime"); if (d >= 2000) ach("extratime"); if (d >= 3000) ach("penalties"); if (G.noHit && d >= 300) ach("cleansheet"); if (G.num >= 15) ach("squad"); if (G.num >= 25) ach("legend"); if (G.num >= 50) ach("retired"); if (G.score >= 5000) ach("bigscore"); if (G.jumps >= 20) ach("acrobat"); if (G.slides >= 10) ach("slider"); if (G.lanes >= 30) ach("dribbler"); if (G.kicks >= 3) ach("freekick"); if (G.coins >= 100) ach("century"); }
-  if (G.dist >= G.nextMile) { feedItem("📍", G.nextMile + " m!", "Keep going!", "big"); sfx.milestone(); celeT = 0.8; celeFlip = G.nextMile % 1000 === 0; G.nextMile += 500; }
+  if (G.dist >= G.nextMile) { feedItem("📍", G.nextMile + " m!", "Keep going!", "big"); sfx.milestone(); celeT = 0.8; celeFlip = G.nextMile % 1000 === 0; if (celeFlip && G.lives < MAXL) { G.lives++; sfx.life(); feedItem("❤", "EXTRA LIFE!", "Reward for 1,000 m", "power"); } G.nextMile += 500; }
   for (const k of ["magnet", "medal", "spray", "rocket", "boots", "whistle"]) if (P[k] > 0) { P[k] -= dt; if (P[k] <= 0) { P[k] = 0; if (k === "spray") setGhost(false); } }
   G.invuln = Math.max(0, G.invuln - dt);
   // George: lane, jump, slide
@@ -625,6 +633,7 @@ function update(dt) {
   if (P.rocket > 0) { py = lerp(py, 3.4, 1 - Math.exp(-5 * dt)); vy = 0; grounded = false; }
   else { if (!grounded || py > 0) { const v0 = vy; vy -= 28 * dt; py += vy * dt; if (py <= 0) { py = 0; vy = 0; grounded = true; if (v0 < -4) { landT = 0.22; burst(px, 0.1, 0, 0x8fd18f, 5); } } } else grounded = true; }
   if (sliding > 0) sliding -= dt;
+  coyote = grounded ? 0.1 : Math.max(0, coyote - dt); jumpBuf -= dt; if (jumpBuf > 0 && grounded && !(P.rocket > 0)) { jumpBuf = 0; jump(); }   // forgiving jumps: press a touch early or late and it still counts
   // the world comes towards him
   roadScroll += sp * dt; scrollWorld(sp * dt); const shim = 0.4 + 0.3 * Math.sin(clock * 6); coinCap.emissiveIntensity = shim; rimMat.emissiveIntensity = shim; roadTex.offset.y = (roadScroll / 16) % 1; grassTex.offset.y = (roadScroll / 16) % 1;
   for (const t of trees) { t.position.z += sp * dt; if (t.position.z > 14) t.position.z -= 228; }
@@ -643,12 +652,12 @@ function update(dt) {
     if (it.kind === "coin" && !it.gone) {
       if (P.magnet > 0 && it.z > -14 && it.z < 1.5 && Math.abs(it.x - px) < 6.5) { const k = 1 - Math.exp(-9 * dt); it.x = lerp(it.x, px, k); it.baseY = lerp(it.baseY, py + 0.9, k); it.mesh.position.x = it.x; }
       if (ballFly && it.z < ballFly.last + 3 && it.z > ballFly.z - 3 && it.z < 0) { takeCoin(it, 2); ballFly.got++; }
-      else if (Math.abs(it.z) < 1.0 && Math.abs(it.x - px) < 1.15 && Math.abs((it.baseY || 0.9) - (py + 0.9)) < 1.5) takeCoin(it);
+      else if (Math.abs(it.z) < 1.0 && Math.abs(it.x - px) < 1.4 && Math.abs((it.baseY || 0.9) - (py + 0.9)) < 1.5) takeCoin(it);
     } else if (it.kind === "power" && !it.gone) {
       if (Math.abs(it.z) < 1.3 && Math.abs(it.x - px) < 1.4 && Math.abs(1.1 - (py + 0.9)) < 1.8) { it.gone = true; givePower(it.type); }
-    } else if (it.kind === "obs" && !it.gone && Math.abs(it.z) < 0.85 && Math.abs(it.x - px) < 1.0) {
+    } else if (it.kind === "obs" && !it.gone && Math.abs(it.z) < 0.7 && Math.abs(it.x - px) < 0.82) {
       const safe = P.spray > 0 || P.rocket > 0 || G.invuln > 0, standing = sliding <= 0;
-      const hit = it.type === "wall" ? py < 2.5 : it.type === "barrier" ? py < 0.75 : (standing && py < 1.5);
+      const hit = it.type === "wall" ? py < 2.5 : it.type === "barrier" ? py < 0.62 : (standing && py < 1.5);
       if (hit && !safe) hurt(it);
     }
     if (it.gone && it.kind !== "obs") { scene.remove(it.mesh); items.splice(i, 1); continue; }
