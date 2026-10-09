@@ -46,10 +46,11 @@ function ach(id) {
   SAVE.ach[id] = true; writeJSON(RUN_KEY, SAVE); newAch.push(a); try { burst(px, 1.6, 0, 0xd7102b, 12); burst(px, 1.6, 0, 0xffffff, 12); burst(px, 1.6, 0, 0xffd84a, 8); } catch (e) {} achQueue.push(a); showAch(); renderAchList();
 }
 function flash(kind) { const f = $("flash"); if (!f) return; f.className = "gr-flash"; void f.offsetWidth; f.className = "gr-flash " + kind; }
+let paused = false;
 function showAch() {
   if (achShowing || !achQueue.length) return; const a = achQueue.shift(), el = $("ach-banner"); achShowing = true;
-  $("ach-ico").textContent = a[1]; $("ach-name").textContent = a[2]; $("ach-text").textContent = a[3]; el.hidden = false; el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); sfx.milestone();
-  setTimeout(() => { el.hidden = true; achShowing = false; showAch(); }, 3200);
+  $("ach-ico").textContent = a[1]; $("ach-name").textContent = a[2]; $("ach-text").textContent = a[3]; el.hidden = false; stage.classList.add("ach-on"); el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); sfx.milestone();
+  setTimeout(() => { el.hidden = true; achShowing = false; if (!achQueue.length) stage.classList.remove("ach-on"); showAch(); }, 3200);
 }
 function renderAchList() {
   const n = ACH.filter((a) => SAVE.ach[a[0]]).length; $("ach-count").textContent = n + " of " + ACH.length;
@@ -367,8 +368,9 @@ const toy = (type, lane, z) => { const m = toyMesh(type); return add("power", m,
 /* ---------------- building the road ahead ---------------- */
 const CHUNK = 34;
 function difficulty() { return clamp((G.speed - 14) / 24, 0, 1); }
+let safeChunks = 0;
 function makeChunk(z0) {
-  const d = difficulty(), p = Math.random(), lane = Math.floor(Math.random() * 3), others = [0, 1, 2].filter((l) => l !== lane);
+  const d = difficulty(), p = safeChunks > 0 ? (safeChunks-- , 0.1) : Math.random(), lane = Math.floor(Math.random() * 3), others = [0, 1, 2].filter((l) => l !== lane);
   const line = (l, n, from, step, y) => { for (let i = 0; i < n; i++) coinAt(l, y || 0.9, from - i * (step || 2.3)); };
   if (p < 0.2) { line(lane, 9, z0 - 4); }
   else if (p < 0.4) { barrier(lane, z0 - 14); for (let i = 0; i < 8; i++) coinAt(lane, 0.9 + Math.sin((i / 7) * Math.PI) * 1.7, z0 - 8 - i * 1.7); line(others[0], 6, z0 - 6); }
@@ -403,7 +405,7 @@ streaks.forEach((m) => placeStreak(m, true));
 let dustT = 0;
 function dust(x) {
   if (reduced) return;
-  const m = new THREE.Mesh(sparkGeo, new THREE.MeshBasicMaterial({ color: 0xa9d88f, transparent: true })); m.position.set(x + rand(-0.25, 0.25), 0.08, 0.5); scene.add(m);
+  const m = new THREE.Mesh(sparkGeo, new THREE.MeshBasicMaterial({ color: 0xa9d88f, transparent: true })); m.scale.setScalar(0.55); m.position.set(x + rand(-0.25, 0.25), 0.08, 0.5); scene.add(m);
   sparks.push({ m, vx: rand(-1.2, 1.2), vy: rand(0.4, 1.6), vz: rand(0.5, 2), life: rand(0.35, 0.6), max: 0.6 });
 }
 function updateFx(dt, sp) {
@@ -464,12 +466,14 @@ function takeCoin(it, bonus) {
 }
 
 /* ---------------- input ---------------- */
-function goLane(d) { const n = clamp(laneIdx + d, 0, 2); if (n !== laneIdx) { laneIdx = n; G.lanes++; } }
-function jump() { if (G.phase !== "play") return; if (grounded && !(P.rocket > 0)) { vy = 10.2; grounded = false; sliding = 0; G.jumps++; sfx.jump(); } }
-function slide() { if (G.phase !== "play") return; if (!grounded) vy = Math.min(vy, -14); if (!(P.rocket > 0)) { sliding = 0.7; G.slides++; sfx.slide(); } }
+function goLane(d) { if (paused) return; const n = clamp(laneIdx + d, 0, 2); if (n !== laneIdx) { laneIdx = n; G.lanes++; } }
+function jump() { if (G.phase !== "play" || paused) return; if (grounded && !(P.rocket > 0)) { vy = 10.2; grounded = false; sliding = 0; G.jumps++; sfx.jump(); } }
+function slide() { if (G.phase !== "play" || paused) return; if (!grounded) vy = Math.min(vy, -14); if (!(P.rocket > 0)) { sliding = 0.7; G.slides++; sfx.slide(); } }
 window.addEventListener("keydown", (e) => {
   if (G.phase !== "play") return;
   const k = e.key;
+  if (k === "p" || k === "P" || k === "Escape") { setPause(!paused); return; }
+  if (paused) return;
   if (k === "ArrowLeft" || k === "a" || k === "A") goLane(-1); else if (k === "ArrowRight" || k === "d" || k === "D") goLane(1);
   else if (k === "ArrowUp" || k === "w" || k === "W" || k === " ") { jump(); e.preventDefault(); } else if (k === "ArrowDown" || k === "s" || k === "S") { slide(); e.preventDefault(); }
 });
@@ -477,7 +481,7 @@ let baseFov = 60;
 let sx = 0, sy = 0, st = 0, swiping = false;
 canvas.addEventListener("pointerdown", (e) => { sx = e.clientX; sy = e.clientY; st = performance.now(); swiping = true; canvas.setPointerCapture(e.pointerId); e.preventDefault(); });
 canvas.addEventListener("pointermove", (e) => {
-  if (!swiping || G.phase !== "play") return;
+  if (!swiping || G.phase !== "play" || paused) return;
   const dx = e.clientX - sx, dy = e.clientY - sy;
   if (Math.abs(dx) > 28 && Math.abs(dx) > Math.abs(dy)) { goLane(dx > 0 ? 1 : -1); sx = e.clientX; sy = e.clientY; }
   else if (dy < -34 && Math.abs(dy) > Math.abs(dx)) { jump(); sx = e.clientX; sy = e.clientY; }
@@ -565,7 +569,7 @@ const camPos = new THREE.Vector3(0, 4.2, 7.6);
 function top3() { return readJSON(TOP_KEY, []).slice(0, 3); }
 function renderTop(el) {
   const t = top3();
-  el.innerHTML = t.length ? t.map((r, i) => `<li><b>${["🥇", "🥈", "🥉"][i]}</b><span>${r.s.toLocaleString("en-GB")}</span><small>${r.m} m</small></li>`).join("") : "<li><span>No scores yet</span></li>";
+  el.innerHTML = t.length ? t.map((r, i) => `<li><b>${["🥇", "🥈", "🥉"][i]}</b><span>${r.s.toLocaleString("en-GB")}</span><small>${r.m} m</small></li>`).join("") : "<li class=\"empty\"><span>No scores yet</span></li>";
 }
 function chips() {
   const c = [];
@@ -582,12 +586,13 @@ function setHud() {
   const t = top3(), n = t.filter((r) => r.s > G.score).length;
   $("hud-rank").textContent = G.phase === "play" ? (n < 3 ? "#" + (n + 1) + " right now" : "") : "";
 }
+let bestShown = false;
 function reset() {
   for (const it of items) scene.remove(it.mesh); items.length = 0; feedEl.innerHTML = ""; coinFeed = null;
   G.speed = 15; G.dist = 0; G.coins = 0; G.score = 0; G.lives = 3; G.t = 0; G.streak = 0; G.invuln = 0; G.shield = false; G.nextMile = 500; G.usedPower = 0; G.kicks = 0; G.noHit = true; G.jumps = G.slides = G.lanes = 0; G.achT = 0; newAch = []; landT = reachT = 0;
   P.magnet = P.medal = P.spray = P.rocket = P.boots = P.whistle = 0; setGhost(false); ballFly = null; laneIdx = 1; px = 0; py = 0; vy = 0; sliding = 0; grounded = true; stumble = kickT = celeT = 0; act.t = 0; tempoBoost = 0;
   G.num = george.baseNum; G.maxNum = G.num; george.drawNumber(G.num);
-  spawnFront = -30; fillAhead(); applySky();
+  safeChunks = 2; bestShown = false; spawnFront = -30; fillAhead(); applySky();
 }
 function hurt(it) {
   if (G.phase !== "play" || G.invuln > 0) return;
@@ -604,6 +609,7 @@ function update(dt) {
   const sp = G.speed * (P.rocket > 0 ? 1.45 : P.boots > 0 ? 1.35 : 1);
   G.dist += sp * dt; G.score += sp * dt * 0.5 * (P.boots > 0 ? 2 : 1);
   tempoBoost = Math.min(34, (G.speed - 15) * 1.2);
+  if (!bestShown && SAVE.best > 0 && G.score > SAVE.best) { bestShown = true; feedItem("🏆", "NEW PERSONAL BEST!", "Keep going!", "big"); sfx.milestone(); burst(px, 1.6, 0, 0xffd84a, 14); }
   G.achT -= dt; if (G.achT <= 0) { G.achT = 0.3; const d = G.dist; if (d >= 100) ach("warmup"); if (d >= 500) ach("halftime"); if (d >= 1000) ach("fulltime"); if (d >= 2000) ach("extratime"); if (d >= 3000) ach("penalties"); if (G.noHit && d >= 300) ach("cleansheet"); if (G.num >= 15) ach("squad"); if (G.num >= 25) ach("legend"); if (G.num >= 50) ach("retired"); if (G.score >= 5000) ach("bigscore"); if (G.jumps >= 20) ach("acrobat"); if (G.slides >= 10) ach("slider"); if (G.lanes >= 30) ach("dribbler"); if (G.kicks >= 3) ach("freekick"); if (G.coins >= 100) ach("century"); }
   if (G.dist >= G.nextMile) { feedItem("📍", G.nextMile + " m!", "Keep going!", "big"); sfx.milestone(); celeT = 0.8; celeFlip = G.nextMile % 1000 === 0; G.nextMile += 500; }
   for (const k of ["magnet", "medal", "spray", "rocket", "boots", "whistle"]) if (P[k] > 0) { P[k] -= dt; if (P[k] <= 0) { P[k] = 0; if (k === "spray") setGhost(false); } }
@@ -666,9 +672,16 @@ function cameraStep(dt) {
   if (Math.abs(camera.fov - wantFov) > 0.05) { camera.fov = lerp(camera.fov, wantFov, 1 - Math.exp(-3 * dt)); camera.updateProjectionMatrix(); }
   camera.position.set(camPos.x + sxk, camPos.y + syk + bob, camPos.z); camera.lookAt(px * 0.35, 1.5 + py * 0.3, -14);
 }
+function setPause(on) {
+  if (on === paused || (on && G.phase !== "play")) return;
+  paused = on; $("pause").hidden = !on; $("btn-pause").textContent = on ? "▶" : "⏸";
+  if (ac) { try { on ? ac.suspend() : ac.resume(); } catch (e) {} }
+}
+$("btn-pause").addEventListener("click", () => setPause(!paused)); $("btn-resume").addEventListener("click", () => setPause(false));
+document.addEventListener("visibilitychange", () => { if (document.hidden) setPause(true); }); window.addEventListener("blur", () => setPause(true));
 function frame(now) {
   raf = requestAnimationFrame(frame);
-  const dt = Math.min(0.05, (now - last) / 1000 || 0.016); last = now; clock += dt;
+  const dt = Math.min(0.05, (now - last) / 1000 || 0.016); last = now; if (paused) { renderer.render(scene, camera); return; } clock += dt;
   if (G.phase === "play") update(P.whistle > 0 ? dt * 0.6 : dt);       // the referee's whistle slows the whole game down
   else if (G.phase === "menu") { roadScroll += 10 * dt; scrollWorld(10 * dt); roadTex.offset.y = (roadScroll / 16) % 1; grassTex.offset.y = (roadScroll / 16) % 1; for (const t of trees) { t.position.z += 10 * dt; if (t.position.z > 14) t.position.z -= 228; } }
   animate(dt); cameraStep(dt);
@@ -683,7 +696,7 @@ const PRIZES = [
   { id: "runghost", test: (r) => r.power >= 5, kit: "Phantom shirt", text: "Use 5 power-ups in one run" },
 ];
 function gameOver() {
-  G.phase = "over"; sfx.over(); stopMusic(); shake = 0.4;
+  G.phase = "over"; paused = false; sfx.over(); stopMusic(); shake = 0.4;
   const score = Math.floor(G.score), meters = Math.floor(G.dist);
   const t = readJSON(TOP_KEY, []);
   t.push({ s: score, m: meters, d: new Date().toISOString().slice(0, 10) }); t.sort((a, b) => b.s - a.s); writeJSON(TOP_KEY, t.slice(0, 10));
@@ -707,7 +720,7 @@ function gameOver() {
   }, 1100);
 }
 function start() {
-  audio(); reset(); G.phase = "play"; ach("kickoff");
+  audio(); paused = false; $("pause").hidden = true; $("btn-pause").textContent = "⏸"; reset(); G.phase = "play"; ach("kickoff");
   $("screen-start").hidden = true; $("screen-end").hidden = true; $("screen-game").hidden = false;
   resize(); renderTop($("hud-top")); startMusic(); feedItem("🏃", "GO GEORGE!", "Swipe to move, jump and slide", "big");
   stage.scrollIntoView({ block: "center", behavior: reduced ? "auto" : "smooth" });
@@ -715,7 +728,8 @@ function start() {
 $("btn-start").addEventListener("click", start);
 $("btn-again").addEventListener("click", start);
 $("btn-music").addEventListener("click", () => { cycleMusic(); audio(); });
-$("btn-sound").addEventListener("click", () => { sfxOn = !sfxOn; $("btn-sound").textContent = sfxOn ? "🔊 Sounds on" : "🔇 Sounds off"; });
+try { if (localStorage.getItem("gz_run_sfx") === "0") { sfxOn = false; $("btn-sound").textContent = "🔇 Sounds off"; } } catch (e) {}
+$("btn-sound").addEventListener("click", () => { sfxOn = !sfxOn; try { localStorage.setItem("gz_run_sfx", sfxOn ? "1" : "0"); } catch (e) {} $("btn-sound").textContent = sfxOn ? "🔊 Sounds on" : "🔇 Sounds off"; });
 showMusic(); renderAchList(); renderTop($("start-top")); newGoals(); resize();
 reset(); G.phase = "menu"; for (const it of items) scene.remove(it.mesh); items.length = 0; last = performance.now(); raf = requestAnimationFrame(frame);
 $("screen-game").hidden = true;
