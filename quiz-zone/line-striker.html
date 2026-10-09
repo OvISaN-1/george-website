@@ -126,7 +126,7 @@
       <li><span class="ls-num">1</span><span><strong>Time freezes.</strong> Look at where everyone is. Two fingers or the round buttons turn and zoom the camera.</span></li>
       <li><span class="ls-num">2</span><span><strong>Draw a line</strong> from George to a team-mate, or into the goal.</span></li>
       <li><span class="ls-num">3</span><span><strong>Curve it</strong> round the defenders. Passes must start inside the glowing arc. The line turns red when a defender is in the way.</span></li>
-      <li><span class="ls-num">4</span><span><strong>Lob it</strong> with the blue button for a cross: a team-mate near goal can head it or even try a bicycle kick. <strong>Hold still</strong> at the end of a pass to hit it harder. <strong>Aim for the corners.</strong> Hit the glowing top corner for bonus points. Wrong line? Let go in the red strip to cancel.</span></li>
+      <li><span class="ls-num">4</span><span><strong>Lob it</strong> with the blue button for a cross: a team-mate near goal can head it or even try a bicycle kick. <strong>A longer line</strong> is a harder strike: harder to save or block, and harder for a team-mate to control. <strong>Hold still</strong> at the end of a pass to push it further. <strong>Aim for the corners.</strong> Hit the glowing top corner for bonus points. Wrong line? Let go in the red strip to cancel.</span></li>
     </ul>
     <p class="ls-best" id="best-line"></p>
     <button class="btn-primary ls-go" id="btn-start" type="button">Kick off</button>
@@ -149,7 +149,7 @@
         <button type="button" id="cam-out" aria-label="Zoom out">－</button>
         <button type="button" id="cam-reset" aria-label="Reset camera">⌖</button>
       </div>
-      <div class="ls-hold" id="holdbar" hidden><span>HOLD STILL = HARDER PASS</span><div><i id="hold-fill"></i></div></div>
+      <div class="ls-hold" id="holdbar" hidden><span id="hold-label">POWER</span><div><i id="hold-fill"></i></div></div>
       <div class="ls-cancel" id="cancelzone" hidden>✕ Let go here to cancel</div>
     </div>
     <p class="ls-hint" id="hint" role="status" aria-live="polite"></p>
