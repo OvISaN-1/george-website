@@ -144,6 +144,10 @@
       { id: "retro90", name: "1990 League Cup", need: 9 },
       { id: "pink", name: "Pink away", need: 12 },
       { id: "legend", name: "Forest Legend gold", need: 15, fk: { stars: 16 } },
+      // prizes from George's Run
+      { id: "speedster", name: "Speedster (neon green)", ach: "run1000", how: "Run 1,000 m in George's Run" },
+      { id: "goldrun", name: "Golden Runner", ach: "run150c", how: "Collect 150 coins in one run of George's Run" },
+      { id: "phantom", name: "Phantom (purple)", ach: "runghost", how: "Use 5 power-ups in one run of George's Run" },
     ],
     boots: [
       { id: "black", name: "Classic black", need: 1, colour: "#15121a" },
@@ -205,7 +209,7 @@
     if (!it) return false;
     if ((get().bought || []).includes(type + ":" + id)) return true;      // bought with coins
     const P = progress();
-    if (it.ach) return !!P.mdAch[it.ach];
+    if (it.ach) return !!P.mdAch[it.ach] || !!(readJSON("gz_run_v1").ach || {})[it.ach];
     if (P.mdLevel >= it.need) return true;
     if (it.fk) return (it.fk.stars != null && P.fkStars >= it.fk.stars) || (it.fk.level != null && P.fkLevel >= it.fk.level);
     return it.need <= 10 && P.fkLevel >= it.need;       // Free Kick levels count too, as far as they go

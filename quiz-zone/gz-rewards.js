@@ -114,6 +114,7 @@
       { id: "fkgoal", icon: "🎯", text: "Score a free kick in Free Kick Masters", ev: "fk_goal", target: 1 },
       { id: "pen", icon: "🥅", text: "Play a Penalty Shootout", ev: "pen_game", target: 1 },
       { id: "md", icon: "🏟️", text: "Play a match in Matchday", ev: "md_game", target: 1 },
+      { id: "run500", icon: "🏃", text: "Run 500 m in George's Run", ev: "run_m", target: 500 },
     ],
     any: [
       { id: "play2", icon: "🎮", text: "Finish 2 games, any games", ev: "game", target: 2 },

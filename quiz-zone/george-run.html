@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>George's Run | George's Game Zone</title>
+<meta name="description" content="A 3D endless runner. George runs, jumps and slides, picks up coins and toys, and kicks a football to collect every coin ahead.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="canonical" href="https://georgeneagu.win/quiz-zone/george-run.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121014'/%3E%3Ctext x='16' y='23' font-family='Arial, sans-serif' font-weight='700' font-size='19' fill='%23e1102c' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="../css/fonts.css">
+<link rel="stylesheet" href="../css/shell.css">
+<link rel="stylesheet" href="stats.css">
+<style>
+  :root{--navy:#121014;--navy-light:#1c1820;--cream:#f1ede9;--gold:#f5b942;--teal:#9d5cff;--ink:#241f29;--good:#3DCC7C;--bad:#FF5D5D;}
+  *{box-sizing:border-box;}
+  body{margin:0;min-height:100vh;font-family:'Manrope',sans-serif;color:var(--cream);display:block;padding:0;background:var(--navy);}
+  h1,h2,h3{font-family:'Rajdhani',sans-serif;margin:0;}
+  button{font-family:'Rajdhani',sans-serif;cursor:pointer;border:none;font-weight:700;}
+  main#main{display:flex;flex-direction:column;align-items:center;padding:24px 16px 60px;
+    background:radial-gradient(circle at 15% 0%, rgba(157,92,255,0.14), transparent 45%),radial-gradient(circle at 85% 100%, rgba(245,185,66,0.10), transparent 45%);}
+  .quiz-title{width:100%;max-width:720px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+  .quiz-title .eyebrow{display:block;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#a264ff;margin-bottom:2px;}
+  .quiz-title h1{font-size:30px;line-height:1.05;color:var(--cream);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .quiz-title .back{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;text-decoration:none;color:var(--cream);border:1px solid rgba(241,237,233,0.18);border-radius:999px;padding:10px 18px;min-height:44px;display:inline-flex;align-items:center;}
+  .quiz-title .back:hover{border-color:var(--gold);color:var(--gold);}
+  .chip3d{font-family:'Manrope',sans-serif;font-size:11px;font-weight:800;letter-spacing:.3px;padding:4px 10px;border-radius:999px;background:#f5b942;color:#241f29;}
+  .footer-note{font-size:12px;color:#8a857e;margin-top:24px;text-align:center;max-width:600px;}
+  .gr-card{width:100%;max-width:720px;background:var(--navy-light);border-radius:20px;padding:24px;border:1px solid rgba(241,237,233,0.10);box-shadow:0 12px 30px rgba(0,0,0,0.35);}
+  .gr-card[hidden]{display:none;}
+  .gr-kicker{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#ff5a6e;margin:0 0 4px;}
+  .gr-h2{font-size:clamp(26px,5vw,34px);line-height:1.05;margin-bottom:8px;}
+  .gr-lede{color:#b9b2ac;margin:0;line-height:1.5;}
+  .gr-how{list-style:none;margin:20px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+  .gr-how li{display:flex;gap:10px;align-items:flex-start;background:rgba(255,255,255,0.05);border-radius:14px;padding:12px;font-size:14px;line-height:1.4;color:#d9d3cd;}
+  .gr-how strong{color:var(--cream);} .gr-ico{font-size:22px;line-height:1;}
+  .gr-toys{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:14px 0 0;padding:0;list-style:none;font-size:13.5px;color:#d9d3cd;}
+  .gr-toys li{background:rgba(245,185,66,.08);border:1px solid rgba(245,185,66,.18);border-radius:12px;padding:8px 10px;} .gr-toys b{color:var(--gold);}
+  .btn-primary{background:var(--teal);color:var(--navy);border-radius:999px;text-transform:uppercase;letter-spacing:.03em;min-height:48px;font-size:19px;padding:14px 26px;box-shadow:0 0 0 1px rgba(157,92,255,0.4), 0 0 28px rgba(157,92,255,0.35);transition:transform .15s ease, filter .15s ease;}
+  .btn-primary:hover{filter:brightness(1.08);} .btn-primary:active{transform:scale(0.97);}
+  .btn-primary:focus-visible,.gr-pill:focus-visible{outline:2px solid var(--cream);outline-offset:3px;}
+  .gr-go{margin-top:20px;width:100%;}
+  .gr-pill{background:rgba(255,255,255,0.07);color:var(--cream);border:1px solid rgba(241,237,233,0.2);border-radius:999px;min-height:44px;padding:0 16px;font-size:15px;}
+  .gr-top{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px;}
+  .gr-top li{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;background:rgba(255,255,255,.06);border-radius:12px;padding:8px 12px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:20px;}
+  .gr-top small{color:#b9b2ac;font-size:13px;font-family:'Manrope',sans-serif;font-weight:600;}
+  .gr-h3{font-size:18px;margin-top:20px;color:var(--gold);}
+  .gr-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin:16px 0;}
+  .gr-stats div{background:rgba(255,255,255,.05);border-radius:12px;padding:10px 12px;} .gr-stats b{display:block;font-family:'Rajdhani',sans-serif;font-size:26px;color:var(--gold);} .gr-stats span{font-size:12px;color:#b9b2ac;}
+  .gr-prizes{list-style:none;margin:0 0 10px;padding:0;display:grid;gap:8px;} .gr-prizes li{background:rgba(61,204,124,.14);border:1px solid rgba(61,204,124,.4);border-radius:12px;padding:10px 12px;} .gr-prizes small{display:block;color:#b9b2ac;}
+  .gr-game{width:100%;max-width:560px;} .gr-game[hidden]{display:none;}
+  .gr-hud{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;background:#0d0b10;border-radius:14px;padding:8px 14px;margin-bottom:10px;border:1px solid rgba(241,237,233,0.08);}
+  .gr-hud .big{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:28px;line-height:1;font-variant-numeric:tabular-nums;}
+  .gr-hud small{display:block;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#b9b2ac;}
+  .gr-hud .mid{text-align:center;} .gr-hud .right{text-align:right;} #hud-lives{color:#ff5a6e;letter-spacing:2px;} #hud-mult{color:var(--gold);margin-left:6px;}
+  .gr-stage{position:relative;border-radius:14px;overflow:hidden;background:#7db4ee;width:100%;height:min(74vh,700px);min-height:420px;touch-action:none;user-select:none;-webkit-user-select:none;}
+  .gr-stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;}
+  .gr-sub{position:absolute;left:10px;top:10px;z-index:3;pointer-events:none;font-family:'Rajdhani',sans-serif;font-weight:700;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.6);}
+  .gr-sub .coins{font-size:22px;color:#ffd84a;} .gr-sub .dist{font-size:16px;opacity:.95;}
+  .gr-board{position:absolute;right:10px;top:10px;z-index:3;pointer-events:none;background:rgba(13,11,16,.55);border-radius:12px;padding:6px 10px;color:#fff;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;min-width:110px;}
+  .gr-board h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#ffd84a;margin:0 0 2px;} .gr-board ol{list-style:none;margin:0;padding:0;} .gr-board li{display:flex;gap:6px;align-items:center;font-size:14px;} .gr-board small{display:none;} .gr-board b{font-size:13px;}
+  #hud-rank{position:absolute;right:10px;top:78px;z-index:3;pointer-events:none;font-family:'Rajdhani',sans-serif;font-weight:700;color:#ffd84a;text-shadow:0 2px 0 rgba(0,0,0,.6);font-size:15px;}
+  .gr-power{position:absolute;left:0;right:0;bottom:12px;text-align:center;z-index:3;pointer-events:none;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:22px;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.65);min-height:1.3em;}
+  .gr-pop{position:absolute;left:50%;top:24%;transform:translate(-50%,-50%) scale(.4);opacity:0;pointer-events:none;text-align:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:clamp(32px,9vw,56px);letter-spacing:.04em;white-space:nowrap;color:#fff;text-shadow:0 4px 0 #7a0d20,0 0 30px rgba(225,16,44,.8);z-index:4;}
+  .gr-pop small{display:block;font-size:.4em;letter-spacing:.08em;text-shadow:0 2px 0 #241f29;}
+  .gr-pop.show{animation:grPop 1.6s cubic-bezier(.2,1.4,.4,1) forwards;} .gr-pop.gold{color:#ffd66b;text-shadow:0 4px 0 #6b4a0a,0 0 30px rgba(245,185,66,.8);} .gr-pop.soft{color:#f1ede9;text-shadow:0 3px 0 #241f29;}
+  @keyframes grPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(-6deg);}22%{opacity:1;transform:translate(-50%,-50%) scale(1.1) rotate(2deg);}75%{opacity:1;transform:translate(-50%,-50%) scale(1);}100%{opacity:0;transform:translate(-50%,-62%) scale(1);}}
+  .gr-keys{font-size:12px;color:#8a857e;text-align:center;margin:10px 0 0;}
+  .gr-bar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px;}
+  @media (prefers-reduced-motion: reduce){.gr-pop.show{animation:none;opacity:1;}}
+</style>
+</head>
+<body data-page="quiz-game">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <nav class="nav-bar" aria-label="Main">
+      <a class="logo" href="../index.html">GEORGE<span>.</span></a>
+      <ul class="nav-links">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../football.html">Football</a></li>
+        <li><a href="../games.html">Video Games</a></li>
+        <li><a href="../quiz-zone.html" aria-current="page">Game Zone</a></li>
+        <li><a href="../school.html">School Zone</a></li>
+        <li><a href="../about.html">About Me</a></li>
+      </ul>
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </nav>
+    <div class="mobile-nav" id="mobile-nav">
+      <a href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/></svg>Home</a>
+      <a href="../football.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/></svg>Football</a>
+      <a href="../games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="10" rx="4"/></svg>Video Games</a>
+      <a href="../quiz-zone.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>Game Zone</a>
+      <a href="../school.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4l9 4-9 4-9-4z"/></svg>School Zone</a>
+      <a href="../about.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>About Me</a>
+    </div>
+  </header>
+
+  <main id="main">
+  <div class="quiz-title">
+    <div>
+      <span class="eyebrow">Game Zone</span>
+      <h1>George's Run <span class="chip3d">3D · NEW</span></h1>
+    </div>
+    <a class="back" href="../quiz-zone.html">&larr; All games</a>
+  </div>
+
+  <section class="gr-card" id="screen-start">
+    <p class="gr-kicker">Run. Jump. Collect.</p>
+    <h2 class="gr-h2">The road never ends. Can George keep up?</h2>
+    <p class="gr-lede" id="start-lede">George runs and runs, and he gets faster and faster. Grab every coin, dodge the barriers and pick up toys for super powers. Three lives, then it's over.</p>
+    <ul class="gr-how">
+      <li><span class="gr-ico">👈👉</span><span><strong>Swipe left or right</strong> to change lane. (Arrow keys or A and D on a keyboard.)</span></li>
+      <li><span class="gr-ico">👆</span><span><strong>Swipe up</strong> to jump over barriers. (Up arrow, W or Space.)</span></li>
+      <li><span class="gr-ico">👇</span><span><strong>Swipe down</strong> to slide under bars. (Down arrow or S.)</span></li>
+      <li><span class="gr-ico">🪙</span><span><strong>Keep collecting</strong> without a break for a bigger multiplier, up to x5.</span></li>
+    </ul>
+    <ul class="gr-toys" aria-label="Toys and power-ups">
+      <li><b>⚽ Football:</b> George kicks it ahead and it picks up every coin in front of him.</li>
+      <li><b>🧸 Teddy:</b> a shield that saves you from one crash.</li>
+      <li><b>🦆 Rubber duck:</b> every coin counts double.</li>
+      <li><b>🚀 Toy rocket:</b> fly high over everything.</li>
+      <li><b>👻 Ghost:</b> invisible, walk right through things.</li>
+      <li><b>🧲 Magnet:</b> coins fly to George.</li>
+    </ul>
+    <h3 class="gr-h3">🏆 Top three</h3>
+    <ol class="gr-top" id="start-top"></ol>
+    <p class="gr-keys">Run far and win shirts for George: 1,000 m, 150 coins in a run, or 5 power-ups in a run. Wear them in My Player.</p>
+    <div class="gr-bar"><button class="gr-pill" id="btn-music" type="button">🎵 Music</button><button class="gr-pill" id="btn-sound" type="button">🔊 Sounds on</button></div>
+    <button class="btn-primary gr-go" id="btn-start" type="button">Start running</button>
+  </section>
+
+  <section class="gr-game" id="screen-game" hidden>
+    <div class="gr-hud">
+      <div><small>Points</small><span class="big" id="hud-score">0</span><span class="big" id="hud-mult"></span></div>
+      <div class="mid"><small>Lives</small><span class="big" id="hud-lives">❤❤❤</span></div>
+      <div class="right"><small>Coins</small><span class="big" id="hud-coins">0</span></div>
+    </div>
+    <div class="gr-stage" id="stage">
+      <canvas id="gl" aria-label="George running down the road. Swipe left or right to change lane, up to jump, down to slide."></canvas>
+      <div class="gr-sub"><div class="dist" id="hud-dist">0 m</div></div>
+      <div class="gr-board"><h3>🏆 Top three</h3><ol class="gr-top" id="hud-top"></ol></div>
+      <div id="hud-rank"></div>
+      <div class="gr-pop" id="pop" aria-hidden="true"></div>
+      <div class="gr-power" id="hud-power" aria-live="polite"></div>
+    </div>
+    <p class="gr-keys">Swipe left and right to change lane. Swipe up to jump. Swipe down to slide.</p>
+  </section>
+
+  <section class="gr-card" id="screen-end" hidden>
+    <h2 class="gr-h2" id="end-title">Nice run, George!</h2>
+    <div class="gr-stats" id="end-stats"></div>
+    <ul class="gr-prizes" id="end-prizes"></ul>
+    <h3 class="gr-h3">🏆 Top three</h3>
+    <ol class="gr-top" id="end-top"></ol>
+    <button class="btn-primary gr-go" id="btn-again" type="button">Run again</button>
+  </section>
+
+  <p class="footer-note">Built with Three.js. Everything in the game, from George to the music, is made in your browser. Your top three scores are saved on this device.</p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-row">
+      <span>Built with ♥ by Dad, for George.</span>
+      <a href="../quiz-zone.html">Game Zone</a>
+    </div>
+  </footer>
+
+<script src="../js/main.js"></script>
+<script src="george-look.js"></script>
+<script src="george-kit.js"></script>
+<script src="gz-rewards.js"></script>
+<script type="module" src="george-run/george-run.js"></script>
+</body>
+</html>
