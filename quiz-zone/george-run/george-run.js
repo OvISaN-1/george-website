@@ -187,6 +187,8 @@ function makeGeorge() {
   if (style === "fringe") head.add(sph(0.1, o.hair, 0, 0.3, 0.07, 1.05, 0.38, 0.5));
   if (style !== "mohawk") head.add(sph(0.118, o.hair, 0, 0.2, -0.045, 1, 0.9, 0.88));
   head.scale.setScalar(1.1); g.add(head);
+  const capeGeo = new THREE.PlaneGeometry(0.5, 0.85, 6, 6), capeBase = Float32Array.from(capeGeo.attributes.position.array);
+  const cape = new THREE.Mesh(capeGeo, new THREE.MeshLambertMaterial({ color: o.shirt, emissive: o.shirt, emissiveIntensity: 0.2, side: THREE.DoubleSide })); cape.position.set(0, 1.28, -0.15); cape.visible = false; mats.push(cape.material); g.add(cape);
   num = clamp(Math.round(Number(num)) || 10, 1, 99);
   const numC = document.createElement("canvas"); numC.width = 256; numC.height = 256;
   const numTex = new THREE.CanvasTexture(numC); numTex.colorSpace = THREE.SRGBColorSpace;
@@ -200,7 +202,7 @@ function makeGeorge() {
   const blob = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.4), new THREE.MeshBasicMaterial({ map: canvasTex(64, 64, (c) => { const gr = c.createRadialGradient(32, 32, 4, 32, 32, 30); gr.addColorStop(0, "rgba(0,0,0,.5)"); gr.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = gr; c.fillRect(0, 0, 64, 64); }), transparent: true, depthWrite: false }));
   blob.rotation.x = -Math.PI / 2; blob.position.y = 0.03;
   const root = new THREE.Group(); root.add(g, blob); root.scale.setScalar(1.28); root.rotation.y = Math.PI;   // a little larger than life so the shirt print reads; he runs away from the camera (towards -z)
-  return { root, body: g, head, legL: lL.hip, legR: lR.hip, kneeL: lL.knee, kneeR: lR.knee, armL: aL.sh, armR: aR.sh, elbowL: aL.elbow, elbowR: aR.elbow, mats, blob, drawNumber, baseNum: num };
+  return { root, body: g, head, cape, capeGeo, capeBase, legL: lL.hip, legR: lR.hip, kneeL: lL.knee, kneeR: lR.knee, armL: aL.sh, armR: aR.sh, elbowL: aL.elbow, elbowR: aR.elbow, mats, blob, drawNumber, baseNum: num };
 }
 let george = makeGeorge(); scene.add(george.root);
 
@@ -424,6 +426,7 @@ function dust(x) {
 function updateFx(dt, sp) {
   const f = clamp((sp - 21) / 18, 0, 1);
   for (const m of streaks) { m.visible = f > 0.05; if (!m.visible) continue; m.position.z += sp * 1.7 * dt; m.material.opacity = f * 0.45; if (m.position.z > 8) placeStreak(m, false); }
+  if (sliding > 0 && grounded && Math.random() < 0.7) dust(px);
   dustT -= dt; if (dustT <= 0 && grounded && sliding <= 0 && P.rocket <= 0) { dustT = 0.09 - f * 0.04; dust(px); }
 }
 function updateSparks(dt) {
@@ -480,8 +483,8 @@ function takeCoin(it, bonus) {
 
 /* ---------------- input ---------------- */
 function goLane(d) { if (paused) return; const n = clamp(laneIdx + d, 0, 2); if (n !== laneIdx) { laneIdx = n; G.lanes++; } }
-let jumpBuf = 0, coyote = 0;
-function jump() { if (G.phase !== "play" || paused) return; if ((grounded || coyote > 0) && !(P.rocket > 0)) { coyote = 0; vy = 10.2; grounded = false; sliding = 0; G.jumps++; sfx.jump(); } else jumpBuf = 0.15; }
+let jumpBuf = 0, coyote = 0, jumpStyle = "tuck";
+function jump() { if (G.phase !== "play" || paused) return; if ((grounded || coyote > 0) && !(P.rocket > 0)) { coyote = 0; jumpStyle = pick(["tuck", "bicycle", "bicycle", "header", "header", "star"]); vy = 10.2; grounded = false; sliding = 0; G.jumps++; sfx.jump(); } else jumpBuf = 0.15; }
 function slide() { if (G.phase !== "play" || paused) return; if (!grounded) vy = Math.min(vy, -14); if (!(P.rocket > 0)) { sliding = 0.7; G.slides++; sfx.slide(); } }
 window.addEventListener("keydown", (e) => {
   if (G.phase !== "play") return;
@@ -518,19 +521,41 @@ function animate(dt) {
   g.armL.rotation.x = s * 0.9; g.armR.rotation.x = -s * 0.9;
   g.body.rotation.x = 0.22; g.body.rotation.y = s * 0.15; g.body.position.y = Math.abs(Math.cos(phase)) * 0.08;
   if (sprint) { g.body.rotation.x = 0.5; g.legL.rotation.x = -s * 1.25; g.legR.rotation.x = s * 1.25; g.armL.rotation.x = s * 1.3; g.armR.rotation.x = -s * 1.3; g.elbowL.rotation.x = g.elbowR.rotation.x = -1.7; }
-  if (!grounded && !flying) {                                          // in the air: tuck the knees, arms up
-    const up = clamp(vy / 10, -1, 1);
-    g.legL.rotation.x = -1.1; g.kneeL.rotation.x = 1.4; g.legR.rotation.x = 0.35; g.kneeR.rotation.x = 0.6;
-    g.armL.rotation.x = g.armR.rotation.x = -2.5 + 0.5 * up; g.armL.rotation.z = -0.4; g.armR.rotation.z = 0.4; g.body.rotation.x = 0.12 - 0.2 * up; g.body.position.y = 0;
+  if (!grounded && !flying) {                                          // in the air: a different move each jump
+    const up = clamp(vy / 10, -1, 1), pa = clamp((10.2 - vy) / 20.4, 0, 1), arc = Math.sin(pa * Math.PI);
+    if (jumpStyle === "bicycle") {                                       // overhead bicycle kick
+      g.body.rotation.x = -1.25 * arc; g.body.position.y = 0.35 * arc;
+      g.legR.rotation.x = -2.5 * arc - 0.3; g.kneeR.rotation.x = 0.25; g.legL.rotation.x = -0.3 * arc; g.kneeL.rotation.x = 1.5 * arc;
+      g.armL.rotation.x = g.armR.rotation.x = -0.4; g.armL.rotation.z = -1.2 * arc; g.armR.rotation.z = 1.2 * arc; g.head.rotation.x = 0.35 * arc;
+    } else if (jumpStyle === "header") {                                 // diving header
+      g.body.rotation.x = 0.35 + 0.75 * arc; g.body.position.y = 0.1;
+      g.legL.rotation.x = 0.7; g.kneeL.rotation.x = 0.9; g.legR.rotation.x = 0.95; g.kneeR.rotation.x = 0.4;
+      g.armL.rotation.x = g.armR.rotation.x = 0.7; g.armL.rotation.z = -0.5; g.armR.rotation.z = 0.5; g.elbowL.rotation.x = g.elbowR.rotation.x = -0.4; g.head.rotation.x = -0.12 - 0.55 * arc;
+    } else if (jumpStyle === "star") {                                   // star jump
+      g.legL.rotation.x = g.legR.rotation.x = -0.1; g.legL.rotation.z = -0.55 * arc; g.legR.rotation.z = 0.55 * arc; g.kneeL.rotation.x = g.kneeR.rotation.x = 0.3;
+      g.armL.rotation.x = g.armR.rotation.x = -0.2; g.armL.rotation.z = -1.7 * arc; g.armR.rotation.z = 1.7 * arc; g.elbowL.rotation.x = g.elbowR.rotation.x = -0.2; g.body.rotation.x = 0.05; g.body.position.y = 0;
+    } else {
+      g.legL.rotation.x = -1.1; g.kneeL.rotation.x = 1.4; g.legR.rotation.x = 0.35; g.kneeR.rotation.x = 0.6;
+      g.armL.rotation.x = g.armR.rotation.x = -2.5 + 0.5 * up; g.armL.rotation.z = -0.4; g.armR.rotation.z = 0.4; g.body.rotation.x = 0.12 - 0.2 * up; g.body.position.y = 0;
+    }
   }
-  if (sliding > 0) {                                                    // slide on the back, feet first
-    g.body.rotation.x = -1.15; g.body.position.y = -0.62; g.legL.rotation.x = g.legR.rotation.x = -1.5; g.kneeL.rotation.x = g.kneeR.rotation.x = 0.1;
-    g.armL.rotation.x = g.armR.rotation.x = 0.6; g.armL.rotation.z = -0.3; g.armR.rotation.z = 0.3;
+  if (sliding > 0) {                                                    // slide tackle: one leg out straight, the other tucked under
+    g.body.rotation.x = -1.0; g.body.position.y = -0.6; g.legR.rotation.x = -1.5; g.kneeR.rotation.x = 0; g.legL.rotation.x = -0.6; g.kneeL.rotation.x = 1.7;
+    g.armL.rotation.x = 0.3; g.armL.rotation.z = -1.3; g.armR.rotation.x = 0.9; g.armR.rotation.z = 0.5; g.head.rotation.x = 0.25;
   }
   if (kickT > 0) { kickT -= dt; const u = 1 - kickT / 0.45; g.legR.rotation.x = -0.4 - 1.5 * Math.sin(Math.min(1, u * 1.6) * Math.PI * 0.8); g.kneeR.rotation.x = u < 0.3 ? 1.3 : 0.1; g.body.rotation.x = 0.1; g.armL.rotation.z = -0.8; g.armR.rotation.z = 0.8; }
   if (P.magnet > 0 && !flying) { g.armL.rotation.z = -1.3; g.armR.rotation.z = 1.3; g.armL.rotation.x = g.armR.rotation.x = -0.5; }
   if (P.spray > 0) { g.body.rotation.x = 0.45; g.armL.rotation.x = g.armR.rotation.x = 0.7; g.elbowL.rotation.x = g.elbowR.rotation.x = -0.3; g.body.rotation.y = s * 0.3; }
-  if (flying) { g.body.rotation.x = 1.3; g.body.position.y = 0.6; g.armL.rotation.x = g.armR.rotation.x = -3.0; g.elbowL.rotation.x = g.elbowR.rotation.x = -0.1; g.legL.rotation.x = g.legR.rotation.x = 0.7; g.kneeL.rotation.x = g.kneeR.rotation.x = 0.1; g.body.rotation.y = s * 0.08; }
+  g.cape.visible = flying;
+  if (flying) {                                                         // Superman: horizontal, fist forward, cape streaming
+    const bob = Math.sin(clock * 3);
+    g.body.rotation.x = 1.45 + bob * 0.05; g.body.position.y = 0.75 + bob * 0.12; g.body.rotation.y = 0;
+    g.armR.rotation.x = -3.1; g.armR.rotation.z = 0.05; g.elbowR.rotation.x = -0.05; g.armL.rotation.x = -0.35; g.armL.rotation.z = -0.25; g.elbowL.rotation.x = -0.2;
+    g.legL.rotation.x = g.legR.rotation.x = 0.12; g.legL.rotation.z = -0.05; g.legR.rotation.z = 0.05; g.kneeL.rotation.x = 0.35 + Math.sin(clock * 9) * 0.15; g.kneeR.rotation.x = 0.35 - Math.sin(clock * 9) * 0.15; g.head.rotation.x = -0.9;
+    const pos = g.capeGeo.attributes.position, b = g.capeBase;
+    for (let i = 0; i < pos.count; i++) { const y = b[i * 3 + 1], k = (0.425 - y) / 0.85; pos.setZ(i, Math.sin(clock * 18 + y * 9 + b[i * 3] * 5) * 0.09 * k - k * k * 0.12); pos.setX(i, b[i * 3] * (1 + k * 0.35)); }
+    pos.needsUpdate = true; g.cape.rotation.x = -0.85; g.cape.scale.set(0.8, 0.75, 1);
+  }
   if (act.t > 0) {                                                      // a pose for each thing George picks up
     act.t -= dt; const u = clamp(1 - act.t / act.dur, 0, 1), ps = Math.sin(u * Math.PI);
     if (act.type === "whistle") { g.armR.rotation.x = -2.3 * ps; g.elbowR.rotation.x = -2.4 * ps; g.armR.rotation.z = -0.25 * ps; g.head.rotation.x = -0.12 - 0.25 * ps; }
