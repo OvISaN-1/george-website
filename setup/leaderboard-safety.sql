@@ -2,7 +2,7 @@
 -- George's website: LEADERBOARD SAFETY (run once in Supabase)
 -- ---------------------------------------------------------------------
 -- Every game saves scores straight into the "leaderboard" table. These
--- rules live in the database, so they protect all 12 games at once
+-- rules live in the database, so they protect all of George's games at once
 -- without changing any game:
 --   * names: 1-18 characters, letters/numbers/spaces (and ' - .),
 --     at least one letter, and no rude words (tidied up automatically)
@@ -50,6 +50,8 @@ begin
     when 'name-that-riff' then 2500
     when 'quickfire-quiz' then 60
     when 'guess-the-player' then 60
+    when 'georges-run' then 5000000
+    when 'georges-run-daily' then 5000000
     else null end;
   if max_score is null then raise exception 'unknown game'; end if;
   if new.score is null or new.score < 0 or new.score > max_score or new.score <> trunc(new.score) then

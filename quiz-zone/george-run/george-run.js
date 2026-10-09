@@ -375,24 +375,70 @@ function toyMesh(type) {
 const toy = (type, lane, z) => { const m = toyMesh(type); return add("power", m, LANES[lane], 1.1, z, { type, baseY: 1.1, spin: !m.userData.billboard }); };
 
 /* ---------------- building the road ahead ---------------- */
+// The daily challenge builds the same pitch for everyone: its layout comes from a random-number
+// generator seeded with today's date (UTC). Normal runs use Math.random.
+let rng = Math.random, chunkNo = 0;
+const R = () => rng(), rR = (a, b) => a + R() * (b - a), pR = (arr) => arr[Math.floor(R() * arr.length)];
+function seeded(a) { return () => { a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function seedOf(str) { let h = 2166136261; for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+const todayUTC = () => new Date().toISOString().slice(0, 10);
+// people on the pitch: a referee crossing two lanes, a defender sliding in from the side, and a groundsman on his mower
+function person(shirt, shorts, socks) {
+  const g = new THREE.Group(), L = (c) => new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 0.15 });
+  const part = (geo, c, x, y, z) => { const m = new THREE.Mesh(geo, L(c)); m.position.set(x, y, z); g.add(m); return m; };
+  const legs = [-0.12, 0.12].map((x) => { const h = new THREE.Group(); h.position.set(x, 0.95, 0); const sk = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.06, 0.9, 8), L(socks)); sk.position.y = -0.45; h.add(sk); const b = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.26), L(0x151515)); b.position.set(0, -0.92, 0.05); h.add(b); g.add(h); return h; });
+  part(new THREE.CylinderGeometry(0.2, 0.19, 0.28, 12), shorts, 0, 0.98, 0);
+  part(new THREE.CylinderGeometry(0.23, 0.19, 0.6, 12), shirt, 0, 1.4, 0);
+  part(new THREE.SphereGeometry(0.15, 14, 10), 0xf0c39c, 0, 1.86, 0); part(new THREE.SphereGeometry(0.155, 14, 10), 0x2a1d12, 0, 1.92, -0.02).scale.set(1, 0.6, 1);
+  const arms = [-1, 1].map((sx) => { const h = new THREE.Group(); h.position.set(sx * 0.28, 1.65, 0); const a = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.05, 0.6, 8), L(shirt)); a.position.y = -0.3; h.add(a); g.add(h); return h; });
+  g.userData.legs = legs; g.userData.arms = arms; return g;
+}
+const warnTex = canvasTex(64, 64, (g) => { g.fillStyle = "#e1102c"; g.beginPath(); g.arc(32, 32, 29, 0, 7); g.fill(); g.lineWidth = 4; g.strokeStyle = "#fff"; g.stroke(); g.fillStyle = "#fff"; g.font = "700 44px Arial Black, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("!", 32, 35); });
+function referee(a, z) {                           // jogs back and forth across two lanes, holding up a yellow card: use the third lane
+  const g = person(0x151515, 0x151515, 0x151515), card = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.32, 0.03), yellowMat); card.position.y = -0.66; g.userData.arms[1].add(card); g.userData.arms[1].rotation.x = -2.7;
+  add("obs", g, (LANES[a] + LANES[a + 1]) / 2, 0, z, { type: "ref", laneA: a, t: R() * 6 });
+}
+function defender(lane, z) {                       // waits beside the pitch, then slides into the outside lane: jump over him
+  const side = lane === 0 ? -1 : 1, g = person(0x6cabdd, 0xffffff, 0x6cabdd);
+  const w = new THREE.Sprite(new THREE.SpriteMaterial({ map: warnTex, depthTest: false })); w.scale.set(0.8, 0.8, 1); w.position.y = 2.6; g.add(w); g.userData.warn = w;
+  add("obs", g, side * 5.4, 0, z, { type: "def", lane, side, slideT: -1 });
+}
+function mower(lane, z) {                          // a ride-on mower driving towards George: go round it
+  const g = new THREE.Group(), M = (c) => new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 0.15 });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.6, 1.6), M(0x2f8a3a)); body.position.y = 0.55; g.add(body);
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.2, 0.9), M(0x1d1d1d)); deck.position.set(0, 0.22, 0.55); g.add(deck);
+  for (const [x, zz, r] of [[-0.62, -0.5, 0.36], [0.62, -0.5, 0.36], [-0.6, 0.6, 0.24], [0.6, 0.6, 0.24]]) { const wh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.22, 14), M(0x151515)); wh.rotation.z = Math.PI / 2; wh.position.set(x, r, zz); g.add(wh); }
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15, 0.5), M(0x151515)); seat.position.set(0, 0.92, -0.35); g.add(seat);
+  const man = person(0xd8ff3a, 0x24324a, 0x24324a); man.scale.setScalar(0.75); man.position.set(0, 0.25, -0.35); man.userData.legs.forEach((l) => (l.rotation.x = -1.4)); g.add(man);
+  add("obs", g, LANES[lane], 0, z, { type: "mower", vz: 3.5 });
+}
+
 const CHUNK = 34;
 function difficulty() { return clamp((G.speed - 14) / 24, 0, 1); }
-let safeChunks = 0;
+let safeChunks = 0, skyT = 0, skyLane = 1, skyN = 0;
 function makeChunk(z0) {
-  const d = difficulty(), p = safeChunks > 0 ? (safeChunks-- , 0.1) : Math.random(), lane = Math.floor(Math.random() * 3), others = [0, 1, 2].filter((l) => l !== lane);
+  const safe = safeChunks > 0; if (safe) safeChunks--; chunkNo++;
+  const d = G.daily ? clamp((chunkNo - 4) / 120, 0, 1) : difficulty(), p = safe ? 0.1 : R(), lane = Math.floor(R() * 3), others = [0, 1, 2].filter((l) => l !== lane);
   const line = (l, n, from, step, y) => { for (let i = 0; i < n; i++) coinAt(l, y || 0.9, from - i * (step || 2.3)); };
-  if (p < 0.2) { line(lane, 9, z0 - 4); }
+  const special = !safe && d > 0.08 && R() < 0.3;
+  if (special) {
+    const k = Math.floor(R() * 3);
+    if (k === 0) { const a = Math.floor(R() * 2); referee(a, z0 - 16); line(a === 0 ? 2 : 0, 10, z0 - 4); }
+    else if (k === 1) { const sl = R() < 0.5 ? 0 : 2; defender(sl, z0 - 16); for (let i = 0; i < 8; i++) coinAt(sl, 0.9 + Math.sin((i / 7) * Math.PI) * 1.7, z0 - 10 - i * 1.7); line(1, 6, z0 - 6); }
+    else { const l = Math.floor(R() * 3); mower(l, z0 - 20); line(l === 1 ? 0 : 1, 8, z0 - 4); }
+  }
+  else if (p < 0.2) { line(lane, 9, z0 - 4); }
   else if (p < 0.4) { barrier(lane, z0 - 14); for (let i = 0; i < 8; i++) coinAt(lane, 0.9 + Math.sin((i / 7) * Math.PI) * 1.7, z0 - 8 - i * 1.7); line(others[0], 6, z0 - 6); }
   else if (p < 0.55) { wall(others[0], z0 - 14); wall(others[1], z0 - 14); line(lane, 10, z0 - 4); }
   else if (p < 0.7) { bar(lane, z0 - 14); line(lane, 3, z0 - 7); line(lane, 3, z0 - 19); line(others[1], 6, z0 - 6); if (d > 0.3) barrier(others[0], z0 - 14); }
   else if (p < 0.85) { for (let i = 0; i < 12; i++) coinAt(Math.round(1 + Math.sin(i * 0.8)), 0.9, z0 - 3 - i * 2.4); if (d > 0.2) { barrier(0, z0 - 18); barrier(2, z0 - 18); } }
-  else { for (let r = 0; r < 4; r++) for (let l = 0; l < 3; l++) coinAt(l, 0.9, z0 - 5 - r * 3); if (d > 0.1) barrier(Math.floor(Math.random() * 3), z0 - 22); }
-  if (d > 0.5 && Math.random() < 0.5) wall(Math.floor(Math.random() * 3), z0 - 30);
+  else { for (let r = 0; r < 4; r++) for (let l = 0; l < 3; l++) coinAt(l, 0.9, z0 - 5 - r * 3); if (d > 0.1) barrier(Math.floor(R() * 3), z0 - 22); }
+  const extra = R() < 0.5, extraLane = Math.floor(R() * 3);
+  if (!special && d > 0.5 && extra) wall(extraLane, z0 - 30);
   // a pick-up now and then: at most one per stretch of road, so it never gets crowded
-  if (Math.random() < 0.5) {
-    const bag = ["ball", "ball", "ball", "boots", "boots", "whistle", "whistle", "gloves", "gloves", "medal", "medal", "spray", "spray", "trophy", "trophy", "rocket", "rocket", "scarf", "num5", "num5", "num5", "num10", "numx2"], t = pick(bag);
-    if (t !== "scarf" || G.lives < MAXL) toy(t, Math.floor(Math.random() * 3), z0 - rand(10, 26));
-  }
+  const give = R() < 0.5, bag = ["ball", "ball", "ball", "boots", "boots", "whistle", "whistle", "gloves", "gloves", "medal", "medal", "spray", "spray", "trophy", "trophy", "rocket", "rocket", "scarf", "num5", "num5", "num5", "num10", "numx2"];
+  const t = pR(bag), tl = Math.floor(R() * 3), tz = z0 - rR(10, 26);
+  if (give && (t !== "scarf" || G.lives < MAXL)) toy(t, tl, tz);
 }
 function fillAhead() { while (spawnFront > -160) { makeChunk(spawnFront); spawnFront -= CHUNK; } }
 
@@ -466,6 +512,7 @@ function slide() { if (G.phase !== "play" || paused) return; if (!grounded) vy =
 window.addEventListener("keydown", (e) => {
   if (G.phase !== "play") return;
   const k = e.key;
+  if (contOpen) { if (k === "Enter" || k === " ") acceptContinue(); else if (k === "Escape") declineContinue(); e.preventDefault(); return; }
   if (k === "p" || k === "P" || k === "Escape") { setPause(!paused); return; }
   if (paused) return;
   if (k === "ArrowLeft" || k === "a" || k === "A") goLane(-1); else if (k === "ArrowRight" || k === "d" || k === "D") goLane(1);
@@ -608,15 +655,33 @@ function reset() {
   G.speed = 15; G.dist = 0; G.coins = 0; G.score = 0; G.lives = 4; G.t = 0; G.streak = 0; G.invuln = 0; G.shield = false; G.nextMile = 500; G.usedPower = 0; G.kicks = 0; G.noHit = true; G.jumps = G.slides = G.lanes = 0; G.achT = 0; jumpBuf = coyote = 0; newAch = []; landT = reachT = 0;
   P.magnet = P.medal = P.spray = P.rocket = P.boots = P.whistle = 0; setGhost(false); ballFly = null; laneIdx = 1; px = 0; py = 0; vy = 0; sliding = 0; grounded = true; stumble = kickT = celeT = 0; act.t = 0; tempoBoost = 0;
   G.num = george.baseNum; G.maxNum = G.num; george.drawNumber(G.num);
+  rng = G.daily ? seeded(seedOf("georges-run:" + todayUTC())) : Math.random; chunkNo = 0; G.continued = false; skyT = 0;
   safeChunks = 3; bestShown = false; spawnFront = -30; fillAhead(); applySky();
 }
+// once per run, George can pay some of his shop coins to keep going
+const CONT_COST = 50; let contOpen = false, contTimer = 0;
+function canContinue() { try { return !G.continued && !!(window.GZR && GZR.ready && GZR.coins() >= CONT_COST); } catch (e) { return false; } }
+function offerContinue() {
+  contOpen = true; paused = true; setHud(); let n = 6; $("cont-n").textContent = n; $("cont-have").textContent = GZR.coins(); $("cont").hidden = false;
+  clearInterval(contTimer); contTimer = setInterval(() => { n--; $("cont-n").textContent = n; if (n <= 0) declineContinue(); }, 1000);
+}
+function closeCont() { clearInterval(contTimer); contOpen = false; $("cont").hidden = true; }
+function acceptContinue() {
+  if (!contOpen) return; closeCont(); paused = false;
+  if (!GZR.spend(CONT_COST)) { gameOver(); return; }
+  G.continued = true; G.lives = 1; G.invuln = 3; stumble = 0;
+  for (const it of items) if (it.kind === "obs" && !it.gone && it.z > -30) { it.gone = true; scene.remove(it.mesh); }
+  feedItem("💪", "BACK IN THE GAME!", CONT_COST + " shop coins spent", "power"); sfx.life();
+}
+function declineContinue() { if (!contOpen) return; closeCont(); paused = false; gameOver(); }
+$("btn-cont").addEventListener("click", acceptContinue); $("btn-nocont").addEventListener("click", declineContinue);
 function hurt(it) {
   if (G.phase !== "play" || G.invuln > 0) return;
   if (G.shield) { G.shield = false; G.invuln = 1.2; burst(px, 1.2, 0, 0x9fe3ff, 18); sfx.power(); feedItem("🧤", "SAVED!", "The gloves stopped the card", "power"); it.gone = true; scene.remove(it.mesh); return; }
-  flash("hit"); G.lives--; G.noHit = false; G.invuln = 3; stumble = 0.9; G.streak = 0; shake = 0.5; G.speed = Math.max(14, G.speed * 0.78); sfx.hit(); burst(px, 1, 0, 0xff6b6b, 14);
+  flash("hit"); G.lives--; try { if (navigator.vibrate) navigator.vibrate(G.lives <= 0 ? [90, 60, 180] : 120); } catch (e) {} G.noHit = false; G.invuln = 3; stumble = 0.9; G.streak = 0; shake = 0.5; G.speed = Math.max(14, G.speed * 0.78); sfx.hit(); burst(px, 1, 0, 0xff6b6b, 14);
   const was = G.num; setNum(Math.max(george.baseNum, G.num - 5));
-  if (G.lives <= 0) { gameOver(); return; }
-  feedItem(it.type === "wall" ? "🟥" : "🟨", "CARD!", G.lives + (G.lives === 1 ? " life left" : " lives left") + (G.num < was ? " · shirt number #" + G.num : ""), "bad");
+  if (G.lives <= 0) { if (canContinue()) offerContinue(); else gameOver(); return; }
+  feedItem(it.type === "wall" ? "🟥" : it.type === "ref" ? "🧑‍⚖️" : it.type === "def" ? "🦵" : it.type === "mower" ? "🚜" : "🟨", it.type === "def" ? "TACKLED!" : it.type === "mower" ? "MOWED DOWN!" : "CARD!", G.lives + (G.lives === 1 ? " life left" : " lives left") + (G.num < was ? " · shirt number #" + G.num : ""), "bad");
 }
 function update(dt) {
   G.t += dt;
@@ -640,9 +705,21 @@ function update(dt) {
   roadScroll += sp * dt; scrollWorld(sp * dt); const shim = 0.4 + 0.3 * Math.sin(clock * 6); coinCap.emissiveIntensity = shim; rimMat.emissiveIntensity = shim; roadTex.offset.y = (roadScroll / 16) % 1; grassTex.offset.y = (roadScroll / 16) % 1;
   for (const t of trees) { t.position.z += sp * dt; if (t.position.z > 14) t.position.z -= 228; }
   spawnFront += sp * dt; fillAhead(); applySky();
+  if (P.rocket > 0) {                                 // a trail of coins in the sky while George flies
+    skyT -= dt;
+    if (skyT <= 0 && P.rocket > 72 / sp + 0.3) { skyT = 2.4 / sp; if (++skyN % 9 === 0) skyLane = clamp(skyLane + (Math.random() < 0.5 ? -1 : 1), 0, 2); coinAt(skyLane, 4.3, -72); }
+  } else { skyLane = laneIdx; skyN = 0; }
   if (ballFly) { ballFly.last = ballFly.z; ballFly.z -= (sp + 85) * dt; ballFly.t += dt; if (ballFly.z < -140) { feedItem("⚽", "BALL BONUS!", "+" + ballFly.got + " coins collected", "big"); ballFly = null; } }
   for (let i = items.length - 1; i >= 0; i--) {
-    const it = items[i]; it.z += sp * dt; it.mesh.position.z = it.z;
+    const it = items[i], pz = it.z; it.z += (sp + (it.vz || 0)) * dt; it.mesh.position.z = it.z;
+    const across = (w) => pz < w && it.z > -w;      // did it pass George since the last frame? (so nothing slips through on a slow phone)
+    if (it.kind === "obs" && it.type === "ref") { it.t += dt; const u = 0.5 - 0.5 * Math.cos(it.t * 1.7); it.x = lerp(LANES[it.laneA], LANES[it.laneA + 1], u); it.mesh.position.x = it.x; const lg = it.mesh.userData.legs; lg[0].rotation.x = Math.sin(it.t * 10) * 0.6; lg[1].rotation.x = -lg[0].rotation.x; it.mesh.userData.arms[0].rotation.x = -lg[0].rotation.x; }
+    else if (it.kind === "obs" && it.type === "def") {
+      const wm = it.mesh.userData.warn; wm.visible = it.slideT < 0.3 && Math.floor(clock * 6) % 2 === 0;
+      if (it.slideT < 0 && it.z > -24) it.slideT = 0;
+      if (it.slideT >= 0 && it.slideT < 1) { it.slideT = Math.min(1, it.slideT + dt * 2.2); const u = 1 - Math.pow(1 - it.slideT, 3); it.x = lerp(it.side * 5.4, LANES[it.lane], u); it.mesh.position.x = it.x; it.mesh.rotation.z = it.side * 1.3 * u; it.mesh.position.y = 0.32 * u; const lg = it.mesh.userData.legs; lg[0].rotation.x = -0.6 * u; lg[1].rotation.x = 0.3 * u; }
+    }
+    else if (it.kind === "obs" && it.type === "mower") { it.mesh.children.forEach((c, k) => { if (k >= 2 && k <= 5) c.rotation.x += dt * 12; }); }
     if (it.spin) it.mesh.rotation.y += dt * 3.2; else if (it.kind === "power") it.mesh.rotation.y = Math.sin(clock * 2 + it.z) * 0.25;
     if (it.kind === "coin" && it.gone) {           // a picked-up coin pops up, grows and vanishes with a sparkle
       it.pop = (it.pop === undefined ? 0.3 : it.pop) - dt; const k = 1 - it.pop / 0.3; it.mesh.position.y += 5 * dt; it.mesh.position.x = lerp(it.mesh.position.x, px, 0.2); it.mesh.scale.setScalar(Math.max(0.01, (1 + k * 0.7) * (1 - k * k))); it.mesh.rotation.y += dt * 14;
@@ -653,12 +730,12 @@ function update(dt) {
     if (it.kind === "coin" && !it.gone) {
       if (P.magnet > 0 && it.z > -14 && it.z < 1.5 && Math.abs(it.x - px) < 6.5) { const k = 1 - Math.exp(-9 * dt); it.x = lerp(it.x, px, k); it.baseY = lerp(it.baseY, py + 0.9, k); it.mesh.position.x = it.x; }
       if (ballFly && it.z < ballFly.last + 3 && it.z > ballFly.z - 3 && it.z < 0) { takeCoin(it, 2); ballFly.got++; }
-      else if (Math.abs(it.z) < 1.0 && Math.abs(it.x - px) < 1.4 && Math.abs((it.baseY || 0.9) - (py + 0.9)) < 1.5) takeCoin(it);
+      else if (across(1.0) && Math.abs(it.x - px) < 1.4 && Math.abs((it.baseY || 0.9) - (py + 0.9)) < 1.5) takeCoin(it);
     } else if (it.kind === "power" && !it.gone) {
-      if (Math.abs(it.z) < 1.3 && Math.abs(it.x - px) < 1.4 && Math.abs(1.1 - (py + 0.9)) < 1.8) { it.gone = true; givePower(it.type); }
-    } else if (it.kind === "obs" && !it.gone && Math.abs(it.z) < 0.7 && Math.abs(it.x - px) < 0.82) {
+      if (across(1.3) && Math.abs(it.x - px) < 1.4 && Math.abs(1.1 - (py + 0.9)) < 1.8) { it.gone = true; givePower(it.type); }
+    } else if (it.kind === "obs" && !it.gone && across(it.type === "mower" ? 1.0 : 0.7) && Math.abs(it.x - px) < (it.type === "mower" ? 1.0 : 0.82)) {
       const safe = P.spray > 0 || P.rocket > 0 || G.invuln > 0, standing = sliding <= 0;
-      const hit = it.type === "wall" ? py < 2.5 : it.type === "barrier" ? py < 0.62 : (standing && py < 1.5);
+      const hit = it.type === "wall" ? py < 2.5 : it.type === "ref" ? py < 2.2 : it.type === "mower" ? py < 1.3 : (it.type === "barrier" || it.type === "def") ? py < 0.62 : (standing && py < 1.5);
       if (hit && !safe) hurt(it);
     }
     if (it.gone && it.kind !== "obs") { scene.remove(it.mesh); items.splice(i, 1); continue; }
@@ -688,11 +765,11 @@ function cameraStep(dt) {
   camera.position.set(camPos.x + sxk, camPos.y + syk, camPos.z); camera.lookAt(px * 0.35, 1.5 + py * 0.3, -14);
 }
 function setPause(on) {
-  if (on === paused || (on && G.phase !== "play")) return;
+  if (contOpen || on === paused || (on && G.phase !== "play")) return;
   paused = on; $("pause").hidden = !on; $("btn-pause").textContent = on ? "▶" : "⏸";
   if (ac) { try { on ? ac.suspend() : ac.resume(); } catch (e) {} }
 }
-$("btn-pause").addEventListener("click", () => setPause(!paused)); $("btn-resume").addEventListener("click", () => setPause(false));
+$("btn-pause").addEventListener("click", () => setPause(!paused)); $("btn-quit").addEventListener("click", () => { if (G.phase !== "play") return; setPause(false); gameOver(); }); $("btn-resume").addEventListener("click", () => setPause(false));
 document.addEventListener("visibilitychange", () => { if (document.hidden) setPause(true); }); window.addEventListener("blur", () => setPause(true));
 function frame(now) {
   raf = requestAnimationFrame(frame);
@@ -705,13 +782,46 @@ function frame(now) {
 }
 
 /* ---------------- screens, scores and prizes ---------------- */
+/* ---------------- daily challenge and the online leaderboard ---------------- */
+const DAILY_KEY = "gz_run_daily_v1", NAME_KEY = "gz_run_name", GAME_ID = "georges-run", GAME_DAILY = "georges-run-daily";
+const SB_URL = "https://hucnucpfyjltlhmvprso.supabase.co/rest/v1/leaderboard";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1Y251Y3BmeWpsdGxobXZwcnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDgzNjEsImV4cCI6MjEwMzU4NDM2MX0.DSjLCkiUWB47wVd4wnW_2RvWFoISbH80JI9ukB1bBdg";
+let lastRun = null;
+const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function dailyRec() { const r = readJSON(DAILY_KEY, {}); return r.date === todayUTC() ? r : { date: todayUTC(), best: 0 }; }
+function showDaily() { const b = dailyRec().best; for (const id of ["daily-best", "daily-best2"]) { const el = $(id); if (el) el.textContent = b ? "Your best today: " + b.toLocaleString("en-GB") : "Same pitch for everyone today"; } }
+function readName() { try { return localStorage.getItem(NAME_KEY) || "George"; } catch (e) { return "George"; } }
+async function fetchBoard(game, today) {
+  const q = `?game=eq.${game}${today ? "&created_at=gte." + todayUTC() + "T00:00:00Z" : ""}&select=player_name,score&order=score.desc&limit=5`;
+  const res = await fetch(SB_URL + q, { headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY } });
+  if (!res.ok) throw new Error(res.status); return res.json();
+}
+async function loadOnline(where) {
+  for (const [id, game, today] of [["-all", GAME_ID, false], ["-day", GAME_DAILY, true]]) {
+    const el = $(where + "-online" + id); if (!el) continue;
+    try { const rows = await fetchBoard(game, today); el.innerHTML = rows.length ? rows.map((r, i) => `<li><b>${["🥇", "🥈", "🥉", "4", "5"][i]}</b><span>${esc(r.player_name)}</span><small>${Number(r.score).toLocaleString("en-GB")}</small></li>`).join("") : `<li class="empty"><span>${today ? "Nobody yet today. Be the first!" : "No scores yet. Be the first!"}</span></li>`; }
+    catch (e) { el.innerHTML = '<li class="empty"><span>Couldn\'t load the online scores right now.</span></li>'; }
+  }
+}
+$("save-form").addEventListener("submit", async (e) => {
+  e.preventDefault(); if (!lastRun) return;
+  const name = $("save-name").value.trim().slice(0, 18); if (!name) return;
+  try { localStorage.setItem(NAME_KEY, name); } catch (er) {}
+  $("save-msg").textContent = "Saving…";
+  try {
+    const res = await fetch(SB_URL, { method: "POST", headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ game: lastRun.game, player_name: name, score: Math.min(lastRun.score, 5000000) }) });
+    if (!res.ok) throw new Error(res.status);
+    $("save-form").hidden = true; $("save-msg").textContent = "Saved online! " + lastRun.score.toLocaleString("en-GB") + " points for " + name + "."; lastRun = null; loadOnline("end"); loadOnline("start");
+  } catch (er) { $("save-msg").textContent = "Couldn't save online right now. Try again later."; }
+});
+
 const PRIZES = [
   { id: "run1000", test: (r) => r.dist >= 1000, kit: "Speedster shirt", text: "Run 1,000 m in one go" },
   { id: "run150c", test: (r) => r.coins >= 150, kit: "Golden Runner shirt", text: "Collect 150 coins in one run" },
   { id: "runghost", test: (r) => r.power >= 5, kit: "Phantom shirt", text: "Use 5 power-ups in one run" },
 ];
 function gameOver() {
-  G.phase = "over"; paused = false; sfx.over(); stopMusic(); shake = 0.4;
+  closeCont(); G.phase = "over"; paused = false; sfx.over(); stopMusic(); shake = 0.4;
   const score = Math.floor(G.score), meters = Math.floor(G.dist);
   const t = readJSON(TOP_KEY, []);
   t.push({ s: score, m: meters, d: new Date().toISOString().slice(0, 10) }); t.sort((a, b) => b.s - a.s); writeJSON(TOP_KEY, t.slice(0, 10));
@@ -724,28 +834,36 @@ function gameOver() {
   const won = [];
   for (const p of PRIZES) if (!SAVE.ach[p.id] && p.test({ dist: meters, coins: G.coins, power: G.usedPower })) { SAVE.ach[p.id] = true; won.push(p); }
   SAVE.best = Math.max(SAVE.best || 0, score); writeJSON(RUN_KEY, SAVE);
+  let dailyBest = false;
+  if (G.daily) { const db = dailyRec(); dailyBest = score > db.best; if (dailyBest) writeJSON(DAILY_KEY, { date: todayUTC(), best: score }); }
+  lastRun = { score, game: G.daily ? GAME_DAILY : GAME_ID };
   setTimeout(() => {
-    $("screen-game").hidden = true; $("screen-end").hidden = false;
+    document.body.classList.remove("gr-playing"); try { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch (e) {}
+    $("screen-game").hidden = true; $("screen-end").hidden = false; window.scrollTo(0, Math.max(0, $("screen-end").getBoundingClientRect().top + window.scrollY - 84));
+    $("end-mode").textContent = G.daily ? "📅 Daily challenge · " + todayUTC() + (dailyBest ? " · your best today!" : "") : "";
+    $("save-form").hidden = score <= 0; $("save-msg").textContent = ""; $("save-name").value = readName();
     $("end-title").textContent = rank === 0 ? "New high score!" : rank > 0 ? "You are in the top three!" : "Nice run, George!";
     $("end-stats").innerHTML = `<div><b>${score.toLocaleString("en-GB")}</b><span>Points</span></div><div><b>${meters} m</b><span>Distance</span></div><div><b>${G.coins}</b><span>Coins picked up</span></div><div><b>#${G.maxNum}</b><span>Best shirt number</span></div>` + (earned ? `<div><b>+${earned}</b><span>Coins for the shop</span></div>` : "");
     $("end-missions").innerHTML = done.map((d) => `<li class="${d.ok ? "ok" : ""}">${d.ok ? "✅" : "▫️"} ${d.m.text}${d.ok ? " <b>+10 🪙</b>" : ""}</li>`).join("");
     $("end-ach").innerHTML = newAch.map((a) => `<li>${a[1]} <b>${a[2]}</b> <small>${a[3]} · +5 🪙</small></li>`).join("");
     $("end-prizes").innerHTML = won.length ? won.map((p) => `<li>🎽 <b>New shirt unlocked: ${p.kit}!</b> <small>${p.text}. Wear it in My Player.</small></li>`).join("") : "";
-    renderTop($("end-top")); newGoals();
+    renderTop($("end-top")); newGoals(); showDaily(); loadOnline("end");
   }, 1100);
 }
-function start() {
+function start(daily) {
+  G.daily = !!daily;
   audio(); paused = false; $("pause").hidden = true; $("btn-pause").textContent = "⏸"; reset(); G.phase = "play"; ach("kickoff");
   $("screen-start").hidden = true; $("screen-end").hidden = true; $("screen-game").hidden = false;
-  resize(); renderTop($("hud-top")); startMusic(); feedItem("🏃", "GO GEORGE!", "Swipe to move, jump and slide", "big");
-  stage.scrollIntoView({ block: "center", behavior: reduced ? "auto" : "smooth" });
+  document.body.classList.add("gr-playing");          // the game fills the whole screen, so the score and hearts are always in view
+  try { if (matchMedia("(pointer: coarse)").matches && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); } catch (e) {}
+  resize(); requestAnimationFrame(resize); renderTop($("hud-top")); startMusic(); feedItem(G.daily ? "📅" : "🏃", G.daily ? "DAILY CHALLENGE" : "GO GEORGE!", G.daily ? "Same pitch for everyone today" : "Swipe to move, jump and slide", "big");
 }
-$("btn-start").addEventListener("click", start);
-$("btn-again").addEventListener("click", start);
+$("btn-start").addEventListener("click", () => start(false)); $("btn-daily").addEventListener("click", () => start(true)); $("btn-daily2").addEventListener("click", () => start(true));
+$("btn-again").addEventListener("click", () => start(G.daily));
 $("btn-music").addEventListener("click", () => { cycleMusic(); audio(); });
 try { if (localStorage.getItem("gz_run_sfx") === "0") { sfxOn = false; $("btn-sound").textContent = "🔇 Sounds off"; } } catch (e) {}
 $("btn-sound").addEventListener("click", () => { sfxOn = !sfxOn; try { localStorage.setItem("gz_run_sfx", sfxOn ? "1" : "0"); } catch (e) {} $("btn-sound").textContent = sfxOn ? "🔊 Sounds on" : "🔇 Sounds off"; });
-showMusic(); renderAchList(); renderTop($("start-top")); newGoals(); resize();
+showMusic(); showDaily(); loadOnline("start"); renderAchList(); renderTop($("start-top")); newGoals(); resize();
 reset(); G.phase = "menu"; for (const it of items) scene.remove(it.mesh); items.length = 0; last = performance.now(); raf = requestAnimationFrame(frame);
 $("screen-game").hidden = true;
-window.__run = { G, P, items, get george() { return george; }, hurt, givePower, camera, makeChunk, setGhost, kick: () => givePower("ball"), jump, slide, goLane, feedItem };
+window.__run = { G, P, items, referee, defender, mower, start, get layout() { return items.filter((i) => i.kind !== "coin" || true).slice(0, 40).map((i) => i.kind + ":" + (i.type || "") + ":" + i.x.toFixed(1) + ":" + Math.round(i.z)).join("|"); }, get george() { return george; }, hurt, givePower, camera, makeChunk, setGhost, kick: () => givePower("ball"), jump, slide, goLane, feedItem };
