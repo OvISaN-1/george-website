@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>George's Run | George's Game Zone</title>
-<meta name="description" content="A 3D endless runner. George runs, jumps and slides, picks up coins and toys, and kicks a football to collect every coin ahead.">
+<meta name="description" content="A 3D endless runner at the City Ground. George runs, jumps and slides, picks up coins and football gear, and kicks a football to collect every coin ahead.">
 <meta name="robots" content="noindex, nofollow">
 <link rel="canonical" href="https://georgeneagu.win/quiz-zone/george-run.html">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121014'/%3E%3Ctext x='16' y='23' font-family='Arial, sans-serif' font-weight='700' font-size='19' fill='%23e1102c' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E">
@@ -57,7 +57,7 @@
   .gr-stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;}
   .gr-sub{position:absolute;left:10px;top:10px;z-index:3;pointer-events:none;font-family:'Rajdhani',sans-serif;font-weight:700;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.6);}
   .gr-sub .coins{font-size:22px;color:#ffd84a;} .gr-sub .dist{font-size:16px;opacity:.95;}
-  .gr-board{position:absolute;right:10px;top:10px;z-index:3;pointer-events:none;background:rgba(13,11,16,.55);border-radius:12px;padding:6px 10px;color:#fff;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;min-width:110px;}
+  .gr-board{position:absolute;right:10px;top:10px;z-index:3;pointer-events:none;background:rgba(13,11,16,.55);border-radius:12px;padding:6px 10px;color:#fff;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;min-width:96px;max-width:40%;}
   .gr-board h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#ffd84a;margin:0 0 2px;} .gr-board ol{list-style:none;margin:0;padding:0;} .gr-board li{display:flex;gap:6px;align-items:center;font-size:14px;} .gr-board small{display:none;} .gr-board b{font-size:13px;}
   #hud-rank{position:absolute;right:10px;top:78px;z-index:3;pointer-events:none;font-family:'Rajdhani',sans-serif;font-weight:700;color:#ffd84a;text-shadow:0 2px 0 rgba(0,0,0,.6);font-size:15px;}
   .gr-power{position:absolute;left:0;right:0;bottom:12px;text-align:center;z-index:3;pointer-events:none;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:22px;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.65);min-height:1.3em;}
@@ -65,6 +65,22 @@
   .gr-pop small{display:block;font-size:.4em;letter-spacing:.08em;text-shadow:0 2px 0 #241f29;}
   .gr-pop.show{animation:grPop 1.6s cubic-bezier(.2,1.4,.4,1) forwards;} .gr-pop.gold{color:#ffd66b;text-shadow:0 4px 0 #6b4a0a,0 0 30px rgba(245,185,66,.8);} .gr-pop.soft{color:#f1ede9;text-shadow:0 3px 0 #241f29;}
   @keyframes grPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(-6deg);}22%{opacity:1;transform:translate(-50%,-50%) scale(1.1) rotate(2deg);}75%{opacity:1;transform:translate(-50%,-50%) scale(1);}100%{opacity:0;transform:translate(-50%,-62%) scale(1);}}
+  .gr-missions{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px;} .gr-missions li{background:rgba(255,255,255,.06);border-radius:10px;padding:8px 12px;font-size:14px;} .gr-missions li.ok{background:rgba(61,204,124,.14);border:1px solid rgba(61,204,124,.4);}
+  .gr-feed{position:absolute;left:8px;top:40px;z-index:3;list-style:none;margin:0;padding:0;display:grid;gap:5px;pointer-events:none;max-width:56%;}
+  .gr-fi{display:flex;align-items:center;gap:8px;background:linear-gradient(90deg,rgba(13,11,16,.78),rgba(13,11,16,.35));border-left:4px solid #ffd84a;border-radius:4px 10px 10px 4px;padding:4px 12px 4px 8px;color:#fff;font-family:'Rajdhani',sans-serif;font-weight:700;animation:grIn .28s ease-out;}
+  .gr-fi i{font-style:normal;font-size:20px;line-height:1;min-width:22px;text-align:center;} .gr-fi b{font-size:17px;letter-spacing:.04em;display:block;line-height:1.05;} .gr-fi small{display:block;font-size:12px;font-weight:600;color:#d9d3cd;letter-spacing:.02em;}
+  .gr-fi.power{border-left-color:#3ddc7c;} .gr-fi.bad{border-left-color:#ff4d5e;} .gr-fi.big{border-left-color:#ffffff;background:linear-gradient(90deg,rgba(160,20,40,.85),rgba(13,11,16,.3));} .gr-fi.num{border-left-color:#b04dff;} .gr-fi.coin b{color:#ffd84a;font-size:15px;}
+  .gr-fi.out{opacity:0;transform:translateX(-30px);transition:all .38s ease-in;}
+  @keyframes grIn{from{opacity:0;transform:translateX(-40px);}to{opacity:1;transform:none;}}
+  .gr-vignette{position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(ellipse at 50% 55%,transparent 55%,rgba(0,0,0,.38) 100%);}
+  .gr-flash{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;} .gr-flash.hit{background:radial-gradient(ellipse at center,rgba(255,30,50,0) 30%,rgba(255,30,50,.55) 100%);animation:grFlash .5s ease-out;}
+  @keyframes grFlash{0%{opacity:1;}100%{opacity:0;}}
+  .gr-ach{position:absolute;left:50%;top:6px;transform:translateX(-50%);z-index:6;display:flex;align-items:center;gap:12px;min-width:250px;max-width:92%;background:linear-gradient(90deg,#7a0d20,#c8102e 60%,#7a0d20);border:2px solid #ffd84a;border-radius:14px;padding:8px 16px;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:none;}
+  .gr-ach[hidden]{display:none;} .gr-ach.show{animation:grAch 3.2s ease-in-out forwards;}
+  .gr-ach i{font-style:normal;font-size:34px;line-height:1;} .gr-ach small{display:block;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;letter-spacing:.18em;color:#ffd84a;} .gr-ach b{display:block;font-family:'Rajdhani',sans-serif;font-size:21px;line-height:1.05;} .gr-ach em{display:block;font-style:normal;font-size:12px;color:#ffe9ec;}
+  @keyframes grAch{0%{transform:translate(-50%,-90px);opacity:0;}10%{transform:translate(-50%,0);opacity:1;}88%{transform:translate(-50%,0);opacity:1;}100%{transform:translate(-50%,-90px);opacity:0;}}
+  .gr-achlist{margin-top:14px;background:rgba(255,255,255,.05);border-radius:12px;padding:6px 12px;} .gr-achlist summary{cursor:pointer;min-height:40px;display:flex;align-items:center;gap:8px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;color:var(--gold);}
+  .gr-achlist ul{list-style:none;margin:6px 0 4px;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px;} .gr-achlist li{display:flex;gap:10px;align-items:center;background:rgba(255,255,255,.05);border-radius:10px;padding:6px 10px;opacity:.6;} .gr-achlist li.got{opacity:1;background:rgba(245,185,66,.12);} .gr-achlist li i{font-style:normal;font-size:22px;} .gr-achlist li b{display:block;font-size:14px;} .gr-achlist li small{display:block;font-size:12px;color:#b9b2ac;}
   .gr-keys{font-size:12px;color:#8a857e;text-align:center;margin:10px 0 0;}
   .gr-bar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px;}
   @media (prefers-reduced-motion: reduce){.gr-pop.show{animation:none;opacity:1;}}
@@ -109,22 +125,30 @@
 
   <section class="gr-card" id="screen-start">
     <p class="gr-kicker">Run. Jump. Collect.</p>
-    <h2 class="gr-h2">The road never ends. Can George keep up?</h2>
-    <p class="gr-lede" id="start-lede">George runs and runs, and he gets faster and faster. Grab every coin, dodge the barriers and pick up toys for super powers. Three lives, then it's over.</p>
+    <h2 class="gr-h2">The pitch never ends. Can George keep up?</h2>
+    <p class="gr-lede" id="start-lede">George runs and runs, and he gets faster and faster. Grab every coin, dodge the referee's cards and pick up football gear for super powers. Three lives, then it's over.</p>
     <ul class="gr-how">
       <li><span class="gr-ico">👈👉</span><span><strong>Swipe left or right</strong> to change lane. (Arrow keys or A and D on a keyboard.)</span></li>
       <li><span class="gr-ico">👆</span><span><strong>Swipe up</strong> to jump over barriers. (Up arrow, W or Space.)</span></li>
       <li><span class="gr-ico">👇</span><span><strong>Swipe down</strong> to slide under bars. (Down arrow or S.)</span></li>
-      <li><span class="gr-ico">🪙</span><span><strong>Keep collecting</strong> without a break for a bigger multiplier, up to x5.</span></li>
+      <li><span class="gr-ico">🔟</span><span><strong>Your shirt number is your coin value.</strong> Every coin is worth your number, so pick up number boosts. A card knocks it down by 5.</span></li>
     </ul>
-    <ul class="gr-toys" aria-label="Toys and power-ups">
-      <li><b>⚽ Football:</b> George kicks it ahead and it picks up every coin in front of him.</li>
-      <li><b>🧸 Teddy:</b> a shield that saves you from one crash.</li>
-      <li><b>🦆 Rubber duck:</b> every coin counts double.</li>
-      <li><b>🚀 Toy rocket:</b> fly high over everything.</li>
-      <li><b>👻 Ghost:</b> invisible, walk right through things.</li>
-      <li><b>🧲 Magnet:</b> coins fly to George.</li>
+    <ul class="gr-toys" aria-label="Football power-ups">
+      <li><b>🟨 Yellow cards:</b> jump over them. <b>🟥 Red cards:</b> go round them.</li>
+      <li><b>⚽ Football:</b> kicked ahead, it picks up every coin in front of you.</li>
+      <li><b>👟 Golden boots:</b> a sprint with double distance points.</li>
+      <li><b>📣 Referee whistle:</b> play slows down.</li>
+      <li><b>🧤 Keeper gloves:</b> a shield against one card.</li>
+      <li><b>🏅 Gold medal:</b> every coin counts double.</li>
+      <li><b>💨 Vanishing spray:</b> invisible, walk through the cards.</li>
+      <li><b>🏆 Golden trophy:</b> coins fly to you.</li>
+      <li><b>🚀 Rocket boots:</b> fly over everything.</li>
+      <li><b>🧣 Fan scarf:</b> an extra life.</li>
+      <li><b>#️⃣ Number badges:</b> +5, +10 or double your shirt number.</li>
     </ul>
+    <details class="gr-achlist"><summary>🏅 Achievements <span id="ach-count"></span></summary><ul id="ach-list"></ul></details>
+    <h3 class="gr-h3">🎯 This run's goals</h3>
+    <ul class="gr-missions" id="missions"></ul>
     <h3 class="gr-h3">🏆 Top three</h3>
     <ol class="gr-top" id="start-top"></ol>
     <p class="gr-keys">Run far and win shirts for George: 1,000 m, 150 coins in a run, or 5 power-ups in a run. Wear them in My Player.</p>
@@ -134,15 +158,18 @@
 
   <section class="gr-game" id="screen-game" hidden>
     <div class="gr-hud">
-      <div><small>Points</small><span class="big" id="hud-score">0</span><span class="big" id="hud-mult"></span></div>
+      <div><small>Points · coin value</small><span class="big" id="hud-score">0</span><span class="big" id="hud-mult">#10</span></div>
       <div class="mid"><small>Lives</small><span class="big" id="hud-lives">❤❤❤</span></div>
       <div class="right"><small>Coins</small><span class="big" id="hud-coins">0</span></div>
     </div>
     <div class="gr-stage" id="stage">
       <canvas id="gl" aria-label="George running down the road. Swipe left or right to change lane, up to jump, down to slide."></canvas>
       <div class="gr-sub"><div class="dist" id="hud-dist">0 m</div></div>
+      <ul class="gr-feed" id="feed" aria-live="polite"></ul>
       <div class="gr-board"><h3>🏆 Top three</h3><ol class="gr-top" id="hud-top"></ol></div>
       <div id="hud-rank"></div>
+      <div class="gr-vignette" aria-hidden="true"></div><div class="gr-flash" id="flash" aria-hidden="true"></div>
+      <div class="gr-ach" id="ach-banner" hidden role="status"><i id="ach-ico">🏆</i><span><small>ACHIEVEMENT UNLOCKED</small><b id="ach-name"></b><em id="ach-text"></em></span></div>
       <div class="gr-pop" id="pop" aria-hidden="true"></div>
       <div class="gr-power" id="hud-power" aria-live="polite"></div>
     </div>
@@ -152,13 +179,15 @@
   <section class="gr-card" id="screen-end" hidden>
     <h2 class="gr-h2" id="end-title">Nice run, George!</h2>
     <div class="gr-stats" id="end-stats"></div>
+    <ul class="gr-prizes" id="end-ach"></ul>
+    <ul class="gr-missions" id="end-missions"></ul>
     <ul class="gr-prizes" id="end-prizes"></ul>
     <h3 class="gr-h3">🏆 Top three</h3>
     <ol class="gr-top" id="end-top"></ol>
     <button class="btn-primary gr-go" id="btn-again" type="button">Run again</button>
   </section>
 
-  <p class="footer-note">Built with Three.js. Everything in the game, from George to the music, is made in your browser. Your top three scores are saved on this device.</p>
+  <p class="footer-note">Built with Three.js. Everything in the game, from George to the stadium and the music, is made in your browser. Your top three scores are saved on this device.</p>
   </main>
 
   <footer class="site-footer">
