@@ -19,7 +19,7 @@ const reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce
 
 const GOAL_HALF = 3.66, GOAL_H = 2.44;
 const PASS_V = 21, SHOT_V = 30, POWER_V = 54;
-const LOB_MIN = 22;                     // a pass longer than this (metres) is lobbed over the top
+const LOB_MIN = 14;                     // a pass longer than this (metres), or one into the box, is lobbed over the top
 const BEST_KEY = "gz_linestriker_best2";
 const PASS_HALF = 105 * Math.PI / 180;  // a pass must go within 105 degrees either side of the way the player faces (so sideways is fine)
 const BIN_X = 2.6, BIN_Y = 2.05;
@@ -50,7 +50,7 @@ function resize() {
   const w = stage.clientWidth || 360, h = stage.clientHeight || 600;
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
-  camera.fov = w / h < 0.75 ? 70 : 56;
+  camera.fov = w / h < 0.75 ? 72 : 58;
   camera.updateProjectionMatrix();
 }
 window.addEventListener("resize", resize);
@@ -219,7 +219,7 @@ const att = [
 ];
 const defs = []; for (let i = 0; i < 8; i++) defs.push(makeEntity("def", [4, 5, 3, 6, 2, 8, 14, 15][i], i + 1));
 const keeper = makeEntity("gk", 1, 4);
-keeper.dive = 0; keeper.diveDir = 0;
+keeper.dive = 0; keeper.diveDir = 0; keeper.hold = 0;
 
 // rings under team-mates (who can I pass to?) and a ring for George
 const ringGeo = new THREE.RingGeometry(0.8, 1.05, 32);
@@ -230,6 +230,11 @@ for (const a of att) { a.ring = new THREE.Mesh(ringGeo, ringMat.clone()); a.ring
 // the arc a pass must start inside
 const cone = new THREE.Mesh(new THREE.CircleGeometry(15, 40, Math.PI / 2 - PASS_HALF, PASS_HALF * 2), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2, side: THREE.DoubleSide, depthWrite: false }));
 cone.rotation.x = -Math.PI / 2; cone.position.y = 0.05; cone.renderOrder = 2; scene.add(cone);
+// offside: nobody may be nearer the goal than the last defender when the ball is played to him
+function offsideLine() { let z = 99; for (let k = 0; k < G.nDef; k++) z = Math.min(z, defs[k].z); return Math.max(z, 4); }
+function isOff(a, carrier) { return a !== carrier && a.z < offsideLine() - 0.25 && a.z < carrier.z - 0.5; }
+const offLine = new THREE.Mesh(new THREE.PlaneGeometry(76, 0.25), new THREE.MeshBasicMaterial({ color: 0xff4d5e, transparent: true, opacity: 0.6, depthWrite: false }));
+offLine.rotation.x = -Math.PI / 2; offLine.position.set(0, 0.055, 12); offLine.renderOrder = 3; scene.add(offLine);
 // the power-shot zone: shoot from here for a rocket
 function goodSpot(c) { return c.z >= 8 && c.z <= 23 && Math.abs(c.x) <= 13; }
 const zone = new THREE.Mesh(new THREE.PlaneGeometry(26, 15), new THREE.MeshBasicMaterial({ color: 0xff8a1f, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false }));
@@ -238,6 +243,16 @@ zone.rotation.x = -Math.PI / 2; zone.position.set(0, 0.045, 15.5); zone.renderOr
 const bin = new THREE.Group();
 bin.add(new THREE.Mesh(new THREE.RingGeometry(0.5, 0.72, 28), new THREE.MeshBasicMaterial({ color: 0xffd23f, side: THREE.DoubleSide })), new THREE.Mesh(new THREE.CircleGeometry(0.45, 24), new THREE.MeshBasicMaterial({ color: 0xff4d5e, transparent: true, opacity: 0.85, side: THREE.DoubleSide })));
 bin.visible = false; scene.add(bin);
+
+// a name tag so George is easy to spot
+const tagTex = canvasTex(256, 90, (g, w, h) => {
+  g.fillStyle = "#d7102b"; g.strokeStyle = "#fff"; g.lineWidth = 6;
+  g.beginPath(); if (g.roundRect) g.roundRect(8, 6, w - 16, 52, 24); else g.rect(8, 6, w - 16, 52); g.fill(); g.stroke();
+  g.fillStyle = "#fff"; g.font = "700 40px Rajdhani, Arial Black, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("GEORGE", w / 2, 33);
+  g.fillStyle = "#fff"; g.beginPath(); g.moveTo(w / 2 - 14, 60); g.lineTo(w / 2 + 14, 60); g.lineTo(w / 2, 84); g.closePath(); g.fill();
+});
+const georgeTag = new THREE.Sprite(new THREE.SpriteMaterial({ map: tagTex, transparent: true, depthTest: false }));
+georgeTag.scale.set(3.0, 1.05, 1); georgeTag.renderOrder = 20; scene.add(georgeTag);
 
 // ball
 const ballTex = canvasTex(64, 32, (g, w, h) => { g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); g.fillStyle = "#222"; for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(5 + i * 11, (i % 2) ? 9 : 22, 4.5, 0, 7); g.fill(); } });
@@ -256,7 +271,7 @@ for (let i = 0; i < 44; i++) {
 }
 let fireIdx = 0, lbx = 0, lby = 0.24, lbz = 0, burnT = 0;
 function fireUpdate(dt) {
-  const burning = !!(run && run.power && (run.state === "fly" || run.state === "goalmouth" || run.state === "end"));
+  const burning = replay ? (replay.power && replay.t < goalGT + 0.3) : !!(run && run.power && (run.state === "fly" || run.state === "goalmouth" || run.state === "end"));
   if (burning) burnT = 0.6; else burnT = Math.max(0, burnT - dt);
   if (burning && !reduced) {
     for (let k = 1; k <= 3; k++) {
@@ -356,31 +371,33 @@ const setHint = (t) => { $("hint").textContent = t; };
 /* ---------------- setting up an attack ---------------- */
 function place(e, x, z, face) { e.x = x; e.z = z; e.vx = e.vz = 0; e.speed = 0; e.face = face === undefined ? Math.PI : face; }
 function newAttack() {
-  G.nDef = Math.min(4 + (G.level >> 1), 8);
+  frames.length = 0;
+  G.nDef = Math.min(5 + (G.level >> 1), 8);
   G.defSpeed = Math.min(4.6 + G.level * 0.22, 6.8);
   G.chain = 0; G.carrier = 0;
-  G.markDist = clamp(3.0 - G.level * 0.2, 1.7, 3.0);
+  G.markDist = clamp(3.6 - G.level * 0.2, 2.2, 3.6);
   G.bonus = Math.random() < 0.4 ? (Math.random() < 0.5 ? -1 : 1) : 0;
   bin.visible = G.bonus !== 0; if (G.bonus) bin.position.set(G.bonus * BIN_X, BIN_Y, 0.3);
-  place(att[0], rand(-7, 7), rand(33, 38));
-  place(att[1], rand(-19, -15), rand(24, 30));
-  place(att[2], rand(15, 19), rand(24, 30));
-  place(att[3], rand(-9, -5), rand(18, 23));
-  place(att[4], rand(5, 9), rand(16, 21));
-  place(att[5], rand(-3, 3), rand(27, 31));
-  const taken = att.map((a) => [a.x, a.z]), dTaken = [];
+  place(att[1], rand(-27, -21), rand(24, 30));
+  place(att[2], rand(21, 27), rand(24, 30));
+  place(att[3], rand(-12, -8), rand(18, 23));
+  place(att[4], rand(8, 12), rand(16, 21));
+  place(att[5], rand(-4, 4), rand(28, 32));
+  { let gx, gz, t = 0; do { gx = rand(-16, 16); gz = rand(33, 38); t++; } while (t < 40 && att.slice(1).some((a) => hyp(a.x - gx, a.z - gz) < 7.5)); place(att[0], gx, gz); }
+  const taken = att.map((a) => [a.x, a.z]), dTaken = [], lineZ = rand(11, 16);   // the back line holds roughly here
   defs.forEach((d, i) => {
     d.p.root.visible = i < G.nDef;
     if (i >= G.nDef) { d.x = 999; return; }
     let x, z, tries = 0;
-    const sep = Math.max(6, 10 - G.nDef * 0.5);       // keep the defenders well apart so there is room to attack
+    const sep = Math.max(6.5, 10 - G.nDef * 0.5);       // spread out, but not too much room between them       // keep the defenders well apart so there is room to attack
     do {
-      if (i === 0) { x = rand(-4, 4); z = rand(14, 22); } else { x = rand(-23, 23); z = rand(8, 31); }
+      if (i === 0) { x = rand(-5, 5); z = lineZ + rand(-1.2, 1.8); } else { x = rand(-26, 26); z = i < 3 ? lineZ + rand(-1.2, 1.8) : lineZ + rand(7, 15); }
       tries++;
-    } while (tries < 120 && (taken.some(([ax, az]) => hyp(ax - x, az - z) < 5.5) || dTaken.some(([ax, az]) => hyp(ax - x, az - z) < sep)));
+    } while (tries < 120 && (taken.some(([ax, az]) => hyp(ax - x, az - z) < 7) || dTaken.some(([ax, az]) => hyp(ax - x, az - z) < sep)));
     taken.push([x, z]); dTaken.push([x, z]);
     place(d, x, z, 0);
   });
+  { const ln = offsideLine(); att.forEach((a) => { if (a.z < ln + 1.5) a.z = ln + 1.5; }); }   // nobody starts offside
   place(keeper, rand(-1, 1), 1.1, 0); keeper.dive = 0; keeper.diveDir = 0;
   ball.x = att[0].x; ball.z = att[0].z - 0.6; ball.y = 0.24;
   run = null; route = null; ribbon.visible = false;
@@ -395,14 +412,14 @@ function newAttack() {
 function planStart(aer) {
   G.phase = "plan"; ribbon.visible = false; timeScaleReset(); G.aerial = aer || null;
   const c = att[G.carrier];
-  c.face = Math.PI; keeper.dive = 0; keeper.diveDir = 0; keeper.jump = 0;
+  c.face = Math.PI; keeper.dive = 0; keeper.diveDir = 0; keeper.jump = 0; keeper.hold = 0;
   cone.visible = !aer; cone.position.set(c.x, 0.05, c.z);
   zone.visible = !aer; zone.material.opacity = goodSpot(c) ? 0.3 : 0.12;
   // Give the player a little room: nudge any defender that is right on top of the ball.
-  for (const d of defs) if (d.p.root.visible) { const dd = hyp(d.x - c.x, d.z - c.z); if (dd < 3) { const k = 3.2 / (dd || 1); d.x = c.x + (d.x - c.x) * k; d.z = c.z + (d.z - c.z) * k; } }
+  for (const d of defs) if (d.p.root.visible) { const dd = hyp(d.x - c.x, d.z - c.z); if (dd < 6.5) { const k = 6.8 / (dd || 1); d.x = c.x + (d.x - c.x) * k; d.z = c.z + (d.z - c.z) * k; } }
   ball.x = c.x + Math.sin(c.face) * 0.5; ball.z = c.z + Math.cos(c.face) * 0.5; ball.y = aer ? (aer.type === "bicycle" ? 2.5 : aer.type === "volley" ? 1.0 : 2.1) : 0.24;
-  if (aer) { pop(aer.type === "bicycle" ? "BICYCLE KICK!" : aer.type === "volley" ? "VOLLEY!" : "HEADER!", aer.type === "bicycle" ? "What a chance! Aim it!" : aer.type === "volley" ? "Hit it first time!" : "Aim it at the goal!", "gold"); sfx.pass(); }
-  setHint(!aer && goodSpot(c) ? "You are in the power zone! Shoot for a rocket." : aer ? (aer.type === "bicycle" ? "Overhead kick! Draw a line into the goal." : aer.type === "volley" ? "Volley! Draw a line into the goal." : "Header! Draw a line into the goal.") : G.chain ? "Pass or shoot! Draw a line." : G.bonus ? "Time is frozen. Hit the glowing corner for bonus points!" : "Time is frozen. Draw a line to a team-mate or into the goal.");
+  if (aer) { pop(aer.special ? "GEORGE!" : (aer.type === "bicycle" ? "BICYCLE KICK!" : aer.type === "volley" ? "VOLLEY!" : "HEADER!"), aer.special ? "A spectacular " + (aer.type === "bicycle" ? "bicycle kick" : aer.type === "volley" ? "volley" : "header") + "! Aim it!" : aer.type === "bicycle" ? "What a chance! Aim it!" : aer.type === "volley" ? "Hit it first time!" : "Aim it at the goal!", "gold"); sfx.pass(); }
+  setHint(!aer && goodSpot(c) ? "You are in the power zone! Shoot for a rocket." : aer ? (aer.type === "bicycle" ? "Overhead kick! Draw a line into the goal." : aer.type === "volley" ? "Volley! Draw a line into the goal." : "Header! Draw a line into the goal.") : G.chain ? "Pass or shoot! Draw a line. Stay onside." : G.bonus ? "Time is frozen. Hit the glowing corner for bonus points!" : "Time is frozen. Draw a line to a team-mate or into the goal.");
   buildQuick();
 }
 
@@ -432,6 +449,7 @@ function updatePreview() {
   if (!r) { ribbonMat.color.set(0xffffff); return; }
   if (G.aerial && r.kind !== "shot") { ribbonMat.color.set(0xff4d5e); setHint("Header! Draw the line into the goal."); return; }
   if (behindRoute(r)) { ribbonMat.color.set(0xff4d5e); setHint("Too far behind. Pass inside the glowing arc."); return; }
+  if (r.kind === "pass" && r.recv !== null && isOff(att[r.recv], att[G.carrier])) { ribbonMat.color.set(0xb04dff); setHint("Offside! Pass to someone behind the red line."); return; }
   let m = lineSafety(r.pts);
   if (r.lob) { const e = r.pts[r.pts.length - 1]; m = 99; for (let k = 0; k < G.nDef; k++) m = Math.min(m, hyp(defs[k].x - e.x, defs[k].z - e.z)); }   // a lob only needs a clear landing spot
   ribbonMat.color.set(r.kind === "shot" && goodSpot(att[G.carrier]) ? 0xff8a1f : r.lob ? (m < 2 ? 0xff4d5e : 0x8fc4ff) : m < 1.9 ? 0xff4d5e : m < 3.4 ? 0xffc23d : 0xffffff);
@@ -441,7 +459,8 @@ const cancelEl = $("cancelzone");
 function overCancel(ev) { const r = cancelEl.getBoundingClientRect(); return ev.clientY >= r.top && ev.clientX >= r.left && ev.clientX <= r.right; }
 
 // camera: two fingers (turn + pinch), the mouse wheel, or the buttons
-const view = { yaw: 0, zoom: 1, yawT: 0, zoomT: 1 };
+const DEFAULT_ZOOM = 1.4;      // start a little zoomed out so you can see both wings
+const view = { yaw: 0, zoom: DEFAULT_ZOOM, yawT: 0, zoomT: DEFAULT_ZOOM };
 const ptrs = new Map(); let gest = null;
 function startGesture() { const [a, b] = [...ptrs.values()]; gest = { d0: hyp(a.x - b.x, a.y - b.y) || 1, mx0: (a.x + b.x) / 2, yaw0: view.yawT, zoom0: view.zoomT }; }
 function updateGesture() {
@@ -461,7 +480,7 @@ bindCam("cam-l", "l", () => { view.yawT = clamp(view.yawT + 0.3, -1.6, 1.6); });
 bindCam("cam-r", "r", () => { view.yawT = clamp(view.yawT - 0.3, -1.6, 1.6); });
 bindCam("cam-in", "i", () => { view.zoomT = clamp(view.zoomT * 0.85, 0.6, 2.4); });
 bindCam("cam-out", "o", () => { view.zoomT = clamp(view.zoomT * 1.18, 0.6, 2.4); });
-$("cam-reset").addEventListener("click", () => { view.yawT = 0; view.zoomT = 1; });
+$("cam-reset").addEventListener("click", () => { view.yawT = 0; view.zoomT = DEFAULT_ZOOM; });
 
 canvas.addEventListener("pointerdown", (ev) => {
   ptrs.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
@@ -506,7 +525,8 @@ function endDraw(ev) {
   if (pts.length < 3) { ribbon.visible = false; return; }
   release(pts);
 }
-window.addEventListener("keydown", (e) => { if (e.key === "Escape" && drawing) cancelDraw(); });
+$("replay-skip").addEventListener("click", () => { if (replay) stopReplay(); });
+window.addEventListener("keydown", (e) => { if ((e.key === "Escape" || e.key === " ") && replay) { stopReplay(); e.preventDefault(); } if (e.key === "Escape" && drawing) cancelDraw(); });
 canvas.addEventListener("pointerup", (ev) => { ptrs.delete(ev.pointerId); if (ptrs.size < 2) gest = null; endDraw(ev); });
 canvas.addEventListener("pointercancel", (ev) => { ptrs.delete(ev.pointerId); gest = null; cancelDraw(); });
 
@@ -565,7 +585,7 @@ function buildRoute(raw, hold) {
     else {
       // a flick towards goal from a good distance becomes a shot
       const q = pts[Math.max(0, pts.length - 7)], tx = end.x - q.x, tz = end.z - q.z;
-      if (tz < -0.4 * hyp(tx, tz) && end.z < 30) {
+      if (tz < -0.4 * hyp(tx, tz) && end.z < 9) {
         const xc = end.x + tx / -tz * end.z;
         if (Math.abs(xc) < GOAL_HALF + 6) { for (let z = end.z - 0.5; z > 0.2; z -= 0.5) pts.push({ x: end.x + tx / -tz * (end.z - z), z }); pts.push({ x: xc, z: 0 }); kind = "shot"; }
       }
@@ -588,7 +608,7 @@ function buildRoute(raw, hold) {
   }
   // the longer the line you drew, the harder the ball is struck
   const pw = clamp((routeLength(raw) + (fitted.length > 0 ? Math.max(0, routeLength(fitted) - routeLength(pts)) : 0) - 4) / 32, 0, 1);
-  return { pts: fitted, kind, recv, pw, lob: kind === "pass" && routeLength(fitted) > LOB_MIN };
+  return { pts: fitted, kind, recv, pw, lob: kind === "pass" && (routeLength(fitted) > LOB_MIN || (fitted[fitted.length - 1].z < 22 && Math.abs(fitted[fitted.length - 1].x) < 24 && c.z > fitted[fitted.length - 1].z + 5)) };
 }
 function release(raw) {
   const r = buildRoute(raw, releaseHold);
@@ -606,14 +626,17 @@ function startRun(pts, kind, recv) {
   const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + hyp(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));
   const lobbed = kind === "pass" && releaseLob; releaseLob = false;
   const power = kind === "shot" && !G.aerial && goodSpot(att[G.carrier]);   // a shot from a good position is a power shot
-  run = { pts, cum, L, kind, recv, s: 0, pw, v: kind === "shot" ? (power ? POWER_V : G.aerial ? (G.aerial.type === "bicycle" ? 42 : G.aerial.type === "volley" ? 36 : 24) : lerp(20, 44, pw)) : (lobbed ? lerp(13, 21, pw) : lerp(15, 30, pw)), lob: lobbed, apex: clamp(L * 0.3, 2.6, 8.5), aerial: kind === "shot" ? G.aerial : null, power, state: "fly", t: 0, outcome: null, wait: 0, dist0: att[G.carrier].z };
+  const offSet = new Set(); if (kind === "pass") att.forEach((a, i) => { if (isOff(a, att[G.carrier])) offSet.add(i); });
+  run = { off: offSet, pts, cum, L, kind, recv, s: 0, pw, v: kind === "shot" ? (power ? POWER_V : G.aerial ? (G.aerial.type === "bicycle" ? 42 : G.aerial.type === "volley" ? 36 : 24) : lerp(20, 44, pw)) : (lobbed ? lerp(13, 21, pw) : lerp(15, 30, pw)), lob: lobbed, wing: lobbed && Math.abs(att[G.carrier].x) > 15, apex: clamp(L * 0.3, 2.6, 8.5), aerial: kind === "shot" ? G.aerial : null, power, state: "fly", t: 0, outcome: null, wait: 0, dist0: att[G.carrier].z };
   if (kind === "pass" && recv === null) {
     const e = pts[pts.length - 1]; let bi = null, bd = 18;
     att.forEach((a, i) => { if (i === G.carrier) return; const d = hyp(a.x - e.x, a.z - e.z); if (d < bd) { bd = d; bi = i; } });
     run.recv = bi;
   }
+  if (kind === "shot") run.follow = att.map((a, i) => [hyp(a.x, a.z), i]).filter((u) => u[1] !== G.carrier).sort((u, v) => u[0] - v[0]).slice(0, 2).map((u) => u[1]);
+  if (lobbed) { const e = pts[pts.length - 1]; run.lobRun = att.map((a, i) => [hyp(a.x - e.x, a.z - e.z), i]).filter((u) => u[1] !== G.carrier).sort((u, v) => u[0] - v[0]).slice(0, 3).map((u) => u[1]); }
   if (kind === "shot") planShot();
-  if (run.aerial) { att[G.carrier].aer = 0.62; att[G.carrier].aerType = run.aerial.type; }
+  if (run.aerial) { att[G.carrier].aer = 0.62; att[G.carrier].aerType = run.aerial.type; run.special = !!run.aerial.special; }
   G.aerial = null; releaseHold = 0; zone.visible = false;
   if (run.power) sfx.power();
   G.phase = "run"; $("quick").innerHTML = ""; cone.visible = false;
@@ -628,11 +651,11 @@ function planShot() {
   const end = run.pts[run.pts.length - 1], xc = end.x, power = run.power;
   const lvl = G.level, tGoal = run.L / run.v;
   const react = Math.max(0.1, 0.32 - lvl * 0.016);
-  const sigma = Math.max(0.3, 2.3 - lvl * 0.28) * (1 + 0.3 * run.pw) * (power ? 1.5 : 1) * (run.aerial ? (run.aerial.type === "bicycle" ? 1.1 : run.aerial.type === "volley" ? 1.15 : 1.25) : 1);
+  const sigma = Math.max(0.3, 2.3 - lvl * 0.28) * (1 + 0.3 * run.pw) * (run.special ? 1.3 : 1) * (power ? 1.5 : 1) * (run.aerial ? (run.aerial.type === "bicycle" ? 1.1 : run.aerial.type === "volley" ? 1.15 : 1.25) : 1);
   const aim = clamp(xc + randn() * sigma, -4.2, 4.2);            // where the keeper guesses it is going
   const kspeed = 4.6 + lvl * 0.45;
   const dx = aim - keeper.x, move = Math.min(Math.abs(dx), kspeed * Math.max(0, tGoal - react));
-  const kFinal = keeper.x + Math.sign(dx) * move;                // where he really gets to in time
+  let kFinal = keeper.x + Math.sign(dx) * move;                  // where he really gets to in time
   const topBins = G.bonus !== 0 && Math.abs(xc - G.bonus * BIN_X) < 1.1;
   const hG = topBins ? BIN_Y : run.aerial ? (run.aerial.type === "bicycle" ? 1.3 : run.aerial.type === "volley" ? 0.6 : 1.0) + Math.random() * 0.6 : 0.55 + Math.min(run.dist0, 36) / 36 * 1.0;
   const dive = clamp(Math.abs(kFinal - keeper.x) / 2, 0, 1);
@@ -642,10 +665,18 @@ function planShot() {
   reach *= 1 - 0.25 * run.pw; if (run.pw < 0.25) reach *= 1.15;   // a soft shot is easy to reach, a hard one is not
   if (power) reach *= 0.75;
   if (run.aerial && run.aerial.type === "bicycle") reach *= 0.8;
-  const diff = Math.abs(kFinal - xc);
+  if (run.special) reach *= 0.6;               // George's spectacular finishes are very hard to stop
+  let diff = Math.abs(kFinal - xc);
   let outcome;
   if (Math.abs(xc) <= GOAL_HALF - 0.08) {
-    if (diff < reach) outcome = (diff < 0.45 && !power && Math.random() < 0.7 - 0.6 * run.pw) ? "catch" : "parry";
+    let saved = diff < reach;
+    if (!saved) {
+      // the closer you shoot to the keeper, the easier it is for him: arms, legs, body, anything gets in the way
+      const dk = Math.abs(xc - keeper.x);
+      const pClose = clamp(1 - (dk - 0.6) / 1.8, 0, 0.95) * (1 - 0.4 * run.pw) * (power ? 0.7 : 1) * (run.special ? 0.6 : 1) * Math.max(0.5, 1 - 0.03 * lvl);
+      if (dk < 2.4 && Math.random() < pClose) { saved = true; kFinal = xc; diff = 0; }
+    }
+    if (saved) outcome = (diff < 0.45 && !power && Math.random() < 0.7 - 0.6 * run.pw) ? "catch" : "parry";
     else outcome = (topBins && Math.random() < 0.2) ? "bar" : "goal";
   } else if (Math.abs(xc) < GOAL_HALF + 0.35) outcome = "post";
   else outcome = "wide";
@@ -695,18 +726,29 @@ function markTarget(i) {
 // marker who is too close and keeps clear of team-mates.
 function attackMove(a, i, dt) {
   const role = i === 1 || i === 2 ? "wing" : i === 5 ? "support" : "cut";
-  let tx = a.x, tz = a.z - 6.5, sp = 6;
-  if (role === "wing") { tx = a.x * (a.z < 20 ? 0.8 : 0.99); sp = 6.3; }
+  const line = offsideLine();
+  let tx = a.x, tz = Math.max(a.z - 6.5, line + 0.5), sp = 6;      // runs stop at the offside line
+  if (role === "wing") { tx = a.x * (a.z < 14 ? 0.9 : 1.0); sp = 6.3; }
   else if (role === "cut") { tx = clamp(a.x * 0.6 + (i === 3 ? 2 : i === 4 ? -2 : 0), -9, 9); }
-  else { tz = a.z - 2.5; sp = 4.4; }
+  else { const cc = att[G.carrier]; if (cc && cc !== a) { tx = cc.x + (a.x >= cc.x ? 8 : -8); tz = Math.max(cc.z + 2, line + 0.5); } else tz = a.z - 2.5; sp = 5; }   // the support player offers himself to the carrier
   let nr = 99, nd = null;
   for (let k = 0; k < G.nDef; k++) { const d = hyp(a.x - defs[k].x, a.z - defs[k].z); if (d < nr) { nr = d; nd = defs[k]; } }
-  if (nd && nr < 2.8) { const ax = a.x - nd.x, az = a.z - nd.z, l = hyp(ax, az) || 1; tx += ax / l * 3.2; sp += 0.8; }
-  for (const b of att) { if (b === a) continue; const d = hyp(a.x - b.x, a.z - b.z); if (d < 3.4 && d > 0.01) { tx += (a.x - b.x) / d * 2.2; tz += (a.z - b.z) / d; } }
-  if (a.z <= (role === "support" ? 14 : 8)) { a.speed = 0; return; }
-  moveTo(a, clamp(tx, -24, 24), Math.max(tz, 7), sp, dt);
+  if (nd && nr < 5) { const ax = a.x - nd.x, az = a.z - nd.z, l = hyp(ax, az) || 1; tx += ax / l * (5.5 - nr) * 1.2; tz += az / l * (5.5 - nr) * 0.3; sp += 0.8; }   // move away from the marker to get free
+  for (const b of att) { if (b === a) continue; const d = hyp(a.x - b.x, a.z - b.z); if (d < 6 && d > 0.01) { tx += (a.x - b.x) / d * 3; tz += (a.z - b.z) / d * 1.5; } }
+  if (a.z <= Math.max(role === "support" ? 14 : 8, line + 0.5)) { a.speed = 0; return; }
+  moveTo(a, clamp(tx, -29, 29), Math.max(tz, 7), sp, dt);
 }
 
+// Where a rebound goes. Often it drops to an attacker near the box, so you can follow it up.
+function reboundVel(bias) {
+  const c = att[G.carrier]; let best = null, bd = 1e9;
+  att.forEach((a) => { if (a === c || a.z > 26) return; const d = hyp(a.x - ball.x, a.z - ball.z); if (d < bd) { bd = d; best = a; } });
+  if (best && Math.random() < bias) {
+    const dx = best.x - ball.x + rand(-1.5, 1.5), dz = best.z - ball.z + rand(-1, 1), d = hyp(dx, dz) || 1, sp = clamp(d * 1.4 * rand(0.85, 1.1), 4, 11);
+    return { vx: dx / d * sp, vz: Math.max(dz / d * sp, 2.5) };
+  }
+  return { vx: rand(-5, 5), vz: rand(5, 9) };
+}
 // The ball is loose (a rebound, a block, a parry). Whoever gets to it first wins it.
 function startLoose(label, sub, vx, vz, vy) {
   run.state = "loose"; run.lt = 0; run.bvx = vx; run.bvz = vz; run.bvy = vy || 2; run.press = null; run.done = false;
@@ -730,7 +772,7 @@ function stepLoose(dt) {
     for (let k = 0; k < att.length; k++) if (!(att[k].stun > 0) && hyp(att[k].x - ball.x, att[k].z - ball.z) < 1.0) {
       G.carrier = k; att[k].face = Math.PI; sfx.pass(); pop(run.heavy ? "GOT IT!" : "REBOUND WON!", run.heavy ? "" : "Shoot again!", "gold"); run = null; planStart(); return;
     }
-    if (ball.z < 7 && hyp(keeper.x - ball.x, keeper.z - ball.z) < 1.4) { run.state = "end"; finishAttack("save"); sfx.save(); return; }
+    if (ball.z < 7 && hyp(keeper.x - ball.x, keeper.z - ball.z) < 1.4) { run.state = "end"; keeper.hold = 1; finishAttack("save"); sfx.save(); return; }
     for (let k = 0; k < G.nDef; k++) if (hyp(defs[k].x - ball.x, defs[k].z - ball.z) < 1.0) { startRecover(defs[k]); return; }
   }
   if (run.lt > 4.5) startRecover(defs.slice(0, G.nDef).sort((u, v) => hyp(u.x - ball.x, u.z - ball.z) - hyp(v.x - ball.x, v.z - ball.z))[0]);
@@ -752,6 +794,8 @@ function aerialFor(a, y) {
   return { type: "header" };
 }
 function receiveBall(a, aer) {
+  if (run.off && run.off.has(att.indexOf(a))) { run.state = "end"; finishAttack("offside"); sfx.lost(); return; }   // whistle
+  if (aer) { aer.special = a === att[0]; aer.wing = !!run.wing; }
   if (!aer && run.kind === "pass" && run.state !== "settle" && Math.random() < clamp((run.pw - 0.5) * 1.1, 0, 0.55)) {
     // a hard pass is hard to control: the ball runs on
     const e = run.pts[run.pts.length - 1], q = run.pts[Math.max(0, run.pts.length - 4)];
@@ -781,6 +825,7 @@ function stepRecover(dt) {
   let bi = 0, bd = 1e9;
   att.forEach((a, i) => { const d = hyp(a.x - h.x, a.z - h.z); if (d < bd) { bd = d; bi = i; } });
   run.chaser = bi; run.chaseDist = bd;
+  run.chaseRank = att.map((a, i) => [hyp(a.x - h.x, a.z - h.z), i]).sort((u, v) => u[0] - v[0]).slice(0, 2).map((u) => u[1]);
   run.autoT -= dt;
   if (run.autoT <= 0 && bd < 1.5) { run.autoT = 0.9; if (tryTackle(false)) return; }
   const away = h.x - att[bi].x;
@@ -808,6 +853,24 @@ function tackle() {
   tryTackle(true);
 }
 
+// After a goal: the scorer runs towards the camera, then slides on his knees; the team runs to join him.
+function celebrate(dt) {
+  run.ct = (run.ct || 0) + dt;
+  const sc = att[run.scorer === undefined ? G.carrier : run.scorer];
+  if (!run.cs) run.cs = { side: sc.x >= 0 ? 1 : -1, z0: sc.z, x0: sc.x };
+  if (run.ct < 1.0) moveTo(sc, clamp(run.cs.x0 + run.cs.side * 9, -28, 28), Math.min(run.cs.z0 + 12, 40), 8.5, dt);
+  else if (run.ct < 1.9) {
+    if (!sc.slideT) sc.slideT = 0.9;
+    const u = Math.max(0, 1 - (run.ct - 1.0) / 0.9); sc.x += Math.sin(sc.face) * 6 * u * dt; sc.z += Math.cos(sc.face) * 6 * u * dt; sc.speed = 0;
+  } else sc.speed = 0;
+  att.forEach((a, i) => {
+    if (a === sc) return;
+    const ang = i * 1.25, d = run.ct < 1.0 ? 2.4 : 1.7;
+    moveTo(a, sc.x + Math.cos(ang) * d, sc.z + 1.2 + Math.sin(ang) * d * 0.7, 7.5, dt);
+  });
+  for (let i = 0; i < G.nDef; i++) defs[i].speed = 0;
+}
+
 function stepRun(dt) {
   run.t += dt;
   const c = att[G.carrier];
@@ -819,7 +882,7 @@ function stepRun(dt) {
     const p = pointAt(run.s); ball.x = p.x; ball.z = p.z;
     ball.y = run.kind === "shot" ? 0.24 + run.hG * Math.pow(run.s / run.L, 1.4) : run.lob ? 0.24 + run.apex * 4 * (run.s / run.L) * (1 - run.s / run.L) : 0.24;
     // a shot: slow motion for the last stretch
-    G.timeScale = run.kind === "shot" && run.L - run.s < 9 && run.outcome !== "wide" ? 0.38 : 1;
+    G.timeScale = run.special && run.s < 5 ? 0.3 : run.kind === "shot" && run.L - run.s < 9 && run.outcome !== "wide" ? 0.38 : 1;
     // defenders can cut it out
     for (let i = 0; i < G.nDef; i++) {
       const d = defs[i];
@@ -832,7 +895,7 @@ function stepRun(dt) {
     if (run.lob && run.s > run.L * 0.45 && ball.y > 0.6 && ball.y < 3.6) {
       if (ball.y > 1.1) for (let i = 0; i < G.nDef; i++) if (hyp(defs[i].x - ball.x, defs[i].z - ball.z) < 1.6) { startRecover(defs[i], "HEADED AWAY!"); return; }
       for (const a of att) {
-        if (a === c || hyp(a.x - ball.x, a.z - ball.z) > 2.0) continue;
+        if (a === c || hyp(a.x - ball.x, a.z - ball.z) > (a === att[0] ? 3.2 : 2.0)) continue;   // George gets first go at a cross
         const aer = aerialFor(a, ball.y);
         if (aer) { receiveBall(a, aer); return; }
       }
@@ -875,12 +938,12 @@ function stepRun(dt) {
       if (!run.done) { run.done = true; finishAttack("goal"); }
       if (!run.netDone && run.gt > 0.18) { run.netDone = true; netHit(ball.x, ball.y, run.power ? 1.5 : 0.8 + 0.7 * run.pw); }
     } else if (o === "catch") {
-      if (!run.done) { run.done = true; run.state = "end"; finishAttack("save"); sfx.save(); }
+      if (!run.done) { run.done = true; run.state = "end"; keeper.hold = 1; finishAttack("save"); sfx.save(); }
     } else if (o === "parry") {
-      sfx.save(); startLoose("SAVED... IT'S LOOSE!", "Follow it up!", rand(-5, 5) + keeper.diveDir * 3, rand(5, 9), 3);
+      sfx.save(); { const rv = reboundVel(run.power ? 0.75 : 0.6); startLoose("LOOSE BALL!", "Saved, but follow it up!", rv.vx + keeper.diveDir, rv.vz * (run.power ? 1.15 : 1), 3); }
     } else if (o === "post" || o === "bar") {
       sfx.post();
-      startLoose(o === "post" ? "OFF THE POST!" : "OFF THE BAR!", "It's bouncing back!", (run.xc > 0 ? -1 : 1) * rand(1, 4), rand(6, 10), o === "bar" ? 3 : 1);
+      { const rv = reboundVel(0.5); startLoose(o === "post" ? "OFF THE POST!" : "OFF THE BAR!", "It's bouncing back!", rv.vx, Math.max(rv.vz, 5), o === "bar" ? 3 : 1); }
     } else {
       ball.z -= 12 * dt; if (!run.done) { run.done = true; run.state = "end"; finishAttack("wide"); sfx.lost(); }
     }
@@ -888,29 +951,36 @@ function stepRun(dt) {
     stepLoose(dt);
   } else if (run.state === "end") {
     if (run.bvx !== undefined) { ball.x += run.bvx * dt; ball.z += run.bvz * dt; run.bvx *= 0.97; run.bvz *= 0.97; }
+    if (keeper.hold) { ball.x = lerp(ball.x, keeper.x, 0.3); ball.z = lerp(ball.z, keeper.z + 0.35, 0.3); ball.y = lerp(ball.y, 1.05, 0.3); }   // the ball is in his hands
   }
 
   if (!run) return;
+  if (ending && ending.kind === "goal") { celebrate(dt); return; }
   // ---- everyone else moves ----
   // team-mates run forward; the receiver runs to the ball
   att.forEach((a, i) => {
     if (a.stun > 0) { a.stun -= dt; a.speed = 0; return; }
-    if (run.state === "recover") { moveTo(a, run.holder.x, run.holder.z, i === run.chaser ? 8.2 : 6.6, dt); return; }
+    if (run.state === "recover") { if (run.chaseRank && run.chaseRank.includes(i)) moveTo(a, run.holder.x, run.holder.z, i === run.chaser ? 8.2 : 7, dt); else attackMove(a, i, dt); return; }
     if (run.state === "loose") { if (run.nearAtt && run.nearAtt.includes(i)) moveTo(a, ball.x, ball.z, 8.2, dt); else attackMove(a, i, dt); return; }
     if (i === G.carrier) {
       // after a pass the passer keeps running forward; after a shot he stands and watches
       if (run.kind === "pass" && run.state !== "end") attackMove(a, i, dt); else a.speed = 0;
       return;
     }
+    if (run.kind === "shot" && run.follow && run.follow.includes(i) && (run.state === "fly" || run.state === "goalmouth")) {      // two attackers follow the shot in, ready for a rebound
+      moveTo(a, clamp(a.x * 0.5 + (i % 3 - 1) * 5 + (a.x > 0 ? 2 : -2), -10, 10), 9 + (i % 3) * 1.6, 8, dt); return;
+    }
     if (run.recv === i && (run.state === "fly" || run.state === "arrive")) {
       // go and get the ball: meet it on its way if he can, otherwise run to where it will stop
       const t = run.state === "arrive" ? ball : run.lob ? run.pts[run.pts.length - 1] : interceptPoint(a, 8);
       moveTo(a, t.x, t.z, 8, dt); return;
     }
+    if (run.lob && run.lobRun && run.lobRun.includes(i) && (run.state === "fly" || run.state === "arrive")) { const e = run.pts[run.pts.length - 1]; if (hyp(a.x - e.x, a.z - e.z) < 22) { moveTo(a, e.x + Math.cos(i * 2.1) * 2.4, e.z + Math.sin(i * 2.1) * 1.8, 8, dt); return; } }   // attackers attack the cross
     attackMove(a, i, dt);
   });
   // defenders: try to cut the ball out, otherwise mark an attacker (standing goal-side of him)
-  if (!run.marks) assignMarks();
+  run.markT = (run.markT || 0) + dt;
+  if (!run.marks || run.markT > 0.6) { run.markT = 0; assignMarks(); }   // keep re-picking who marks whom
   for (let i = 0; i < G.nDef; i++) {
     const d = defs[i], sp = G.defSpeed * (1 + (i % 3) * 0.04);
     if (run.state === "fly" && run.s < run.L) {
@@ -933,7 +1003,7 @@ function stepRun(dt) {
   // keep players from standing inside each other
   for (let i = 0; i < G.nDef; i++) for (let j = i + 1; j < G.nDef; j++) {
     const dx = defs[j].x - defs[i].x, dz = defs[j].z - defs[i].z, dd = hyp(dx, dz);
-    if (dd < 3 && dd > 0.001) { const k = (3 - dd) / 2 / dd * 0.5; defs[i].x -= dx * k; defs[i].z -= dz * k; defs[j].x += dx * k; defs[j].z += dz * k; }
+    if (dd < 5 && dd > 0.001) { const k = (5 - dd) / 2 / dd * 0.5; defs[i].x -= dx * k; defs[i].z -= dz * k; defs[j].x += dx * k; defs[j].z += dz * k; }
   }
   // the keeper
   if (run.kind === "shot" && run.kFinal !== undefined && (run.state === "fly" || run.state === "goalmouth")) {
@@ -951,7 +1021,40 @@ function stepRun(dt) {
 }
 
 function timeScaleReset() { G.timeScale = 1; }
-let ending = null;
+let ending = null, cheer = 0;
+const frames = []; let gtime = 0, goalGT = 0, replay = null;
+function recordFrame() {
+  const f = { gt: gtime, b: [ball.x, ball.y, ball.z], k: [keeper.x, keeper.z, keeper.dive || 0, keeper.diveDir || 0, keeper.jump || 0, keeper.hold || 0],
+    a: att.map((e) => [e.x, e.z, e.face, e.speed, e.aer || 0, e.aerType || "", e.cele || 0, e.slideT || 0, e.kickT || 0]), d: [] };
+  for (let i = 0; i < G.nDef; i++) f.d.push([defs[i].x, defs[i].z, defs[i].face, defs[i].speed]);
+  frames.push(f); if (frames.length > 700) frames.shift();
+}
+// A replay of the goal in slow motion. It can be skipped.
+function startReplay() {
+  const t1 = Math.min(goalGT + 1.4, gtime), t0 = Math.max(frames.length ? frames[0].gt : 0, goalGT - 3.4);
+  const list = frames.filter((f) => f.gt >= t0 && f.gt <= t1);
+  ending = null;
+  if (list.length < 8) { afterResult(); return; }
+  replay = { list, t: list[0].gt, end: list[list.length - 1].gt, idx: 0, power: !!(run && run.power), netDone: false, hitT: goalGT + 0.2 };
+  G.phase = "replay"; cone.visible = false; zone.visible = false; ribbon.visible = false; offLine.visible = false; setHint("");
+  $("replay-badge").hidden = false; $("replay-skip").hidden = false;
+}
+function stopReplay() {
+  replay = null; $("replay-badge").hidden = true; $("replay-skip").hidden = true;
+  for (const e of att) { e.aer = 0; e.cele = 0; e.slideT = 0; e.kickT = 0; }
+  G.phase = "run"; afterResult();
+}
+function replayStep(real) {
+  const R = replay; R.t += real * 0.4;                 // slow motion
+  if (R.t >= R.end) { stopReplay(); return; }
+  const L = R.list; let i = R.idx; while (i < L.length - 2 && L[i + 1].gt <= R.t) i++; R.idx = i;
+  const f0 = L[i], f1 = L[i + 1] || f0, u = f1.gt > f0.gt ? clamp((R.t - f0.gt) / (f1.gt - f0.gt), 0, 1) : 0, m = (a, b) => lerp(a, b, u);
+  ball.x = m(f0.b[0], f1.b[0]); ball.y = m(f0.b[1], f1.b[1]); ball.z = m(f0.b[2], f1.b[2]);
+  keeper.x = m(f0.k[0], f1.k[0]); keeper.z = m(f0.k[1], f1.k[1]); keeper.dive = m(f0.k[2], f1.k[2]); keeper.diveDir = f0.k[3]; keeper.jump = m(f0.k[4], f1.k[4]); keeper.hold = f0.k[5];
+  att.forEach((e, j) => { const a0 = f0.a[j], a1 = f1.a[j]; e.x = m(a0[0], a1[0]); e.z = m(a0[1], a1[1]); e.face = a0[2]; e.speed = a0[3]; e.aer = a0[4]; e.aerType = a0[5]; e.cele = a0[6]; e.slideT = a0[7]; e.kickT = a0[8]; });
+  for (let j = 0; j < f0.d.length; j++) { const d0 = f0.d[j], d1 = (f1.d[j] || d0); defs[j].x = m(d0[0], d1[0]); defs[j].z = m(d0[1], d1[1]); defs[j].face = d0[2]; defs[j].speed = d0[3]; }
+  if (!R.netDone && R.t >= R.hitT) { R.netDone = true; netHit(ball.x, ball.y, R.power ? 1.5 : 1); }
+}
 function finishAttack(kind) {
   ending = { kind, t: 0 };
   setHint("");
@@ -959,15 +1062,16 @@ function finishAttack(kind) {
   if (kind === "goal") {
     G.goals++; sfx.goal();
     const far = dist > 30, ch = G.chain, tb = run.topBins;
-    const ae = run.aerial ? run.aerial.type : null;
-    const pts = 10 + (far ? 10 : 0) + (tb ? 15 : 0) + (ae === "bicycle" ? 25 : ae === "volley" ? 15 : ae === "header" ? 10 : 0) + Math.max(0, ch - 1) * 3;
+    const ae = run.aerial ? run.aerial.type : null, sp = run.special ? 2 : 1, wg = run.aerial && run.aerial.wing ? 8 : 0;
+    const pts = 10 + wg + (far ? 10 : 0) + (tb ? 15 : 0) + (ae === "bicycle" ? 25 * sp : ae === "volley" ? 15 * sp : ae === "header" ? 10 * sp : 0) + Math.max(0, ch - 1) * 3;
     G.score += pts;
     for (const a of att) a.cele = 1.8;
-    const why = [ae === "bicycle" ? "bicycle kick +25" : ae === "volley" ? "volley +15" : ae === "header" ? "header +10" : "", tb ? "top corner +15" : "", far ? "long range +10" : "", ch > 1 ? ch - 1 + " passes +" + (ch - 1) * 3 : ""].filter(Boolean).join(" · ");
-    pop(ae === "bicycle" ? "WHAT A BICYCLE KICK!" : ae === "volley" ? "WHAT A VOLLEY!" : ae === "header" ? "GREAT HEADER!" : tb ? "TOP BINS!" : far ? "IMPOSSIBLE!" : "GOAL!", "+" + pts + (why ? " · " + why : ""), "gold");
+    run.scorer = G.carrier; cheer = 1; goalGT = gtime;
+    const why = [wg ? "wing cross +8" : "", ae === "bicycle" ? "bicycle kick +25" : ae === "volley" ? "volley +15" : ae === "header" ? "header +10" : "", tb ? "top corner +15" : "", far ? "long range +10" : "", ch > 1 ? ch - 1 + " passes +" + (ch - 1) * 3 : ""].filter(Boolean).join(" · ");
+    pop(run.special && ae ? "SPECTACULAR!" : ae === "bicycle" ? "WHAT A BICYCLE KICK!" : ae === "volley" ? "WHAT A VOLLEY!" : ae === "header" ? "GREAT HEADER!" : tb ? "TOP BINS!" : far ? "IMPOSSIBLE!" : "GOAL!", "+" + pts + (why ? " · " + why : ""), "gold");
   } else {
     G.lives--;
-    const t = { save: ["SAVED!", "The keeper got there"], post: ["OFF THE POST!", "So close"], wide: ["WIDE!", "Just missed"], blocked: ["BLOCKED!", "A defender got in the way"], stolen: ["LOST IT!", "A defender won the ball"] }[kind];
+    const t = { save: ["SAVED!", "The keeper got there"], post: ["OFF THE POST!", "So close"], wide: ["WIDE!", "Just missed"], blocked: ["BLOCKED!", "A defender got in the way"], stolen: ["LOST IT!", "A defender won the ball"], offside: ["OFFSIDE!", "Stay behind the red line"] }[kind];
     pop(t[0], t[1], "soft");
   }
   setHud();
@@ -999,7 +1103,8 @@ function animateLimbs(e, dt) {
     else if (e.aerType === "bicycle") { p.body.position.y = 0.35 + Math.sin(u * Math.PI) * 1.0; p.body.rotation.x = -u * Math.PI * 1.15; p.legR.rotation.x = -2.2 * Math.sin(u * Math.PI); p.legL.rotation.x = 0.8; p.armL.rotation.x = p.armR.rotation.x = -1.2; }
     else { p.body.position.y = Math.sin(u * Math.PI) * 0.8; p.body.rotation.x = 0.45 * Math.sin(u * Math.PI); p.armL.rotation.x = p.armR.rotation.x = -2.2; p.legL.rotation.x = 0.5; p.legR.rotation.x = -0.4; }
   }
-  if (e.cele > 0) { e.cele -= dt; p.armL.rotation.x = p.armR.rotation.x = -Math.PI * 0.92; p.armL.rotation.z = 0.35; p.armR.rotation.z = -0.35; p.body.position.y = Math.abs(Math.sin(clock * 11)) * 0.35; }
+  if (e.slideT > 0) { e.slideT -= dt; p.body.position.y = -0.5; p.body.rotation.x = -0.45; p.armL.rotation.z = 1.4; p.armR.rotation.z = -1.4; p.armL.rotation.x = p.armR.rotation.x = -0.3; p.legL.rotation.x = p.legR.rotation.x = 0.5; }
+  else if (e.cele > 0) { e.cele -= dt; p.armL.rotation.x = p.armR.rotation.x = -Math.PI * 0.92; p.armL.rotation.z = 0.35; p.armR.rotation.z = -0.35; p.body.position.y = Math.abs(Math.sin(clock * 11)) * 0.35; }
   else { p.armL.rotation.z = 0; p.armR.rotation.z = 0; }
 }
 function syncMeshes(dt) {
@@ -1007,19 +1112,36 @@ function syncMeshes(dt) {
   for (let i = 0; i < defs.length; i++) { const d = defs[i]; if (!d.p.root.visible) continue; d.p.root.position.set(d.x, 0, d.z); d.p.root.rotation.y = d.face; animateLimbs(d, dt); }
   keeper.p.root.position.set(keeper.x, 0, keeper.z === 0 ? 1.1 : keeper.z);
   keeper.p.root.rotation.y = 0;
-  const dv = keeper.dive || 0;
-  keeper.p.body.rotation.z = -keeper.diveDir * dv * 1.25;
-  keeper.p.body.position.y = dv * 0.35 + (keeper.jump || 0) * 0.5;
-  keeper.p.armL.rotation.x = keeper.p.armR.rotation.x = -Math.PI * 0.85 * dv;
+  {
+    const kp = keeper.p, dv = keeper.dive || 0, dir = keeper.diveDir || 0, jp = keeper.jump || 0, low = !!(run && run.kind === "shot" && run.hG < 0.9);
+    kp.armL.rotation.z = kp.armR.rotation.z = 0; kp.legL.rotation.z = kp.legR.rotation.z = 0; kp.legL.rotation.x = kp.legR.rotation.x = 0; kp.body.rotation.x = 0;
+    if (keeper.hold) {                                           // holding the ball against his chest
+      kp.body.rotation.z = 0; kp.body.position.y = 0; kp.body.rotation.x = 0.25;
+      kp.armL.rotation.x = kp.armR.rotation.x = -1.3; kp.armL.rotation.z = 0.5; kp.armR.rotation.z = -0.5;
+    } else if (dir !== 0) {                                      // a dive: flat for a low shot, stretched for a high one
+      kp.body.rotation.z = -dir * dv * (low ? 1.45 : 1.15);
+      kp.body.position.y = dv * (low ? 0.12 : 0.4) + jp * 0.3;
+      kp.armL.rotation.x = kp.armR.rotation.x = -Math.PI * 0.85 * dv; kp.armL.rotation.z = kp.armR.rotation.z = dir * 0.5 * dv;
+      kp.legL.rotation.z = kp.legR.rotation.z = -dir * 0.35 * dv; kp.legL.rotation.x = 0.4 * dv; kp.legR.rotation.x = -0.3 * dv;
+    } else {                                                     // up on his toes, arms high; or set low in a block
+      kp.body.rotation.z = 0; kp.body.position.y = jp * 0.7 - (low ? 0.12 * dv : 0);
+      kp.armL.rotation.x = kp.armR.rotation.x = low ? -1.1 * dv : -Math.PI * (0.35 + 0.6 * jp) * dv;
+      kp.legL.rotation.x = 0.5 * jp * dv; kp.legR.rotation.x = -0.4 * jp * dv; kp.body.rotation.x = low ? 0.3 * dv : 0;
+      kp.legL.rotation.z = low ? 0.25 * dv : 0; kp.legR.rotation.z = low ? -0.25 * dv : 0;
+    }
+    if (run && run.state === "loose" && run.lt < 0.35 && dir !== 0) (dir > 0 ? kp.armR : kp.armL).rotation.x = -2.8;   // a punched clearance
+  }
   ball.mesh.position.set(ball.x, ball.y, ball.z);
   ballBlob.position.set(ball.x, 0.04, ball.z); ballBlob.scale.setScalar(1 + ball.y * 0.4);
   if (run && run.state === "fly") ball.mesh.rotation.x -= 0.5; else if (run && run.state === "goalmouth") ball.mesh.rotation.x -= 0.2;
   if (bin.visible) { const sc = 1 + Math.sin(clock * 6) * 0.12; bin.scale.set(sc, sc, sc); }
+  georgeTag.position.set(att[0].x, 3.1, att[0].z);
+  offLine.visible = G.phase === "plan" && !G.aerial; if (offLine.visible) offLine.position.z = offsideLine();
   const planning = G.phase === "plan", rec = G.phase === "run" && run && run.state === "recover";
   att.forEach((a, i) => {
-    const show = planning || (rec && i === run.chaser);
+    const show = planning || (rec && i === run.chaser) || i === 0;
     a.ring.visible = show;
-    if (show) { a.ring.position.x = a.x; a.ring.position.z = a.z; const sc = 1 + Math.sin(clock * 5) * 0.08; a.ring.scale.set(sc, sc, sc); a.ring.material.color.set(planning ? (i === G.carrier ? 0xff4d5e : 0xffd23f) : (run.chaseDist <= 2.6 ? 0x3ddc7c : 0xffd23f)); }
+    if (show) { a.ring.position.x = a.x; a.ring.position.z = a.z; const sc = 1 + Math.sin(clock * 5) * 0.08; a.ring.scale.set(sc, sc, sc); a.ring.material.color.set(rec && i === run.chaser ? (run.chaseDist <= 2.6 ? 0x3ddc7c : 0xffd23f) : i === G.carrier && planning ? 0xff4d5e : planning && isOff(a, att[G.carrier]) ? 0xb04dff : i === 0 ? 0x4dd2ff : 0xffd23f); }
   });
   tackRing.visible = !!rec;
   if (rec) { tackRing.position.x = run.holder.x; tackRing.position.z = run.holder.z; const sc = 1 + Math.sin(clock * 9) * 0.12; tackRing.scale.set(sc, sc, sc); }
@@ -1028,18 +1150,25 @@ function syncMeshes(dt) {
 /* ---------------- camera ---------------- */
 function snapCamera() { camStep(1, true); }
 function camStep(dt, snap) {
+  if (replay) {
+    const close = replay.t > replay.end - 1.8, tx = ball.x + (close ? 7 : 12), ty = close ? 2.6 : 5.5, tz = Math.max(ball.z, 3) + (close ? 7 : 10), k = 1 - Math.exp(-4 * dt);
+    camera.position.set(lerp(camera.position.x, tx, k), lerp(camera.position.y, ty, k), lerp(camera.position.z, tz, k));
+    camera.lookAt(ball.x, 0.8, Math.max(ball.z - 1, -1)); return;
+  }
   const c = att[G.carrier];
-  let fx, fz, lookZ, height, back;
-  if (G.phase === "plan" || !run) { fx = c.x * 0.85; fz = c.z + 13; lookZ = c.z - 10; height = 10.5; }
+  let fx, fz, lookZ, height, back, lookK = 0.6;
+  if (G.phase === "plan" || !run) { fx = c.x * 0.9; fz = c.z + 16; lookZ = c.z - 10; height = 12.5; }
+  else if (ending && ending.kind === "goal" && run.scorer !== undefined) { const sc = att[run.scorer]; fx = sc.x; fz = sc.z + 8; lookZ = sc.z - 1; height = 4.8; lookK = 1; }
   else if (run.kind === "shot") { fx = ball.x * 0.5; fz = Math.max(ball.z + 12, 11); lookZ = Math.max(ball.z - 12, -2); height = 8.5; }
-  else { fx = ball.x * 0.6; fz = ball.z + 13; lookZ = ball.z - 10; height = 10.5; }
+  else { fx = ball.x * 0.7; fz = ball.z + 16; lookZ = ball.z - 10; height = 12.5; }
   const k = snap ? 1 : 1 - Math.exp(-3.2 * dt);
   cam.x = lerp(cam.x, fx, k); cam.z = lerp(cam.z, fz, k);
-  const lx = lerp(cam.lx, fx * 0.6, snap ? 1 : k), lz = lerp(cam.lz, lookZ, snap ? 1 : k);
+  const lx = lerp(cam.lx, fx * lookK, snap ? 1 : k), lz = lerp(cam.lz, lookZ, snap ? 1 : k);
   cam.lx = lx; cam.lz = lz;
   const ox = cam.x - lx, oz = cam.z - lz, cy = Math.cos(view.yaw), sy = Math.sin(view.yaw);
   camera.position.set(lx + (ox * cy + oz * sy) * view.zoom, Math.max(2, height * Math.pow(view.zoom, 0.85)), lz + (-ox * sy + oz * cy) * view.zoom);
   camera.lookAt(lx, 0.6, lz);
+  if (run && run.special && run.kind === "shot" && run.state === "fly" && run.s < 5) { const sc = att[G.carrier]; camera.position.set(sc.x + 4.2, 2.3, sc.z + 4.2); camera.lookAt(sc.x, 1.5, sc.z - 1.5); }
 }
 
 /* ---------------- quick buttons (an easier way to play, and for keyboards) ---------------- */
@@ -1057,9 +1186,12 @@ function frame(now) {
   raf = requestAnimationFrame(frame);
   const real = Math.min(0.05, (now - last) / 1000 || 0.016); last = now; clock += real;
   if (G.phase === "run" && run) {
-    const dt = real * G.timeScale; let acc = dt;
+    const dt = real * G.timeScale; let acc = dt; gtime += dt;
     while (acc > 0 && G.phase === "run" && run) { const h = Math.min(acc, 1 / 60); stepRun(h); acc -= h; }
-    if (ending) { ending.t += real; if (ending.t > (ending.kind === "goal" ? 2.2 : 1.5)) { afterResult(); } }
+    if (G.phase === "run" && run) recordFrame();
+    if (ending) { ending.t += real; if (ending.kind === "goal") { if (ending.t > 1.9) startReplay(); } else if (ending.t > 1.5) afterResult(); }
+  } else if (G.phase === "replay") {
+    replayStep(real);
   } else if (G.phase === "plan") {
     for (const e of [...att, ...defs]) { e.speed = 0; }
     keeper.x += clamp(clamp(ball.x * 0.12, -2.4, 2.4) - keeper.x, -2 * real, 2 * real);
@@ -1072,7 +1204,8 @@ function frame(now) {
   view.zoomT = clamp(view.zoomT + (camHold.o - camHold.i) * real * 0.9, 0.6, 2.4);
   const vk = 1 - Math.exp(-8 * real); view.yaw = lerp(view.yaw, view.yawT, vk); view.zoom = lerp(view.zoom, view.zoomT, vk);
   if (G.phase !== "menu") { syncMeshes(real); camStep(real); }
-  crowdTex.offset.y = Math.sin(clock * 2) * 0.004;
+  cheer = Math.max(0, cheer - real * 0.35);
+  crowdTex.offset.y = Math.sin(clock * 2) * 0.004 + Math.sin(clock * 16) * 0.014 * cheer;
   netUpdate(real); fireUpdate(real);
   renderer.render(scene, camera);
 }
