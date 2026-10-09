@@ -121,12 +121,12 @@
   <section class="ls-card" id="screen-start">
     <p class="ls-kicker">Freeze. Draw. Score.</p>
     <h2 class="ls-h2">Draw the pass. Draw the shot.</h2>
-    <p class="ls-lede">Time stops while you plan. Draw a line with your finger and the ball follows it. You have three lives. Passes charge a power shot. Every goal makes the defenders quicker and the keeper smarter. Rebounds are live, so follow them up!</p>
+    <p class="ls-lede">Time stops while you plan. Draw a line with your finger and the ball follows it. You have three lives. Every goal makes the defenders quicker and the keeper smarter. Rebounds are live, so follow them up!</p>
     <ul class="ls-how">
       <li><span class="ls-num">1</span><span><strong>Time freezes.</strong> Look at where everyone is. Two fingers or the round buttons turn and zoom the camera.</span></li>
       <li><span class="ls-num">2</span><span><strong>Draw a line</strong> from George to a team-mate, or into the goal.</span></li>
       <li><span class="ls-num">3</span><span><strong>Curve it</strong> round the defenders. Passes must start inside the glowing arc. The line turns red when a defender is in the way.</span></li>
-      <li><span class="ls-num">4</span><span><strong>Lob it</strong> with the blue button for a cross: a team-mate near goal can head it or even try a bicycle kick. <strong>A longer line</strong> is a harder strike: harder to save or block, and harder for a team-mate to control. <strong>Hold still</strong> at the end of a pass to push it further. <strong>Aim for the corners.</strong> Hit the glowing top corner for bonus points. Wrong line? Let go in the red strip to cancel.</span></li>
+      <li><span class="ls-num">4</span><span><strong>Draw a long line</strong> for a lob or cross: a team-mate near goal can head it or even try a bicycle kick. Shoot from the <strong>orange zone</strong> for a power shot. <strong>A longer line</strong> is a harder strike: harder to save or block, and harder for a team-mate to control. <strong>Hold still</strong> at the end of a pass to push it further. <strong>Aim for the corners.</strong> Hit the glowing top corner for bonus points. Wrong line? Let go in the red strip to cancel.</span></li>
     </ul>
     <p class="ls-best" id="best-line"></p>
     <button class="btn-primary ls-go" id="btn-start" type="button">Kick off</button>
@@ -138,7 +138,6 @@
       <div class="mid"><small>Points</small><span class="big" id="hud-score">0</span></div>
       <div class="right"><small>Lives</small><span class="big" id="hud-lives" aria-label="3 lives">❤❤❤</span></div>
     </div>
-    <div class="ls-power" id="power-box"><span>POWER</span><div><i id="power-fill"></i></div></div>
     <div class="ls-stage" id="stage">
       <canvas id="gl" aria-label="3D football pitch. Draw a line from George to a team-mate or into the goal."></canvas>
       <div class="ls-pop" id="pop" aria-hidden="true"></div>
@@ -154,7 +153,7 @@
     </div>
     <p class="ls-hint" id="hint" role="status" aria-live="polite"></p>
     <div class="ls-bar" id="quick"></div>
-    <p class="ls-keys">Prefer buttons? Use the quick buttons to pass or shoot straight. Drawing a line gives you far more control.</p>
+    <p class="ls-keys">Short line = ground pass. Long line = lob or cross. Shoot from the orange zone for a power shot.</p>
   </section>
 
   <section class="ls-card" id="screen-end" hidden>
