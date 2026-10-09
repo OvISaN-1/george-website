@@ -137,9 +137,9 @@ function scrollWorld(d) {
 /* ---------------- George ---------------- */
 function makeGeorge() {
   const mats = [];
-  const M = (c) => { const m = new THREE.MeshLambertMaterial({ color: c }); mats.push(m); return m; };
-  const cyl = (rt, rb, h, c, x, y, z, seg) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg || 10), M(c)); m.position.set(x, y, z); return m; };
-  const sph = (r, c, x, y, z, sx, sy, sz) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), M(c)); m.position.set(x, y, z); m.scale.set(sx || 1, sy || 1, sz || 1); return m; };
+  const M = (c) => { const m = new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 0.16 }); mats.push(m); return m; };
+  const cyl = (rt, rb, h, c, x, y, z, seg) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg || 14), M(c)); m.position.set(x, y, z); return m; };
+  const sph = (r, c, x, y, z, sx, sy, sz) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), M(c)); m.position.set(x, y, z); m.scale.set(sx || 1, sy || 1, sz || 1); return m; };
   const box = (w, h, d, c, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), M(c)); m.position.set(x, y, z); return m; };
   const hex = (s, d) => { try { return parseInt(String(s).replace("#", ""), 16); } catch (e) { return d; } };
   let kit = { shirt: "#d7102b", shorts: "#f4f1ee", socks: "#d7102b", sockTop: "#ffffff", trim: "#ffffff", text: "#ffffff" }, hairC = "#a57d52", style = "fringe", boots = "#15121a", num = 10;
@@ -147,8 +147,9 @@ function makeGeorge() {
   const o = { shirt: hex(kit.shirt, 0xd7102b), shorts: hex(kit.shorts, 0xf4f1ee), socks: hex(kit.socks, 0xd7102b), band: hex(kit.sockTop || kit.trim, 0xffffff), collar: hex(kit.trim, 0xffffff), skin: 0xf3c9a4, hair: hex(hairC, 0xa57d52), boots: hex(boots, 0x151515) };
   const g = new THREE.Group();
   const leg = (sx) => {
-    const hip = new THREE.Group(); hip.position.set(sx * 0.1, 0.96, 0);
-    hip.add(cyl(0.088, 0.072, 0.46, o.skin, 0, -0.23, 0), cyl(0.118, 0.126, 0.27, o.shorts, 0, -0.12, 0));
+    const hip = new THREE.Group(); hip.position.set(sx * 0.095, 0.96, 0);
+    const short = cyl(0.092, 0.104, 0.3, o.shorts, 0, -0.115, 0); short.scale.z = 0.95;
+    hip.add(cyl(0.088, 0.072, 0.46, o.skin, 0, -0.23, 0), short, cyl(0.1, 0.108, 0.02, o.collar, 0, -0.262, 0));
     const knee = new THREE.Group(); knee.position.set(0, -0.46, 0);
     knee.add(sph(0.068, o.skin, 0, 0, 0), cyl(0.064, 0.05, 0.42, o.socks, 0, -0.21, 0), cyl(0.067, 0.067, 0.04, o.band, 0, -0.1, 0));
     const foot = new THREE.Group(); foot.position.set(0, -0.43, 0); foot.add(box(0.1, 0.07, 0.26, o.boots, 0, -0.03, 0.06), sph(0.05, o.socks, 0, 0.01, -0.01));
@@ -156,14 +157,18 @@ function makeGeorge() {
   };
   const arm = (sx) => {
     const sh = new THREE.Group(); sh.position.set(sx * 0.235, 1.66, 0);
-    sh.add(sph(0.065, o.shirt, 0, 0, 0), cyl(0.058, 0.05, 0.22, o.shirt, 0, -0.11, 0), cyl(0.048, 0.043, 0.1, o.skin, 0, -0.25, 0));
+    sh.add(sph(0.065, o.shirt, 0, 0, 0), cyl(0.058, 0.05, 0.22, o.shirt, 0, -0.11, 0), cyl(0.052, 0.052, 0.025, o.collar, 0, -0.215, 0), cyl(0.048, 0.043, 0.1, o.skin, 0, -0.25, 0));
+    if (sx < 0) sh.add(cyl(0.06, 0.058, 0.05, 0xffd84a, 0, -0.1, 0));   // captain's armband
     const elbow = new THREE.Group(); elbow.position.set(0, -0.3, 0);
     elbow.add(sph(0.044, o.skin, 0, 0, 0), cyl(0.043, 0.036, 0.27, o.skin, 0, -0.14, 0), sph(0.045, o.skin, 0, -0.3, 0));
     sh.add(elbow); g.add(sh); return { sh, elbow };
   };
   const lL = leg(-1), lR = leg(1), aL = arm(-1), aR = arm(1);
   const chest = cyl(0.205, 0.155, 0.58, o.shirt, 0, 1.4, 0, 14); chest.scale.z = 0.62; g.add(chest);
-  const waist = cyl(0.165, 0.175, 0.22, o.shorts, 0, 1.06, 0, 14); waist.scale.z = 0.7; g.add(waist);
+  const waist = sph(0.19, o.shorts, 0, 1.0, 0, 1, 0.62, 0.7); g.add(waist);
+  const band = cyl(0.156, 0.16, 0.05, o.collar, 0, 1.1, 0, 14); band.scale.z = 0.68; g.add(band);
+  const hem = cyl(0.158, 0.158, 0.03, o.collar, 0, 1.12, 0, 14); hem.scale.z = 0.66; g.add(hem);
+  const yoke = sph(0.215, o.shirt, 0, 1.66, 0, 1, 0.22, 0.6); g.add(yoke);
   g.add(cyl(0.075, 0.085, 0.035, o.collar, 0, 1.7, 0));
   const head = new THREE.Group(); head.position.set(0, 1.72, 0);
   head.add(cyl(0.055, 0.06, 0.1, o.skin, 0, 0.04, 0), sph(0.115, o.skin, 0, 0.19, 0, 0.95, 1.18, 1.05), sph(0.025, o.skin, -0.113, 0.19, 0), sph(0.025, o.skin, 0.113, 0.19, 0));
@@ -174,20 +179,21 @@ function makeGeorge() {
   else if (style === "mohawk") head.add(sph(0.05, o.hair, 0, 0.32, -0.01, 0.5, 1.1, 1.8));
   else head.add(sph(0.127, o.hair, 0, 0.26, -0.01, 1, 0.74, 1.1));
   if (style === "fringe") head.add(sph(0.1, o.hair, 0, 0.3, 0.07, 1.05, 0.38, 0.5));
-  g.add(head);
+  if (style !== "mohawk") head.add(sph(0.118, o.hair, 0, 0.2, -0.045, 1, 0.9, 0.88));
+  head.scale.setScalar(1.1); g.add(head);
   num = clamp(Math.round(Number(num)) || 10, 1, 99);
-  const numC = document.createElement("canvas"); numC.width = 128; numC.height = 128;
+  const numC = document.createElement("canvas"); numC.width = 256; numC.height = 256;
   const numTex = new THREE.CanvasTexture(numC); numTex.colorSpace = THREE.SRGBColorSpace;
   const drawNumber = (n) => {     // his name and number on the back of the shirt; the number is his coin multiplier
-    const c = numC.getContext("2d"); c.clearRect(0, 0, 128, 128); c.fillStyle = kit.text || "#fff"; c.textAlign = "center"; c.textBaseline = "middle";
-    c.font = "700 24px Rajdhani, Arial Black, sans-serif"; c.fillText("GEORGE", 64, 20);
-    c.font = "700 " + (n >= 100 ? 66 : n >= 10 ? 84 : 98) + "px Rajdhani, Arial Black, sans-serif"; c.fillText(String(n), 64, 76); numTex.needsUpdate = true;
+    const c = numC.getContext("2d"); c.clearRect(0, 0, 256, 256); c.fillStyle = kit.text || "#fff"; c.textAlign = "center"; c.textBaseline = "middle";
+    c.font = "700 54px Rajdhani, Arial Black, sans-serif"; c.fillText("GEORGE", 128, 38);
+    c.font = "700 " + (n >= 100 ? 130 : n >= 10 ? 170 : 196) + "px Rajdhani, Arial Black, sans-serif"; c.fillText(String(n), 128, 150); numTex.needsUpdate = true;
   };
   drawNumber(num);
-  const nm = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.42), new THREE.MeshBasicMaterial({ map: numTex, transparent: true })); nm.position.set(0, 1.4, -0.1); nm.rotation.y = Math.PI; g.add(nm);
+  const nm = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), new THREE.MeshBasicMaterial({ map: numTex, transparent: true, depthWrite: false })); nm.position.set(0, 1.37, -0.138); nm.rotation.y = Math.PI; g.add(nm);
   const blob = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.4), new THREE.MeshBasicMaterial({ map: canvasTex(64, 64, (c) => { const gr = c.createRadialGradient(32, 32, 4, 32, 32, 30); gr.addColorStop(0, "rgba(0,0,0,.5)"); gr.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = gr; c.fillRect(0, 0, 64, 64); }), transparent: true, depthWrite: false }));
   blob.rotation.x = -Math.PI / 2; blob.position.y = 0.03;
-  const root = new THREE.Group(); root.add(g, blob); root.rotation.y = Math.PI;   // he runs away from the camera (towards -z)
+  const root = new THREE.Group(); root.add(g, blob); root.scale.setScalar(1.28); root.rotation.y = Math.PI;   // a little larger than life so the shirt print reads; he runs away from the camera (towards -z)
   return { root, body: g, head, legL: lL.hip, legR: lR.hip, kneeL: lL.knee, kneeR: lR.knee, armL: aL.sh, armR: aR.sh, elbowL: aL.elbow, elbowR: aR.elbow, mats, blob, drawNumber, baseNum: num };
 }
 let george = makeGeorge(); scene.add(george.root);
@@ -664,7 +670,7 @@ function update(dt) {
 const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 10), new THREE.MeshLambertMaterial({ map: ballTex, emissive: 0xffe9a8, emissiveIntensity: 0.4 })); ballMesh.visible = false; scene.add(ballMesh);
 
 function cameraStep(dt) {
-  const tx = px * 0.55, ty = (P.rocket > 0 ? 5.6 : 4.0) + py * 0.3, tz = 7.4;
+  const tx = px * 0.55, ty = (P.rocket > 0 ? 5.4 : 3.7) + py * 0.3, tz = 6.7;
   camPos.x = lerp(camPos.x, tx, 1 - Math.exp(-6 * dt)); camPos.y = lerp(camPos.y, ty, 1 - Math.exp(-4 * dt)); camPos.z = lerp(camPos.z, tz + clamp((G.speed - 15) * 0.05, 0, 1.4) + (P.boots > 0 ? 0.8 : 0), 1 - Math.exp(-3 * dt));
   let sxk = 0, syk = 0; if (shake > 0 && !reduced) { shake -= dt; sxk = rand(-0.15, 0.15) * shake * 2; syk = rand(-0.1, 0.1) * shake * 2; }
   const bob = G.phase === "play" && grounded ? Math.sin(phase * 2) * 0.025 * clamp((G.speed - 12) / 20, 0, 1) : 0;
