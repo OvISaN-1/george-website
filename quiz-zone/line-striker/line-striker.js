@@ -19,7 +19,7 @@ const reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce
 
 const GOAL_HALF = 3.66, GOAL_H = 2.44;
 const PASS_V = 21, SHOT_V = 30, POWER_V = 54;
-const LOB_MIN = 14;                     // a pass longer than this (metres), or one into the box, is lobbed over the top
+const LOB_MIN = 19;                     // a pass longer than this (metres), or one into the box, is lobbed over the top
 const BEST_KEY = "gz_linestriker_best2";
 const PASS_HALF = Math.PI;              // passes can go in any direction, including backwards
 const BIN_X = 2.6, BIN_Y = 2.05;
@@ -176,45 +176,67 @@ const blobMat = new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, d
 
 function box(w, h, d, c, x, y, z) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c)); m.position.set(x, y, z); return m; }
 
+const cyl = (rt, rb, h, c, x, y, z, seg) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg || 10), mat(c)); m.position.set(x, y, z); return m; };
+const sph = (r, c, x, y, z, sx, sy, sz) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), mat(c)); m.position.set(x, y, z); m.scale.set(sx || 1, sy || 1, sz || 1); return m; };
+
+// A jointed footballer: hips, knees, shoulders and elbows all bend, so he can run, kick and head the ball.
 function makePlayer(o) {
   const g = new THREE.Group();
   const leg = (sx) => {
-    const p = new THREE.Group(); p.position.set(sx * 0.1, 1.08, 0);
-    p.add(box(0.17, 0.4, 0.19, o.shorts, 0, -0.19, 0), box(0.13, 0.56, 0.15, o.socks, 0, -0.66, 0), box(0.15, 0.09, 0.27, 0x111111, 0, -1.0, 0.04));
-    g.add(p); return p;
+    const hip = new THREE.Group(); hip.position.set(sx * 0.1, 0.96, 0);
+    hip.add(cyl(0.088, 0.072, 0.46, o.skin, 0, -0.23, 0), cyl(0.118, 0.126, 0.27, o.shorts, 0, -0.12, 0));
+    const knee = new THREE.Group(); knee.position.set(0, -0.46, 0);
+    knee.add(sph(0.068, o.skin, 0, 0, 0), cyl(0.064, 0.05, 0.42, o.socks, 0, -0.21, 0), cyl(0.067, 0.067, 0.04, o.sockBand || 0xffffff, 0, -0.1, 0));
+    const foot = new THREE.Group(); foot.position.set(0, -0.43, 0);
+    foot.add(box(0.1, 0.07, 0.26, o.boots || 0x151515, 0, -0.03, 0.06), sph(0.05, o.socks, 0, 0.01, -0.01));
+    knee.add(foot); hip.add(knee); g.add(hip);
+    return { hip, knee };
   };
   const arm = (sx) => {
-    const p = new THREE.Group(); p.position.set(sx * 0.29, 1.72, 0);
-    p.add(box(0.11, 0.3, 0.13, o.shirt, 0, -0.14, 0), box(0.09, 0.36, 0.11, o.keeper ? 0xffe14d : o.skin, 0, -0.47, 0));
-    g.add(p); return p;
+    const sh = new THREE.Group(); sh.position.set(sx * 0.235, 1.66, 0);
+    sh.add(sph(0.065, o.shirt, 0, 0, 0), cyl(0.058, 0.05, 0.22, o.shirt, 0, -0.11, 0), cyl(0.048, 0.043, 0.1, o.keeper ? o.shirt : o.skin, 0, -0.25, 0));
+    const elbow = new THREE.Group(); elbow.position.set(0, -0.3, 0);
+    elbow.add(sph(0.044, o.keeper ? o.shirt : o.skin, 0, 0, 0), cyl(0.043, 0.036, 0.27, o.keeper ? o.shirt : o.skin, 0, -0.14, 0), sph(o.keeper ? 0.07 : 0.045, o.keeper ? 0xffe14d : o.skin, 0, -0.3, 0));
+    sh.add(elbow); g.add(sh);
+    return { sh, elbow };
   };
-  const legL = leg(-1), legR = leg(1), armL = arm(-1), armR = arm(1);
-  g.add(box(0.42, 0.64, 0.25, o.shirt, 0, 1.44, 0), box(0.4, 0.2, 0.25, o.shorts, 0, 1.14, 0));
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 10), mat(o.skin)); head.position.set(0, 2.0, 0); g.add(head);
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.168, 14, 10), mat(o.hair)); hair.scale.set(1, 0.78, 1.02); hair.position.set(0, 2.07, -0.022); g.add(hair);
-  const num = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 0.28), new THREE.MeshBasicMaterial({ map: numberTex(o.number, o.numCol || "#fff"), transparent: true }));
-  num.position.set(0, 1.46, -0.128); num.rotation.y = Math.PI; g.add(num);
-  g.scale.setScalar(0.9);
+  const lL = leg(-1), lR = leg(1), aL = arm(-1), aR = arm(1);
+  const chest = cyl(0.205, 0.155, 0.58, o.shirt, 0, 1.4, 0, 14); chest.scale.z = 0.62; g.add(chest);
+  const waist = cyl(0.165, 0.175, 0.22, o.shorts, 0, 1.06, 0, 14); waist.scale.z = 0.7; g.add(waist);
+  g.add(cyl(0.075, 0.085, 0.035, o.collar || 0xffffff, 0, 1.7, 0));
+  // head on a neck, so it can turn to follow the ball
+  const head = new THREE.Group(); head.position.set(0, 1.72, 0);
+  head.add(cyl(0.055, 0.06, 0.1, o.skin, 0, 0.04, 0), sph(0.115, o.skin, 0, 0.19, 0, 0.95, 1.18, 1.05));
+  head.add(sph(0.025, o.skin, -0.113, 0.19, 0), sph(0.025, o.skin, 0.113, 0.19, 0), sph(0.013, 0x2a1d12, -0.04, 0.21, 0.108), sph(0.013, 0x2a1d12, 0.04, 0.21, 0.108));
+  const hs = o.hairStyle || "short";
+  if (hs === "buzz") head.add(sph(0.12, o.hair, 0, 0.25, -0.01, 1, 0.62, 1.08));
+  else if (hs === "afro") head.add(sph(0.155, o.hair, 0, 0.27, -0.01, 1, 0.9, 1));
+  else if (hs === "long") { head.add(sph(0.127, o.hair, 0, 0.26, -0.01, 1, 0.72, 1.1)); head.add(sph(0.11, o.hair, 0, 0.1, -0.075, 1, 1.5, 0.55)); }
+  else head.add(sph(0.127, o.hair, 0, 0.26, -0.01, 1, 0.74, 1.1));
+  if (o.fringe) head.add(sph(0.1, o.hair, 0, 0.3, 0.07, 1.05, 0.38, 0.5));
+  g.add(head);
+  const num = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.3), new THREE.MeshBasicMaterial({ map: numberTex(o.number, o.numCol || "#fff"), transparent: true }));
+  num.position.set(0, 1.42, -0.1); num.rotation.y = Math.PI; g.add(num);
   const blob = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.4), blobMat); blob.rotation.x = -Math.PI / 2; blob.position.y = 0.03;
   const root = new THREE.Group(); root.add(g, blob);
-  return { root, body: g, legL, legR, armL, armR, phase: Math.random() * 6 };
+  return { root, body: g, head, legL: lL.hip, legR: lR.hip, kneeL: lL.knee, kneeR: lR.knee, armL: aL.sh, armR: aR.sh, elbowL: aL.elbow, elbowR: aR.elbow, phase: Math.random() * 6 };
 }
 
 const KITS = {
-  att: { shirt: 0xd7102b, shorts: 0xf4f4f4, socks: 0xd7102b, numCol: "#fff" },
-  def: { shirt: 0xe7edf5, shorts: 0xe2765a, socks: 0xf4f4f4, numCol: "#2a3a55" },
-  gk: { shirt: 0x39d17a, shorts: 0x14532d, socks: 0x14532d, numCol: "#0b2a18" },
+  att: { shirt: 0xd7102b, shorts: 0xf4f4f4, socks: 0xd7102b, sockBand: 0xffffff, collar: 0xffffff, numCol: "#fff" },
+  def: { shirt: 0xe7edf5, shorts: 0xe2765a, socks: 0xf4f4f4, sockBand: 0xe2765a, collar: 0xe2765a, numCol: "#2a3a55" },
+  gk: { shirt: 0x39d17a, shorts: 0x14532d, socks: 0x14532d, sockBand: 0x39d17a, collar: 0x14532d, numCol: "#0b2a18" },
 };
 const SKINS = [0xf3c9a4, 0xe0ac86, 0xc68642, 0x8d5524, 0xf1d3b5];
 const HAIRS = [0x2a1d12, 0xa57d52, 0x151515, 0x6b4423, 0xc9a24a];
 
 function makeEntity(kit, number, i, extra) {
-  const p = makePlayer(Object.assign({}, KITS[kit], { number, skin: extra && extra.skin || SKINS[i % SKINS.length], hair: extra && extra.hair || HAIRS[(i * 3) % HAIRS.length], keeper: kit === "gk" }));
+  const p = makePlayer(Object.assign({}, KITS[kit], { number, skin: extra && extra.skin || SKINS[i % SKINS.length], hair: extra && extra.hair || HAIRS[(i * 3) % HAIRS.length], hairStyle: extra && extra.hairStyle || ["short", "buzz", "long", "afro", "short"][i % 5], fringe: !!(extra && extra.fringe), keeper: kit === "gk" }));
   scene.add(p.root);
   return { p, x: 0, z: 0, vx: 0, vz: 0, face: Math.PI, speed: 0, ring: null, isDef: kit === "def" };
 }
 const att = [
-  makeEntity("att", 10, 0, { skin: 0xf3c9a4, hair: 0xa57d52 }),
+  makeEntity("att", 10, 0, { skin: 0xf3c9a4, hair: 0xa57d52, hairStyle: "short", fringe: true }),
   makeEntity("att", 7, 1), makeEntity("att", 9, 2), makeEntity("att", 11, 3), makeEntity("att", 8, 5), makeEntity("att", 6, 6),
 ];
 const defs = []; for (let i = 0; i < 8; i++) defs.push(makeEntity("def", [4, 5, 3, 6, 2, 8, 14, 15][i], i + 1));
@@ -254,6 +276,17 @@ const tagTex = canvasTex(256, 90, (g, w, h) => {
 });
 const georgeTag = new THREE.Sprite(new THREE.SpriteMaterial({ map: tagTex, transparent: true, depthTest: false }));
 georgeTag.scale.set(3.0, 1.05, 1); georgeTag.renderOrder = 20; scene.add(georgeTag);
+
+// says what the player is about to do on an aerial chance
+const actCanvas = document.createElement("canvas"); actCanvas.width = 360; actCanvas.height = 90;
+const actTex = new THREE.CanvasTexture(actCanvas); actTex.colorSpace = THREE.SRGBColorSpace;
+const actTag = new THREE.Sprite(new THREE.SpriteMaterial({ map: actTex, transparent: true, depthTest: false })); actTag.renderOrder = 21; actTag.visible = false; scene.add(actTag);
+function setActTag(text) {
+  const g = actCanvas.getContext("2d"); g.clearRect(0, 0, 360, 90);
+  g.fillStyle = "#ffb300"; g.strokeStyle = "#241f29"; g.lineWidth = 6; g.beginPath(); if (g.roundRect) g.roundRect(6, 6, 348, 60, 26); else g.rect(6, 6, 348, 60); g.fill(); g.stroke();
+  g.fillStyle = "#241f29"; g.font = "700 40px Rajdhani, Arial Black, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(text, 180, 37);
+  g.fillStyle = "#ffb300"; g.beginPath(); g.moveTo(166, 66); g.lineTo(194, 66); g.lineTo(180, 86); g.closePath(); g.fill(); actTex.needsUpdate = true;
+}
 
 // ball
 const ballTex = canvasTex(64, 32, (g, w, h) => { g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); g.fillStyle = "#222"; for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(5 + i * 11, (i % 2) ? 9 : 22, 4.5, 0, 7); g.fill(); } });
@@ -418,9 +451,10 @@ function planStart(aer) {
   zone.visible = !aer; zone.material.opacity = goodSpot(c) ? 0.3 : 0.12;
   // Give the player a little room: nudge any defender that is right on top of the ball.
   for (const d of defs) if (d.p.root.visible) { const dd = hyp(d.x - c.x, d.z - c.z); if (dd < 6.5) { const k = 6.8 / (dd || 1); d.x = c.x + (d.x - c.x) * k; d.z = c.z + (d.z - c.z) * k; } }
-  ball.x = c.x + Math.sin(c.face) * 0.5; ball.z = c.z + Math.cos(c.face) * 0.5; ball.y = aer ? (aer.type === "bicycle" ? 2.5 : aer.type === "volley" ? 1.0 : 2.1) : 0.24;
+  if (!aer) { ball.x = c.x + Math.sin(c.face) * 0.5; ball.z = c.z + Math.cos(c.face) * 0.5; ball.y = 0.24; }   // for an aerial chance the ball stays in the air where it is
+  if (aer) setActTag(aer.type === "bicycle" ? "BICYCLE KICK" : aer.type === "volley" ? "VOLLEY" : "HEADER");
   if (aer) { pop(aer.special ? "GEORGE!" : (aer.type === "bicycle" ? "BICYCLE KICK!" : aer.type === "volley" ? "VOLLEY!" : "HEADER!"), aer.special ? "A spectacular " + (aer.type === "bicycle" ? "bicycle kick" : aer.type === "volley" ? "volley" : "header") + "! Aim it!" : aer.type === "bicycle" ? "What a chance! Aim it!" : aer.type === "volley" ? "Hit it first time!" : "Aim it at the goal!", "gold"); sfx.pass(); }
-  setHint(!aer && goodSpot(c) ? "Power zone! Draw a long, hard line at the goal for a rocket shot." : aer ? (aer.type === "bicycle" ? "Overhead kick! Draw a line into the goal." : aer.type === "volley" ? "Volley! Draw a line into the goal." : "Header! Draw a line into the goal.") : G.chain ? "Pass or shoot! Draw a line. Stay onside." : G.bonus ? "Time is frozen. Find George up front, or hit the glowing corner for bonus points!" : "Time is frozen. Pass forward to George, your striker, or draw into the goal.");
+  setHint(!aer && goodSpot(c) ? "Power zone! Draw a long, hard line at the goal for a rocket shot." : aer ? (aer.type === "bicycle" ? "Overhead kick! Shoot, or draw to a team-mate to pass it." : aer.type === "volley" ? "Volley! Shoot, or draw to a team-mate to pass it." : "Header! Shoot, or draw to a team-mate to flick it on.") : G.chain ? "Pass or shoot! Draw a line. Stay onside." : G.bonus ? "Time is frozen. Find George up front, or hit the glowing corner for bonus points!" : "Time is frozen. Pass forward to George, your striker, or draw into the goal.");
   buildQuick();
 }
 
@@ -448,7 +482,6 @@ function updatePreview() {
   setRibbon(r ? r.pts : drawPts, 0.07 + 0.07 * (r ? r.pw : 0));          // show the path the ball will really take (thicker = harder)
   if (r) { $("holdbar").hidden = false; $("hold-label").textContent = "POWER " + Math.round(r.pw * 100) + "%" + (r.kind === "pass" ? (r.lob ? " · LOB / CROSS" : r.pw > 0.6 ? " · HARD PASS, HARDER TO CONTROL" : " · GROUND PASS") : (powerShotOk(att[G.carrier], r.pw, r.pts[r.pts.length - 1].x) ? " · POWER SHOT!" : goodSpot(att[G.carrier]) ? " · DRAW LONGER FOR A POWER SHOT" : r.pw > 0.6 ? " · HARD TO SAVE OR BLOCK" : " · DRAW LONGER = HARDER")); $("hold-fill").style.width = Math.round(r.pw * 100) + "%"; }
   if (!r) { ribbonMat.color.set(0xffffff); return; }
-  if (G.aerial && r.kind !== "shot") { ribbonMat.color.set(0xff4d5e); setHint("Header! Draw the line into the goal."); return; }
   if (behindRoute(r)) { ribbonMat.color.set(0xff4d5e); setHint("Too far behind. Pass inside the glowing arc."); return; }
   if (r.kind === "pass" && r.recv !== null && isOff(att[r.recv], att[G.carrier])) { ribbonMat.color.set(0xb04dff); setHint("Offside! Pass to someone behind the red line."); return; }
   let m = lineSafety(r.pts);
@@ -609,12 +642,11 @@ function buildRoute(raw, hold) {
   }
   // the longer the line you drew, the harder the ball is struck
   const pw = clamp((routeLength(raw) + (fitted.length > 0 ? Math.max(0, routeLength(fitted) - routeLength(pts)) : 0) - 4) / 32, 0, 1);
-  return { pts: fitted, kind, recv, pw, lob: kind === "pass" && (routeLength(fitted) > LOB_MIN || (fitted[fitted.length - 1].z < 22 && Math.abs(fitted[fitted.length - 1].x) < 24 && c.z > fitted[fitted.length - 1].z + 5)) };
+  return { pts: fitted, kind, recv, pw, lob: kind === "pass" && (routeLength(fitted) > LOB_MIN || (fitted[fitted.length - 1].z < 17 && Math.abs(fitted[fitted.length - 1].x) < 22 && c.z > fitted[fitted.length - 1].z + 9)) };
 }
 function release(raw) {
   const r = buildRoute(raw, releaseHold);
   if (!r) { ribbon.visible = false; setHint("Too short. Draw a longer line."); return; }
-  if (G.aerial && r.kind !== "shot") { ribbon.visible = false; setHint("Header! Draw the line into the goal."); return; }
   if (behindRoute(r)) { ribbon.visible = false; setHint("Too far behind. Pass inside the glowing arc, or draw to the goal."); return; }
   releasePw = r.pw; releaseLob = r.lob; startRun(r.pts, r.kind, r.recv);
 }
@@ -625,10 +657,10 @@ function startRun(pts, kind, recv) {
   const L = routeLength(pts);
   const pw = releasePw !== null ? releasePw : (kind === "shot" ? 0.55 : 0.4); releasePw = null;
   const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + hyp(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));
-  const lobbed = kind === "pass" && releaseLob; releaseLob = false;
+  const lobbed = kind === "pass" && releaseLob && !G.aerial; releaseLob = false;
   const power = kind === "shot" && !G.aerial && powerShotOk(att[G.carrier], pw, pts[pts.length - 1].x);   // a hard shot on target from a good position is a power shot
   const offSet = new Set(); if (kind === "pass") att.forEach((a, i) => { if (isOff(a, att[G.carrier])) offSet.add(i); });
-  run = { off: offSet, pts, cum, L, kind, recv, s: 0, pw, v: kind === "shot" ? (power ? POWER_V : G.aerial ? (G.aerial.type === "bicycle" ? 42 : G.aerial.type === "volley" ? 36 : 24) : lerp(20, 44, pw)) : (lobbed ? lerp(13, 21, pw) : lerp(15, 30, pw)), lob: lobbed, wing: lobbed && Math.abs(att[G.carrier].x) > 15, apex: clamp(L * 0.3, 2.6, 8.5), aerial: kind === "shot" ? G.aerial : null, power, state: "fly", t: 0, outcome: null, wait: 0, dist0: att[G.carrier].z };
+  run = { off: offSet, pts, cum, L, kind, recv, s: 0, pw, v: kind === "shot" ? (power ? POWER_V : G.aerial ? (G.aerial.type === "bicycle" ? 42 : G.aerial.type === "volley" ? 36 : 24) : lerp(20, 44, pw)) : (lobbed ? lerp(13, 21, pw) : lerp(15, 30, pw)), lob: lobbed, wing: lobbed && Math.abs(att[G.carrier].x) > 15, apex: clamp(L * 0.3, 2.6, 8.5), aerial: G.aerial, power, state: "fly", t: 0, outcome: null, wait: 0, dist0: att[G.carrier].z };
   if (kind === "pass" && recv === null) {
     const e = pts[pts.length - 1]; let bi = null, bd = 18;
     att.forEach((a, i) => { if (i === G.carrier) return; const d = hyp(a.x - e.x, a.z - e.z); if (d < bd) { bd = d; bi = i; } });
@@ -637,14 +669,25 @@ function startRun(pts, kind, recv) {
   if (kind === "shot") run.follow = att.map((a, i) => [hyp(a.x, a.z), i]).filter((u) => u[1] !== G.carrier).sort((u, v) => u[0] - v[0]).slice(0, 2).map((u) => u[1]);
   if (lobbed) { const e = pts[pts.length - 1]; run.lobRun = att.map((a, i) => [hyp(a.x - e.x, a.z - e.z), i]).filter((u) => u[1] !== G.carrier).sort((u, v) => u[0] - v[0]).slice(0, 3).map((u) => u[1]); }
   if (kind === "shot") planShot();
-  if (run.aerial) { att[G.carrier].aer = 0.62; att[G.carrier].aerType = run.aerial.type; run.special = !!run.aerial.special; }
+  if (run.aerial) { att[G.carrier].aer = 0.62; att[G.carrier].aerType = run.aerial.type; run.special = !!run.aerial.special; att[G.carrier].aerAmp = kind === "pass" ? 0.65 : 1; run.hold = 0.3; run.b0 = { x: ball.x, y: ball.y, z: ball.z }; run.y0 = run.aerial.type === "bicycle" ? 2.5 : run.aerial.type === "volley" ? 1.0 : 2.1; }
   G.aerial = null; releaseHold = 0; zone.visible = false;
   if (run.power) sfx.power();
   G.phase = "run"; $("quick").innerHTML = ""; cone.visible = false;
   setHint(kind === "shot" ? "" : "");
   ribbonMat.color.set(0xffffff);
-  att[G.carrier].kickT = 0.25;
-  sfx.kick();
+  run.state0 = null;
+  if (kind === "pass" && !G.aerial) {
+    // a pass backwards means turning with the ball first, and a defender close by can close him down
+    const c0 = att[G.carrier], q = pts[Math.min(pts.length - 1, 8)], ang = Math.atan2(q.x - c0.x, q.z - c0.z);
+    if (angDiff(ang, c0.face) > 1.9) {
+      let pr = -1, pd = 7; for (let k = 0; k < G.nDef; k++) { const d = hyp(defs[k].x - c0.x, defs[k].z - c0.z); if (d < pd) { pd = d; pr = k; } }
+      Object.assign(run, { state: "turn", turnT: 0.75, turnAng: ang, presser: pr, skill: Math.random() < 0.4 });
+      G.timeScale = 1.2;
+      if (run.skill) { c0.skillT = 0.7; c0.skillType = Math.random() < 0.5 ? "roulette" : "stepover"; }
+      if (pr >= 0) pop(run.skill ? "SKILL MOVE!" : "TURNING...", run.skill ? "He might beat the defender" : "A defender is closing in", "soft");
+    }
+  }
+  if (run.state !== "turn") { att[G.carrier].kickT = 0.25; sfx.kick(); }
   if (kind === "pass") G.chain++;
 }
 
@@ -696,13 +739,21 @@ function pointAt(s) {
   const t = (s - cum[lo]) / (cum[hi] - cum[lo] || 1);
   return { x: lerp(pts[lo].x, pts[hi].x, t), z: lerp(pts[lo].z, pts[hi].z, t) };
 }
+// Players speed up and slow down gradually, and turn at a sensible rate, instead of snapping around.
 function moveTo(e, tx, tz, sp, dt) {
+  e.mv = true;
   const dx = tx - e.x, dz = tz - e.z, d = hyp(dx, dz);
-  if (d < 0.05) { e.vx = e.vz = 0; e.speed = 0; return d; }
-  const st = Math.min(d, sp * dt);
-  e.x += dx / d * st; e.z += dz / d * st; e.vx = dx / d * sp; e.vz = dz / d * sp; e.speed = sp;
-  e.face = Math.atan2(dx, dz);
-  return d - st;
+  let wx = 0, wz = 0;
+  if (d > 0.05) { const want = Math.min(sp, d / 0.3 + 0.7); wx = dx / d * want; wz = dz / d * want; }   // ease off on arrival
+  const ax = wx - e.vx, az = wz - e.vz, al = hyp(ax, az) || 1, k = Math.min(1, 15 * dt / al);
+  e.vx += ax * k; e.vz += az * k;
+  e.x += e.vx * dt; e.z += e.vz * dt;
+  e.speed = hyp(e.vx, e.vz);
+  if (e.speed > 0.4) {
+    let df = Math.atan2(e.vx, e.vz) - e.face; while (df > Math.PI) df -= 2 * Math.PI; while (df < -Math.PI) df += 2 * Math.PI;
+    e.face += clamp(df, -9 * dt, 9 * dt);
+  }
+  return d - e.speed * dt;
 }
 
 // Each defender picks the attacker he is closest to (nobody is marked twice). The rest cover the middle.
@@ -791,8 +842,11 @@ function interceptPoint(e, sp) {
 // middle of the box is a chance for a bicycle kick.
 function aerialFor(a, y) {
   if (!run.lob || a.z > 24 || Math.abs(a.x) > 15) return null;
-  if (y < 1.4) return a.z < 20 && Math.abs(a.x) < 14 ? { type: "volley" } : null;   // a low ball: hit it first time
-  if (run.apex > 5 && a.z > 5.5 && a.z < 15 && Math.abs(a.x) < 9) return { type: "bicycle" };
+  // which way the ball is travelling: towards goal (z falling) means it arrives from behind the attacker
+  const e = run.pts[run.pts.length - 1], q = run.pts[Math.max(0, run.pts.length - 6)];
+  const dz = (e.z - q.z) / (hyp(e.x - q.x, e.z - q.z) || 1), fromFront = dz > 0.5;
+  if (y < 1.4) return a.z < 20 && Math.abs(a.x) < 14 ? { type: "volley" } : null;                    // a low ball: hit it first time
+  if (!fromFront && run.apex > 4 && a.z > 5.5 && a.z < 15 && Math.abs(a.x) < 9) return { type: "bicycle" };   // high, from behind or the side, in the box
   return { type: "header" };
 }
 function receiveBall(a, aer) {
@@ -806,6 +860,7 @@ function receiveBall(a, aer) {
   }
   G.carrier = att.indexOf(a); a.face = Math.PI;
   sfx.pass();
+  if (!aer) { a.touch = 0.45; a.touchType = run.lob ? "chest" : "foot"; }
   const nice = G.chain;
   if (nice >= 2) pop(["", "", "NICE!", "GREAT!", "AMAZING!", "UNREAL!"][Math.min(nice, 5)], nice + " passes in a row", "gold");
   if (aer) { run = null; planStart(aer); return; }
@@ -833,6 +888,12 @@ function stepRecover(dt) {
   const away = h.x - att[bi].x;
   moveTo(h, clamp(h.x + (away >= 0 ? 4 : -4), -28, 28), Math.min(54, h.z + 8), G.defSpeed * 0.82, dt);
   ball.x = h.x + Math.sin(h.face) * 0.5; ball.z = h.z + Math.cos(h.face) * 0.5; ball.y = 0.24;
+  // nobody close enough to win it back: he just boots it clear
+  run.farT = bd > 6.5 ? (run.farT || 0) + dt : 0;
+  if (run.farT > 0.35) {
+    run.state = "end"; run.clear = true; h.kickT = 0.3; h.speed = 0;
+    run.bvx = rand(-7, 7); run.bvz = rand(16, 22); run.bvy = rand(5, 8); sfx.kick(); finishAttack("cleared"); return;
+  }
   if (run.rt > run.maxT) { run.state = "end"; finishAttack("stolen"); }
 }
 function tryTackle(manual) {
@@ -877,14 +938,29 @@ function stepRun(dt) {
   run.t += dt;
   const c = att[G.carrier];
   // ---- the ball ----
-  if (run.state === "fly") {
+  if (run.state === "turn") {
+    run.turnT -= dt; const c1 = att[G.carrier];
+    let da = run.turnAng - c1.face; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
+    c1.face += da * clamp(dt * 7, 0, 1);
+    ball.x = c1.x + Math.sin(c1.face) * 0.5; ball.z = c1.z + Math.cos(c1.face) * 0.5; ball.y = 0.24;
+    const pr = run.presser >= 0 ? defs[run.presser] : null;
+    if (pr && !(pr.stun > 0) && hyp(pr.x - c1.x, pr.z - c1.z) < 1.3) {
+      if (run.skill) { pr.stun = 1.0; run.skill = false; pop("SKILL!", "He has beaten the defender", "gold"); G.score += 5; setHud(); sfx.pass(); }
+      else { startRecover(pr, "TACKLED!"); return; }
+    }
+    if (run.turnT <= 0) { run.state = "fly"; c1.kickT = 0.25; sfx.kick(); }
+  } else if (run.hold > 0 && run.state === "fly") {
+    run.hold -= dt;                       // the ball drops in to the head or boot, which makes contact as the animation peaks
+    { const c0 = att[G.carrier], u = clamp(1 - run.hold / 0.3, 0, 1), k = u * u * (3 - 2 * u); ball.x = lerp(run.b0.x, c0.x, k); ball.z = lerp(run.b0.z, c0.z - 0.15, k); ball.y = lerp(run.b0.y, run.y0, k); }
+  } else if (run.state === "fly") {
     let v = run.v;
     if (run.kind === "pass" && !run.lob) { v = run.v * (1.12 - 0.5 * run.s / run.L); const left = run.L - run.s; if (left < 4) v = Math.max(5, v * (left / 4)); }
     run.s = Math.min(run.L, run.s + v * dt);
     const p = pointAt(run.s); ball.x = p.x; ball.z = p.z;
     ball.y = run.kind === "shot" ? 0.24 + run.hG * Math.pow(run.s / run.L, 1.4) : run.lob ? 0.24 + run.apex * 4 * (run.s / run.L) * (1 - run.s / run.L) : 0.24;
+    if (run.y0) ball.y = Math.max(ball.y, run.y0 * Math.max(0, 1 - run.s / 3));   // the ball leaves from head or knee height
     // a shot: slow motion for the last stretch
-    G.timeScale = run.special && run.s < 5 ? 0.3 : run.kind === "shot" && run.L - run.s < 9 && run.outcome !== "wide" ? 0.38 : 1;
+    G.timeScale = run.special && run.kind === "shot" && run.s < 5 ? 0.3 : run.kind === "shot" && run.L - run.s < 9 && run.outcome !== "wide" ? 0.38 : 1;
     // defenders can cut it out
     for (let i = 0; i < G.nDef; i++) {
       const d = defs[i];
@@ -894,10 +970,10 @@ function stepRun(dt) {
       }
     }
     // a lob: whoever gets their head to it. Defenders clear it, attackers can head or volley it at goal.
-    if (run.lob && run.s > run.L * 0.45 && ball.y > 0.6 && ball.y < 3.6) {
+    if (run.lob && run.s > run.L * 0.45 && ball.y > 0.6 && ball.y < 4.4) {
       if (ball.y > 1.1) for (let i = 0; i < G.nDef; i++) if (hyp(defs[i].x - ball.x, defs[i].z - ball.z) < 1.6) { startRecover(defs[i], "HEADED AWAY!"); return; }
       for (const a of att) {
-        if (a === c || hyp(a.x - ball.x, a.z - ball.z) > (a === att[0] ? 3.2 : 2.0)) continue;   // George gets first go at a cross
+        if (a === c || hyp(a.x - ball.x, a.z - ball.z) > (a === att[0] ? 6.5 : 5.0)) continue;   // time stops while the ball is still on its way in; George gets first go at a cross
         const aer = aerialFor(a, ball.y);
         if (aer) { receiveBall(a, aer); return; }
       }
@@ -925,7 +1001,7 @@ function stepRun(dt) {
     if (run.wait > 3.2) { const nd = defs.slice(0, G.nDef).sort((u, v) => hyp(u.x - ball.x, u.z - ball.z) - hyp(v.x - ball.x, v.z - ball.z))[0]; startRecover(nd); return; }
   } else if (run.state === "settle") {
     run.st += dt;
-    const nc = att[G.carrier]; ball.x = nc.x + Math.sin(nc.face) * 0.5; ball.z = nc.z + Math.cos(nc.face) * 0.5; ball.y = 0.24;
+    const nc = att[G.carrier], dr = 0.55 + 0.2 * Math.sin(nc.p.phase * 2); ball.x = nc.x + Math.sin(nc.face) * dr; ball.z = nc.z + Math.cos(nc.face) * dr; ball.y = 0.24;
     if (run.st > 0.8) { run = null; planStart(); return; }
   } else if (run.state === "recover") {
     stepRecover(dt);
@@ -952,12 +1028,14 @@ function stepRun(dt) {
   } else if (run.state === "loose") {
     stepLoose(dt);
   } else if (run.state === "end") {
-    if (run.bvx !== undefined) { ball.x += run.bvx * dt; ball.z += run.bvz * dt; run.bvx *= 0.97; run.bvz *= 0.97; }
+    if (run.bvx !== undefined) { ball.x += run.bvx * dt; ball.z += run.bvz * dt; if (!run.clear) { run.bvx *= 0.97; run.bvz *= 0.97; } }
+    if (run.clear) { run.bvy -= 14 * dt; ball.y = Math.max(0.24, ball.y + run.bvy * dt); if (ball.y <= 0.24) run.bvy = Math.abs(run.bvy) * 0.35; }   // a clearance in the air
     if (keeper.hold) { ball.x = lerp(ball.x, keeper.x, 0.3); ball.z = lerp(ball.z, keeper.z + 0.35, 0.3); ball.y = lerp(ball.y, 1.05, 0.3); }   // the ball is in his hands
   }
 
   if (!run) return;
   if (ending && ending.kind === "goal") { celebrate(dt); return; }
+  for (const e of att) e.mv = false; for (let i = 0; i < G.nDef; i++) defs[i].mv = false;
   // ---- everyone else moves ----
   // team-mates run forward; the receiver runs to the ball
   att.forEach((a, i) => {
@@ -966,7 +1044,7 @@ function stepRun(dt) {
     if (run.state === "loose") { if (run.nearAtt && run.nearAtt.includes(i)) moveTo(a, ball.x, ball.z, 8.2, dt); else attackMove(a, i, dt); return; }
     if (i === G.carrier) {
       // after a pass the passer keeps running forward; after a shot he stands and watches
-      if (run.kind === "pass" && run.state !== "end") attackMove(a, i, dt); else a.speed = 0;
+      if (run.kind === "pass" && run.state !== "end" && run.state !== "turn") attackMove(a, i, dt); else a.speed = 0;
       return;
     }
     if (run.kind === "shot" && run.follow && run.follow.includes(i) && (run.state === "fly" || run.state === "goalmouth")) {      // two attackers follow the shot in, ready for a rebound
@@ -985,6 +1063,7 @@ function stepRun(dt) {
   if (!run.marks || run.markT > 0.6) { run.markT = 0; assignMarks(); }   // keep re-picking who marks whom
   for (let i = 0; i < G.nDef; i++) {
     const d = defs[i], sp = G.defSpeed * (1 + (i % 3) * 0.04);
+    if (d.stun > 0) { d.stun -= dt; d.speed = 0; continue; }
     if (run.state === "fly" && run.s < run.L) {
       let tx = null, tz = null, spd = sp;
       for (let k = Math.floor(run.s / 0.5) + 1; k < run.pts.length; k += 3) {
@@ -998,6 +1077,7 @@ function stepRun(dt) {
       if (run.press.includes(i)) moveTo(d, ball.x, ball.z, sp, dt);
       else { const m = markTarget(i); moveTo(d, m.x, m.z, sp * 0.92, dt); }
     } else if (run.state === "goalmouth" || run.state === "settle") { const m = markTarget(i); moveTo(d, m.x, m.z, sp * 0.85, dt); }
+    else if (run.state === "turn") { if (i === run.presser) moveTo(d, c.x, c.z, sp * 1.15, dt); else { const m = markTarget(i); moveTo(d, m.x, m.z, sp * 0.9, dt); } }
     else if (run.state === "recover") { if (d !== run.holder) { const m = markTarget(i); moveTo(d, m.x, m.z, sp * 0.9, dt); } }
     else if (run.state === "loose") { if (run.nearDef && run.nearDef.includes(i)) moveTo(d, ball.x, ball.z, sp * 1.05, dt); else { const m = markTarget(i); moveTo(d, m.x, m.z, sp * 0.9, dt); } }
     else d.speed = 0;
@@ -1020,6 +1100,8 @@ function stepRun(dt) {
   } else if (run.kind !== "shot") {
     keeper.x += clamp(clamp(ball.x * 0.12, -2.4, 2.4) - keeper.x, -1.5 * dt, 1.5 * dt);
   }
+  for (const e of att) if (!e.mv) { e.vx = e.vz = 0; }
+  for (let i = 0; i < G.nDef; i++) if (!defs[i].mv) { defs[i].vx = defs[i].vz = 0; }
 }
 
 function timeScaleReset() { G.timeScale = 1; }
@@ -1027,7 +1109,7 @@ let ending = null, cheer = 0;
 const frames = []; let gtime = 0, goalGT = 0, replay = null;
 function recordFrame() {
   const f = { gt: gtime, b: [ball.x, ball.y, ball.z], k: [keeper.x, keeper.z, keeper.dive || 0, keeper.diveDir || 0, keeper.jump || 0, keeper.hold || 0],
-    a: att.map((e) => [e.x, e.z, e.face, e.speed, e.aer || 0, e.aerType || "", e.cele || 0, e.slideT || 0, e.kickT || 0]), d: [] };
+    a: att.map((e) => [e.x, e.z, e.face, e.speed, e.aer || 0, e.aerType || "", e.cele || 0, e.slideT || 0, e.kickT || 0, e.touch || 0, e.touchType || "", e.skillT || 0, e.skillType || ""]), d: [] };
   for (let i = 0; i < G.nDef; i++) f.d.push([defs[i].x, defs[i].z, defs[i].face, defs[i].speed]);
   frames.push(f); if (frames.length > 700) frames.shift();
 }
@@ -1053,7 +1135,7 @@ function replayStep(real) {
   const f0 = L[i], f1 = L[i + 1] || f0, u = f1.gt > f0.gt ? clamp((R.t - f0.gt) / (f1.gt - f0.gt), 0, 1) : 0, m = (a, b) => lerp(a, b, u);
   ball.x = m(f0.b[0], f1.b[0]); ball.y = m(f0.b[1], f1.b[1]); ball.z = m(f0.b[2], f1.b[2]);
   keeper.x = m(f0.k[0], f1.k[0]); keeper.z = m(f0.k[1], f1.k[1]); keeper.dive = m(f0.k[2], f1.k[2]); keeper.diveDir = f0.k[3]; keeper.jump = m(f0.k[4], f1.k[4]); keeper.hold = f0.k[5];
-  att.forEach((e, j) => { const a0 = f0.a[j], a1 = f1.a[j]; e.x = m(a0[0], a1[0]); e.z = m(a0[1], a1[1]); e.face = a0[2]; e.speed = a0[3]; e.aer = a0[4]; e.aerType = a0[5]; e.cele = a0[6]; e.slideT = a0[7]; e.kickT = a0[8]; });
+  att.forEach((e, j) => { const a0 = f0.a[j], a1 = f1.a[j]; e.x = m(a0[0], a1[0]); e.z = m(a0[1], a1[1]); e.face = a0[2]; e.speed = a0[3]; e.aer = a0[4]; e.aerType = a0[5]; e.cele = a0[6]; e.slideT = a0[7]; e.kickT = a0[8]; e.touch = a0[9]; e.touchType = a0[10]; e.skillT = a0[11]; e.skillType = a0[12]; });
   for (let j = 0; j < f0.d.length; j++) { const d0 = f0.d[j], d1 = (f1.d[j] || d0); defs[j].x = m(d0[0], d1[0]); defs[j].z = m(d0[1], d1[1]); defs[j].face = d0[2]; defs[j].speed = d0[3]; }
   if (!R.netDone && R.t >= R.hitT) { R.netDone = true; netHit(ball.x, ball.y, R.power ? 1.5 : 1); }
 }
@@ -1073,7 +1155,7 @@ function finishAttack(kind) {
     pop(run.special && ae ? "SPECTACULAR!" : ae === "bicycle" ? "WHAT A BICYCLE KICK!" : ae === "volley" ? "WHAT A VOLLEY!" : ae === "header" ? "GREAT HEADER!" : tb ? "TOP BINS!" : far ? "IMPOSSIBLE!" : "GOAL!", "+" + pts + (why ? " · " + why : ""), "gold");
   } else {
     G.lives--;
-    const t = { save: ["SAVED!", "The keeper got there"], post: ["OFF THE POST!", "So close"], wide: ["WIDE!", "Just missed"], blocked: ["BLOCKED!", "A defender got in the way"], stolen: ["LOST IT!", "A defender won the ball"], offside: ["OFFSIDE!", "Stay behind the red line"] }[kind];
+    const t = { save: ["SAVED!", "The keeper got there"], post: ["OFF THE POST!", "So close"], wide: ["WIDE!", "Just missed"], blocked: ["BLOCKED!", "A defender got in the way"], stolen: ["LOST IT!", "A defender won the ball"], offside: ["OFFSIDE!", "Stay behind the red line"], cleared: ["CLEARED!", "Nobody close enough to win it back"] }[kind];
     pop(t[0], t[1], "soft");
   }
   setHud();
@@ -1088,35 +1170,75 @@ function afterResult() {
 }
 
 /* ---------------- placing the 3D things each frame ---------------- */
-let clock = 0;
+let clock = 0; const ballPrev = { x: 0, z: 0 }, rollAxis = new THREE.Vector3();
 function animateLimbs(e, dt) {
-  const p = e.p, sp = e.speed, an = Math.max(sp, 1.4);
-  p.phase += an * dt * 1.9;
-  const amp = Math.min(1, an / 4.5), sw = Math.sin(p.phase) * amp * 1.2;
-  p.legL.rotation.x = sw; p.legR.rotation.x = -sw;
-  p.armL.rotation.x = -sw * 1.1; p.armR.rotation.x = sw * 1.1;
-  p.body.position.y = Math.abs(Math.sin(p.phase)) * 0.1 * amp;
-  p.body.rotation.x = Math.min(0.28, sp * 0.045);
-  p.body.rotation.z = Math.sin(p.phase) * 0.05 * amp;
-  if (e.kickT > 0) { e.kickT -= dt; p.legR.rotation.x = -1.2 * Math.min(1, e.kickT / 0.12); }
-  if (e.aer > 0) {
-    e.aer -= dt; const u = 1 - e.aer / 0.62;
-    if (e.aerType === "volley") { p.body.position.y = Math.sin(u * Math.PI) * 0.3; p.body.rotation.x = -0.3 * Math.sin(u * Math.PI); p.legR.rotation.x = -1.9 * Math.sin(Math.min(1, u * 1.6) * Math.PI); p.legL.rotation.x = 0.3; p.armL.rotation.x = 0.8; p.armR.rotation.x = -0.9; }
-    else if (e.aerType === "bicycle") { p.body.position.y = 0.35 + Math.sin(u * Math.PI) * 1.0; p.body.rotation.x = -u * Math.PI * 1.15; p.legR.rotation.x = -2.2 * Math.sin(u * Math.PI); p.legL.rotation.x = 0.8; p.armL.rotation.x = p.armR.rotation.x = -1.2; }
-    else { p.body.position.y = Math.sin(u * Math.PI) * 0.8; p.body.rotation.x = 0.45 * Math.sin(u * Math.PI); p.armL.rotation.x = p.armR.rotation.x = -2.2; p.legL.rotation.x = 0.5; p.legR.rotation.x = -0.4; }
+  const p = e.p, sp = e.speed;
+  p.armL.rotation.z = p.armR.rotation.z = 0; p.legL.rotation.z = p.legR.rotation.z = 0; p.body.rotation.y = 0;
+  if (sp > 0.5) {
+    // a running stride: hips swing, knees fold as the leg comes through, arms pump with bent elbows, shoulders counter-twist
+    p.phase += sp * dt * 1.45;
+    const amp = Math.min(1, sp / 6), sL = Math.sin(p.phase), sR = -sL, swing = 0.35 + 0.65 * amp;
+    p.legL.rotation.x = -sL * swing; p.legR.rotation.x = -sR * swing;
+    p.kneeL.rotation.x = (0.2 + 1.2 * amp) * Math.max(0, Math.cos(p.phase)); p.kneeR.rotation.x = (0.2 + 1.2 * amp) * Math.max(0, -Math.cos(p.phase));
+    p.armL.rotation.x = sL * (0.3 + 0.55 * amp); p.armR.rotation.x = sR * (0.3 + 0.55 * amp);
+    p.elbowL.rotation.x = p.elbowR.rotation.x = -(0.35 + 0.9 * amp);
+    p.body.position.y = Math.abs(Math.cos(p.phase)) * 0.07 * amp;
+    p.body.rotation.x = Math.min(0.28, sp * 0.04); p.body.rotation.z = sL * 0.03 * amp; p.body.rotation.y = sL * 0.16 * amp;
+  } else {
+    // standing: a gentle weight shift, knees soft, arms relaxed
+    p.phase += dt * 1.1; const sw = Math.sin(p.phase);
+    p.legL.rotation.x = sw * 0.03; p.legR.rotation.x = -sw * 0.03; p.kneeL.rotation.x = p.kneeR.rotation.x = 0.1;
+    p.armL.rotation.x = -sw * 0.05; p.armR.rotation.x = sw * 0.05; p.elbowL.rotation.x = p.elbowR.rotation.x = -0.3;
+    p.body.position.y = 0; p.body.rotation.x = 0.05; p.body.rotation.z = sw * 0.012;
   }
-  if (e.slideT > 0) { e.slideT -= dt; p.body.position.y = -0.5; p.body.rotation.x = -0.45; p.armL.rotation.z = 1.4; p.armR.rotation.z = -1.4; p.armL.rotation.x = p.armR.rotation.x = -0.3; p.legL.rotation.x = p.legR.rotation.x = 0.5; }
-  else if (e.cele > 0) { e.cele -= dt; p.armL.rotation.x = p.armR.rotation.x = -Math.PI * 0.92; p.armL.rotation.z = 0.35; p.armR.rotation.z = -0.35; p.body.position.y = Math.abs(Math.sin(clock * 11)) * 0.35; }
-  else { p.armL.rotation.z = 0; p.armR.rotation.z = 0; }
+  if (e.kickT > 0) { e.kickT -= dt; const k = Math.min(1, e.kickT / 0.12); p.legR.rotation.x = -1.2 * k; p.kneeR.rotation.x = 0.2 * k; }
+  if (e.touch > 0) {                                  // first touch: cushion the ball with the foot, or take it on the chest
+    e.touch -= dt; const u = clamp(1 - e.touch / 0.45, 0, 1), ps = Math.sin(u * Math.PI);
+    if (e.touchType === "chest") { p.body.rotation.x = -0.35 * ps; p.armL.rotation.z = -0.9 * ps; p.armR.rotation.z = 0.9 * ps; p.armL.rotation.x = p.armR.rotation.x = -0.3 * ps; p.body.position.y = 0.05 * ps; }
+    else { p.legR.rotation.x = -0.9 * ps; p.kneeR.rotation.x = 0.7 * ps; p.body.rotation.x = -0.1 * ps; p.armL.rotation.z = -0.5 * ps; p.armR.rotation.z = 0.5 * ps; }
+  }
+  if (e.skillT > 0) {                                 // skill moves: a roulette spin or a step-over
+    e.skillT -= dt; const u = clamp(1 - e.skillT / 0.7, 0, 1);
+    if (e.skillType === "roulette") { p.body.rotation.y = u * Math.PI * 2; p.body.position.y = Math.sin(u * Math.PI) * 0.12; p.armL.rotation.z = -0.7; p.armR.rotation.z = 0.7; }
+    else { const w = Math.sin(u * Math.PI * 7); p.legR.rotation.x = -0.8 + 0.6 * w; p.legL.rotation.x = -0.8 - 0.6 * w; p.kneeL.rotation.x = p.kneeR.rotation.x = 0.5; p.body.rotation.z = 0.22 * w; }
+  }
+  if (e.aer > 0) {
+    e.aer -= dt; const u = clamp(1 - e.aer / 0.62, 0, 1), am = e.aerAmp || 1, ps = Math.sin(u * Math.PI);
+    if (e.aerType === "volley") {                    // wind the leg back, then whip it through the ball
+      p.body.position.y = ps * 0.3 * am; p.body.rotation.x = -0.3 * ps;
+      p.legR.rotation.x = u < 0.4 ? 0.9 * (u / 0.4) : 0.9 - 3.1 * Math.min(1, (u - 0.4) / 0.3); p.kneeR.rotation.x = u < 0.4 ? 1.2 * (u / 0.4) : Math.max(0, 1.2 - 3 * (u - 0.4)); p.legL.rotation.x = 0.3;
+      p.armL.rotation.x = 0.4; p.armR.rotation.x = -0.4; p.armL.rotation.z = -1.0 * ps; p.armR.rotation.z = 1.0 * ps;
+    } else if (e.aerType === "bicycle") {            // throw the body back, one leg up, then the kicking leg over the top, landing on the back
+      const sm = u * u * (3 - 2 * u);
+      p.body.position.y = 0.3 + ps * 1.0 * am; p.body.rotation.x = -1.55 * sm;
+      p.legL.rotation.x = -1.3 * Math.sin(clamp(u / 0.55, 0, 1) * Math.PI); p.legR.rotation.x = -2.5 * Math.sin(clamp((u - 0.2) / 0.6, 0, 1) * Math.PI);
+      p.kneeL.rotation.x = 0.5; p.kneeR.rotation.x = 0.2;
+      p.armL.rotation.x = p.armR.rotation.x = -0.6; p.armL.rotation.z = -1.1 * ps; p.armR.rotation.z = 1.1 * ps;
+    } else {                                         // a header: jump, lean back, then snap the head forward into the ball
+      p.body.position.y = ps * 0.85 * am;
+      const lean = u < 0.45 ? -0.55 * (u / 0.45) : -0.55 + 1.35 * Math.min(1, (u - 0.45) / 0.3);
+      p.body.rotation.x = u > 0.85 ? lean * (1 - (u - 0.85) / 0.15) : lean;
+      p.armL.rotation.x = p.armR.rotation.x = -0.5; p.armL.rotation.z = -1.0 * ps; p.armR.rotation.z = 1.0 * ps;
+      p.legL.rotation.x = 0.5 * ps; p.legR.rotation.x = -0.4 * ps; p.kneeL.rotation.x = p.kneeR.rotation.x = 0.8 * ps;
+    }
+  }
+  if (e.slideT > 0) { e.slideT -= dt; p.body.position.y = -0.5; p.body.rotation.x = -0.45; p.armL.rotation.z = 1.4; p.armR.rotation.z = -1.4; p.armL.rotation.x = p.armR.rotation.x = -0.3; p.legL.rotation.x = p.legR.rotation.x = 0.5; p.kneeL.rotation.x = p.kneeR.rotation.x = 0.4; }
+  else if (e.cele > 0) { e.cele -= dt; p.armL.rotation.x = p.armR.rotation.x = -Math.PI * 0.92; p.armL.rotation.z = 0.35; p.armR.rotation.z = -0.35; p.elbowL.rotation.x = p.elbowR.rotation.x = -0.15; p.body.position.y = Math.abs(Math.sin(clock * 11)) * 0.35; }
+}
+// his head turns to follow the ball
+function lookAtBall(e, base) {
+  let d = Math.atan2(ball.x - e.x, ball.z - e.z) - (base === undefined ? e.face : base); while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+  e.p.head.rotation.y = clamp(d, -1.1, 1.1) * 0.8; e.p.head.rotation.x = 0.08;
 }
 function syncMeshes(dt) {
-  for (const e of att) { e.p.root.position.set(e.x, 0, e.z); e.p.root.rotation.y = e.face; animateLimbs(e, dt); }
-  for (let i = 0; i < defs.length; i++) { const d = defs[i]; if (!d.p.root.visible) continue; d.p.root.position.set(d.x, 0, d.z); d.p.root.rotation.y = d.face; animateLimbs(d, dt); }
+  for (const e of att) { e.p.root.position.set(e.x, 0, e.z); e.p.root.rotation.y = e.face; animateLimbs(e, dt); lookAtBall(e); }
+  for (let i = 0; i < defs.length; i++) { const d = defs[i]; if (!d.p.root.visible) continue; d.p.root.position.set(d.x, 0, d.z); d.p.root.rotation.y = d.face; animateLimbs(d, dt); lookAtBall(d); }
   keeper.p.root.position.set(keeper.x, 0, keeper.z === 0 ? 1.1 : keeper.z);
   keeper.p.root.rotation.y = 0;
   {
     const kp = keeper.p, dv = keeper.dive || 0, dir = keeper.diveDir || 0, jp = keeper.jump || 0, low = !!(run && run.kind === "shot" && run.hG < 0.9);
     kp.armL.rotation.z = kp.armR.rotation.z = 0; kp.legL.rotation.z = kp.legR.rotation.z = 0; kp.legL.rotation.x = kp.legR.rotation.x = 0; kp.body.rotation.x = 0;
+    kp.kneeL.rotation.x = kp.kneeR.rotation.x = 0.12; kp.elbowL.rotation.x = kp.elbowR.rotation.x = -0.35; lookAtBall(keeper, 0);
     if (keeper.hold) {                                           // holding the ball against his chest
       kp.body.rotation.z = 0; kp.body.position.y = 0; kp.body.rotation.x = 0.25;
       kp.armL.rotation.x = kp.armR.rotation.x = -1.3; kp.armL.rotation.z = 0.5; kp.armR.rotation.z = -0.5;
@@ -1135,9 +1257,11 @@ function syncMeshes(dt) {
   }
   ball.mesh.position.set(ball.x, ball.y, ball.z);
   ballBlob.position.set(ball.x, 0.04, ball.z); ballBlob.scale.setScalar(1 + ball.y * 0.4);
-  if (run && run.state === "fly") ball.mesh.rotation.x -= 0.5; else if (run && run.state === "goalmouth") ball.mesh.rotation.x -= 0.2;
+  { const bdx = ball.x - ballPrev.x, bdz = ball.z - ballPrev.z, bd = hyp(bdx, bdz); if (bd > 1e-4 && bd < 3) { rollAxis.set(bdz, 0, -bdx).normalize(); ball.mesh.rotateOnWorldAxis(rollAxis, bd / 0.24); } ballPrev.x = ball.x; ballPrev.z = ball.z; }   // the ball rolls as far as it travels
   if (bin.visible) { const sc = 1 + Math.sin(clock * 6) * 0.12; bin.scale.set(sc, sc, sc); }
   georgeTag.position.set(att[0].x, 3.1, att[0].z);
+  actTag.visible = !!G.aerial && G.phase === "plan";
+  if (actTag.visible) { const cc = att[G.carrier]; actTag.position.set(cc.x, 5.3, cc.z); const da = clamp(camera.position.distanceTo(actTag.position), 12, 45); actTag.scale.set(da * 0.2, da * 0.05, 1); }
   { const dc = clamp(camera.position.distanceTo(georgeTag.position), 12, 45); georgeTag.scale.set(dc * 0.15, dc * 0.052, 1); }   // keep the tag readable from afar
   offLine.visible = G.phase === "plan" && !G.aerial; if (offLine.visible) offLine.position.z = offsideLine();
   const planning = G.phase === "plan", rec = G.phase === "run" && run && run.state === "recover";
@@ -1241,4 +1365,4 @@ $("btn-again").addEventListener("click", start);
 showBest();
 
 // handy for testing
-window.__ls = { nets, G, att, defs, keeper, ball, get run() { return run; }, release, startRun, camera, THREE };
+window.__ls = { view, nets, G, att, defs, keeper, ball, get run() { return run; }, release, startRun, camera, THREE };
