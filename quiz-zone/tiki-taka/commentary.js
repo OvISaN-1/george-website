@@ -8,14 +8,19 @@
   "use strict";
 
   const LINES = {
-    start1: ["And we're underway! Five attacks to make them count!", "Here comes George with the ball at his feet. Let's see some tiki-taka!", "Kick-off! Be patient, pass it quickly, then strike!"],
-    startN: ["Attack {n} of 5. Time for another go!", "Here we go again, attack number {n}!", "Fresh legs, fresh attack. Number {n}!"],
+    start1: ["And we're underway! Three minutes on the clock!", "Here comes George with the ball at his feet. Let's see some tiki-taka!", "Kick-off! Be patient, pass it quickly, then strike!"],
+    startN: ["Here we go again! Another attack!", "Fresh legs, fresh attack!", "Back to the kick-off spot. Let's go again!"],
     startLast: ["The last attack! Everything on this one!", "Final attack of the match. Make it count, George!"],
 
     pass1: ["Nice and simple.", "Quick feet, good ball.", "Neat little pass.", "Lovely and tidy."],
     pass2: ["Two in a row! That's tiki-taka!", "A one-two! They can't get near it!", "Lovely passing, keeping it moving!"],
     pass3: ["Three passes! They're chasing shadows!", "The defence is being pulled all over the place!", "Beautiful football, this!"],
     pass5: ["{n} passes in a row! This is a masterclass!", "Pass, pass, pass! The crowd are loving it!", "They haven't touched it for {n} passes! Unreal!"],
+    passLob: ["What a lob! Right over the top of them!", "Chipped over the defence, lovely touch!", "Up it goes... and it drops perfectly!"],
+    passThrough: ["Threaded through! He's in behind!", "A killer ball, splitting the defence!", "Through the middle, he's away!"],
+    shotPerfect: ["Perfectly struck!", "Right in the sweet spot!", "Pure timing on that one!"],
+    shotBlazed: ["He's blazed that!", "Way too hard, that's going anywhere!", "Overhit! He's gone for power over placement!"],
+    shotWeak: ["That's a soft one...", "He's scuffed it, no power at all.", "A tame effort, the keeper will gather that."],
     passLong: ["What a ball! Straight through the middle of them!", "Long and accurate, brilliant vision!", "That is a pass and a half!"],
     passLocked: ["Right on the money, straight to his feet!", "Perfect weight on that one!"],
 

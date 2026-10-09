@@ -64,7 +64,28 @@
   .tt-hud .big{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:30px;line-height:1;font-variant-numeric:tabular-nums;}
   .tt-hud small{display:block;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#b9b2ac;}
   .tt-hud .mid{text-align:center;} .tt-hud .right{text-align:right;}
+  .tt-hud .clock{font-size:34px;}
+  .tt-hud .clock.low{color:#ff5d5d;animation:ttBlink .7s ease-in-out infinite;}
+  @keyframes ttBlink{50%{opacity:.45;}}
+  .chainpill{font-weight:700;color:var(--gold);letter-spacing:.06em;margin-left:4px;}
   .tt-pips{display:flex;gap:5px;justify-content:center;margin-top:4px;}
+  /* choosing an opponent */
+  .tt-ladder{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;}
+  .tt-opp{text-align:left;position:relative;background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.12);border-radius:14px;padding:12px 12px 10px;color:var(--cream);font-family:'Manrope',sans-serif;font-weight:500;font-size:12.5px;line-height:1.35;min-height:92px;cursor:pointer;}
+  .tt-opp b{display:block;font-family:'Rajdhani',sans-serif;font-size:18px;padding-right:56px;}
+  .tt-opp[aria-checked="true"]{border-color:var(--gold);background:rgba(245,185,66,.12);}
+  .tt-opp[aria-disabled="true"]{opacity:.55;cursor:default;}
+  .tt-opp .kit{position:absolute;right:10px;top:10px;width:30px;height:30px;border-radius:50%;border:3px solid;}
+  .tt-opp .stars{display:block;margin-top:6px;font-size:15px;letter-spacing:2px;color:var(--gold);}
+  .tt-opp .dots{display:block;margin-top:2px;font-size:11px;color:#9a948d;letter-spacing:.06em;}
+  .tt-opp:focus-visible{outline:2px solid var(--cream);outline-offset:3px;}
+  /* pass type and the hold-to-shoot button */
+  .tt-kinds{display:flex;gap:8px;justify-content:center;margin:2px 0 4px;}
+  .tt-kinds button{min-height:46px;min-width:96px;padding:0 14px;border-radius:999px;border:2px solid rgba(241,237,233,.22);background:rgba(255,255,255,.06);color:var(--cream);font-size:16px;}
+  .tt-kinds button[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#241f29;}
+  .tt-kinds button:focus-visible{outline:2px solid var(--cream);outline-offset:3px;}
+  .tt-shoot{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
+  .tt-shoot.holding{filter:brightness(1.25);transform:scale(.98);}
   .tt-pip{width:12px;height:12px;border-radius:50%;border:2px solid rgba(241,237,233,0.3);}
   .tt-pip.now{border-color:var(--gold);background:rgba(245,185,66,.35);}
   .tt-pip.goal{background:var(--good);border-color:var(--good);} .tt-pip.fail{background:var(--bad);border-color:var(--bad);}
@@ -111,7 +132,7 @@
     .tt-stage{grid-column:1;grid-row:2;}
     .tt-comm{grid-column:2;grid-row:2;margin-top:0;align-self:stretch;display:flex;flex-direction:column;}
     .tt-comm-list li.now{font-size:22px;} .tt-comm-list li.now.ex{font-size:26px;}
-    .tt-hint,.tt-bar,.tt-keys{grid-column:1 / -1;}
+    .tt-hint,.tt-controls,.tt-keys{grid-column:1 / -1;}
   }
 
   /* Training ground */
@@ -162,7 +183,9 @@
   #btn-again{margin-top:18px;width:100%;}
   @media (max-width:520px){.tt-card{padding:16px;}.tt-game{padding:8px;}.tt-shoot{min-width:0;flex:1;}}
   @media (max-width:700px){
-    .tt-bar{position:sticky;bottom:calc(72px + env(safe-area-inset-bottom,0px));z-index:6;gap:8px;padding:10px 4px 6px;margin-top:0;background:linear-gradient(to top,rgba(28,24,32,.96) 62%,rgba(28,24,32,0));}
+    .tt-controls{position:sticky;bottom:calc(72px + env(safe-area-inset-bottom,0px));z-index:6;padding:8px 4px 4px;background:linear-gradient(to top,rgba(28,24,32,.97) 70%,rgba(28,24,32,0));}
+    .tt-bar{gap:8px;padding:6px 0 2px;margin-top:0;}
+    .tt-kinds button{min-height:44px;min-width:0;flex:1;font-size:15px;padding:0 8px;}
     .tt-bar .tt-shoot{min-height:60px;font-size:23px;flex:1.3;}
     .tt-bar .tt-super{min-height:60px;min-width:0;flex:1;font-size:17px;padding:0 10px;}
     .tt-bar .tt-super .lbl{white-space:nowrap;}
@@ -210,14 +233,16 @@
 
   <section class="tt-card" id="screen-start">
     <p class="tt-kicker">Pass, pass, pass... shoot</p>
-    <h2 class="tt-h2">Pass your way through the defence</h2>
-    <p class="tt-lede">You only attack. Five attacks to score as many goals as you can. The defenders will take the ball if you hang on to it, so keep it moving and shoot when you see a gap.</p>
+    <h2 class="tt-h2">Three minutes. Score as many as you can.</h2>
+    <p class="tt-lede">You only attack. Pass your way through the defence and shoot. If a defender wins the ball you lose a couple of seconds and start a fresh attack.</p>
     <ol class="tt-how">
-      <li><span class="tt-num">1</span><span><strong>Drag to pass.</strong> Drag the way you want the ball to go. A longer drag is a longer pass.</span></li>
-      <li><span class="tt-num">2</span><span><strong>Time slows while you aim.</strong> Point at a team-mate and the pass locks onto him.</span></li>
-      <li><span class="tt-num">3</span><span><strong>Shoot any time.</strong> Press SHOOT (or Space), or tap where you want it in the goal.</span></li>
-      <li><span class="tt-num">4</span><span><strong>Be quick.</strong> A defender who reaches you wins the ball. Long chains of passes score extra.</span></li>
+      <li><span class="tt-num">1</span><span><strong>Drag to pass.</strong> Drag the way you want the ball to go. A longer drag is a longer pass. Green line = safe, red = a defender is in the way.</span></li>
+      <li><span class="tt-num">2</span><span><strong>Three passes.</strong> ⚽ Ground, ⤴ Lob over the defenders, ⚡ Through-ball to a runner.</span></li>
+      <li><span class="tt-num">3</span><span><strong>Hold to shoot.</strong> Hold SHOOT to build power and let go in the green. Slide across the goal to aim.</span></li>
+      <li><span class="tt-num">4</span><span><strong>Super skill.</strong> Pass your way to a full bar. A super shot is deadly close in, but the keeper can get to it from far out.</span></li>
     </ol>
+    <h3 class="tt-h3" style="margin-bottom:8px">Pick your opponent</h3>
+    <div class="tt-ladder" id="ladder" role="radiogroup" aria-label="Opponent"></div>
     <p class="tt-best" id="best-line"></p>
 
     <div class="tt-train" id="train">
@@ -240,10 +265,10 @@
   </section>
 
   <section class="tt-card tt-game" id="screen-game" hidden>
-    <div class="tt-hud" aria-live="polite">
-      <div><small>Score</small><span class="big" id="hud-score">0</span></div>
-      <div class="mid"><small id="hud-attack">Attack 1 of 5</small><div class="tt-pips" id="hud-pips"></div></div>
-      <div class="right"><small>Passes in a row</small><span class="big" id="hud-chain">0</span></div>
+    <div class="tt-hud" role="group" aria-label="Scoreboard">
+      <div><small>Goals</small><span class="big" id="hud-goals">0</span></div>
+      <div class="mid"><small id="hud-team">vs Park Rovers</small><span class="big clock" id="hud-clock">3:00</span></div>
+      <div class="right"><small>Points <span id="hud-chain" class="chainpill">chain 0</span></small><span class="big" id="hud-score">0</span></div>
     </div>
     <div class="tt-stage" id="stage">
       <canvas id="pitch" width="808" height="846" role="img" aria-label="A football pitch seen from above. Drag to pass the ball to a team-mate, then shoot."></canvas>
@@ -255,11 +280,18 @@
       <ol class="tt-comm-list" id="comm-list" aria-live="off"></ol>
     </aside>
     <p class="tt-hint" id="hint" aria-live="polite">Drag to pass.</p>
+    <div class="tt-controls">
+    <div class="tt-kinds" id="kinds" role="group" aria-label="Pass type">
+      <button type="button" data-k="0" aria-pressed="true">⚽ Ground</button>
+      <button type="button" data-k="1" aria-pressed="false">⤴ Lob</button>
+      <button type="button" data-k="2" aria-pressed="false">⚡ Through</button>
+    </div>
     <div class="tt-bar">
-      <button class="btn-primary tt-shoot" id="btn-shoot" type="button" disabled>⚽ Shoot!</button>
+      <button class="btn-primary tt-shoot" id="btn-shoot" type="button" disabled aria-describedby="shoot-help">⚽ Hold to shoot</button>
       <button class="tt-super" id="btn-super" type="button" disabled aria-label="Super skill"><span class="fill" id="super-fill"></span><span class="lbl" id="super-lbl">⚡ Super</span></button>
     </div>
-    <p class="tt-keys">Drag from anywhere to pass. Tap the goal to aim a shot. Space or Enter shoots. E or Shift fires your super skill when the bar is full. On a keyboard, hold the arrow keys then let go to pass.</p>
+    </div>
+    <p class="tt-keys" id="shoot-help">Drag from anywhere to pass; 1, 2, 3 pick Ground, Lob or Through. Hold the goal (or Space or the SHOOT button) to charge a shot, slide to aim, let go in the green. E or Shift fires your super skill. Arrow keys aim a pass or a shot.</p>
   </section>
 
   <section class="tt-card" id="screen-end" hidden>
@@ -277,7 +309,7 @@
     <button class="btn-primary tt-go" id="btn-again" type="button">Play again</button>
   </section>
 
-  <p class="footer-note">Score = 100 for a goal, plus bonuses for long chains of passes and long shots, plus 10 for every pass. The whole game engine is written in Rust and runs in your browser as WebAssembly. Top scores are shared online with everyone who plays.</p>
+  <p class="footer-note">Score = 100 for a goal, plus bonuses for long chains of passes and long shots, plus 10 for every pass. Harder teams multiply your points. The whole game engine is written in Rust and runs in your browser as WebAssembly. Top scores are shared online with everyone who plays.</p>
   </main>
 
   <footer class="site-footer">

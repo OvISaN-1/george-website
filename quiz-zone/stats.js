@@ -44,10 +44,12 @@
     { id: "pack-icon",         emoji: "🌟", name: "Icon Pulled",     desc: "Pull an Icon card from a pack" },
     { id: "pack-regular",      emoji: "📦", name: "Pack Regular",    desc: "Open 10 packs" },
     { id: "tt-first-goal",     emoji: "⚽", name: "Tiki-Taka Goal",  desc: "Score a goal in Tiki-Taka" },
-    { id: "tt-hattrick",       emoji: "🎩", name: "Tiki-Taka Hat-trick", desc: "Score 3 goals in one game of Tiki-Taka" },
+    { id: "tt-hattrick",       emoji: "🎩", name: "Tiki-Taka Hat-trick", desc: "Score 3 goals in one match of Tiki-Taka" },
     { id: "tt-chain5",         emoji: "🔁", name: "Pass Master",     desc: "Make 5 passes in a row in Tiki-Taka" },
     { id: "tt-super",          emoji: "⚡", name: "Super Skill",     desc: "Use a super skill in Tiki-Taka" },
     { id: "tt-upgrade",        emoji: "💪", name: "In Training",     desc: "Buy your first Tiki-Taka upgrade" },
+    { id: "tt-giants",         emoji: "🌌", name: "Galaxy Giant Slayer", desc: "Win a star against the Galaxy Giants in Tiki-Taka" },
+    { id: "tt-lob",            emoji: "⤴️", name: "Over the Top",    desc: "Score a goal after a lobbed pass in Tiki-Taka" },
   ];
 
   // Coins, level and daily missions live in gz-rewards.js. It is loaded for us if the page did not.
@@ -275,7 +277,7 @@
     return { stats: s, newBadges: newlyAwarded.map(bid => BADGES.find(b => b.id === bid)).filter(Boolean) };
   }
 
-  /* Tiki-Taka: r = { score, goals, bestChain, superUsed } */
+  /* Tiki-Taka: r = { score, goals, bestChain, superUsed, team, stars, lobGoal } */
   function recordTikiTaka(r) {
     const s = load();
     const id = "tiki-taka";
@@ -292,6 +294,8 @@
     if (r.goals >= 3) award("tt-hattrick");
     if (r.bestChain >= 5) award("tt-chain5");
     if (r.superUsed) award("tt-super");
+    if (r.team === 5 && r.stars >= 1) award("tt-giants");
+    if (r.lobGoal) award("tt-lob");
     if ((s.streak || 0) >= 3) award("three-day-streak");
     save(s);
     gzr("gameFinished", id, { goals: r.goals || 0 });
