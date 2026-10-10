@@ -556,7 +556,7 @@ function feedItem(icon, text, sub, cls) {
 }
 function setNum(n) { G.num = clamp(Math.round(n), george.baseNum, 99); george.drawNumber(G.num); G.maxNum = Math.max(G.maxNum, G.num); }
 function setAct(type, dur) { act = { type, t: dur, dur }; }
-const AM = { ball: "topbins", boots: "bootroom", whistle: "fairplay", gloves: "safehands", trophy: "champions", rocket: "moon", scarf: "fan" };
+const AM = { gloves: "safehands", rocket: "moon" };
 const UPG_KEY = "gz_run_upg_v1", UPG_COST = [40, 80, 140, 200], UPG_MAX = 4;
 const UPG = [{ id: "rocket", icon: "🚀", name: "Rocket boots", base: 4.5, step: 1 }, { id: "trophy", icon: "🏆", name: "Golden trophy", base: 10, step: 2.5 }, { id: "boots", icon: "👟", name: "Golden boots", base: 6, step: 1.5 }];
 const upgLevel = (id) => clamp(readJSON(UPG_KEY, {})[id] | 0, 0, UPG_MAX);
@@ -777,14 +777,27 @@ function setHud() {
   const t = top3(), n = t.filter((r) => r.s > G.score).length;
   $("hud-rank").textContent = G.phase === "play" ? (n < 3 ? "#" + (n + 1) + " right now" : "") : "";
 }
-let bestShown = false;
+let bestShown = false, bestM = 0;
+// "YOUR BEST" banner across the pitch, at the furthest George has ever run
+const bestGate = new THREE.Group(); bestGate.visible = false; scene.add(bestGate);
+const bestTex = (() => { const c = document.createElement("canvas"); c.width = 512; c.height = 64; const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+{
+  const pm = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  for (const x of [-4.5, 4.5]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 3.8, 8), pm); p.position.set(x, 1.9, 0); bestGate.add(p); }
+  const ban = new THREE.Mesh(new THREE.PlaneGeometry(9, 1.1), new THREE.MeshBasicMaterial({ map: bestTex, side: THREE.DoubleSide })); ban.position.y = 3.3; bestGate.add(ban);
+}
+function drawBest(m) {
+  const g = bestTex.image.getContext("2d"), w = 512, h = 64;
+  for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? "#ffffff" : "#d7102b"; g.fillRect(i * w / 8, 0, w / 8, h); }
+  g.fillStyle = "#d7102b"; g.fillRect(96, 6, 320, 52); g.fillStyle = "#fff"; g.font = "700 34px Rajdhani, Arial Black, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("YOUR BEST · " + m.toLocaleString("en-GB") + " m", w / 2, h / 2 + 2); bestTex.needsUpdate = true;
+}
 function reset() {
   for (const it of items) scene.remove(it.mesh); items.length = 0; feedEl.innerHTML = "";
   G.speed = 15; G.dist = 0; G.coins = 0; G.score = 0; G.lives = 4; G.t = 0; G.streak = 0; G.invuln = 0; G.shield = false; G.nextMile = 1000; G.usedPower = 0; G.kicks = 0; G.noHit = true; G.jumps = G.slides = G.lanes = 0; G.achT = 0; G.funs = 0; G.season = 0; wantSong = 0; songLap = 0; jumpBuf = coyote = 0; newAch = []; landT = reachT = 0;
   P.magnet = P.rocket = P.boots = P.whistle = 0; ballFly = null; goalT = 0; goalGrp.visible = false; coach.visible = false; hintT = 0; $("hint").hidden = true; laneIdx = 1; px = 0; py = 0; vy = 0; sliding = 0; grounded = true; stumble = kickT = celeT = 0; act.t = 0; tempoBoost = 0;
   G.num = george.baseNum; G.maxNum = G.num; george.drawNumber(G.num);
   rng = G.daily ? seeded(seedOf("georges-run:" + todayUTC())) : Math.random; chunkNo = 0; G.continued = false; skyT = 0;
-  safeChunks = 3; bestShown = false; spawnFront = -30; fillAhead(); applySky();
+  safeChunks = 3; bestShown = false; bestM = SAVE.bestDist || Math.max(0, ...readJSON(TOP_KEY, []).map((r) => r.m || 0)); bestGate.visible = false; if (bestM > 100) drawBest(bestM); spawnFront = -30; fillAhead(); applySky();
 }
 // once per run, George can pay some of his shop coins to keep going
 const CONT_COST = 50; let contOpen = false, contTimer = 0;
@@ -831,7 +844,10 @@ function update(dt) {
   const sp = G.speed * (P.rocket > 0 ? 1.45 : P.boots > 0 ? 1.35 : 1);
   G.dist += sp * dt; G.score += sp * dt * 0.5 * (P.boots > 0 ? 2 : 1);
   tempoBoost = Math.min(34, (G.speed - 15) * 1.2);
-  if (!bestShown && SAVE.best > 0 && G.score > SAVE.best) { bestShown = true; feedItem("🏆", "NEW PERSONAL BEST!", "Keep going!", "big"); sfx.milestone(); burst(px, 1.6, 0, 0xffd84a, 14); }
+  if (bestM > 100) {
+    const z = G.dist - bestM; bestGate.visible = z > -170 && z < 12; bestGate.position.z = z;
+    if (!bestShown && z >= 0) { bestShown = true; feedItem("🎉", "PAST YOUR BEST!", "Further than ever before", "big"); sfx.goal(); burst(px, 2, 0, 0xffd84a, 14); burst(px, 2, 0, 0xd7102b, 14); }
+  }
   G.achT -= dt; if (G.achT <= 0) { G.achT = 0.3; const d = G.dist; if (d >= 100) ach("warmup"); if (d >= 500) ach("halftime"); if (d >= 1000) ach("fulltime"); if (d >= 2000) ach("extratime"); if (d >= 3000) ach("penalties"); if (G.noHit && d >= 300) ach("cleansheet"); if (G.num >= 15) ach("squad"); if (G.num >= 25) ach("legend"); if (G.num >= 50) ach("retired"); if (G.score >= 5000) ach("bigscore"); if (G.jumps >= 20) ach("acrobat"); if (G.slides >= 10) ach("slider"); if (G.lanes >= 30) ach("dribbler"); if (G.kicks >= 3) ach("freekick"); if (G.coins >= 100) ach("century"); }
   if (G.dist >= G.nextMile) { sfx.milestone(); celeT = 0.8; celeFlip = true; if (G.lives < MAXL) { G.lives++; sfx.life(); feedItem("❤", "EXTRA LIFE!", "Reward for " + G.nextMile.toLocaleString("en-GB") + " m", "power"); coachCheer(); } G.nextMile += 1000; }
   for (const k of ["magnet", "rocket", "boots", "whistle"]) if (P[k] > 0) { P[k] -= dt; if (P[k] <= 0) P[k] = 0; }
@@ -932,13 +948,13 @@ function updateGoal(dt, sp) {
   if (goalT <= 0) goalGrp.visible = false;
 }
 // the coach on the touchline, clapping when George earns a life
-const coach = person(0x1d2a44, 0x1d2a44, 0x1d2a44); coach.scale.setScalar(1.15); coach.visible = false; scene.add(coach);
+const coach = person(0x1d2a44, 0x1d2a44, 0x1d2a44); coach.scale.setScalar(1.5); coach.visible = false; scene.add(coach);
 {
   const cap = new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0xd7102b })); cap.position.y = 1.9; coach.add(cap);
-  const say = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(256, 64, (g, w, h) => { g.fillStyle = "#fff"; if (g.roundRect) { g.beginPath(); g.roundRect(2, 2, w - 4, h - 4, 22); g.fill(); } else g.fillRect(2, 2, w - 4, h - 4); g.fillStyle = "#c8102e"; g.font = "700 30px Rajdhani, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("Well done, George!", w / 2, h / 2 + 2); }), depthTest: false }));
-  say.scale.set(2.2, 0.55, 1); say.position.y = 2.65; coach.add(say);
+  const say = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(256, 64, (g, w, h) => { g.fillStyle = "#fff"; if (g.roundRect) { g.beginPath(); g.roundRect(2, 2, w - 4, h - 4, 22); g.fill(); } else g.fillRect(2, 2, w - 4, h - 4); g.fillStyle = "#c8102e"; g.font = "700 34px Rajdhani, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("Well done, George!", w / 2, h / 2 + 2); }), depthTest: false }));
+  say.scale.set(2.6, 0.65, 1); say.position.y = 2.55; coach.add(say);
 }
-function coachCheer() { const sd = Math.random() < 0.5 ? -1 : 1; coach.position.set(sd * 6.4, 0, -40); coach.rotation.y = -sd * 0.6; coach.visible = true; }
+function coachCheer() { const sd = Math.random() < 0.5 ? -1 : 1; coach.position.set(sd * 5.1, 0, -40); coach.rotation.y = -sd * 0.6; coach.visible = true; }
 function updateCoach(dt, sp) {
   if (!coach.visible) return; coach.position.z += sp * dt; if (coach.position.z > 6) { coach.visible = false; return; }
   const c = 0.2 + 0.35 * Math.abs(Math.sin(clock * 14)), ar = coach.userData.arms;
@@ -1022,7 +1038,7 @@ function gameOver() {
   if (window.GZR && GZR.ready) { try { GZR.earn({ coins: earned, xp: Math.round(meters / 25) }); GZR.event("game"); GZR.event("run_m", meters); } catch (e) {} }
   const won = [];
   for (const p of PRIZES) if (!SAVE.ach[p.id] && p.test({ dist: meters, coins: G.coins, power: G.usedPower })) { SAVE.ach[p.id] = true; won.push(p); }
-  SAVE.best = Math.max(SAVE.best || 0, score); writeJSON(RUN_KEY, SAVE);
+  SAVE.best = Math.max(SAVE.best || 0, score); SAVE.bestDist = Math.max(SAVE.bestDist || 0, bestM || 0, meters); writeJSON(RUN_KEY, SAVE);
   let dailyBest = false;
   if (G.daily) { const db = dailyRec(); dailyBest = score > db.best; if (dailyBest) writeJSON(DAILY_KEY, { date: todayUTC(), best: score }); }
   lastRun = { score, game: G.daily ? GAME_DAILY : GAME_ID };
