@@ -31,11 +31,12 @@ const ACH = [
   ["invincibles", "🛡️", "The Invincibles", "Collect 100 coins without a card"], ["century", "💯", "Century", "Collect 100 coins in one run"],
   ["warmup", "🏃", "Warm-up", "Run 100 m"], ["halftime", "⏱️", "Half-time", "Run 500 m"], ["fulltime", "🔔", "Full Time", "Run 1,000 m"], ["extratime", "⏳", "Extra Time", "Run 2,000 m"], ["penalties", "🥅", "Penalty Shoot-out", "Run 3,000 m"],
   ["topbins", "🥅", "Top Bins", "Kick the football"], ["freekick", "🎯", "Free-kick Specialist", "Kick the football 3 times in one run"],
-  ["fairplay", "📣", "Fair Play", "Use the referee whistle"], ["safehands", "🧤", "Safe Hands", "Use the keeper gloves"], ["motm", "🏅", "Man of the Match", "Use the gold medal"], ["bootroom", "👟", "Boot Room", "Use the golden boots"],
-  ["champions", "🏆", "Champions!", "Use the golden trophy"], ["moon", "🚀", "Out of This World", "Use the rocket boots"], ["fan", "🧣", "Fan Favourite", "Use the fan scarf"], ["invisible", "💨", "Now You See Him", "Use the vanishing spray"],
+  ["fairplay", "📣", "Fair Play", "Use the referee whistle"], ["safehands", "🧤", "Safe Hands", "Use the keeper gloves"], ["bootroom", "👟", "Boot Room", "Use the golden boots"],
+  ["champions", "🏆", "Champions!", "Use the golden trophy"], ["moon", "🚀", "Out of This World", "Use the rocket boots"], ["fan", "🧣", "Fan Favourite", "Use the fan scarf"],
   ["squad", "🔢", "Squad Number", "Get your shirt number to 15"], ["legend", "⭐", "Forest Legend", "Get your shirt number to 25"], ["retired", "🎖️", "Retired Number", "Get your shirt number to 50"],
   ["cleansheet", "🧱", "Clean Sheet", "Run 300 m without a card"], ["acrobat", "🤸", "Bicycle Kick", "Jump 20 times in one run"], ["slider", "🛷", "Sliding Tackle", "Slide 10 times in one run"], ["dribbler", "💃", "Dribbler", "Change lane 30 times in one run"],
   ["bigscore", "📈", "Man of the Match Score", "Score 5,000 points in one run"], ["season", "🎟️", "Season Ticket", "Play 5 runs"], ["clublegend", "🏟️", "Club Legend", "Play 25 runs"],
+  ["allseasons", "🗓️", "Four Seasons", "Reach spring in one run"], ["splash", "💦", "Splash Zone", "Run through 5 puddles, snow piles or leaf piles"],
 ];
 /* ---------------- renderer, scene, camera ---------------- */
 const stage = $("stage"), canvas = $("gl");
@@ -193,9 +194,15 @@ function makeGeorge() {
   };
   drawNumber(num);
   const nm = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), new THREE.MeshBasicMaterial({ map: numTex, transparent: true, depthWrite: false })); nm.position.set(0, 1.37, -0.138); nm.rotation.y = Math.PI; g.add(nm);
+  // a 10-year-old: shorter legs and arms and a bigger head than a grown-up footballer
+  const LEG = 0.8, DROP = 0.96 * (1 - LEG);
+  for (const c of g.children) if (c !== lL.hip && c !== lR.hip) c.position.y -= DROP;
+  for (const h of [lL.hip, lR.hip]) { h.scale.setScalar(LEG); h.position.y = 0.96 * LEG; }
+  for (const a of [aL.sh, aR.sh]) a.scale.setScalar(0.88);
+  head.scale.setScalar(1.24); head.position.y -= 0.05;
   const blob = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.4), new THREE.MeshBasicMaterial({ map: canvasTex(64, 64, (c) => { const gr = c.createRadialGradient(32, 32, 4, 32, 32, 30); gr.addColorStop(0, "rgba(0,0,0,.5)"); gr.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = gr; c.fillRect(0, 0, 64, 64); }), transparent: true, depthWrite: false }));
   blob.rotation.x = -Math.PI / 2; blob.position.y = 0.03;
-  const root = new THREE.Group(); root.add(g, blob); root.scale.setScalar(1.28); root.rotation.y = Math.PI;   // a little larger than life so the shirt print reads; he runs away from the camera (towards -z)
+  const root = new THREE.Group(); root.add(g, blob); root.scale.setScalar(1.15); root.rotation.y = Math.PI;   // a little larger than life so the shirt print reads; he runs away from the camera (towards -z)
   return { root, body: g, head, cape, capeGeo, capeBase, legL: lL.hip, legR: lR.hip, kneeL: lL.knee, kneeR: lR.knee, armL: aL.sh, armR: aR.sh, elbowL: aL.elbow, elbowR: aR.elbow, mats, blob, drawNumber, baseNum: num };
 }
 let george = makeGeorge(); scene.add(george.root);
@@ -228,15 +235,28 @@ const sfx = {
   kick() { if (sfxOn) { tone(160, 0.14, "triangle", 0.25, 60); noise(0.08, 0.15, 900); } },
   life() { if (sfxOn) [659, 880, 1175].forEach((f, i) => tone(f, 0.16, "sine", 0.1, 0, i * 0.08)); },
   milestone() { if (sfxOn) [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.18, "triangle", 0.1, 0, i * 0.07)); },
+  season() { if (sfxOn) { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.2, "triangle", 0.1, 0, i * 0.07)); noise(0.6, 0.12, 6000); } },
+  splash(k) { if (sfxOn) { noise(0.3, 0.22, k === "puddle" ? 1800 : 900); tone(k === "snow" ? 900 : 600, 0.12, "sine", 0.06, 300); } },
   over() { if (sfxOn) [392, 330, 262].forEach((f, i) => tone(f, 0.3, "triangle", 0.12, 0, i * 0.18)); },
 };
 // The tune: a stadium stomp-and-clap beat, a chant-like tune, and more instruments joining in as George gets faster.
 const NOTE = (n) => 440 * Math.pow(2, (n - 69) / 12);
-const CHORDS = [[57, 60, 64], [53, 57, 60], [60, 64, 67], [55, 59, 62]], ROOTS = [45, 41, 48, 43];                  // A minor, F, C, G
-const MELODY = [
-  [76, 0, 0, 76, 79, 0, 81, 0, 79, 0, 76, 0, 74, 0, 76, 0], [77, 0, 0, 77, 81, 0, 84, 0, 81, 0, 77, 0, 76, 0, 77, 0],
-  [76, 0, 0, 76, 79, 0, 84, 0, 83, 0, 79, 0, 76, 0, 79, 0], [74, 0, 0, 74, 79, 0, 83, 0, 81, 0, 79, 0, 74, 0, 0, 0],
+// One song per season. Each has its own key, speed and instruments, and gets busier as George speeds up.
+const SONGS = [
+  { name: "Sunshine Stomp", bpm: 122, chords: [[60, 64, 67], [55, 59, 62], [57, 60, 64], [53, 57, 60]], roots: [48, 43, 45, 41],
+    mel: [[72, 0, 76, 0, 79, 0, 76, 0, 77, 0, 76, 0, 74, 0, 72, 0], [71, 0, 74, 0, 79, 0, 74, 0, 76, 0, 74, 0, 71, 0, 67, 0], [72, 0, 76, 0, 81, 0, 79, 0, 76, 0, 72, 0, 76, 0, 79, 0], [77, 0, 76, 0, 74, 0, 72, 0, 74, 0, 0, 0, 72, 0, 0, 0]],
+    lead: { type: "square", lp: 3200, len: 1.8, vol: 0.045 }, bass: [0, 3, 6, 8, 11, 14], oct: [6, 14], pad: "triangle" },
+  { name: "Autumn Chant", bpm: 112, chords: [[57, 60, 64], [53, 57, 60], [60, 64, 67], [55, 59, 62]], roots: [45, 41, 48, 43],
+    mel: [[76, 0, 0, 76, 79, 0, 81, 0, 79, 0, 76, 0, 74, 0, 76, 0], [77, 0, 0, 77, 81, 0, 84, 0, 81, 0, 77, 0, 76, 0, 77, 0], [76, 0, 0, 76, 79, 0, 84, 0, 83, 0, 79, 0, 76, 0, 79, 0], [74, 0, 0, 74, 79, 0, 83, 0, 81, 0, 79, 0, 74, 0, 0, 0]],
+    lead: { type: "sawtooth", lp: 2600, len: 2.2, vol: 0.055 }, bass: [0, 3, 6, 8, 10, 13, 14], oct: [3, 10, 13], pad: "sawtooth" },
+  { name: "Boxing Day Bells", bpm: 106, chords: [[62, 66, 69], [59, 62, 66], [55, 59, 62], [57, 61, 64]], roots: [38, 35, 43, 45],
+    mel: [[74, 0, 78, 0, 81, 0, 78, 0, 86, 0, 0, 0, 81, 0, 0, 0], [83, 0, 81, 0, 78, 0, 74, 0, 78, 0, 0, 0, 0, 0, 0, 0], [79, 0, 83, 0, 86, 0, 83, 0, 81, 0, 79, 0, 78, 0, 79, 0], [81, 0, 0, 0, 76, 0, 79, 0, 78, 0, 0, 0, 76, 0, 0, 0]],
+    lead: { type: "triangle", lp: 6000, len: 3, vol: 0.09 }, bass: [0, 8], oct: [8], pad: "triangle", bells: true },
+  { name: "Spring Shower", bpm: 128, chords: [[64, 67, 71], [60, 64, 67], [55, 59, 62], [62, 66, 69]], roots: [40, 36, 43, 38],
+    mel: [[76, 0, 79, 0, 83, 0, 79, 0, 81, 0, 79, 0, 76, 0, 74, 0], [72, 0, 76, 0, 79, 0, 76, 0, 77, 0, 76, 0, 72, 0, 71, 0], [74, 0, 79, 0, 83, 0, 86, 0, 83, 0, 79, 0, 74, 0, 79, 0], [78, 0, 81, 0, 78, 0, 74, 0, 76, 0, 0, 0, 0, 0, 0, 0]],
+    lead: { type: "square", lp: 2400, len: 1.1, vol: 0.05 }, bass: [0, 2, 4, 6, 8, 10, 12, 14], oct: [2, 6, 10, 14], pad: "sawtooth", claps: true },
 ];
+let curSong = 0, wantSong = 0, songLap = 0;
 let musicOn = false, step = 0, nextT = 0, musicTimer = 0, tempoBoost = 0;
 function synth(f, t, dur, o) {
   const a = audio(); if (!a) return;
@@ -261,27 +281,30 @@ function musicTick() {
   const a = audio(); if (!a || !musicOn) return;
   const vol = MVOL[musicLevel()]; if (!vol) { nextT = a.currentTime; return; }
   const lvl = G.speed < 19 ? 0 : G.speed < 26 ? 1 : G.speed < 34 ? 2 : 3;
-  const sd = 60 / (116 + tempoBoost) / 4;
   while (nextT < a.currentTime + 0.18) {
-    const t = nextT - a.currentTime, i = step % 16, bar = Math.floor(step / 16) % 4, ch = CHORDS[bar], root = ROOTS[bar];
+    const t = nextT - a.currentTime;
+    if (step % 16 === 0 && curSong !== wantSong) { curSong = wantSong; step = 0; drum("crash", t, vol); }   // a new season starts its song on the next bar
+    const S = SONGS[curSong], sd = 60 / (S.bpm + tempoBoost * 0.7 + songLap * 6) / 4;
+    const i = step % 16, bar = Math.floor(step / 16) % 4, ch = S.chords[bar], root = S.roots[bar];
     // drums: stomp, stomp, clap like the terraces; four on the floor from level 1
-    if (i === 0 || i === 8 || (lvl >= 1 && (i === 4 || i === 12)) || (lvl >= 3 && i === 14)) drum("kick", t, vol);
-    if (i === 4 || i === 12) drum("clap", t, vol);
-    if (i % 4 === 2 || (lvl >= 1 && i % 2 === 1)) drum("hat", t, vol * (i % 4 === 2 ? 1 : 0.6));
+    if (i === 0 || i === 8 || (lvl >= 1 && (i === 4 || i === 12)) || (lvl >= 3 && i === 14)) drum("kick", t, vol * (S.bells ? 0.8 : 1));
+    if (i === 4 || i === 12 || (S.claps && lvl >= 1 && (i === 7 || i === 15))) drum("clap", t, vol * (i % 4 === 3 ? 0.6 : 1));
+    if (i % 4 === 2 || ((lvl >= 1 || S.bells) && i % 2 === 1)) drum("hat", t, vol * (i % 4 === 2 ? 1 : 0.6));
+    if (S.bells && i % 4 === 0) synth(NOTE(ch[(i / 4) % 3] + 24), t, sd * 3, { type: "sine", lp: 9000, vol: 0.035 * vol });     // sleigh bells
     if (lvl >= 3 && i === 0 && bar % 2 === 0) drum("crash", t, vol);
-    // bass: root and octave bounce
-    if (i === 0 || i === 6 || i === 8 || i === 14) synth(NOTE(root + (i === 6 || i === 14 ? 12 : 0)), t, sd * 2.4, { type: "sawtooth", lp: 600, sweep: 0.4, vol: 0.13 * vol });
-    // warm chord pad
-    if (lvl >= 1 && i === 0) for (const n of ch) { synth(NOTE(n), t, sd * 15, { type: "sawtooth", lp: 900, vol: 0.02 * vol, a: 0.25, detune: -7 }); synth(NOTE(n), t, sd * 15, { type: "sawtooth", lp: 900, vol: 0.02 * vol, a: 0.25, detune: 7 }); }
+    // bass
+    if (S.bass.includes(i)) synth(NOTE(root + (S.oct.includes(i) ? 12 : 0)), t, sd * (S.bells ? 6 : 2.4), { type: S.bells ? "triangle" : "sawtooth", lp: 600, sweep: 0.4, vol: (S.bells ? 0.16 : 0.13) * vol });
+    // chord pad
+    if ((lvl >= 1 || S.bells) && i === 0) for (const n of ch) { synth(NOTE(n), t, sd * 15, { type: S.pad, lp: 900, vol: 0.02 * vol, a: 0.25, detune: -7 }); synth(NOTE(n), t, sd * 15, { type: S.pad, lp: 900, vol: 0.02 * vol, a: 0.25, detune: 7 }); }
     // sparkly arpeggio
     if (lvl >= 2 && i % 2 === 0) synth(NOTE(ch[(i / 2) % 3] + 12), t, sd * 1.6, { type: "triangle", lp: 4000, vol: 0.05 * vol });
     // the tune
-    const m = MELODY[bar][i];
-    if (m) { synth(NOTE(m), t, sd * 2.2, { type: "sawtooth", lp: 2800, vol: 0.06 * vol, a: 0.01 }); if (lvl >= 3) synth(NOTE(m + 12), t, sd * 2, { type: "square", lp: 3500, vol: 0.02 * vol }); }
+    const m = S.mel[bar][i];
+    if (m) { synth(NOTE(m), t, sd * S.lead.len, { type: S.lead.type, lp: S.lead.lp, vol: S.lead.vol * vol, a: 0.01 }); if (lvl >= 3) synth(NOTE(m + 12), t, sd * 2, { type: "square", lp: 3500, vol: 0.02 * vol }); }
     nextT += sd; step++;
   }
 }
-function startMusic() { const a = audio(); if (!a) return; if (a.state === "suspended") a.resume(); musicOn = true; nextT = a.currentTime + 0.05; step = 0; clearInterval(musicTimer); musicTimer = setInterval(musicTick, 40); }
+function startMusic() { const a = audio(); if (!a) return; if (a.state === "suspended") a.resume(); musicOn = true; nextT = a.currentTime + 0.05; step = 0; curSong = wantSong; clearInterval(musicTimer); musicTimer = setInterval(musicTick, 40); }
 function stopMusic() { musicOn = false; clearInterval(musicTimer); }
 function cycleMusic() { const order = ["loud", "quiet", "off"], nx = order[(order.indexOf(musicLevel()) + 1) % 3]; try { localStorage.setItem(MKEY, nx); } catch (e) {} showMusic(); }
 function showMusic() { const l = musicLevel(); $("btn-music").textContent = "🎵 Music: " + (l === "loud" ? "Loud" : l === "quiet" ? "Quiet" : "Off"); }
@@ -342,8 +365,6 @@ const TOYS = {
   boots: { name: "GOLDEN BOOTS", sub: "Sprint! Double distance points", icon: "👟", col: 0xffc933 },
   whistle: { name: "REFEREE WHISTLE", sub: "Play slows down", icon: "📣", col: 0xcfd5df },
   gloves: { name: "KEEPER GLOVES", sub: "Saves you from one card", icon: "🧤", col: 0x39d17a },
-  medal: { name: "GOLD MEDAL", sub: "Every coin counts double", icon: "🏅", col: 0xffd23f },
-  spray: { name: "VANISHING SPRAY", sub: "Invisible: walk through the cards", icon: "💨", col: 0xdde6ff },
   trophy: { name: "GOLDEN TROPHY", sub: "Coins fly to you", icon: "🏆", col: 0xffc933 },
   rocket: { name: "ROCKET BOOTS", sub: "Fly over everything", icon: "🚀", col: 0xe5384a },
   scarf: { name: "FAN SCARF", sub: "An extra life", icon: "🧣", col: 0xff4d6d },
@@ -363,8 +384,6 @@ function toyMesh(type) {
   else if (type === "boots") { B(0.34, 0.2, 0.8, 0xffc933, 0, -0.12, 0.08); C(0.17, 0.2, 0.5, 0xffc933, 0, 0.12, -0.15); B(0.36, 0.06, 0.82, 0x6b4a00, 0, -0.25, 0.08); for (const sx of [-0.1, 0.1]) { B(0.04, 0.08, 0.06, 0xdddddd, sx, -0.3, 0.3); B(0.04, 0.08, 0.06, 0xdddddd, sx, -0.3, -0.1); } const w = B(0.04, 0.3, 0.5, 0xffffff, 0.2, 0.2, -0.2); w.rotation.z = -0.3; const w2 = B(0.04, 0.3, 0.5, 0xffffff, -0.2, 0.2, -0.2); w2.rotation.z = 0.3; g.rotation.y = 0.6; }
   else if (type === "whistle") { const b = C(0.24, 0.24, 0.5, 0x22252c, 0, 0, 0); b.rotation.z = Math.PI / 2; B(0.4, 0.2, 0.26, 0x22252c, 0.38, -0.02, 0); const r = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.04, 6, 14), L(0xcfd5df)); r.position.set(-0.3, 0.2, 0); g.add(r); S(0.07, 0xffffff, 0, 0.22, 0.2); }
   else if (type === "gloves") { S(0.3, 0x39d17a, 0, 0, 0, 1, 1.1, 0.7); for (let k = -2; k <= 1; k++) S(0.09, 0x39d17a, k * 0.13 + 0.065, 0.36, 0, 1, 1.9, 1); S(0.1, 0x39d17a, 0.32, 0.05, 0, 1.6, 0.9, 1); B(0.5, 0.14, 0.3, 0xffffff, 0, -0.34, 0); }
-  else if (type === "medal") { const d = C(0.36, 0.36, 0.09, 0xffd23f, 0, 0, 0); d.rotation.x = Math.PI / 2; const d2 = C(0.26, 0.26, 0.11, 0xffe680, 0, 0, 0); d2.rotation.x = Math.PI / 2; B(0.16, 0.5, 0.04, 0xe1102c, 0, 0.5, 0); }
-  else if (type === "spray") { C(0.2, 0.2, 0.7, 0xf4f4f4, 0, 0, 0); C(0.12, 0.2, 0.2, 0x2f6fe0, 0, 0.42, 0); C(0.03, 0.03, 0.18, 0x222222, 0, 0.58, 0.04); S(0.08, 0xcfe6ff, 0.25, 0.5, 0.1); S(0.12, 0xcfe6ff, 0.38, 0.55, 0.15); }
   else if (type === "trophy") { const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.16, 0.5, 16), L(0xffc933)); cup.position.y = 0.2; g.add(cup); C(0.06, 0.08, 0.3, 0xffc933, 0, -0.2, 0); C(0.22, 0.26, 0.1, 0xffc933, 0, -0.4, 0); for (const sx of [-1, 1]) { const h = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.04, 6, 12), L(0xffc933)); h.position.set(sx * 0.4, 0.22, 0); g.add(h); } }
   else if (type === "rocket") { C(0.22, 0.28, 0.9, 0xeeeeee, 0, 0, 0); const n = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.4, 12), L(0xe5384a)); n.position.y = 0.65; g.add(n); for (const sx of [-1, 1]) B(0.4, 0.3, 0.05, 0xe5384a, sx * 0.28, -0.35, 0); g.rotation.z = 0.5; }
   else if (type === "scarf") { const t = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.13, 8, 18), L(0xd7102b)); g.add(t); for (let k = 0; k < 4; k++) { const st = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.135, 8, 3, 0.5), L(0xffffff)); st.rotation.z = k * 1.57; g.add(st); } B(0.2, 0.5, 0.06, 0xd7102b, 0.22, -0.4, 0.1); B(0.2, 0.5, 0.06, 0xffffff, 0.44, -0.4, 0.1); }
@@ -395,11 +414,11 @@ function person(shirt, shorts, socks) {
 }
 const warnTex = canvasTex(64, 64, (g) => { g.fillStyle = "#e1102c"; g.beginPath(); g.arc(32, 32, 29, 0, 7); g.fill(); g.lineWidth = 4; g.strokeStyle = "#fff"; g.stroke(); g.fillStyle = "#fff"; g.font = "700 44px Arial Black, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("!", 32, 35); });
 function referee(a, z) {                           // jogs back and forth across two lanes, holding up a yellow card: use the third lane
-  const g = person(0x151515, 0x151515, 0x151515), card = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.32, 0.03), yellowMat); card.position.y = -0.66; g.userData.arms[1].add(card); g.userData.arms[1].rotation.x = -2.7;
+  const g = person(0x151515, 0x151515, 0x151515); g.scale.setScalar(1.2); const card = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.32, 0.03), yellowMat); card.position.y = -0.66; g.userData.arms[1].add(card); g.userData.arms[1].rotation.x = -2.7;
   add("obs", g, (LANES[a] + LANES[a + 1]) / 2, 0, z, { type: "ref", laneA: a, t: R() * 6 });
 }
 function defender(lane, z) {                       // waits beside the pitch, then slides into the outside lane: jump over him
-  const side = lane === 0 ? -1 : 1, g = person(0x6cabdd, 0xffffff, 0x6cabdd);
+  const side = lane === 0 ? -1 : 1, g = person(0x6cabdd, 0xffffff, 0x6cabdd); g.scale.setScalar(1.2);
   const w = new THREE.Sprite(new THREE.SpriteMaterial({ map: warnTex, depthTest: false })); w.scale.set(0.8, 0.8, 1); w.position.y = 2.6; g.add(w); g.userData.warn = w;
   add("obs", g, side * 5.4, 0, z, { type: "def", lane, side, slideT: -1 });
 }
@@ -409,7 +428,7 @@ function mower(lane, z) {                          // a ride-on mower driving to
   const deck = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.2, 0.9), M(0x1d1d1d)); deck.position.set(0, 0.22, 0.55); g.add(deck);
   for (const [x, zz, r] of [[-0.62, -0.5, 0.36], [0.62, -0.5, 0.36], [-0.6, 0.6, 0.24], [0.6, 0.6, 0.24]]) { const wh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.22, 14), M(0x151515)); wh.rotation.z = Math.PI / 2; wh.position.set(x, r, zz); g.add(wh); }
   const seat = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15, 0.5), M(0x151515)); seat.position.set(0, 0.92, -0.35); g.add(seat);
-  const man = person(0xd8ff3a, 0x24324a, 0x24324a); man.scale.setScalar(0.75); man.position.set(0, 0.25, -0.35); man.userData.legs.forEach((l) => (l.rotation.x = -1.4)); g.add(man);
+  const man = person(0xd8ff3a, 0x24324a, 0x24324a); man.scale.setScalar(0.9); man.position.set(0, 0.25, -0.35); man.userData.legs.forEach((l) => (l.rotation.x = -1.4)); g.add(man);
   add("obs", g, LANES[lane], 0, z, { type: "mower", vz: 3.5 });
 }
 
@@ -436,9 +455,11 @@ function makeChunk(z0) {
   const extra = R() < 0.5, extraLane = Math.floor(R() * 3);
   if (!special && d > 0.5 && extra) wall(extraLane, z0 - 30);
   // a pick-up now and then: at most one per stretch of road, so it never gets crowded
-  const give = R() < 0.5, bag = ["ball", "ball", "ball", "boots", "boots", "whistle", "whistle", "gloves", "gloves", "medal", "medal", "spray", "spray", "trophy", "trophy", "rocket", "rocket", "scarf", "num5", "num5", "num5", "num10", "numx2"];
+  const give = R() < 0.5, bag = ["ball", "ball", "ball", "boots", "boots", "whistle", "whistle", "gloves", "gloves", "trophy", "trophy", "rocket", "rocket", "scarf", "num5", "num5", "num5", "num10", "numx2"];
   const t = pR(bag), tl = Math.floor(R() * 3), tz = z0 - rR(10, 26);
   if (give && (t !== "scarf" || G.lives < MAXL)) toy(t, tl, tz);
+  const funRoll = R(), funLane = Math.floor(R() * 3), funZ = z0 - rR(6, 30), fs = SEASONS[seasonAt(G.dist - funZ) % 4].fun;   // the season George will be in when he gets here
+  if (fs && !safe && funRoll < 0.55) funItem(fs, funLane, funZ);
 }
 function fillAhead() { while (spawnFront > -160) { makeChunk(spawnFront); spawnFront -= CHUNK; } }
 
@@ -463,11 +484,10 @@ function updateSparks(dt) {
 }
 
 /* ---------------- power-ups and the top-of-screen feed ---------------- */
-const P = { magnet: 0, medal: 0, spray: 0, rocket: 0, boots: 0, whistle: 0 };
+const P = { magnet: 0, rocket: 0, boots: 0, whistle: 0 };
 const bubble = new THREE.Mesh(new THREE.SphereGeometry(1.25, 18, 12), new THREE.MeshBasicMaterial({ color: 0x9fe3ff, transparent: true, opacity: 0.28 })); bubble.visible = false; scene.add(bubble);
 const flame = []; for (let i = 0; i < 14; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.13, 6, 5), new THREE.MeshBasicMaterial({ color: 0xff8a1f, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); m.visible = false; scene.add(m); flame.push({ m, life: 0 }); }
 let flameIdx = 0;
-function setGhost(on) { for (const m of george.mats) { m.transparent = on; m.opacity = on ? 0.32 : 1; m.needsUpdate = true; } }
 // short messages that slide in at the top left, one line each, and fade away on their own
 const feedEl = $("feed");
 function feedItem(icon, text, sub, cls) {
@@ -479,15 +499,13 @@ function feedItem(icon, text, sub, cls) {
 }
 function setNum(n) { G.num = clamp(Math.round(n), george.baseNum, 99); george.drawNumber(G.num); G.maxNum = Math.max(G.maxNum, G.num); }
 function setAct(type, dur) { act = { type, t: dur, dur }; }
-const AM = { ball: "topbins", boots: "bootroom", whistle: "fairplay", gloves: "safehands", medal: "motm", spray: "invisible", trophy: "champions", rocket: "moon", scarf: "fan" };
+const AM = { ball: "topbins", boots: "bootroom", whistle: "fairplay", gloves: "safehands", trophy: "champions", rocket: "moon", scarf: "fan" };
 function givePower(type) {
   const T = TOYS[type]; if (AM[type]) ach(AM[type]); G.usedPower++; sfx.power(); burst(px, 1.2, 0, T.col, 14);
   if (type === "ball") { feedItem(T.icon, T.name, T.sub, "power"); kickT = 0.45; G.kicks++; sfx.kick(); ballFly = { z: -1.5, t: 0, last: -1.5, got: 0 }; return; }
   if (type === "boots") { P.boots = 6; setAct("flex", 0.6); }
   else if (type === "whistle") { P.whistle = 3; setAct("whistle", 0.9); }
   else if (type === "gloves") { G.shield = true; setAct("gloves", 0.9); }
-  else if (type === "medal") { P.medal = 10; setAct("medal", 0.9); }
-  else if (type === "spray") { P.spray = 8; setGhost(true); setAct("spray", 0.8); }
   else if (type === "trophy") { P.magnet = 10; setAct("trophy", 0.9); }
   else if (type === "rocket") { P.rocket = 4.5; }
   else if (type === "scarf") { if (G.lives < MAXL) G.lives++; sfx.life(); setAct("cheer", 0.8); }
@@ -499,7 +517,7 @@ function givePower(type) {
 }
 function takeCoin(it, bonus) {
   it.gone = true; G.streak++;
-  const n = P.medal > 0 ? 2 : 1, value = G.num * n * (bonus || 1);
+  const n = 1, value = G.num * (bonus || 1);
   G.coins += n; G.score += value; reachT = 0.22; ach("firsttouch"); if (G.streak >= 3) ach("hattrick"); if (G.streak >= 11) ach("fullteam"); if (G.streak >= 25) ach("goldenboot"); if (G.streak >= 50) ach("unplayable"); if (G.streak >= 100) ach("invincibles"); sfx.coin(G.streak); burst(it.mesh.position.x, it.mesh.position.y, it.mesh.position.z, 0xffd84a, 3);
   if (G.streak === 25 || G.streak === 50 || G.streak === 100 || G.streak === 200) feedItem("🔥", "COIN FEVER!", G.streak + " coins without a card", "big");
 }
@@ -564,12 +582,11 @@ function animate(dt) {
     }
   }
   if (sliding > 0) {                                                    // slide tackle: one leg out straight, the other tucked under
-    g.body.rotation.x = -1.0; g.body.position.y = -0.6; g.legR.rotation.x = -1.5; g.kneeR.rotation.x = 0; g.legL.rotation.x = -0.6; g.kneeL.rotation.x = 1.7;
+    g.body.rotation.x = -1.0; g.body.position.y = -0.5; g.legR.rotation.x = -1.5; g.kneeR.rotation.x = 0; g.legL.rotation.x = -0.6; g.kneeL.rotation.x = 1.7;
     g.armL.rotation.x = 0.3; g.armL.rotation.z = -1.3; g.armR.rotation.x = 0.9; g.armR.rotation.z = 0.5; g.head.rotation.x = 0.25;
   }
   if (kickT > 0) { kickT -= dt; const u = 1 - kickT / 0.45; g.legR.rotation.x = -0.4 - 1.5 * Math.sin(Math.min(1, u * 1.6) * Math.PI * 0.8); g.kneeR.rotation.x = u < 0.3 ? 1.3 : 0.1; g.body.rotation.x = 0.1; g.armL.rotation.z = -0.8; g.armR.rotation.z = 0.8; }
   if (P.magnet > 0 && !flying) { g.armL.rotation.z = -1.3; g.armR.rotation.z = 1.3; g.armL.rotation.x = g.armR.rotation.x = -0.5; }
-  if (P.spray > 0) { g.body.rotation.x = 0.45; g.armL.rotation.x = g.armR.rotation.x = 0.7; g.elbowL.rotation.x = g.elbowR.rotation.x = -0.3; g.body.rotation.y = s * 0.3; }
   g.cape.visible = flying;
   if (flying) {                                                         // Superman: horizontal, fist forward, cape streaming
     const bob = Math.sin(clock * 3);
@@ -584,9 +601,7 @@ function animate(dt) {
     act.t -= dt; const u = clamp(1 - act.t / act.dur, 0, 1), ps = Math.sin(u * Math.PI);
     if (act.type === "whistle") { g.armR.rotation.x = -2.3 * ps; g.elbowR.rotation.x = -2.4 * ps; g.armR.rotation.z = -0.25 * ps; g.head.rotation.x = -0.12 - 0.25 * ps; }
     else if (act.type === "gloves") { g.armL.rotation.z = -1.4 * ps; g.armR.rotation.z = 1.4 * ps; g.armL.rotation.x = g.armR.rotation.x = -0.9 * ps; g.body.rotation.x = 0.2 + 0.3 * ps; g.legL.rotation.z = -0.35 * ps; g.legR.rotation.z = 0.35 * ps; }
-    else if (act.type === "medal") { g.armR.rotation.x = -1.2 * ps; g.elbowR.rotation.x = -2.4 * ps; g.armR.rotation.z = -0.5 * ps; g.head.rotation.x = -0.12 + 0.5 * ps; }
     else if (act.type === "trophy") { g.armL.rotation.x = g.armR.rotation.x = -3.0 * ps; g.armL.rotation.z = -0.3 * ps; g.armR.rotation.z = 0.3 * ps; g.body.position.y += ps * 0.2; }
-    else if (act.type === "spray") { g.armR.rotation.x = -1.5 * ps; g.elbowR.rotation.x = -0.4 * ps; g.body.rotation.y += Math.sin(u * Math.PI * 4) * 0.7 * ps; }
     else if (act.type === "cheer") { g.armL.rotation.x = g.armR.rotation.x = -3.0 * ps; g.body.position.y = Math.abs(Math.sin(clock * 12)) * 0.25 * ps; }
     else if (act.type === "flex") { g.armL.rotation.z = -1.3 * ps; g.armR.rotation.z = 1.3 * ps; g.elbowL.rotation.x = g.elbowR.rotation.x = -2.2 * ps; g.armL.rotation.x = g.armR.rotation.x = -0.3 * ps; }
   }
@@ -598,22 +613,69 @@ function animate(dt) {
     else { g.armL.rotation.x = g.armR.rotation.x = -3.0; g.armL.rotation.z = -0.4; g.armR.rotation.z = 0.4; g.body.position.y = Math.abs(Math.sin(clock * 12)) * 0.25; }
   }
   if (stumble > 0) { stumble -= dt; const u = 1 - stumble / 0.9; g.body.rotation.x = 0.4 + Math.sin(u * Math.PI) * 1.0; g.armL.rotation.x = g.armR.rotation.x = -1.2; g.armL.rotation.z = -1.0; g.armR.rotation.z = 1.0; g.legL.rotation.x = 0.8; g.legR.rotation.x = -0.6; g.body.rotation.y = u * 2.2; }
-  if (!run) { g.body.rotation.set(1.1, 0, 0); g.body.position.y = -0.5; g.legL.rotation.x = g.legR.rotation.x = 0.4; g.armL.rotation.z = -1.1; g.armR.rotation.z = 1.1; g.armL.rotation.x = g.armR.rotation.x = -0.3; }
+  if (!run) { g.body.rotation.set(1.1, 0, 0); g.body.position.y = -0.4; g.legL.rotation.x = g.legR.rotation.x = 0.4; g.armL.rotation.z = -1.1; g.armR.rotation.z = 1.1; g.armL.rotation.x = g.armR.rotation.x = -0.3; }
 }
 
-/* ---------------- sky: day, sunset, night and back again ---------------- */
-const SKYS = [[0x7db4ee, 0x2f9a35, 2.4, 1.5], [0x7db4ee, 0x2f9a35, 2.4, 1.5], [0xea9a6e, 0x2a8a30, 1.9, 1.1], [0x0f1b40, 0x14451c, 1.0, 0.25], [0x0f1b40, 0x14451c, 1.0, 0.25], [0x9ec5f0, 0x2f9a35, 2.2, 1.3]];
-const STOPS = [0, 0.3, 0.45, 0.6, 0.82, 0.93];
+/* ---------------- seasons: every 800 m a new season, with its own sky, pitch, weather and song ---------------- */
+const SEASON_M = 800;
+const SEASONS = [
+  { name: "Summer", icon: "☀️", sky: 0x7db4ee, grass: 0x2f9a35, pitch: 0xffffff, hemi: 2.4, sun: 1.5, weather: null, fun: null, hint: "" },
+  { name: "Autumn", icon: "🍂", sky: 0xe7a06e, grass: 0x6e8a2c, pitch: 0xf3e7c4, hemi: 2.0, sun: 1.15, weather: "leaves", fun: "leaves", hint: "Run through the leaf piles!" },
+  { name: "Winter", icon: "❄️", sky: 0x101c3e, grass: 0x6f8f86, pitch: 0xdde9f2, hemi: 1.1, sun: 0.3, weather: "snow", fun: "snow", hint: "Burst the snow piles!" },
+  { name: "Spring", icon: "🌧️", sky: 0x8b9db0, grass: 0x3aa245, pitch: 0xffffff, hemi: 1.9, sun: 0.9, weather: "rain", fun: "puddle", hint: "Splash through the puddles!" },
+];
+const seasonAt = (m) => Math.floor(Math.max(0, m) / SEASON_M);
 const cA = new THREE.Color(), cB = new THREE.Color(), hemi = scene.children.find((o) => o.isHemisphereLight);
+let wType = null, wK = 0;
 function applySky() {
-  const f = (G.dist / 2400) % 1; let k = STOPS.length - 1; for (let i = 0; i < STOPS.length - 1; i++) if (f >= STOPS[i] && f < STOPS[i + 1]) { k = i; break; }
-  const a = SKYS[k], b = SKYS[(k + 1) % SKYS.length], lo = STOPS[k], hi = k === STOPS.length - 1 ? 1 : STOPS[k + 1], t = clamp((f - lo) / (hi - lo), 0, 1);
-  cA.set(a[0]); cB.set(b[0]); cA.lerp(cB, t); scene.background.copy(cA); scene.fog.color.copy(cA);
-  cA.set(a[1]); cB.set(b[1]); cA.lerp(cB, t); ground.material.color.copy(cA);
-  if (hemi) hemi.intensity = lerp(a[2], b[2], t); sun.intensity = lerp(a[3], b[3], t);
-  const dayK = clamp(((hemi ? hemi.intensity : 2.4) - 1.0) / 1.4, 0, 1);
-  for (const m of crowdMats) m.color.setScalar(0.4 + 0.6 * dayK); for (const m of boardMats) m.color.setScalar(0.5 + 0.5 * dayK); road.material.color.setScalar(0.55 + 0.45 * dayK);
+  const n = seasonAt(G.dist), cur = SEASONS[n % 4], prev = n > 0 ? SEASONS[(n + 3) % 4] : cur, t = clamp((G.dist - n * SEASON_M) / 70, 0, 1);   // blend over the first 70 m
+  cA.set(prev.sky); cB.set(cur.sky); cA.lerp(cB, t); scene.background.copy(cA); scene.fog.color.copy(cA);
+  cA.set(prev.grass); cB.set(cur.grass); cA.lerp(cB, t); ground.material.color.copy(cA);
+  const hi = lerp(prev.hemi, cur.hemi, t); if (hemi) hemi.intensity = hi; sun.intensity = lerp(prev.sun, cur.sun, t);
+  const dayK = clamp((hi - 1.0) / 1.4, 0, 1);
+  for (const m of crowdMats) m.color.setScalar(0.4 + 0.6 * dayK); for (const m of boardMats) m.color.setScalar(0.5 + 0.5 * dayK);
+  cA.set(prev.pitch); cB.set(cur.pitch); cA.lerp(cB, t).multiplyScalar(0.55 + 0.45 * dayK); road.material.color.copy(cA);
   lampMat.color.setRGB(1, 0.85 + 0.15 * (1 - dayK), 0.6 + 0.3 * (1 - dayK)); lampMat.color.multiplyScalar(0.55 + 0.45 * (1 - dayK) * 1.2);
+  if (prev.weather !== cur.weather && t < 0.5) { wType = prev.weather; wK = 1 - 2 * t; } else { wType = cur.weather; wK = prev.weather === cur.weather ? 1 : clamp(2 * t - 1, 0, 1); }
+}
+// falling leaves, snow and rain
+const WN = 260, wPos = new Float32Array(WN * 3), wGeo = new THREE.BufferGeometry(); wGeo.setAttribute("position", new THREE.BufferAttribute(wPos, 3));
+for (let i = 0; i < WN; i++) { wPos[i * 3] = rand(-16, 16); wPos[i * 3 + 1] = rand(0, 14); wPos[i * 3 + 2] = rand(-70, 8); }
+const dotTex = canvasTex(32, 32, (g) => { const gr = g.createRadialGradient(16, 16, 0, 16, 16, 15); gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = gr; g.fillRect(0, 0, 32, 32); });
+const wMat = new THREE.PointsMaterial({ map: dotTex, transparent: true, depthWrite: false, size: 0.2, color: 0xffffff, opacity: 0 });
+const weather = new THREE.Points(wGeo, wMat); weather.frustumCulled = false; weather.visible = false; scene.add(weather);
+const WX = { leaves: { col: 0xe0782a, size: 0.34, fall: 1.4, sway: 1.4, op: 0.95 }, snow: { col: 0xffffff, size: 0.22, fall: 2.2, sway: 0.6, op: 0.95 }, rain: { col: 0xd6e6ff, size: 0.15, fall: 16, sway: 0, op: 0.9 } };
+function updateWeather(dt, sp) {
+  const w = WX[wType]; weather.visible = !!w && wK > 0.02 && !reduced; if (!weather.visible) return;
+  wMat.color.setHex(w.col); wMat.size = w.size; wMat.opacity = wK * w.op;
+  for (let i = 0; i < WN; i++) {
+    const j = i * 3; wPos[j + 1] -= w.fall * dt; wPos[j] += Math.sin(clock * 1.3 + i) * w.sway * dt; wPos[j + 2] += sp * dt * 0.9;
+    if (wPos[j + 1] < 0 || wPos[j + 2] > 3) { wPos[j] = rand(-16, 16); wPos[j + 1] = rand(5, 14); wPos[j + 2] = rand(-70, 0); }
+  }
+  wGeo.attributes.position.needsUpdate = true;
+}
+// a big "SEASON 2 · AUTUMN" banner, a fanfare, and the new season's song
+function announceSeason(n) {
+  const S = SEASONS[n % 4], el = $("season"); wantSong = n % 4; songLap = Math.floor(n / 4);
+  $("season-n").textContent = "SEASON " + (n + 1); $("season-name").textContent = S.icon + " " + S.name.toUpperCase();
+  $("season-sub").textContent = "♪ " + SONGS[n % 4].name + (S.hint ? " · " + S.hint : "");
+  el.hidden = false; el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); clearTimeout(el._t); el._t = setTimeout(() => { el.hidden = true; }, 2900);
+  if (n > 0) { sfx.season(); if (n >= 3) ach("allseasons"); }
+}
+// puddles, snow piles and leaf piles: run through them for a splash and 3 bonus coins (they never hurt)
+const funGeo = { puddle: new THREE.CircleGeometry(0.8, 22), mound: new THREE.SphereGeometry(0.7, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), leaf: new THREE.BoxGeometry(0.22, 0.03, 0.14) };
+const funMat = { puddle: new THREE.MeshPhongMaterial({ color: 0x5f8fc0, shininess: 120, specular: 0xffffff, transparent: true, opacity: 0.85 }), snow: new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x2a3a4a, emissiveIntensity: 0.6 }), leaves: new THREE.MeshLambertMaterial({ color: 0xc8641e, emissive: 0x3a1a00, emissiveIntensity: 0.4 }), leafCols: [0xe0782a, 0xc23b22, 0xf2b134].map((c) => new THREE.MeshLambertMaterial({ color: c })) };
+function funItem(kind, lane, z) {
+  const g = new THREE.Group();
+  if (kind === "puddle") { const m = new THREE.Mesh(funGeo.puddle, funMat.puddle); m.rotation.x = -Math.PI / 2; m.scale.set(1, 1.6, 1); m.position.y = 0.025; g.add(m); }
+  else { const m = new THREE.Mesh(funGeo.mound, funMat[kind]); m.scale.set(1, 0.6, 1.1); g.add(m); if (kind === "leaves") for (let k = 0; k < 7; k++) { const l = new THREE.Mesh(funGeo.leaf, funMat.leafCols[k % 3]); l.position.set(rand(-0.45, 0.45), 0.3 + rand(0, 0.12), rand(-0.45, 0.45)); l.rotation.set(rand(-0.6, 0.6), rand(0, 3), rand(-0.6, 0.6)); g.add(l); } }
+  add("fun", g, LANES[lane], 0, z, { type: kind });
+}
+function funHit(it) {
+  const k = it.type; G.funs++; G.coins += 3; G.score += G.num * 3;
+  burst(it.x, 0.4, 0, k === "puddle" ? 0x7fb6ff : k === "snow" ? 0xffffff : 0xe07a24, 16); sfx.splash(k);
+  feedItem(k === "puddle" ? "💦" : k === "snow" ? "☃️" : "🍁", k === "puddle" ? "SPLASH!" : k === "snow" ? "SNOW BURST!" : "LEAF PILE!", "+3 coins", "coin");
+  if (G.funs >= 5) ach("splash");
 }
 
 /* ---------------- goals for each run ---------------- */
@@ -636,13 +698,13 @@ function renderTop(el) {
 }
 function chips() {
   const c = [];
-  if (G.shield) c.push("🧤"); if (P.medal > 0) c.push("🏅 " + Math.ceil(P.medal)); if (P.spray > 0) c.push("💨 " + Math.ceil(P.spray)); if (P.rocket > 0) c.push("🚀 " + Math.ceil(P.rocket));
+  if (G.shield) c.push("🧤"); if (P.rocket > 0) c.push("🚀 " + Math.ceil(P.rocket));
   if (P.magnet > 0) c.push("🏆 " + Math.ceil(P.magnet)); if (P.boots > 0) c.push("👟 " + Math.ceil(P.boots)); if (P.whistle > 0) c.push("📣"); if (ballFly) c.push("⚽");
   return c.join("   ");
 }
 function setHud() {
   $("hud-score").textContent = Math.floor(G.score).toLocaleString("en-GB");
-  $("hud-coins").textContent = G.coins; $("hud-dist").textContent = Math.floor(G.dist) + " m";
+  $("hud-coins").textContent = G.coins; $("hud-dist").textContent = SEASONS[seasonAt(G.dist) % 4].icon + " " + Math.floor(G.dist) + " m";
   $("hud-lives").textContent = "❤".repeat(G.lives) + "♡".repeat(Math.max(0, MAXL - G.lives));
   $("hud-mult").textContent = "#" + G.num;
   $("hud-power").textContent = chips();
@@ -652,8 +714,8 @@ function setHud() {
 let bestShown = false;
 function reset() {
   for (const it of items) scene.remove(it.mesh); items.length = 0; feedEl.innerHTML = "";
-  G.speed = 15; G.dist = 0; G.coins = 0; G.score = 0; G.lives = 4; G.t = 0; G.streak = 0; G.invuln = 0; G.shield = false; G.nextMile = 500; G.usedPower = 0; G.kicks = 0; G.noHit = true; G.jumps = G.slides = G.lanes = 0; G.achT = 0; jumpBuf = coyote = 0; newAch = []; landT = reachT = 0;
-  P.magnet = P.medal = P.spray = P.rocket = P.boots = P.whistle = 0; setGhost(false); ballFly = null; laneIdx = 1; px = 0; py = 0; vy = 0; sliding = 0; grounded = true; stumble = kickT = celeT = 0; act.t = 0; tempoBoost = 0;
+  G.speed = 15; G.dist = 0; G.coins = 0; G.score = 0; G.lives = 4; G.t = 0; G.streak = 0; G.invuln = 0; G.shield = false; G.nextMile = 500; G.usedPower = 0; G.kicks = 0; G.noHit = true; G.jumps = G.slides = G.lanes = 0; G.achT = 0; G.funs = 0; G.season = 0; wantSong = 0; songLap = 0; jumpBuf = coyote = 0; newAch = []; landT = reachT = 0;
+  P.magnet = P.rocket = P.boots = P.whistle = 0; ballFly = null; laneIdx = 1; px = 0; py = 0; vy = 0; sliding = 0; grounded = true; stumble = kickT = celeT = 0; act.t = 0; tempoBoost = 0;
   G.num = george.baseNum; G.maxNum = G.num; george.drawNumber(G.num);
   rng = G.daily ? seeded(seedOf("georges-run:" + todayUTC())) : Math.random; chunkNo = 0; G.continued = false; skyT = 0;
   safeChunks = 3; bestShown = false; spawnFront = -30; fillAhead(); applySky();
@@ -693,7 +755,7 @@ function update(dt) {
   if (!bestShown && SAVE.best > 0 && G.score > SAVE.best) { bestShown = true; feedItem("🏆", "NEW PERSONAL BEST!", "Keep going!", "big"); sfx.milestone(); burst(px, 1.6, 0, 0xffd84a, 14); }
   G.achT -= dt; if (G.achT <= 0) { G.achT = 0.3; const d = G.dist; if (d >= 100) ach("warmup"); if (d >= 500) ach("halftime"); if (d >= 1000) ach("fulltime"); if (d >= 2000) ach("extratime"); if (d >= 3000) ach("penalties"); if (G.noHit && d >= 300) ach("cleansheet"); if (G.num >= 15) ach("squad"); if (G.num >= 25) ach("legend"); if (G.num >= 50) ach("retired"); if (G.score >= 5000) ach("bigscore"); if (G.jumps >= 20) ach("acrobat"); if (G.slides >= 10) ach("slider"); if (G.lanes >= 30) ach("dribbler"); if (G.kicks >= 3) ach("freekick"); if (G.coins >= 100) ach("century"); }
   if (G.dist >= G.nextMile) { feedItem("📍", G.nextMile + " m!", "Keep going!", "big"); sfx.milestone(); celeT = 0.8; celeFlip = G.nextMile % 1000 === 0; if (celeFlip && G.lives < MAXL) { G.lives++; sfx.life(); feedItem("❤", "EXTRA LIFE!", "Reward for 1,000 m", "power"); } G.nextMile += 500; }
-  for (const k of ["magnet", "medal", "spray", "rocket", "boots", "whistle"]) if (P[k] > 0) { P[k] -= dt; if (P[k] <= 0) { P[k] = 0; if (k === "spray") setGhost(false); } }
+  for (const k of ["magnet", "rocket", "boots", "whistle"]) if (P[k] > 0) { P[k] -= dt; if (P[k] <= 0) P[k] = 0; }
   G.invuln = Math.max(0, G.invuln - dt);
   // George: lane, jump, slide
   px = lerp(px, LANES[laneIdx], 1 - Math.exp(-14 * dt));
@@ -733,8 +795,9 @@ function update(dt) {
       else if (across(1.0) && Math.abs(it.x - px) < 1.4 && Math.abs((it.baseY || 0.9) - (py + 0.9)) < 1.5) takeCoin(it);
     } else if (it.kind === "power" && !it.gone) {
       if (across(1.3) && Math.abs(it.x - px) < 1.4 && Math.abs(1.1 - (py + 0.9)) < 1.8) { it.gone = true; givePower(it.type); }
+    } else if (it.kind === "fun" && !it.gone && across(0.9) && Math.abs(it.x - px) < 1.1 && py < 0.6) { it.gone = true; funHit(it);
     } else if (it.kind === "obs" && !it.gone && across(it.type === "mower" ? 1.0 : 0.7) && Math.abs(it.x - px) < (it.type === "mower" ? 1.0 : 0.82)) {
-      const safe = P.spray > 0 || P.rocket > 0 || G.invuln > 0, standing = sliding <= 0;
+      const safe = P.rocket > 0 || G.invuln > 0, standing = sliding <= 0;
       const hit = it.type === "wall" ? py < 2.5 : it.type === "ref" ? py < 2.2 : it.type === "mower" ? py < 1.3 : (it.type === "barrier" || it.type === "def") ? py < 0.62 : (standing && py < 1.5);
       if (hit && !safe) hurt(it);
     }
@@ -746,10 +809,11 @@ function update(dt) {
   // rocket flames
   if (P.rocket > 0 && !reduced) { for (let k = 0; k < 2; k++) { const f = flame[flameIdx++ % flame.length]; f.m.position.set(px + rand(-0.15, 0.15), py + 0.7 + rand(-0.1, 0.1), 0.9); f.life = 0.35; f.m.visible = true; } }
   for (const f of flame) { if (f.life > 0) { f.life -= dt; f.m.position.z += (sp * 0.9) * dt; f.m.material.opacity = Math.max(0, f.life / 0.35); const sc = 0.6 + (1 - f.life / 0.35); f.m.scale.setScalar(sc); if (f.life <= 0) f.m.visible = false; } }
-  updateSparks(dt); updateFx();
+  updateSparks(dt); updateFx(); updateWeather(dt, sp);
+  { const sn = seasonAt(G.dist); if (sn !== G.season) { G.season = sn; announceSeason(sn); } }
   // the figure
   george.root.position.set(px, py, 0);
-  george.root.visible = !(G.invuln > 0 && P.spray <= 0 && Math.floor(clock * 14) % 2 === 0 && G.phase === "play" && stumble <= 0);
+  george.root.visible = !(G.invuln > 0 && Math.floor(clock * 14) % 2 === 0 && G.phase === "play" && stumble <= 0);
   george.blob.position.y = 0.03 - py; george.blob.scale.setScalar(clamp(1 - py * 0.12, 0.5, 1));
   george.root.rotation.z = (px - LANES[laneIdx]) * -0.07; george.root.rotation.y = Math.PI + clamp((px - LANES[laneIdx]) * 0.12, -0.35, 0.35);   // leans into a lane change
   bubble.visible = G.shield; if (G.shield) { bubble.position.set(px, py + 1, 0); const bs = 1 + Math.sin(clock * 5) * 0.04; bubble.scale.set(bs, bs, bs); }
@@ -852,11 +916,11 @@ function gameOver() {
 }
 function start(daily) {
   G.daily = !!daily;
-  audio(); paused = false; $("pause").hidden = true; $("btn-pause").textContent = "⏸"; reset(); G.phase = "play"; ach("kickoff");
+  audio(); paused = false; $("pause").hidden = true; $("btn-pause").textContent = "⏸"; reset(); G.phase = "play"; ach("kickoff"); announceSeason(0);
   $("screen-start").hidden = true; $("screen-end").hidden = true; $("screen-game").hidden = false;
   document.body.classList.add("gr-playing");          // the game fills the whole screen, so the score and hearts are always in view
   try { if (matchMedia("(pointer: coarse)").matches && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); } catch (e) {}
-  resize(); requestAnimationFrame(resize); renderTop($("hud-top")); startMusic(); feedItem(G.daily ? "📅" : "🏃", G.daily ? "DAILY CHALLENGE" : "GO GEORGE!", G.daily ? "Same pitch for everyone today" : "Swipe to move, jump and slide", "big");
+  resize(); requestAnimationFrame(resize); { const t = top3(); $("hud-best").textContent = t.length ? "🏆 Best " + t[0].s.toLocaleString("en-GB") : ""; } startMusic(); feedItem(G.daily ? "📅" : "🏃", G.daily ? "DAILY CHALLENGE" : "GO GEORGE!", G.daily ? "Same pitch for everyone today" : "Swipe to move, jump and slide", "big");
 }
 $("btn-start").addEventListener("click", () => start(false)); $("btn-daily").addEventListener("click", () => start(true)); $("btn-daily2").addEventListener("click", () => start(true));
 $("btn-again").addEventListener("click", () => start(G.daily));
@@ -866,4 +930,4 @@ $("btn-sound").addEventListener("click", () => { sfxOn = !sfxOn; try { localStor
 showMusic(); showDaily(); loadOnline("start"); renderAchList(); renderTop($("start-top")); newGoals(); resize();
 reset(); G.phase = "menu"; for (const it of items) scene.remove(it.mesh); items.length = 0; last = performance.now(); raf = requestAnimationFrame(frame);
 $("screen-game").hidden = true;
-window.__run = { G, P, items, referee, defender, mower, start, get layout() { return items.filter((i) => i.kind !== "coin" || true).slice(0, 40).map((i) => i.kind + ":" + (i.type || "") + ":" + i.x.toFixed(1) + ":" + Math.round(i.z)).join("|"); }, get george() { return george; }, hurt, givePower, camera, makeChunk, setGhost, kick: () => givePower("ball"), jump, slide, goLane, feedItem };
+window.__run = { G, P, items, funItem, get song() { return curSong; }, referee, defender, mower, start, get layout() { return items.filter((i) => i.kind !== "coin" || true).slice(0, 40).map((i) => i.kind + ":" + (i.type || "") + ":" + i.x.toFixed(1) + ":" + Math.round(i.z)).join("|"); }, get george() { return george; }, hurt, givePower, camera, makeChunk, kick: () => givePower("ball"), jump, slide, goLane, feedItem };
