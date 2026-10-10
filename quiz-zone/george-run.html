@@ -79,7 +79,7 @@
   .gr-ach i{font-style:normal;font-size:34px;line-height:1;} .gr-ach small{display:block;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;letter-spacing:.18em;color:#ffd84a;} .gr-ach b{display:block;font-family:'Rajdhani',sans-serif;font-size:21px;line-height:1.05;} .gr-ach em{display:block;font-style:normal;font-size:12px;color:#ffe9ec;}
   @keyframes grAch{0%{transform:translate(-50%,-90px);opacity:0;}10%{transform:translate(-50%,0);opacity:1;}88%{transform:translate(-50%,0);opacity:1;}100%{transform:translate(-50%,-90px);opacity:0;}}
   .gr-achlist{margin-top:14px;background:rgba(255,255,255,.05);border-radius:12px;padding:6px 12px;} .gr-achlist summary{cursor:pointer;min-height:40px;display:flex;align-items:center;gap:8px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;color:var(--gold);}
-  .gr-achlist ul{list-style:none;margin:6px 0 4px;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px;} .gr-achlist li{display:flex;gap:10px;align-items:center;background:rgba(255,255,255,.05);border-radius:10px;padding:6px 10px;opacity:.6;} .gr-achlist li.got{opacity:1;background:rgba(245,185,66,.12);} .gr-achlist li i{font-style:normal;font-size:22px;} .gr-achlist li b{display:block;font-size:14px;} .gr-achlist li small{display:block;font-size:12px;color:#b9b2ac;}
+  #ach-list{list-style:none;margin:6px 0 4px;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px;} #ach-list li{display:flex;gap:10px;align-items:center;background:rgba(255,255,255,.05);border-radius:10px;padding:6px 10px;opacity:.6;} #ach-list li.got{opacity:1;background:rgba(245,185,66,.12);} #ach-list li i{font-style:normal;font-size:22px;} #ach-list li b{display:block;font-size:14px;} #ach-list li small{display:block;font-size:12px;color:#b9b2ac;}
   .gr-feed{transition:transform .3s ease;} .gr-stage.ach-on .gr-feed{transform:translateY(74px);}
   .gr-top li.empty{display:block;font-size:15px;} .gr-top li.empty span{display:block;}
   .gr-pausebtn{position:absolute;right:10px;bottom:10px;z-index:7;width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.5);background:rgba(13,11,16,.6);color:#fff;font-size:18px;cursor:pointer;}
@@ -103,6 +103,11 @@
   .gr-season[hidden]{display:none;} .gr-season.show{animation:grSeason 2.9s ease-out forwards;}
   .gr-season small{display:block;font-size:15px;letter-spacing:.3em;color:#ffd84a;text-shadow:0 2px 0 rgba(0,0,0,.6);} .gr-season b{display:block;font-size:clamp(40px,12vw,70px);line-height:1;text-shadow:0 4px 0 #7a0d20,0 0 30px rgba(0,0,0,.6);} .gr-season em{display:block;font-style:normal;font-size:16px;margin-top:4px;text-shadow:0 2px 0 rgba(0,0,0,.7);}
   @keyframes grSeason{0%{opacity:0;transform:translate(-50%,-50%) scale(.6);}12%{opacity:1;transform:translate(-50%,-50%) scale(1.06);}20%{transform:translate(-50%,-50%) scale(1);}82%{opacity:1;}100%{opacity:0;transform:translate(-50%,-60%) scale(1);}}
+  .gr-how{margin-top:8px;} .gr-achlist .gr-toys{margin-bottom:8px;}
+  .gr-upg{list-style:none;margin:8px 0 4px;padding:0;display:grid;gap:6px;} .gr-upg li{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border-radius:12px;padding:6px 10px;} .gr-upg li i{font-style:normal;font-size:24px;} .gr-upg li span{flex:1;} .gr-upg li b{display:block;font-size:15px;} .gr-upg li small{display:block;font-size:12px;color:#b9b2ac;letter-spacing:.04em;} .gr-upg li em{font-style:normal;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--gold);}
+  .gr-upg li.gr-upg-coins{background:none;padding:0 2px;font-size:13px;color:#b9b2ac;} .gr-upg .gr-pill{min-height:40px;} .gr-upg .gr-pill:disabled{opacity:.45;cursor:not-allowed;}
+  .gr-hint{position:absolute;left:50%;bottom:20%;transform:translateX(-50%);z-index:5;pointer-events:none;background:rgba(13,11,16,.82);border:2px solid #ffd84a;border-radius:16px;padding:10px 16px;color:#fff;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;text-align:center;width:max-content;max-width:90%;}
+  .gr-hint[hidden]{display:none;} .gr-hint b{display:block;font-size:26px;color:#ffd84a;} .gr-hint.show{animation:grIn .25s ease-out;}
   .gr-bar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px;}
   @media (prefers-reduced-motion: reduce){.gr-pop.show{animation:none;opacity:1;}}
 </style>
@@ -147,40 +152,42 @@
   <section class="gr-card" id="screen-start">
     <p class="gr-kicker">Run. Jump. Collect.</p>
     <h2 class="gr-h2">The pitch never ends. Can George keep up?</h2>
-    <p class="gr-lede" id="start-lede">George runs and runs, and he gets faster and faster. Grab every coin, dodge the referee's cards and pick up football gear for super powers. Four lives, then it's over.</p>
+    <p class="gr-lede" id="start-lede">Run, jump and slide through four seasons at the City Ground. Grab the coins, dodge everything else. Four lives, then it's over.</p>
     <div class="gr-starts">
       <button class="btn-primary gr-go" id="btn-start" type="button">Start running</button>
       <button class="gr-daily" id="btn-daily" type="button"><b>📅 Daily challenge</b><small id="daily-best">Same pitch for everyone today</small></button>
     </div>
     <div class="gr-bar"><button class="gr-pill" id="btn-music" type="button">🎵 Music</button><button class="gr-pill" id="btn-sound" type="button">🔊 Sounds on</button></div>
+    <h3 class="gr-h3">🎯 This run's goals</h3>
+    <ul class="gr-missions" id="missions"></ul>
+    <h3 class="gr-h3">🏆 Top three on this device</h3>
+    <ol class="gr-top" id="start-top"></ol>
+    <details class="gr-achlist"><summary>📖 How to play</summary>
     <ul class="gr-how">
       <li><span class="gr-ico">👈👉</span><span><strong>Swipe left or right</strong> to change lane. (Arrow keys or A and D on a keyboard.)</span></li>
       <li><span class="gr-ico">👆</span><span><strong>Swipe up</strong> to jump over barriers. (Up arrow, W or Space.)</span></li>
       <li><span class="gr-ico">👇</span><span><strong>Swipe down</strong> to slide under bars. (Down arrow or S.)</span></li>
-      <li><span class="gr-ico">🗓️</span><span><strong>Four seasons, four songs.</strong> Every 800 m the season changes: summer, autumn, winter, spring. Run through leaf piles, snow piles and puddles for bonus coins.</span></li>
+      <li><span class="gr-ico">🗓️</span><span><strong>Four seasons, four songs.</strong> Every 800 m the season changes: summer, autumn, winter, spring. Jump the leaf piles, snow piles and puddles: they cost a life.</span></li>
       <li><span class="gr-ico">🔟</span><span><strong>Your shirt number is your coin value.</strong> Every coin is worth your number, so pick up number boosts. A card knocks it down by 5.</span></li>
     </ul>
-    <details class="gr-achlist"><summary>⚽ Power-ups and cards</summary>
     <ul class="gr-toys" aria-label="Football power-ups">
       <li><b>🟨 Yellow cards:</b> jump over them. <b>🟥 Red cards:</b> go round them.</li>
-      <li><b>⚽ Football:</b> kicked ahead, it picks up every coin in front of you.</li>
+      <li><b>⚽ Football:</b> George kicks it into a goal up the pitch, picking up every coin on the way.</li>
       <li><b>👟 Golden boots:</b> a sprint with double distance points.</li>
       <li><b>📣 Referee whistle:</b> play slows down.</li>
       <li><b>🧤 Keeper gloves:</b> a shield against one card.</li>
       <li><b>🏆 Golden trophy:</b> coins fly to you.</li>
       <li><b>🚀 Rocket boots:</b> fly over everything.</li>
       <li><b>🧣 Fan scarf:</b> an extra life.</li>
-      <li><b>#️⃣ Number badges:</b> +5, +10 or double your shirt number.</li>
+      <li><b>#️⃣ Number badges:</b> +5 or double your shirt number.</li>
       <li><b>🧑‍⚖️ Referee:</b> jogs across two lanes. Use the third one.</li>
       <li><b>🦵 Defender:</b> the red ! means he is about to slide in. Jump over him.</li>
       <li><b>🚜 Groundsman's mower:</b> drives towards you. Go round it.</li>
       <li><b>💪 Keep playing:</b> lost your last life? Once per run, spend 50 shop coins to carry on.</li>
-    </ul></details>
+    </ul>
+    </details>
+    <details class="gr-achlist"><summary>⬆️ Upgrades</summary><ul class="gr-upg" id="start-upg"></ul></details>
     <details class="gr-achlist"><summary>🏅 Achievements <span id="ach-count"></span></summary><ul id="ach-list"></ul></details>
-    <h3 class="gr-h3">🎯 This run's goals</h3>
-    <ul class="gr-missions" id="missions"></ul>
-    <h3 class="gr-h3">🏆 Top three on this device</h3>
-    <ol class="gr-top" id="start-top"></ol>
     <details class="gr-achlist"><summary>🌍 Online leaderboards</summary>
     <div class="gr-boards">
       <div><h3 class="gr-h3">🌍 Online · all time</h3><ol class="gr-top" id="start-online-all"><li class="empty"><span>Loading…</span></li></ol></div>
@@ -205,6 +212,7 @@
       <div class="gr-pause" id="pause" hidden><div><h2>Paused</h2><p>Take a breather, George.</p><button class="btn-primary" id="btn-resume" type="button">Keep running</button><br><button class="gr-pill gr-quit" id="btn-quit" type="button">End run</button></div></div>
       <div class="gr-pause" id="cont" hidden><div><h2>Keep playing?</h2><p>Spend 50 shop coins for one more life.<br>You have <b id="cont-have">0</b> 🪙</p><button class="btn-primary" id="btn-cont" type="button">Yes! (50 🪙)</button><br><button class="gr-pill gr-quit" id="btn-nocont" type="button">No thanks</button><p class="gr-count" id="cont-n" aria-live="polite">6</p></div></div>
       <div class="gr-flash" id="flash" aria-hidden="true"></div>
+      <div class="gr-hint" id="hint" hidden role="status"></div>
       <div class="gr-season" id="season" hidden aria-live="polite"><small id="season-n"></small><b id="season-name"></b><em id="season-sub"></em></div>
       <div class="gr-ach" id="ach-banner" hidden role="status"><i id="ach-ico">🏆</i><span><small>ACHIEVEMENT UNLOCKED</small><b id="ach-name"></b><em id="ach-text"></em></span></div>
       <div class="gr-power" id="hud-power" aria-live="polite"></div>
@@ -221,6 +229,8 @@
     <ul class="gr-prizes" id="end-ach"></ul>
     <ul class="gr-missions" id="end-missions"></ul>
     <ul class="gr-prizes" id="end-prizes"></ul>
+    <h3 class="gr-h3">⬆️ Upgrades</h3>
+    <ul class="gr-upg" id="end-upg"></ul>
     <div class="gr-starts">
       <button class="btn-primary gr-go" id="btn-again" type="button">Run again</button>
       <button class="gr-daily" id="btn-daily2" type="button"><b>📅 Daily challenge</b><small id="daily-best2">Same pitch for everyone today</small></button>
