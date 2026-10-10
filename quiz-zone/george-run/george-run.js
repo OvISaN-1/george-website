@@ -26,17 +26,11 @@ const writeJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); 
 
 /* ---------------- achievements (football themed, and nothing too hard) ---------------- */
 const ACH = [
-  ["kickoff", "⚽", "Kick-off", "Play your first run"], ["firsttouch", "🪙", "First Touch", "Collect a coin"], ["hattrick", "🎩", "Hat-trick", "Collect 3 coins in a row"],
-  ["fullteam", "👥", "Full Team", "Collect 11 coins without a card"], ["goldenboot", "👟", "Golden Boot", "Collect 25 coins without a card"], ["unplayable", "🔥", "Unplayable", "Collect 50 coins without a card"],
-  ["invincibles", "🛡️", "The Invincibles", "Collect 100 coins without a card"], ["century", "💯", "Century", "Collect 100 coins in one run"],
-  ["warmup", "🏃", "Warm-up", "Run 100 m"], ["halftime", "⏱️", "Half-time", "Run 500 m"], ["fulltime", "🔔", "Full Time", "Run 1,000 m"], ["extratime", "⏳", "Extra Time", "Run 2,000 m"], ["penalties", "🥅", "Penalty Shoot-out", "Run 3,000 m"],
-  ["topbins", "🥅", "Top Bins", "Kick the football"], ["freekick", "🎯", "Free-kick Specialist", "Kick the football 3 times in one run"],
-  ["fairplay", "📣", "Fair Play", "Use the referee whistle"], ["safehands", "🧤", "Safe Hands", "Use the keeper gloves"], ["bootroom", "👟", "Boot Room", "Use the golden boots"],
-  ["champions", "🏆", "Champions!", "Use the golden trophy"], ["moon", "🚀", "Out of This World", "Use the rocket boots"], ["fan", "🧣", "Fan Favourite", "Use the fan scarf"],
-  ["squad", "🔢", "Squad Number", "Get your shirt number to 15"], ["legend", "⭐", "Forest Legend", "Get your shirt number to 25"], ["retired", "🎖️", "Retired Number", "Get your shirt number to 50"],
-  ["cleansheet", "🧱", "Clean Sheet", "Run 300 m without a card"], ["acrobat", "🤸", "Bicycle Kick", "Jump 20 times in one run"], ["slider", "🛷", "Sliding Tackle", "Slide 10 times in one run"], ["dribbler", "💃", "Dribbler", "Change lane 30 times in one run"],
-  ["bigscore", "📈", "Man of the Match Score", "Score 5,000 points in one run"], ["season", "🎟️", "Season Ticket", "Play 5 runs"], ["clublegend", "🏟️", "Club Legend", "Play 25 runs"],
-  ["allseasons", "🗓️", "Four Seasons", "Reach spring in one run"], ["splash", "💦", "Splash Zone", "Run through 5 puddles, snow piles or leaf piles"],
+  ["kickoff", "⚽", "Kick-off", "Play your first run"], ["firsttouch", "🪙", "First Touch", "Collect a coin"],
+  ["fullteam", "👥", "Full Team", "Collect 11 coins without a card"], ["goldenboot", "👟", "Golden Boot", "Collect 25 coins without a card"], ["invincibles", "🛡️", "The Invincibles", "Collect 100 coins without a card"],
+  ["halftime", "⏱️", "Half-time", "Run 500 m"], ["fulltime", "🔔", "Full Time", "Run 1,000 m"], ["extratime", "⏳", "Extra Time", "Run 2,000 m"], ["allseasons", "🗓️", "Four Seasons", "Reach spring in one run"],
+  ["topbins", "🥅", "Top Bins", "Score a goal with the football"], ["safehands", "🧤", "Safe Hands", "Use the keeper gloves"], ["moon", "🚀", "Out of This World", "Use the rocket boots"],
+  ["legend", "⭐", "Forest Legend", "Get your shirt number to 25"], ["cleansheet", "🧱", "Clean Sheet", "Run 300 m without losing a life"], ["season", "🎟️", "Season Ticket", "Play 5 runs"],
 ];
 /* ---------------- renderer, scene, camera ---------------- */
 const stage = $("stage"), canvas = $("gl");
@@ -237,6 +231,7 @@ const sfx = {
   milestone() { if (sfxOn) [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.18, "triangle", 0.1, 0, i * 0.07)); },
   season() { if (sfxOn) { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.2, "triangle", 0.1, 0, i * 0.07)); noise(0.6, 0.12, 6000); } },
   splash(k) { if (sfxOn) { noise(0.3, 0.22, k === "puddle" ? 1800 : 900); tone(k === "snow" ? 900 : 600, 0.12, "sine", 0.06, 300); } },
+  goal() { if (sfxOn) { noise(1.6, 0.28, 1400); [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.25, "triangle", 0.09, 0, 0.1 + i * 0.08)); } },
   over() { if (sfxOn) [392, 330, 262].forEach((f, i) => tone(f, 0.3, "triangle", 0.12, 0, i * 0.18)); },
 };
 // The tune: a stadium stomp-and-clap beat, a chant-like tune, and more instruments joining in as George gets faster.
@@ -258,53 +253,115 @@ const SONGS = [
 ];
 let curSong = 0, wantSong = 0, songLap = 0;
 let musicOn = false, step = 0, nextT = 0, musicTimer = 0, tempoBoost = 0;
+// The mixing desk: everything goes through a gentle compressor; the tune gets an echo, and the pads and the crowd
+// get some stadium reverb. The pads duck a little on every kick, so the beat "pumps".
+let bus = null;
+function mixer() {
+  const a = audio(); if (!a) return null; if (bus) return bus;
+  const comp = a.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 3.5; comp.attack.value = 0.01; comp.release.value = 0.2; comp.connect(a.destination);
+  const main = a.createGain(); main.connect(comp);
+  const rev = a.createConvolver(), len = Math.floor(a.sampleRate * 2.2), ir = a.createBuffer(2, len, a.sampleRate);
+  for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let k = 0; k < len; k++) d[k] = (Math.random() * 2 - 1) * Math.pow(1 - k / len, 3); }
+  rev.buffer = ir; const revIn = a.createGain(), revOut = a.createGain(); revOut.gain.value = 0.3; revIn.connect(rev).connect(revOut).connect(comp);
+  const dly = a.createDelay(1), fb = a.createGain(), dlyOut = a.createGain(); fb.gain.value = 0.3; dlyOut.gain.value = 0.22; dly.connect(fb).connect(dly); dly.connect(dlyOut).connect(comp);
+  const pad = a.createGain(); pad.connect(main); pad.connect(revIn);
+  const lead = a.createGain(); lead.connect(main); lead.connect(dly); lead.connect(revIn);
+  const crowd = a.createGain(); crowd.connect(main); crowd.connect(revIn);
+  bus = { main, pad, lead, crowd, revIn, dly };
+  return bus;
+}
 function synth(f, t, dur, o) {
-  const a = audio(); if (!a) return;
-  const osc = a.createOscillator(), g = a.createGain(), flt = a.createBiquadFilter();
-  osc.type = o.type || "sawtooth"; osc.frequency.value = f; if (o.detune) osc.detune.value = o.detune;
-  flt.type = "lowpass"; flt.frequency.setValueAtTime(o.lp || 2500, a.currentTime + t);
-  if (o.sweep) flt.frequency.exponentialRampToValueAtTime(Math.max(120, o.lp * o.sweep), a.currentTime + t + dur);
+  const a = audio(), b = mixer(); if (!a || !b) return;
+  const t0 = a.currentTime + t, g = a.createGain(), flt = a.createBiquadFilter();
+  flt.type = "lowpass"; flt.frequency.setValueAtTime(o.lp || 2500, t0);
+  if (o.sweep) flt.frequency.exponentialRampToValueAtTime(Math.max(120, o.lp * o.sweep), t0 + dur);
   const at = o.a || 0.005, v = o.vol || 0.05;
-  g.gain.setValueAtTime(0.0001, a.currentTime + t); g.gain.linearRampToValueAtTime(v, a.currentTime + t + at); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t + dur);
-  osc.connect(flt).connect(g).connect(a.destination); osc.start(a.currentTime + t); osc.stop(a.currentTime + t + dur + 0.05);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(v, t0 + at); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  const oscs = [o.detune || 0].concat(o.thick ? [-(o.thick), o.thick] : []).map((dt) => { const osc = a.createOscillator(); osc.type = o.type || "sawtooth"; osc.frequency.value = f; osc.detune.value = dt; osc.connect(flt); osc.start(t0); osc.stop(t0 + dur + 0.05); return osc; });
+  if (o.vib) { const l = a.createOscillator(), lg = a.createGain(); l.frequency.value = 5.5; lg.gain.value = f * 0.006; l.connect(lg); oscs.forEach((x) => lg.connect(x.frequency)); l.start(t0 + 0.08); l.stop(t0 + dur + 0.05); }
+  flt.connect(g).connect(b[o.bus || "main"]);
 }
+// the terrace choir: a low "oh-oh" built from a buzzy note pushed through two vowel filters
+function choir(f, t, dur, vol) {
+  const a = audio(), b = mixer(); if (!a || !b) return;
+  const t0 = a.currentTime + t, g = a.createGain();
+  g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(vol, t0 + 0.08); g.gain.setValueAtTime(vol, t0 + dur * 0.7); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  for (const dt of [-12, 0, 9]) {
+    const osc = a.createOscillator(); osc.type = "sawtooth"; osc.frequency.value = f; osc.detune.value = dt;
+    for (const [fq, q] of [[650, 6], [1100, 8]]) { const bp = a.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = fq; bp.Q.value = q; osc.connect(bp).connect(g); }
+    osc.start(t0); osc.stop(t0 + dur + 0.05);
+  }
+  g.connect(b.crowd);
+}
+let noiseBuf = null;
 function drum(kind, t, vol) {
-  const a = audio(); if (!a) return;
-  if (kind === "kick") { const o = a.createOscillator(), g = a.createGain(); o.frequency.setValueAtTime(150, a.currentTime + t); o.frequency.exponentialRampToValueAtTime(42, a.currentTime + t + 0.13); g.gain.setValueAtTime(0.5 * vol, a.currentTime + t); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t + 0.2); o.connect(g).connect(a.destination); o.start(a.currentTime + t); o.stop(a.currentTime + t + 0.22); return; }
-  const n = Math.floor(a.sampleRate * (kind === "crash" ? 0.7 : 0.12)), buf = a.createBuffer(1, n, a.sampleRate), ch = buf.getChannelData(0);
-  for (let i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, kind === "crash" ? 1.4 : 2.4);
-  const s2 = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
-  s2.buffer = buf; f.type = kind === "hat" ? "highpass" : kind === "crash" ? "highpass" : "bandpass"; f.frequency.value = kind === "hat" ? 7500 : kind === "crash" ? 4500 : 1500;
-  g.gain.value = (kind === "hat" ? 0.12 : kind === "crash" ? 0.16 : 0.34) * vol; s2.connect(f).connect(g).connect(a.destination); s2.start(a.currentTime + t);
+  const a = audio(), b = mixer(); if (!a || !b) return;
+  const t0 = a.currentTime + t;
+  if (kind === "kick") {
+    const o = a.createOscillator(), g = a.createGain(); o.frequency.setValueAtTime(160, t0); o.frequency.exponentialRampToValueAtTime(40, t0 + 0.14);
+    g.gain.setValueAtTime(0.6 * vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.24); o.connect(g).connect(b.main); o.start(t0); o.stop(t0 + 0.26);
+    b.pad.gain.setValueAtTime(0.35, t0); b.pad.gain.linearRampToValueAtTime(1, t0 + 0.2);      // the pump
+    kind = "click"; vol *= 0.5;
+  }
+  if (!noiseBuf) { const n = a.sampleRate; noiseBuf = a.createBuffer(1, n, a.sampleRate); const ch = noiseBuf.getChannelData(0); for (let k = 0; k < n; k++) ch[k] = Math.random() * 2 - 1; }
+  const L = { click: 0.02, hat: 0.05, ohat: 0.22, clap: 0.18, snare: 0.2, crash: 1.1 }[kind] || 0.1;
+  const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(); src.buffer = noiseBuf;
+  f.type = kind === "snare" || kind === "clap" ? "bandpass" : "highpass"; f.frequency.value = { click: 3000, hat: 8000, ohat: 7000, clap: 1400, snare: 1900, crash: 5000 }[kind] || 2000;
+  const pk = { click: 0.2, hat: 0.11, ohat: 0.08, clap: 0.42, snare: 0.38, crash: 0.16 }[kind] * vol;
+  if (kind === "clap") { g.gain.setValueAtTime(0.0001, t0); for (const k of [0, 0.012, 0.024]) { g.gain.setValueAtTime(pk, t0 + k); g.gain.exponentialRampToValueAtTime(pk * 0.3, t0 + k + 0.01); } g.gain.exponentialRampToValueAtTime(0.0001, t0 + L); }
+  else { g.gain.setValueAtTime(pk, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + L); }
+  src.connect(f).connect(g).connect(kind === "clap" || kind === "snare" || kind === "crash" ? b.revIn : b.main); if (kind === "clap" || kind === "snare" || kind === "crash") g.connect(b.main);
+  src.start(t0, Math.random() * 0.5, L + 0.05);
+  if (kind === "snare") { const o = a.createOscillator(), g2 = a.createGain(); o.frequency.setValueAtTime(200, t0); o.frequency.exponentialRampToValueAtTime(140, t0 + 0.1); g2.gain.setValueAtTime(0.18 * vol, t0); g2.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.12); o.connect(g2).connect(b.main); o.start(t0); o.stop(t0 + 0.14); }
 }
+// Each song runs in 8-bar rounds: 4 bars of the tune, then 4 bars where the crowd sings the tune and the lead plays
+// a counter-melody, with a drum fill to finish. A new season's song opens with two bars of just drums and bass.
+let songStep = 0;
 function musicTick() {
-  const a = audio(); if (!a || !musicOn) return;
+  const a = audio(), b = mixer(); if (!a || !b || !musicOn) return;
   const vol = MVOL[musicLevel()]; if (!vol) { nextT = a.currentTime; return; }
+  b.main.gain.value = 1;
   const lvl = G.speed < 19 ? 0 : G.speed < 26 ? 1 : G.speed < 34 ? 2 : 3;
   while (nextT < a.currentTime + 0.18) {
     const t = nextT - a.currentTime;
-    if (step % 16 === 0 && curSong !== wantSong) { curSong = wantSong; step = 0; drum("crash", t, vol); }   // a new season starts its song on the next bar
+    if (step % 16 === 0 && curSong !== wantSong) { curSong = wantSong; step = 0; songStep = 0; drum("crash", t, vol); }   // a new season starts its song on the next bar
     const S = SONGS[curSong], sd = 60 / (S.bpm + tempoBoost * 0.7 + songLap * 6) / 4;
-    const i = step % 16, bar = Math.floor(step / 16) % 4, ch = S.chords[bar], root = S.roots[bar];
-    // drums: stomp, stomp, clap like the terraces; four on the floor from level 1
+    b.dly.delayTime.setValueAtTime(sd * 3, a.currentTime + t);
+    const i = step % 16, bar8 = Math.floor(step / 16) % 8, bar = bar8 % 4, B = bar8 >= 4, intro = songStep < 32, ch = S.chords[bar], root = S.roots[bar];
+    const fill = bar8 === 7 && i >= 12;
+    // drums
     if (i === 0 || i === 8 || (lvl >= 1 && (i === 4 || i === 12)) || (lvl >= 3 && i === 14)) drum("kick", t, vol * (S.bells ? 0.8 : 1));
-    if (i === 4 || i === 12 || (S.claps && lvl >= 1 && (i === 7 || i === 15))) drum("clap", t, vol * (i % 4 === 3 ? 0.6 : 1));
-    if (i % 4 === 2 || ((lvl >= 1 || S.bells) && i % 2 === 1)) drum("hat", t, vol * (i % 4 === 2 ? 1 : 0.6));
-    if (S.bells && i % 4 === 0) synth(NOTE(ch[(i / 4) % 3] + 24), t, sd * 3, { type: "sine", lp: 9000, vol: 0.035 * vol });     // sleigh bells
-    if (lvl >= 3 && i === 0 && bar % 2 === 0) drum("crash", t, vol);
-    // bass
-    if (S.bass.includes(i)) synth(NOTE(root + (S.oct.includes(i) ? 12 : 0)), t, sd * (S.bells ? 6 : 2.4), { type: S.bells ? "triangle" : "sawtooth", lp: 600, sweep: 0.4, vol: (S.bells ? 0.16 : 0.13) * vol });
+    if (fill) drum("snare", t, vol * (0.5 + (i - 12) * 0.15));
+    else {
+      if (i === 4 || i === 12 || (S.claps && lvl >= 1 && (i === 7 || i === 15))) drum("clap", t, vol * (i % 4 === 3 ? 0.6 : 1));
+      if (lvl >= 2 && (i === 4 || i === 12)) drum("snare", t, vol * 0.6);
+    }
+    if (i % 2 === 0 || lvl >= 1 || S.bells) drum(lvl >= 2 && i % 4 === 2 ? "ohat" : "hat", t, vol * (i % 4 === 2 ? 1 : 0.55));
+    if (S.bells && i % 4 === 0) synth(NOTE(ch[(i / 4) % 3] + 24), t, sd * 3, { type: "sine", lp: 9000, vol: 0.035 * vol, bus: "lead" });     // sleigh bells
+    if ((lvl >= 3 || B) && i === 0 && bar === 0) drum("crash", t, vol);
+    // bass, with a sine underneath for weight
+    if (S.bass.includes(i)) {
+      const n = NOTE(root + (S.oct.includes(i) ? 12 : 0)), len = sd * (S.bells ? 6 : 2.4);
+      synth(n, t, len, { type: S.bells ? "triangle" : "sawtooth", lp: 650, sweep: 0.4, vol: (S.bells ? 0.15 : 0.11) * vol });
+      synth(NOTE(root), t, len, { type: "sine", lp: 400, vol: 0.12 * vol });
+    }
     // chord pad
-    if ((lvl >= 1 || S.bells) && i === 0) for (const n of ch) { synth(NOTE(n), t, sd * 15, { type: S.pad, lp: 900, vol: 0.02 * vol, a: 0.25, detune: -7 }); synth(NOTE(n), t, sd * 15, { type: S.pad, lp: 900, vol: 0.02 * vol, a: 0.25, detune: 7 }); }
+    if ((lvl >= 1 || S.bells || B) && i === 0) for (const n of ch) synth(NOTE(n), t, sd * 15.5, { type: S.pad, lp: 1100, vol: 0.022 * vol, a: 0.3, thick: 9, bus: "pad" });
     // sparkly arpeggio
-    if (lvl >= 2 && i % 2 === 0) synth(NOTE(ch[(i / 2) % 3] + 12), t, sd * 1.6, { type: "triangle", lp: 4000, vol: 0.05 * vol });
-    // the tune
-    const m = S.mel[bar][i];
-    if (m) { synth(NOTE(m), t, sd * S.lead.len, { type: S.lead.type, lp: S.lead.lp, vol: S.lead.vol * vol, a: 0.01 }); if (lvl >= 3) synth(NOTE(m + 12), t, sd * 2, { type: "square", lp: 3500, vol: 0.02 * vol }); }
-    nextT += sd; step++;
+    if (lvl >= 2 && i % 2 === 0) synth(NOTE(ch[(i / 2) % 3] + 12), t, sd * 1.6, { type: "triangle", lp: 4000, vol: 0.04 * vol, bus: "lead" });
+    if (!intro) {
+      const m = S.mel[bar][i];
+      if (!B) {                                                     // the tune
+        if (m) { synth(NOTE(m), t, sd * S.lead.len, { type: S.lead.type, lp: S.lead.lp, vol: S.lead.vol * vol, a: 0.01, thick: 6, vib: true, bus: "lead" }); if (lvl >= 3) synth(NOTE(m + 12), t, sd * 2, { type: "square", lp: 3500, vol: 0.018 * vol, bus: "lead" }); }
+      } else {                                                      // the crowd sings it, the lead answers
+        if (m) choir(NOTE(m - 12), t, sd * 3, 0.05 * vol);
+        if (i % 4 === 2) synth(NOTE(ch[[0, 1, 2, 1][(i - 2) / 4]] + 12), t, sd * 1.5, { type: S.lead.type, lp: S.lead.lp * 0.9, vol: S.lead.vol * 0.7 * vol, a: 0.01, bus: "lead" });
+      }
+    }
+    nextT += sd; step++; songStep++;
   }
 }
-function startMusic() { const a = audio(); if (!a) return; if (a.state === "suspended") a.resume(); musicOn = true; nextT = a.currentTime + 0.05; step = 0; curSong = wantSong; clearInterval(musicTimer); musicTimer = setInterval(musicTick, 40); }
+function startMusic() { const a = audio(); if (!a) return; if (a.state === "suspended") a.resume(); musicOn = true; nextT = a.currentTime + 0.05; step = 0; songStep = 0; curSong = wantSong; mixer(); clearInterval(musicTimer); musicTimer = setInterval(musicTick, 40); }
 function stopMusic() { musicOn = false; clearInterval(musicTimer); }
 function cycleMusic() { const order = ["loud", "quiet", "off"], nx = order[(order.indexOf(musicLevel()) + 1) % 3]; try { localStorage.setItem(MKEY, nx); } catch (e) {} showMusic(); }
 function showMusic() { const l = musicLevel(); $("btn-music").textContent = "🎵 Music: " + (l === "loud" ? "Loud" : l === "quiet" ? "Quiet" : "Off"); }
@@ -369,7 +426,6 @@ const TOYS = {
   rocket: { name: "ROCKET BOOTS", sub: "Fly over everything", icon: "🚀", col: 0xe5384a },
   scarf: { name: "FAN SCARF", sub: "An extra life", icon: "🧣", col: 0xff4d6d },
   num5: { name: "SHIRT NUMBER +5", sub: "Every coin is worth more", icon: "#", col: 0x3ddc7c },
-  num10: { name: "SHIRT NUMBER +10", sub: "Big boost for every coin", icon: "#", col: 0x4aa8ff },
   numx2: { name: "NUMBER DOUBLE!", sub: "Your shirt number doubles", icon: "#", col: 0xb04dff },
 };
 const ballTex = canvasTex(64, 32, (g, w, h) => { g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); g.fillStyle = "#222"; for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(5 + i * 11, i % 2 ? 9 : 22, 4.5, 0, 7); g.fill(); } });
@@ -418,9 +474,9 @@ function referee(a, z) {                           // jogs back and forth across
   add("obs", g, (LANES[a] + LANES[a + 1]) / 2, 0, z, { type: "ref", laneA: a, t: R() * 6 });
 }
 function defender(lane, z) {                       // waits beside the pitch, then slides into the outside lane: jump over him
-  const side = lane === 0 ? -1 : 1, g = person(0x6cabdd, 0xffffff, 0x6cabdd); g.scale.setScalar(1.2);
+  const side = lane === 0 ? -1 : 1, g = person(0x6cabdd, 0xffffff, 0x6cabdd); g.scale.setScalar(1.2); g.rotation.order = "YXZ"; g.rotation.y = -side * Math.PI / 2;   // faces the middle of the pitch
   const w = new THREE.Sprite(new THREE.SpriteMaterial({ map: warnTex, depthTest: false })); w.scale.set(0.8, 0.8, 1); w.position.y = 2.6; g.add(w); g.userData.warn = w;
-  add("obs", g, side * 5.4, 0, z, { type: "def", lane, side, slideT: -1 });
+  add("obs", g, side * 6.2, 0, z, { type: "def", lane, side, slideT: -1 });
 }
 function mower(lane, z) {                          // a ride-on mower driving towards George: go round it
   const g = new THREE.Group(), M = (c) => new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 0.15 });
@@ -455,11 +511,12 @@ function makeChunk(z0) {
   const extra = R() < 0.5, extraLane = Math.floor(R() * 3);
   if (!special && d > 0.5 && extra) wall(extraLane, z0 - 30);
   // a pick-up now and then: at most one per stretch of road, so it never gets crowded
-  const give = R() < 0.5, bag = ["ball", "ball", "ball", "boots", "boots", "whistle", "whistle", "gloves", "gloves", "trophy", "trophy", "rocket", "rocket", "scarf", "num5", "num5", "num5", "num10", "numx2"];
+  const give = R() < 0.5, bag = ["ball", "ball", "ball", "boots", "boots", "whistle", "whistle", "gloves", "gloves", "trophy", "trophy", "rocket", "rocket", "scarf", "num5", "num5", "num5", "numx2"];
   const t = pR(bag), tl = Math.floor(R() * 3), tz = z0 - rR(10, 26);
   if (give && (t !== "scarf" || G.lives < MAXL)) toy(t, tl, tz);
   const funRoll = R(), funLane = Math.floor(R() * 3), funZ = z0 - rR(6, 30), fs = SEASONS[seasonAt(G.dist - funZ) % 4].fun;   // the season George will be in when he gets here
-  if (fs && !safe && funRoll < 0.55) funItem(fs, funLane, funZ);
+  // never right next to another obstacle in the same lane, so there is always a way through
+  if (fs && !safe && !special && funRoll < 0.55 && !items.some((o) => o.kind === "obs" && Math.abs(o.z - funZ) < 9 && Math.abs(o.x - LANES[funLane]) < 1.3)) funItem(fs, funLane, funZ);
 }
 function fillAhead() { while (spawnFront > -160) { makeChunk(spawnFront); spawnFront -= CHUNK; } }
 
@@ -500,17 +557,32 @@ function feedItem(icon, text, sub, cls) {
 function setNum(n) { G.num = clamp(Math.round(n), george.baseNum, 99); george.drawNumber(G.num); G.maxNum = Math.max(G.maxNum, G.num); }
 function setAct(type, dur) { act = { type, t: dur, dur }; }
 const AM = { ball: "topbins", boots: "bootroom", whistle: "fairplay", gloves: "safehands", trophy: "champions", rocket: "moon", scarf: "fan" };
+const UPG_KEY = "gz_run_upg_v1", UPG_COST = [40, 80, 140, 200], UPG_MAX = 4;
+const UPG = [{ id: "rocket", icon: "🚀", name: "Rocket boots", base: 4.5, step: 1 }, { id: "trophy", icon: "🏆", name: "Golden trophy", base: 10, step: 2.5 }, { id: "boots", icon: "👟", name: "Golden boots", base: 6, step: 1.5 }];
+const upgLevel = (id) => clamp(readJSON(UPG_KEY, {})[id] | 0, 0, UPG_MAX);
+const powerTime = (id) => { const u = UPG.find((x) => x.id === id); return u.base + u.step * upgLevel(id); };
+function shopCoins() { try { return window.GZR && GZR.ready ? GZR.coins() : 0; } catch (e) { return 0; } }
+function renderUpgrades() {
+  const coins = shopCoins();
+  for (const el of [$("start-upg"), $("end-upg")]) if (el) el.innerHTML = `<li class="gr-upg-coins">You have <b>${coins} 🪙</b> shop coins</li>` + UPG.map((u) => { const l = upgLevel(u.id), cost = UPG_COST[l];
+    return `<li><i>${u.icon}</i><span><b>${u.name}</b><small>Lasts ${powerTime(u.id)} s · ${"●".repeat(l)}${"○".repeat(UPG_MAX - l)}</small></span>${l >= UPG_MAX ? "<em>MAX</em>" : `<button class="gr-pill" type="button" data-upg="${u.id}"${coins >= cost ? "" : " disabled"}>${cost} 🪙</button>`}</li>`; }).join("");
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest && e.target.closest("[data-upg]"); if (!b) return;
+  const id = b.dataset.upg, l = upgLevel(id); if (l >= UPG_MAX || !window.GZR || !GZR.spend(UPG_COST[l])) return;
+  const u = readJSON(UPG_KEY, {}); u[id] = l + 1; writeJSON(UPG_KEY, u); audio(); sfx.power(); renderUpgrades();
+});
 function givePower(type) {
   const T = TOYS[type]; if (AM[type]) ach(AM[type]); G.usedPower++; sfx.power(); burst(px, 1.2, 0, T.col, 14);
   if (type === "ball") { feedItem(T.icon, T.name, T.sub, "power"); kickT = 0.45; G.kicks++; sfx.kick(); ballFly = { z: -1.5, t: 0, last: -1.5, got: 0 }; return; }
-  if (type === "boots") { P.boots = 6; setAct("flex", 0.6); }
+  if (type === "boots") { P.boots = powerTime("boots"); setAct("flex", 0.6); }
   else if (type === "whistle") { P.whistle = 3; setAct("whistle", 0.9); }
   else if (type === "gloves") { G.shield = true; setAct("gloves", 0.9); }
-  else if (type === "trophy") { P.magnet = 10; setAct("trophy", 0.9); }
-  else if (type === "rocket") { P.rocket = 4.5; }
-  else if (type === "scarf") { if (G.lives < MAXL) G.lives++; sfx.life(); setAct("cheer", 0.8); }
+  else if (type === "trophy") { P.magnet = powerTime("trophy"); setAct("trophy", 0.9); }
+  else if (type === "rocket") { P.rocket = powerTime("rocket"); }
+  else if (type === "scarf") { if (G.lives < MAXL) G.lives++; sfx.life(); setAct("cheer", 0.8); coachCheer(); }
   else {
-    const before = G.num; setNum(type === "num5" ? G.num + 5 : type === "num10" ? G.num + 10 : G.num * 2); setAct("flex", 0.8);
+    const before = G.num; setNum(type === "num5" ? G.num + 5 : G.num * 2); setAct("flex", 0.8);
     feedItem("#", "#" + before + " → #" + G.num, "Every coin is now worth " + G.num, "num"); return;
   }
   feedItem(T.icon, T.name, T.sub, "power");
@@ -620,9 +692,9 @@ function animate(dt) {
 const SEASON_M = 800;
 const SEASONS = [
   { name: "Summer", icon: "☀️", sky: 0x7db4ee, grass: 0x2f9a35, pitch: 0xffffff, hemi: 2.4, sun: 1.5, weather: null, fun: null, hint: "" },
-  { name: "Autumn", icon: "🍂", sky: 0xe7a06e, grass: 0x6e8a2c, pitch: 0xf3e7c4, hemi: 2.0, sun: 1.15, weather: "leaves", fun: "leaves", hint: "Run through the leaf piles!" },
-  { name: "Winter", icon: "❄️", sky: 0x101c3e, grass: 0x6f8f86, pitch: 0xdde9f2, hemi: 1.1, sun: 0.3, weather: "snow", fun: "snow", hint: "Burst the snow piles!" },
-  { name: "Spring", icon: "🌧️", sky: 0x8b9db0, grass: 0x3aa245, pitch: 0xffffff, hemi: 1.9, sun: 0.9, weather: "rain", fun: "puddle", hint: "Splash through the puddles!" },
+  { name: "Autumn", icon: "🍂", sky: 0xe7a06e, grass: 0x6e8a2c, pitch: 0xf3e7c4, hemi: 2.0, sun: 1.15, weather: "leaves", fun: "leaves", hint: "Jump the leaf piles!" },
+  { name: "Winter", icon: "❄️", sky: 0x101c3e, grass: 0x6f8f86, pitch: 0xdde9f2, hemi: 1.1, sun: 0.3, weather: "snow", fun: "snow", hint: "Jump the snow piles!" },
+  { name: "Spring", icon: "🌧️", sky: 0x8b9db0, grass: 0x3aa245, pitch: 0xffffff, hemi: 1.9, sun: 0.9, weather: "rain", fun: "puddle", hint: "Jump the puddles!" },
 ];
 const seasonAt = (m) => Math.floor(Math.max(0, m) / SEASON_M);
 const cA = new THREE.Color(), cB = new THREE.Color(), hemi = scene.children.find((o) => o.isHemisphereLight);
@@ -662,20 +734,14 @@ function announceSeason(n) {
   el.hidden = false; el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); clearTimeout(el._t); el._t = setTimeout(() => { el.hidden = true; }, 2900);
   if (n > 0) { sfx.season(); if (n >= 3) ach("allseasons"); }
 }
-// puddles, snow piles and leaf piles: run through them for a splash and 3 bonus coins (they never hurt)
+// puddles, snow piles and leaf piles: jump over them, or they cost a life
 const funGeo = { puddle: new THREE.CircleGeometry(0.8, 22), mound: new THREE.SphereGeometry(0.7, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), leaf: new THREE.BoxGeometry(0.22, 0.03, 0.14) };
 const funMat = { puddle: new THREE.MeshPhongMaterial({ color: 0x5f8fc0, shininess: 120, specular: 0xffffff, transparent: true, opacity: 0.85 }), snow: new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x2a3a4a, emissiveIntensity: 0.6 }), leaves: new THREE.MeshLambertMaterial({ color: 0xc8641e, emissive: 0x3a1a00, emissiveIntensity: 0.4 }), leafCols: [0xe0782a, 0xc23b22, 0xf2b134].map((c) => new THREE.MeshLambertMaterial({ color: c })) };
 function funItem(kind, lane, z) {
   const g = new THREE.Group();
   if (kind === "puddle") { const m = new THREE.Mesh(funGeo.puddle, funMat.puddle); m.rotation.x = -Math.PI / 2; m.scale.set(1, 1.6, 1); m.position.y = 0.025; g.add(m); }
   else { const m = new THREE.Mesh(funGeo.mound, funMat[kind]); m.scale.set(1, 0.6, 1.1); g.add(m); if (kind === "leaves") for (let k = 0; k < 7; k++) { const l = new THREE.Mesh(funGeo.leaf, funMat.leafCols[k % 3]); l.position.set(rand(-0.45, 0.45), 0.3 + rand(0, 0.12), rand(-0.45, 0.45)); l.rotation.set(rand(-0.6, 0.6), rand(0, 3), rand(-0.6, 0.6)); g.add(l); } }
-  add("fun", g, LANES[lane], 0, z, { type: kind });
-}
-function funHit(it) {
-  const k = it.type; G.funs++; G.coins += 3; G.score += G.num * 3;
-  burst(it.x, 0.4, 0, k === "puddle" ? 0x7fb6ff : k === "snow" ? 0xffffff : 0xe07a24, 16); sfx.splash(k);
-  feedItem(k === "puddle" ? "💦" : k === "snow" ? "☃️" : "🍁", k === "puddle" ? "SPLASH!" : k === "snow" ? "SNOW BURST!" : "LEAF PILE!", "+3 coins", "coin");
-  if (G.funs >= 5) ach("splash");
+  add("obs", g, LANES[lane], 0, z, { type: kind });
 }
 
 /* ---------------- goals for each run ---------------- */
@@ -714,8 +780,8 @@ function setHud() {
 let bestShown = false;
 function reset() {
   for (const it of items) scene.remove(it.mesh); items.length = 0; feedEl.innerHTML = "";
-  G.speed = 15; G.dist = 0; G.coins = 0; G.score = 0; G.lives = 4; G.t = 0; G.streak = 0; G.invuln = 0; G.shield = false; G.nextMile = 500; G.usedPower = 0; G.kicks = 0; G.noHit = true; G.jumps = G.slides = G.lanes = 0; G.achT = 0; G.funs = 0; G.season = 0; wantSong = 0; songLap = 0; jumpBuf = coyote = 0; newAch = []; landT = reachT = 0;
-  P.magnet = P.rocket = P.boots = P.whistle = 0; ballFly = null; laneIdx = 1; px = 0; py = 0; vy = 0; sliding = 0; grounded = true; stumble = kickT = celeT = 0; act.t = 0; tempoBoost = 0;
+  G.speed = 15; G.dist = 0; G.coins = 0; G.score = 0; G.lives = 4; G.t = 0; G.streak = 0; G.invuln = 0; G.shield = false; G.nextMile = 1000; G.usedPower = 0; G.kicks = 0; G.noHit = true; G.jumps = G.slides = G.lanes = 0; G.achT = 0; G.funs = 0; G.season = 0; wantSong = 0; songLap = 0; jumpBuf = coyote = 0; newAch = []; landT = reachT = 0;
+  P.magnet = P.rocket = P.boots = P.whistle = 0; ballFly = null; goalT = 0; goalGrp.visible = false; coach.visible = false; hintT = 0; $("hint").hidden = true; laneIdx = 1; px = 0; py = 0; vy = 0; sliding = 0; grounded = true; stumble = kickT = celeT = 0; act.t = 0; tempoBoost = 0;
   G.num = george.baseNum; G.maxNum = G.num; george.drawNumber(G.num);
   rng = G.daily ? seeded(seedOf("georges-run:" + todayUTC())) : Math.random; chunkNo = 0; G.continued = false; skyT = 0;
   safeChunks = 3; bestShown = false; spawnFront = -30; fillAhead(); applySky();
@@ -733,17 +799,30 @@ function acceptContinue() {
   if (!GZR.spend(CONT_COST)) { gameOver(); return; }
   G.continued = true; G.lives = 1; G.invuln = 3; stumble = 0;
   for (const it of items) if (it.kind === "obs" && !it.gone && it.z > -30) { it.gone = true; scene.remove(it.mesh); }
-  feedItem("💪", "BACK IN THE GAME!", CONT_COST + " shop coins spent", "power"); sfx.life();
+  feedItem("💪", "BACK IN THE GAME!", CONT_COST + " shop coins spent", "power"); sfx.life(); coachCheer();
 }
 function declineContinue() { if (!contOpen) return; closeCont(); paused = false; gameOver(); }
 $("btn-cont").addEventListener("click", acceptContinue); $("btn-nocont").addEventListener("click", declineContinue);
+const TOUCH = (() => { try { return matchMedia("(pointer: coarse)").matches; } catch (e) { return true; } })();
+const HINTS = {
+  barrier: [TOUCH ? "👆 Swipe UP" : "⬆️ Press UP", "to jump the yellow cards"], wall: [TOUCH ? "👈 👉 Swipe" : "⬅️ ➡️ Press", "to go round the red card"], bar: [TOUCH ? "👇 Swipe DOWN" : "⬇️ Press DOWN", "to slide under"],
+  ref: ["👈 👉", "use the lane the referee isn't in"], def: [TOUCH ? "👆 Swipe UP" : "⬆️ Press UP", "to jump the sliding defender"], mower: ["👈 👉", "go round the mower"],
+  puddle: [TOUCH ? "👆 Swipe UP" : "⬆️ Press UP", "to jump the puddles"], snow: [TOUCH ? "👆 Swipe UP" : "⬆️ Press UP", "to jump the snow piles"], leaves: [TOUCH ? "👆 Swipe UP" : "⬆️ Press UP", "to jump the leaf piles"],
+};
+let hintT = 0;
+function showHint(type) {
+  SAVE.hints = SAVE.hints || {}; SAVE.hints[type] = 1; writeJSON(RUN_KEY, SAVE);
+  const el = $("hint"), h = HINTS[type]; el.innerHTML = "<b>" + h[0] + "</b> " + h[1]; el.hidden = false; el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); hintT = 2.2;
+}
 function hurt(it) {
   if (G.phase !== "play" || G.invuln > 0) return;
   if (G.shield) { G.shield = false; G.invuln = 1.2; burst(px, 1.2, 0, 0x9fe3ff, 18); sfx.power(); feedItem("🧤", "SAVED!", "The gloves stopped the card", "power"); it.gone = true; scene.remove(it.mesh); return; }
   flash("hit"); G.lives--; try { if (navigator.vibrate) navigator.vibrate(G.lives <= 0 ? [90, 60, 180] : 120); } catch (e) {} G.noHit = false; G.invuln = 3; stumble = 0.9; G.streak = 0; shake = 0.5; G.speed = Math.max(14, G.speed * 0.78); sfx.hit(); burst(px, 1, 0, 0xff6b6b, 14);
   const was = G.num; setNum(Math.max(george.baseNum, G.num - 5));
   if (G.lives <= 0) { if (canContinue()) offerContinue(); else gameOver(); return; }
-  feedItem(it.type === "wall" ? "🟥" : it.type === "ref" ? "🧑‍⚖️" : it.type === "def" ? "🦵" : it.type === "mower" ? "🚜" : "🟨", it.type === "def" ? "TACKLED!" : it.type === "mower" ? "MOWED DOWN!" : "CARD!", G.lives + (G.lives === 1 ? " life left" : " lives left") + (G.num < was ? " · shirt number #" + G.num : ""), "bad");
+  const WX_HIT = { puddle: ["💦", "SPLASHED!", 0x7fb6ff], snow: ["☃️", "SNOWED UNDER!", 0xffffff], leaves: ["🍂", "LEAF PILE!", 0xe07a24] }[it.type];
+  if (WX_HIT) { burst(px, 0.4, 0, WX_HIT[2], 16); sfx.splash(it.type); }
+  feedItem(WX_HIT ? WX_HIT[0] : it.type === "wall" ? "🟥" : it.type === "ref" ? "🧑‍⚖️" : it.type === "def" ? "🦵" : it.type === "mower" ? "🚜" : "🟨", WX_HIT ? WX_HIT[1] : it.type === "def" ? "TACKLED!" : it.type === "mower" ? "MOWED DOWN!" : "CARD!", G.lives + (G.lives === 1 ? " life left" : " lives left") + (G.num < was ? " · shirt number #" + G.num : ""), "bad");
 }
 function update(dt) {
   G.t += dt;
@@ -754,7 +833,7 @@ function update(dt) {
   tempoBoost = Math.min(34, (G.speed - 15) * 1.2);
   if (!bestShown && SAVE.best > 0 && G.score > SAVE.best) { bestShown = true; feedItem("🏆", "NEW PERSONAL BEST!", "Keep going!", "big"); sfx.milestone(); burst(px, 1.6, 0, 0xffd84a, 14); }
   G.achT -= dt; if (G.achT <= 0) { G.achT = 0.3; const d = G.dist; if (d >= 100) ach("warmup"); if (d >= 500) ach("halftime"); if (d >= 1000) ach("fulltime"); if (d >= 2000) ach("extratime"); if (d >= 3000) ach("penalties"); if (G.noHit && d >= 300) ach("cleansheet"); if (G.num >= 15) ach("squad"); if (G.num >= 25) ach("legend"); if (G.num >= 50) ach("retired"); if (G.score >= 5000) ach("bigscore"); if (G.jumps >= 20) ach("acrobat"); if (G.slides >= 10) ach("slider"); if (G.lanes >= 30) ach("dribbler"); if (G.kicks >= 3) ach("freekick"); if (G.coins >= 100) ach("century"); }
-  if (G.dist >= G.nextMile) { feedItem("📍", G.nextMile + " m!", "Keep going!", "big"); sfx.milestone(); celeT = 0.8; celeFlip = G.nextMile % 1000 === 0; if (celeFlip && G.lives < MAXL) { G.lives++; sfx.life(); feedItem("❤", "EXTRA LIFE!", "Reward for 1,000 m", "power"); } G.nextMile += 500; }
+  if (G.dist >= G.nextMile) { sfx.milestone(); celeT = 0.8; celeFlip = true; if (G.lives < MAXL) { G.lives++; sfx.life(); feedItem("❤", "EXTRA LIFE!", "Reward for " + G.nextMile.toLocaleString("en-GB") + " m", "power"); coachCheer(); } G.nextMile += 1000; }
   for (const k of ["magnet", "rocket", "boots", "whistle"]) if (P[k] > 0) { P[k] -= dt; if (P[k] <= 0) P[k] = 0; }
   G.invuln = Math.max(0, G.invuln - dt);
   // George: lane, jump, slide
@@ -771,15 +850,29 @@ function update(dt) {
     skyT -= dt;
     if (skyT <= 0 && P.rocket > 72 / sp + 0.3) { skyT = 2.4 / sp; if (++skyN % 9 === 0) skyLane = clamp(skyLane + (Math.random() < 0.5 ? -1 : 1), 0, 2); coinAt(skyLane, 4.3, -72); }
   } else { skyLane = laneIdx; skyN = 0; }
-  if (ballFly) { ballFly.last = ballFly.z; ballFly.z -= (sp + 85) * dt; ballFly.t += dt; if (ballFly.z < -140) { feedItem("⚽", "BALL BONUS!", "+" + ballFly.got + " coins collected", "big"); ballFly = null; } }
+  if (ballFly) { ballFly.last = ballFly.z; ballFly.z -= (sp + 85) * dt; ballFly.t += dt; if (ballFly.z < -55) { showGoal(px, ballFly.z); feedItem("⚽", "GOAL!", "+" + ballFly.got + " coins collected", "big"); sfx.goal(); ach("topbins"); ballFly = null; } }
   for (let i = items.length - 1; i >= 0; i--) {
     const it = items[i], pz = it.z; it.z += (sp + (it.vz || 0)) * dt; it.mesh.position.z = it.z;
     const across = (w) => pz < w && it.z > -w;      // did it pass George since the last frame? (so nothing slips through on a slow phone)
+    if (it.kind === "obs" && hintT <= 0 && HINTS[it.type] && it.z > -28 && it.z < -12 && !(SAVE.hints && SAVE.hints[it.type])) showHint(it.type);
     if (it.kind === "obs" && it.type === "ref") { it.t += dt; const u = 0.5 - 0.5 * Math.cos(it.t * 1.7); it.x = lerp(LANES[it.laneA], LANES[it.laneA + 1], u); it.mesh.position.x = it.x; const lg = it.mesh.userData.legs; lg[0].rotation.x = Math.sin(it.t * 10) * 0.6; lg[1].rotation.x = -lg[0].rotation.x; it.mesh.userData.arms[0].rotation.x = -lg[0].rotation.x; }
     else if (it.kind === "obs" && it.type === "def") {
-      const wm = it.mesh.userData.warn; wm.visible = it.slideT < 0.3 && Math.floor(clock * 6) % 2 === 0;
-      if (it.slideT < 0 && it.z > -24) it.slideT = 0;
-      if (it.slideT >= 0 && it.slideT < 1) { it.slideT = Math.min(1, it.slideT + dt * 2.2); const u = 1 - Math.pow(1 - it.slideT, 3); it.x = lerp(it.side * 5.4, LANES[it.lane], u); it.mesh.position.x = it.x; it.mesh.rotation.z = it.side * 1.3 * u; it.mesh.position.y = 0.32 * u; const lg = it.mesh.userData.legs; lg[0].rotation.x = -0.6 * u; lg[1].rotation.x = 0.3 * u; }
+      const m = it.mesh, ud = m.userData, lg = ud.legs, ar = ud.arms;
+      ud.warn.visible = it.slideT < 0.4 && Math.floor(clock * 6) % 2 === 0;
+      if (it.slideT < 0 && it.z > -30) it.slideT = 0;
+      if (it.slideT >= 0 && it.slideT < 1) {
+        it.slideT = Math.min(1, it.slideT + dt * 1.7);
+        const run = clamp(it.slideT / 0.35, 0, 1), sl = clamp((it.slideT - 0.35) / 0.65, 0, 1), e = 1 - Math.pow(1 - sl, 3);
+        if (sl <= 0) {                                   // a few quick steps in from the touchline
+          it.x = lerp(it.side * 6.2, it.side * 4.6, run); const sw = Math.sin(clock * 18) * 0.9;
+          lg[0].rotation.x = sw; lg[1].rotation.x = -sw; ar[0].rotation.x = -sw; ar[1].rotation.x = sw; m.rotation.x = 0.25;
+        } else {                                         // then down on the grass, front leg out, back leg tucked, arm back for balance
+          it.x = lerp(it.side * 4.6, LANES[it.lane], e); m.rotation.x = 0.25 - 1.25 * e; m.position.y = -0.45 * e;
+          lg[0].rotation.x = -0.85 * e; lg[1].rotation.x = 0.55 * e; ar[0].rotation.x = 1.5 * e; ar[1].rotation.x = -0.4 * e; ar[1].rotation.z = 0.7 * e;
+          if (!reduced && sl < 0.9 && Math.random() < 0.7) burst(it.x, 0.1, it.z, 0x9fd58a, 1);
+        }
+        m.position.x = it.x;
+      }
     }
     else if (it.kind === "obs" && it.type === "mower") { it.mesh.children.forEach((c, k) => { if (k >= 2 && k <= 5) c.rotation.x += dt * 12; }); }
     if (it.spin) it.mesh.rotation.y += dt * 3.2; else if (it.kind === "power") it.mesh.rotation.y = Math.sin(clock * 2 + it.z) * 0.25;
@@ -795,10 +888,9 @@ function update(dt) {
       else if (across(1.0) && Math.abs(it.x - px) < 1.4 && Math.abs((it.baseY || 0.9) - (py + 0.9)) < 1.5) takeCoin(it);
     } else if (it.kind === "power" && !it.gone) {
       if (across(1.3) && Math.abs(it.x - px) < 1.4 && Math.abs(1.1 - (py + 0.9)) < 1.8) { it.gone = true; givePower(it.type); }
-    } else if (it.kind === "fun" && !it.gone && across(0.9) && Math.abs(it.x - px) < 1.1 && py < 0.6) { it.gone = true; funHit(it);
     } else if (it.kind === "obs" && !it.gone && across(it.type === "mower" ? 1.0 : 0.7) && Math.abs(it.x - px) < (it.type === "mower" ? 1.0 : 0.82)) {
       const safe = P.rocket > 0 || G.invuln > 0, standing = sliding <= 0;
-      const hit = it.type === "wall" ? py < 2.5 : it.type === "ref" ? py < 2.2 : it.type === "mower" ? py < 1.3 : (it.type === "barrier" || it.type === "def") ? py < 0.62 : (standing && py < 1.5);
+      const hit = it.type === "wall" ? py < 2.5 : it.type === "ref" ? py < 2.2 : it.type === "mower" ? py < 1.3 : (it.type === "puddle" || it.type === "snow" || it.type === "leaves") ? py < 0.5 : (it.type === "barrier" || it.type === "def") ? py < 0.62 : (standing && py < 1.5);
       if (hit && !safe) hurt(it);
     }
     if (it.gone && it.kind !== "obs") { scene.remove(it.mesh); items.splice(i, 1); continue; }
@@ -809,7 +901,7 @@ function update(dt) {
   // rocket flames
   if (P.rocket > 0 && !reduced) { for (let k = 0; k < 2; k++) { const f = flame[flameIdx++ % flame.length]; f.m.position.set(px + rand(-0.15, 0.15), py + 0.7 + rand(-0.1, 0.1), 0.9); f.life = 0.35; f.m.visible = true; } }
   for (const f of flame) { if (f.life > 0) { f.life -= dt; f.m.position.z += 5 * dt; f.m.position.y -= 0.6 * dt; f.m.material.opacity = Math.max(0, f.life / 0.35); const sc = 0.5 + 0.6 * (1 - f.life / 0.35); f.m.scale.setScalar(sc); if (f.life <= 0) f.m.visible = false; } }
-  updateSparks(dt); updateFx(); updateWeather(dt, sp);
+  updateSparks(dt); updateFx(); updateWeather(dt, sp); updateGoal(dt, sp); updateCoach(dt, sp);
   { const sn = seasonAt(G.dist); if (sn !== G.season) { G.season = sn; announceSeason(sn); } }
   // the figure
   george.root.position.set(px, py, 0);
@@ -820,6 +912,38 @@ function update(dt) {
 }
 const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 10), new THREE.MeshLambertMaterial({ map: ballTex, emissive: 0xffe9a8, emissiveIntensity: 0.4 })); ballMesh.visible = false; scene.add(ballMesh);
 
+// a goal fades in where the ball lands, the net bulges, then it fades away
+const goalGrp = new THREE.Group(), goalMats = []; goalGrp.visible = false; scene.add(goalGrp);
+{
+  const pm = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x777777, transparent: true }); goalMats.push(pm);
+  for (const x of [-2.4, 2.4]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 2.3, 10), pm); p.position.set(x, 1.15, 0); goalGrp.add(p); }
+  const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 4.9, 10), pm); bar.rotation.z = Math.PI / 2; bar.position.y = 2.3; goalGrp.add(bar);
+  const nm = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true }); goalMats.push(nm);
+  const net = new THREE.Group(), netBox = new THREE.Mesh(new THREE.BoxGeometry(4.8, 2.3, 1.6, 14, 7, 4), nm); netBox.position.set(0, 1.15, -0.8); net.add(netBox); goalGrp.add(net); goalGrp.userData.net = net;
+  const gb = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 10), new THREE.MeshLambertMaterial({ map: ballTex, transparent: true })); gb.position.set(0, 0.9, -1.2); goalGrp.add(gb); goalMats.push(gb.material);
+}
+let goalT = 0;
+function showGoal(x, z) { goalGrp.position.set(x, 0, z); goalGrp.scale.setScalar(1.3); goalGrp.visible = true; goalT = 1.8; }
+function updateGoal(dt, sp) {
+  if (goalT <= 0) return; goalT -= dt; goalGrp.position.z += sp * dt;
+  const a = 1.8 - goalT, op = clamp(a / 0.2, 0, 1) * clamp(goalT / 0.6, 0, 1);
+  goalGrp.userData.net.scale.z = 1 + 0.8 * Math.exp(-a * 3) * Math.abs(Math.sin(a * 12));
+  goalMats.forEach((m, i) => { m.opacity = op * (i === 1 ? 0.55 : 1); });
+  if (goalT <= 0) goalGrp.visible = false;
+}
+// the coach on the touchline, clapping when George earns a life
+const coach = person(0x1d2a44, 0x1d2a44, 0x1d2a44); coach.scale.setScalar(1.15); coach.visible = false; scene.add(coach);
+{
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0xd7102b })); cap.position.y = 1.9; coach.add(cap);
+  const say = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(256, 64, (g, w, h) => { g.fillStyle = "#fff"; if (g.roundRect) { g.beginPath(); g.roundRect(2, 2, w - 4, h - 4, 22); g.fill(); } else g.fillRect(2, 2, w - 4, h - 4); g.fillStyle = "#c8102e"; g.font = "700 30px Rajdhani, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("Well done, George!", w / 2, h / 2 + 2); }), depthTest: false }));
+  say.scale.set(2.2, 0.55, 1); say.position.y = 2.65; coach.add(say);
+}
+function coachCheer() { const sd = Math.random() < 0.5 ? -1 : 1; coach.position.set(sd * 6.4, 0, -40); coach.rotation.y = -sd * 0.6; coach.visible = true; }
+function updateCoach(dt, sp) {
+  if (!coach.visible) return; coach.position.z += sp * dt; if (coach.position.z > 6) { coach.visible = false; return; }
+  const c = 0.2 + 0.35 * Math.abs(Math.sin(clock * 14)), ar = coach.userData.arms;
+  ar[0].rotation.x = ar[1].rotation.x = -1.2; ar[0].rotation.z = c; ar[1].rotation.z = -c; coach.position.y = Math.abs(Math.sin(clock * 7)) * 0.08;
+}
 function cameraStep(dt) {
   const tx = px * 0.55, ty = (P.rocket > 0 ? 5.4 : 3.7) + py * 0.3, tz = 6.7;
   camPos.x = lerp(camPos.x, tx, 1 - Math.exp(-6 * dt)); camPos.y = lerp(camPos.y, ty, 1 - Math.exp(-4 * dt)); camPos.z = lerp(camPos.z, tz + clamp((G.speed - 15) * 0.05, 0, 1.4) + (P.boots > 0 ? 0.8 : 0), 1 - Math.exp(-3 * dt));
@@ -838,7 +962,8 @@ document.addEventListener("visibilitychange", () => { if (document.hidden) setPa
 function frame(now) {
   raf = requestAnimationFrame(frame);
   const dt = Math.min(0.05, (now - last) / 1000 || 0.016); last = now; if (paused) { renderer.render(scene, camera); return; } clock += dt;
-  if (G.phase === "play") update(P.whistle > 0 ? dt * 0.6 : dt);       // the referee's whistle slows the whole game down
+  if (hintT > 0) { hintT -= dt; if (hintT <= 0) $("hint").hidden = true; }
+  if (G.phase === "play") update((P.whistle > 0 ? dt * 0.6 : dt) * (hintT > 0 ? 0.45 : 1));   // a tip slows the game down for a moment       // the referee's whistle slows the whole game down
   else if (G.phase === "menu") { roadScroll += 10 * dt; scrollWorld(10 * dt); roadTex.offset.y = (roadScroll / 16) % 1; grassTex.offset.y = (roadScroll / 16) % 1; for (const t of trees) { t.position.z += 10 * dt; if (t.position.z > 14) t.position.z -= 228; } }
   animate(dt); cameraStep(dt);
   if (G.phase !== "over") setHud();
@@ -911,7 +1036,7 @@ function gameOver() {
     $("end-missions").innerHTML = done.map((d) => `<li class="${d.ok ? "ok" : ""}">${d.ok ? "✅" : "▫️"} ${d.m.text}${d.ok ? " <b>+10 🪙</b>" : ""}</li>`).join("");
     $("end-ach").innerHTML = newAch.map((a) => `<li>${a[1]} <b>${a[2]}</b> <small>${a[3]} · +5 🪙</small></li>`).join("");
     $("end-prizes").innerHTML = won.length ? won.map((p) => `<li>🎽 <b>New shirt unlocked: ${p.kit}!</b> <small>${p.text}. Wear it in My Player.</small></li>`).join("") : "";
-    renderTop($("end-top")); newGoals(); showDaily(); loadOnline("end");
+    renderTop($("end-top")); newGoals(); showDaily(); loadOnline("end"); renderUpgrades();
   }, 1100);
 }
 function start(daily) {
@@ -927,7 +1052,7 @@ $("btn-again").addEventListener("click", () => start(G.daily));
 $("btn-music").addEventListener("click", () => { cycleMusic(); audio(); });
 try { if (localStorage.getItem("gz_run_sfx") === "0") { sfxOn = false; $("btn-sound").textContent = "🔇 Sounds off"; } } catch (e) {}
 $("btn-sound").addEventListener("click", () => { sfxOn = !sfxOn; try { localStorage.setItem("gz_run_sfx", sfxOn ? "1" : "0"); } catch (e) {} $("btn-sound").textContent = sfxOn ? "🔊 Sounds on" : "🔇 Sounds off"; });
-showMusic(); showDaily(); loadOnline("start"); renderAchList(); renderTop($("start-top")); newGoals(); resize();
+showMusic(); showDaily(); renderUpgrades(); loadOnline("start"); renderAchList(); renderTop($("start-top")); newGoals(); resize();
 reset(); G.phase = "menu"; for (const it of items) scene.remove(it.mesh); items.length = 0; last = performance.now(); raf = requestAnimationFrame(frame);
 $("screen-game").hidden = true;
-window.__run = { G, P, items, funItem, get song() { return curSong; }, referee, defender, mower, start, get layout() { return items.filter((i) => i.kind !== "coin" || true).slice(0, 40).map((i) => i.kind + ":" + (i.type || "") + ":" + i.x.toFixed(1) + ":" + Math.round(i.z)).join("|"); }, get george() { return george; }, hurt, givePower, camera, makeChunk, kick: () => givePower("ball"), jump, slide, goLane, feedItem };
+window.__run = { G, P, items, showGoal, coachCheer, renderUpgrades, powerTime, funItem, get song() { return curSong; }, referee, defender, mower, start, get layout() { return items.filter((i) => i.kind !== "coin" || true).slice(0, 40).map((i) => i.kind + ":" + (i.type || "") + ":" + i.x.toFixed(1) + ":" + Math.round(i.z)).join("|"); }, get george() { return george; }, hurt, givePower, camera, makeChunk, kick: () => givePower("ball"), jump, slide, goLane, feedItem };
