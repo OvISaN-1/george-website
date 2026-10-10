@@ -36,6 +36,7 @@ const ACH = [
   ["squad", "🔢", "Squad Number", "Get your shirt number to 15"], ["legend", "⭐", "Forest Legend", "Get your shirt number to 25"], ["retired", "🎖️", "Retired Number", "Get your shirt number to 50"],
   ["cleansheet", "🧱", "Clean Sheet", "Run 300 m without a card"], ["acrobat", "🤸", "Bicycle Kick", "Jump 20 times in one run"], ["slider", "🛷", "Sliding Tackle", "Slide 10 times in one run"], ["dribbler", "💃", "Dribbler", "Change lane 30 times in one run"],
   ["bigscore", "📈", "Man of the Match Score", "Score 5,000 points in one run"], ["season", "🎟️", "Season Ticket", "Play 5 runs"], ["clublegend", "🏟️", "Club Legend", "Play 25 runs"],
+  ["allseasons", "🗓️", "Four Seasons", "Reach spring in one run"], ["splash", "💦", "Splash Zone", "Run through 5 puddles, snow piles or leaf piles"],
 ];
 /* ---------------- renderer, scene, camera ---------------- */
 const stage = $("stage"), canvas = $("gl");
@@ -234,15 +235,28 @@ const sfx = {
   kick() { if (sfxOn) { tone(160, 0.14, "triangle", 0.25, 60); noise(0.08, 0.15, 900); } },
   life() { if (sfxOn) [659, 880, 1175].forEach((f, i) => tone(f, 0.16, "sine", 0.1, 0, i * 0.08)); },
   milestone() { if (sfxOn) [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.18, "triangle", 0.1, 0, i * 0.07)); },
+  season() { if (sfxOn) { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.2, "triangle", 0.1, 0, i * 0.07)); noise(0.6, 0.12, 6000); } },
+  splash(k) { if (sfxOn) { noise(0.3, 0.22, k === "puddle" ? 1800 : 900); tone(k === "snow" ? 900 : 600, 0.12, "sine", 0.06, 300); } },
   over() { if (sfxOn) [392, 330, 262].forEach((f, i) => tone(f, 0.3, "triangle", 0.12, 0, i * 0.18)); },
 };
 // The tune: a stadium stomp-and-clap beat, a chant-like tune, and more instruments joining in as George gets faster.
 const NOTE = (n) => 440 * Math.pow(2, (n - 69) / 12);
-const CHORDS = [[57, 60, 64], [53, 57, 60], [60, 64, 67], [55, 59, 62]], ROOTS = [45, 41, 48, 43];                  // A minor, F, C, G
-const MELODY = [
-  [76, 0, 0, 76, 79, 0, 81, 0, 79, 0, 76, 0, 74, 0, 76, 0], [77, 0, 0, 77, 81, 0, 84, 0, 81, 0, 77, 0, 76, 0, 77, 0],
-  [76, 0, 0, 76, 79, 0, 84, 0, 83, 0, 79, 0, 76, 0, 79, 0], [74, 0, 0, 74, 79, 0, 83, 0, 81, 0, 79, 0, 74, 0, 0, 0],
+// One song per season. Each has its own key, speed and instruments, and gets busier as George speeds up.
+const SONGS = [
+  { name: "Sunshine Stomp", bpm: 122, chords: [[60, 64, 67], [55, 59, 62], [57, 60, 64], [53, 57, 60]], roots: [48, 43, 45, 41],
+    mel: [[72, 0, 76, 0, 79, 0, 76, 0, 77, 0, 76, 0, 74, 0, 72, 0], [71, 0, 74, 0, 79, 0, 74, 0, 76, 0, 74, 0, 71, 0, 67, 0], [72, 0, 76, 0, 81, 0, 79, 0, 76, 0, 72, 0, 76, 0, 79, 0], [77, 0, 76, 0, 74, 0, 72, 0, 74, 0, 0, 0, 72, 0, 0, 0]],
+    lead: { type: "square", lp: 3200, len: 1.8, vol: 0.045 }, bass: [0, 3, 6, 8, 11, 14], oct: [6, 14], pad: "triangle" },
+  { name: "Autumn Chant", bpm: 112, chords: [[57, 60, 64], [53, 57, 60], [60, 64, 67], [55, 59, 62]], roots: [45, 41, 48, 43],
+    mel: [[76, 0, 0, 76, 79, 0, 81, 0, 79, 0, 76, 0, 74, 0, 76, 0], [77, 0, 0, 77, 81, 0, 84, 0, 81, 0, 77, 0, 76, 0, 77, 0], [76, 0, 0, 76, 79, 0, 84, 0, 83, 0, 79, 0, 76, 0, 79, 0], [74, 0, 0, 74, 79, 0, 83, 0, 81, 0, 79, 0, 74, 0, 0, 0]],
+    lead: { type: "sawtooth", lp: 2600, len: 2.2, vol: 0.055 }, bass: [0, 3, 6, 8, 10, 13, 14], oct: [3, 10, 13], pad: "sawtooth" },
+  { name: "Boxing Day Bells", bpm: 106, chords: [[62, 66, 69], [59, 62, 66], [55, 59, 62], [57, 61, 64]], roots: [38, 35, 43, 45],
+    mel: [[74, 0, 78, 0, 81, 0, 78, 0, 86, 0, 0, 0, 81, 0, 0, 0], [83, 0, 81, 0, 78, 0, 74, 0, 78, 0, 0, 0, 0, 0, 0, 0], [79, 0, 83, 0, 86, 0, 83, 0, 81, 0, 79, 0, 78, 0, 79, 0], [81, 0, 0, 0, 76, 0, 79, 0, 78, 0, 0, 0, 76, 0, 0, 0]],
+    lead: { type: "triangle", lp: 6000, len: 3, vol: 0.09 }, bass: [0, 8], oct: [8], pad: "triangle", bells: true },
+  { name: "Spring Shower", bpm: 128, chords: [[64, 67, 71], [60, 64, 67], [55, 59, 62], [62, 66, 69]], roots: [40, 36, 43, 38],
+    mel: [[76, 0, 79, 0, 83, 0, 79, 0, 81, 0, 79, 0, 76, 0, 74, 0], [72, 0, 76, 0, 79, 0, 76, 0, 77, 0, 76, 0, 72, 0, 71, 0], [74, 0, 79, 0, 83, 0, 86, 0, 83, 0, 79, 0, 74, 0, 79, 0], [78, 0, 81, 0, 78, 0, 74, 0, 76, 0, 0, 0, 0, 0, 0, 0]],
+    lead: { type: "square", lp: 2400, len: 1.1, vol: 0.05 }, bass: [0, 2, 4, 6, 8, 10, 12, 14], oct: [2, 6, 10, 14], pad: "sawtooth", claps: true },
 ];
+let curSong = 0, wantSong = 0, songLap = 0;
 let musicOn = false, step = 0, nextT = 0, musicTimer = 0, tempoBoost = 0;
 function synth(f, t, dur, o) {
   const a = audio(); if (!a) return;
@@ -267,27 +281,30 @@ function musicTick() {
   const a = audio(); if (!a || !musicOn) return;
   const vol = MVOL[musicLevel()]; if (!vol) { nextT = a.currentTime; return; }
   const lvl = G.speed < 19 ? 0 : G.speed < 26 ? 1 : G.speed < 34 ? 2 : 3;
-  const sd = 60 / (116 + tempoBoost) / 4;
   while (nextT < a.currentTime + 0.18) {
-    const t = nextT - a.currentTime, i = step % 16, bar = Math.floor(step / 16) % 4, ch = CHORDS[bar], root = ROOTS[bar];
+    const t = nextT - a.currentTime;
+    if (step % 16 === 0 && curSong !== wantSong) { curSong = wantSong; step = 0; drum("crash", t, vol); }   // a new season starts its song on the next bar
+    const S = SONGS[curSong], sd = 60 / (S.bpm + tempoBoost * 0.7 + songLap * 6) / 4;
+    const i = step % 16, bar = Math.floor(step / 16) % 4, ch = S.chords[bar], root = S.roots[bar];
     // drums: stomp, stomp, clap like the terraces; four on the floor from level 1
-    if (i === 0 || i === 8 || (lvl >= 1 && (i === 4 || i === 12)) || (lvl >= 3 && i === 14)) drum("kick", t, vol);
-    if (i === 4 || i === 12) drum("clap", t, vol);
-    if (i % 4 === 2 || (lvl >= 1 && i % 2 === 1)) drum("hat", t, vol * (i % 4 === 2 ? 1 : 0.6));
+    if (i === 0 || i === 8 || (lvl >= 1 && (i === 4 || i === 12)) || (lvl >= 3 && i === 14)) drum("kick", t, vol * (S.bells ? 0.8 : 1));
+    if (i === 4 || i === 12 || (S.claps && lvl >= 1 && (i === 7 || i === 15))) drum("clap", t, vol * (i % 4 === 3 ? 0.6 : 1));
+    if (i % 4 === 2 || ((lvl >= 1 || S.bells) && i % 2 === 1)) drum("hat", t, vol * (i % 4 === 2 ? 1 : 0.6));
+    if (S.bells && i % 4 === 0) synth(NOTE(ch[(i / 4) % 3] + 24), t, sd * 3, { type: "sine", lp: 9000, vol: 0.035 * vol });     // sleigh bells
     if (lvl >= 3 && i === 0 && bar % 2 === 0) drum("crash", t, vol);
-    // bass: root and octave bounce
-    if (i === 0 || i === 6 || i === 8 || i === 14) synth(NOTE(root + (i === 6 || i === 14 ? 12 : 0)), t, sd * 2.4, { type: "sawtooth", lp: 600, sweep: 0.4, vol: 0.13 * vol });
-    // warm chord pad
-    if (lvl >= 1 && i === 0) for (const n of ch) { synth(NOTE(n), t, sd * 15, { type: "sawtooth", lp: 900, vol: 0.02 * vol, a: 0.25, detune: -7 }); synth(NOTE(n), t, sd * 15, { type: "sawtooth", lp: 900, vol: 0.02 * vol, a: 0.25, detune: 7 }); }
+    // bass
+    if (S.bass.includes(i)) synth(NOTE(root + (S.oct.includes(i) ? 12 : 0)), t, sd * (S.bells ? 6 : 2.4), { type: S.bells ? "triangle" : "sawtooth", lp: 600, sweep: 0.4, vol: (S.bells ? 0.16 : 0.13) * vol });
+    // chord pad
+    if ((lvl >= 1 || S.bells) && i === 0) for (const n of ch) { synth(NOTE(n), t, sd * 15, { type: S.pad, lp: 900, vol: 0.02 * vol, a: 0.25, detune: -7 }); synth(NOTE(n), t, sd * 15, { type: S.pad, lp: 900, vol: 0.02 * vol, a: 0.25, detune: 7 }); }
     // sparkly arpeggio
     if (lvl >= 2 && i % 2 === 0) synth(NOTE(ch[(i / 2) % 3] + 12), t, sd * 1.6, { type: "triangle", lp: 4000, vol: 0.05 * vol });
     // the tune
-    const m = MELODY[bar][i];
-    if (m) { synth(NOTE(m), t, sd * 2.2, { type: "sawtooth", lp: 2800, vol: 0.06 * vol, a: 0.01 }); if (lvl >= 3) synth(NOTE(m + 12), t, sd * 2, { type: "square", lp: 3500, vol: 0.02 * vol }); }
+    const m = S.mel[bar][i];
+    if (m) { synth(NOTE(m), t, sd * S.lead.len, { type: S.lead.type, lp: S.lead.lp, vol: S.lead.vol * vol, a: 0.01 }); if (lvl >= 3) synth(NOTE(m + 12), t, sd * 2, { type: "square", lp: 3500, vol: 0.02 * vol }); }
     nextT += sd; step++;
   }
 }
-function startMusic() { const a = audio(); if (!a) return; if (a.state === "suspended") a.resume(); musicOn = true; nextT = a.currentTime + 0.05; step = 0; clearInterval(musicTimer); musicTimer = setInterval(musicTick, 40); }
+function startMusic() { const a = audio(); if (!a) return; if (a.state === "suspended") a.resume(); musicOn = true; nextT = a.currentTime + 0.05; step = 0; curSong = wantSong; clearInterval(musicTimer); musicTimer = setInterval(musicTick, 40); }
 function stopMusic() { musicOn = false; clearInterval(musicTimer); }
 function cycleMusic() { const order = ["loud", "quiet", "off"], nx = order[(order.indexOf(musicLevel()) + 1) % 3]; try { localStorage.setItem(MKEY, nx); } catch (e) {} showMusic(); }
 function showMusic() { const l = musicLevel(); $("btn-music").textContent = "🎵 Music: " + (l === "loud" ? "Loud" : l === "quiet" ? "Quiet" : "Off"); }
@@ -441,6 +458,8 @@ function makeChunk(z0) {
   const give = R() < 0.5, bag = ["ball", "ball", "ball", "boots", "boots", "whistle", "whistle", "gloves", "gloves", "trophy", "trophy", "rocket", "rocket", "scarf", "num5", "num5", "num5", "num10", "numx2"];
   const t = pR(bag), tl = Math.floor(R() * 3), tz = z0 - rR(10, 26);
   if (give && (t !== "scarf" || G.lives < MAXL)) toy(t, tl, tz);
+  const funRoll = R(), funLane = Math.floor(R() * 3), funZ = z0 - rR(6, 30), fs = SEASONS[seasonAt(G.dist - funZ) % 4].fun;   // the season George will be in when he gets here
+  if (fs && !safe && funRoll < 0.55) funItem(fs, funLane, funZ);
 }
 function fillAhead() { while (spawnFront > -160) { makeChunk(spawnFront); spawnFront -= CHUNK; } }
 
@@ -597,19 +616,66 @@ function animate(dt) {
   if (!run) { g.body.rotation.set(1.1, 0, 0); g.body.position.y = -0.4; g.legL.rotation.x = g.legR.rotation.x = 0.4; g.armL.rotation.z = -1.1; g.armR.rotation.z = 1.1; g.armL.rotation.x = g.armR.rotation.x = -0.3; }
 }
 
-/* ---------------- sky: day, sunset, night and back again ---------------- */
-const SKYS = [[0x7db4ee, 0x2f9a35, 2.4, 1.5], [0x7db4ee, 0x2f9a35, 2.4, 1.5], [0xea9a6e, 0x2a8a30, 1.9, 1.1], [0x0f1b40, 0x14451c, 1.0, 0.25], [0x0f1b40, 0x14451c, 1.0, 0.25], [0x9ec5f0, 0x2f9a35, 2.2, 1.3]];
-const STOPS = [0, 0.3, 0.45, 0.6, 0.82, 0.93];
+/* ---------------- seasons: every 800 m a new season, with its own sky, pitch, weather and song ---------------- */
+const SEASON_M = 800;
+const SEASONS = [
+  { name: "Summer", icon: "☀️", sky: 0x7db4ee, grass: 0x2f9a35, pitch: 0xffffff, hemi: 2.4, sun: 1.5, weather: null, fun: null, hint: "" },
+  { name: "Autumn", icon: "🍂", sky: 0xe7a06e, grass: 0x6e8a2c, pitch: 0xf3e7c4, hemi: 2.0, sun: 1.15, weather: "leaves", fun: "leaves", hint: "Run through the leaf piles!" },
+  { name: "Winter", icon: "❄️", sky: 0x101c3e, grass: 0x6f8f86, pitch: 0xdde9f2, hemi: 1.1, sun: 0.3, weather: "snow", fun: "snow", hint: "Burst the snow piles!" },
+  { name: "Spring", icon: "🌧️", sky: 0x8b9db0, grass: 0x3aa245, pitch: 0xffffff, hemi: 1.9, sun: 0.9, weather: "rain", fun: "puddle", hint: "Splash through the puddles!" },
+];
+const seasonAt = (m) => Math.floor(Math.max(0, m) / SEASON_M);
 const cA = new THREE.Color(), cB = new THREE.Color(), hemi = scene.children.find((o) => o.isHemisphereLight);
+let wType = null, wK = 0;
 function applySky() {
-  const f = (G.dist / 2400) % 1; let k = STOPS.length - 1; for (let i = 0; i < STOPS.length - 1; i++) if (f >= STOPS[i] && f < STOPS[i + 1]) { k = i; break; }
-  const a = SKYS[k], b = SKYS[(k + 1) % SKYS.length], lo = STOPS[k], hi = k === STOPS.length - 1 ? 1 : STOPS[k + 1], t = clamp((f - lo) / (hi - lo), 0, 1);
-  cA.set(a[0]); cB.set(b[0]); cA.lerp(cB, t); scene.background.copy(cA); scene.fog.color.copy(cA);
-  cA.set(a[1]); cB.set(b[1]); cA.lerp(cB, t); ground.material.color.copy(cA);
-  if (hemi) hemi.intensity = lerp(a[2], b[2], t); sun.intensity = lerp(a[3], b[3], t);
-  const dayK = clamp(((hemi ? hemi.intensity : 2.4) - 1.0) / 1.4, 0, 1);
-  for (const m of crowdMats) m.color.setScalar(0.4 + 0.6 * dayK); for (const m of boardMats) m.color.setScalar(0.5 + 0.5 * dayK); road.material.color.setScalar(0.55 + 0.45 * dayK);
+  const n = seasonAt(G.dist), cur = SEASONS[n % 4], prev = n > 0 ? SEASONS[(n + 3) % 4] : cur, t = clamp((G.dist - n * SEASON_M) / 70, 0, 1);   // blend over the first 70 m
+  cA.set(prev.sky); cB.set(cur.sky); cA.lerp(cB, t); scene.background.copy(cA); scene.fog.color.copy(cA);
+  cA.set(prev.grass); cB.set(cur.grass); cA.lerp(cB, t); ground.material.color.copy(cA);
+  const hi = lerp(prev.hemi, cur.hemi, t); if (hemi) hemi.intensity = hi; sun.intensity = lerp(prev.sun, cur.sun, t);
+  const dayK = clamp((hi - 1.0) / 1.4, 0, 1);
+  for (const m of crowdMats) m.color.setScalar(0.4 + 0.6 * dayK); for (const m of boardMats) m.color.setScalar(0.5 + 0.5 * dayK);
+  cA.set(prev.pitch); cB.set(cur.pitch); cA.lerp(cB, t).multiplyScalar(0.55 + 0.45 * dayK); road.material.color.copy(cA);
   lampMat.color.setRGB(1, 0.85 + 0.15 * (1 - dayK), 0.6 + 0.3 * (1 - dayK)); lampMat.color.multiplyScalar(0.55 + 0.45 * (1 - dayK) * 1.2);
+  if (prev.weather !== cur.weather && t < 0.5) { wType = prev.weather; wK = 1 - 2 * t; } else { wType = cur.weather; wK = prev.weather === cur.weather ? 1 : clamp(2 * t - 1, 0, 1); }
+}
+// falling leaves, snow and rain
+const WN = 260, wPos = new Float32Array(WN * 3), wGeo = new THREE.BufferGeometry(); wGeo.setAttribute("position", new THREE.BufferAttribute(wPos, 3));
+for (let i = 0; i < WN; i++) { wPos[i * 3] = rand(-16, 16); wPos[i * 3 + 1] = rand(0, 14); wPos[i * 3 + 2] = rand(-70, 8); }
+const dotTex = canvasTex(32, 32, (g) => { const gr = g.createRadialGradient(16, 16, 0, 16, 16, 15); gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = gr; g.fillRect(0, 0, 32, 32); });
+const wMat = new THREE.PointsMaterial({ map: dotTex, transparent: true, depthWrite: false, size: 0.2, color: 0xffffff, opacity: 0 });
+const weather = new THREE.Points(wGeo, wMat); weather.frustumCulled = false; weather.visible = false; scene.add(weather);
+const WX = { leaves: { col: 0xe0782a, size: 0.34, fall: 1.4, sway: 1.4, op: 0.95 }, snow: { col: 0xffffff, size: 0.22, fall: 2.2, sway: 0.6, op: 0.95 }, rain: { col: 0xd6e6ff, size: 0.15, fall: 16, sway: 0, op: 0.9 } };
+function updateWeather(dt, sp) {
+  const w = WX[wType]; weather.visible = !!w && wK > 0.02 && !reduced; if (!weather.visible) return;
+  wMat.color.setHex(w.col); wMat.size = w.size; wMat.opacity = wK * w.op;
+  for (let i = 0; i < WN; i++) {
+    const j = i * 3; wPos[j + 1] -= w.fall * dt; wPos[j] += Math.sin(clock * 1.3 + i) * w.sway * dt; wPos[j + 2] += sp * dt * 0.9;
+    if (wPos[j + 1] < 0 || wPos[j + 2] > 3) { wPos[j] = rand(-16, 16); wPos[j + 1] = rand(5, 14); wPos[j + 2] = rand(-70, 0); }
+  }
+  wGeo.attributes.position.needsUpdate = true;
+}
+// a big "SEASON 2 · AUTUMN" banner, a fanfare, and the new season's song
+function announceSeason(n) {
+  const S = SEASONS[n % 4], el = $("season"); wantSong = n % 4; songLap = Math.floor(n / 4);
+  $("season-n").textContent = "SEASON " + (n + 1); $("season-name").textContent = S.icon + " " + S.name.toUpperCase();
+  $("season-sub").textContent = "♪ " + SONGS[n % 4].name + (S.hint ? " · " + S.hint : "");
+  el.hidden = false; el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); clearTimeout(el._t); el._t = setTimeout(() => { el.hidden = true; }, 2900);
+  if (n > 0) { sfx.season(); if (n >= 3) ach("allseasons"); }
+}
+// puddles, snow piles and leaf piles: run through them for a splash and 3 bonus coins (they never hurt)
+const funGeo = { puddle: new THREE.CircleGeometry(0.8, 22), mound: new THREE.SphereGeometry(0.7, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), leaf: new THREE.BoxGeometry(0.22, 0.03, 0.14) };
+const funMat = { puddle: new THREE.MeshPhongMaterial({ color: 0x5f8fc0, shininess: 120, specular: 0xffffff, transparent: true, opacity: 0.85 }), snow: new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x2a3a4a, emissiveIntensity: 0.6 }), leaves: new THREE.MeshLambertMaterial({ color: 0xc8641e, emissive: 0x3a1a00, emissiveIntensity: 0.4 }), leafCols: [0xe0782a, 0xc23b22, 0xf2b134].map((c) => new THREE.MeshLambertMaterial({ color: c })) };
+function funItem(kind, lane, z) {
+  const g = new THREE.Group();
+  if (kind === "puddle") { const m = new THREE.Mesh(funGeo.puddle, funMat.puddle); m.rotation.x = -Math.PI / 2; m.scale.set(1, 1.6, 1); m.position.y = 0.025; g.add(m); }
+  else { const m = new THREE.Mesh(funGeo.mound, funMat[kind]); m.scale.set(1, 0.6, 1.1); g.add(m); if (kind === "leaves") for (let k = 0; k < 7; k++) { const l = new THREE.Mesh(funGeo.leaf, funMat.leafCols[k % 3]); l.position.set(rand(-0.45, 0.45), 0.3 + rand(0, 0.12), rand(-0.45, 0.45)); l.rotation.set(rand(-0.6, 0.6), rand(0, 3), rand(-0.6, 0.6)); g.add(l); } }
+  add("fun", g, LANES[lane], 0, z, { type: kind });
+}
+function funHit(it) {
+  const k = it.type; G.funs++; G.coins += 3; G.score += G.num * 3;
+  burst(it.x, 0.4, 0, k === "puddle" ? 0x7fb6ff : k === "snow" ? 0xffffff : 0xe07a24, 16); sfx.splash(k);
+  feedItem(k === "puddle" ? "💦" : k === "snow" ? "☃️" : "🍁", k === "puddle" ? "SPLASH!" : k === "snow" ? "SNOW BURST!" : "LEAF PILE!", "+3 coins", "coin");
+  if (G.funs >= 5) ach("splash");
 }
 
 /* ---------------- goals for each run ---------------- */
@@ -638,7 +704,7 @@ function chips() {
 }
 function setHud() {
   $("hud-score").textContent = Math.floor(G.score).toLocaleString("en-GB");
-  $("hud-coins").textContent = G.coins; $("hud-dist").textContent = Math.floor(G.dist) + " m";
+  $("hud-coins").textContent = G.coins; $("hud-dist").textContent = SEASONS[seasonAt(G.dist) % 4].icon + " " + Math.floor(G.dist) + " m";
   $("hud-lives").textContent = "❤".repeat(G.lives) + "♡".repeat(Math.max(0, MAXL - G.lives));
   $("hud-mult").textContent = "#" + G.num;
   $("hud-power").textContent = chips();
@@ -648,7 +714,7 @@ function setHud() {
 let bestShown = false;
 function reset() {
   for (const it of items) scene.remove(it.mesh); items.length = 0; feedEl.innerHTML = "";
-  G.speed = 15; G.dist = 0; G.coins = 0; G.score = 0; G.lives = 4; G.t = 0; G.streak = 0; G.invuln = 0; G.shield = false; G.nextMile = 500; G.usedPower = 0; G.kicks = 0; G.noHit = true; G.jumps = G.slides = G.lanes = 0; G.achT = 0; jumpBuf = coyote = 0; newAch = []; landT = reachT = 0;
+  G.speed = 15; G.dist = 0; G.coins = 0; G.score = 0; G.lives = 4; G.t = 0; G.streak = 0; G.invuln = 0; G.shield = false; G.nextMile = 500; G.usedPower = 0; G.kicks = 0; G.noHit = true; G.jumps = G.slides = G.lanes = 0; G.achT = 0; G.funs = 0; G.season = 0; wantSong = 0; songLap = 0; jumpBuf = coyote = 0; newAch = []; landT = reachT = 0;
   P.magnet = P.rocket = P.boots = P.whistle = 0; ballFly = null; laneIdx = 1; px = 0; py = 0; vy = 0; sliding = 0; grounded = true; stumble = kickT = celeT = 0; act.t = 0; tempoBoost = 0;
   G.num = george.baseNum; G.maxNum = G.num; george.drawNumber(G.num);
   rng = G.daily ? seeded(seedOf("georges-run:" + todayUTC())) : Math.random; chunkNo = 0; G.continued = false; skyT = 0;
@@ -729,6 +795,7 @@ function update(dt) {
       else if (across(1.0) && Math.abs(it.x - px) < 1.4 && Math.abs((it.baseY || 0.9) - (py + 0.9)) < 1.5) takeCoin(it);
     } else if (it.kind === "power" && !it.gone) {
       if (across(1.3) && Math.abs(it.x - px) < 1.4 && Math.abs(1.1 - (py + 0.9)) < 1.8) { it.gone = true; givePower(it.type); }
+    } else if (it.kind === "fun" && !it.gone && across(0.9) && Math.abs(it.x - px) < 1.1 && py < 0.6) { it.gone = true; funHit(it);
     } else if (it.kind === "obs" && !it.gone && across(it.type === "mower" ? 1.0 : 0.7) && Math.abs(it.x - px) < (it.type === "mower" ? 1.0 : 0.82)) {
       const safe = P.rocket > 0 || G.invuln > 0, standing = sliding <= 0;
       const hit = it.type === "wall" ? py < 2.5 : it.type === "ref" ? py < 2.2 : it.type === "mower" ? py < 1.3 : (it.type === "barrier" || it.type === "def") ? py < 0.62 : (standing && py < 1.5);
@@ -742,7 +809,8 @@ function update(dt) {
   // rocket flames
   if (P.rocket > 0 && !reduced) { for (let k = 0; k < 2; k++) { const f = flame[flameIdx++ % flame.length]; f.m.position.set(px + rand(-0.15, 0.15), py + 0.7 + rand(-0.1, 0.1), 0.9); f.life = 0.35; f.m.visible = true; } }
   for (const f of flame) { if (f.life > 0) { f.life -= dt; f.m.position.z += (sp * 0.9) * dt; f.m.material.opacity = Math.max(0, f.life / 0.35); const sc = 0.6 + (1 - f.life / 0.35); f.m.scale.setScalar(sc); if (f.life <= 0) f.m.visible = false; } }
-  updateSparks(dt); updateFx();
+  updateSparks(dt); updateFx(); updateWeather(dt, sp);
+  { const sn = seasonAt(G.dist); if (sn !== G.season) { G.season = sn; announceSeason(sn); } }
   // the figure
   george.root.position.set(px, py, 0);
   george.root.visible = !(G.invuln > 0 && Math.floor(clock * 14) % 2 === 0 && G.phase === "play" && stumble <= 0);
@@ -848,7 +916,7 @@ function gameOver() {
 }
 function start(daily) {
   G.daily = !!daily;
-  audio(); paused = false; $("pause").hidden = true; $("btn-pause").textContent = "⏸"; reset(); G.phase = "play"; ach("kickoff");
+  audio(); paused = false; $("pause").hidden = true; $("btn-pause").textContent = "⏸"; reset(); G.phase = "play"; ach("kickoff"); announceSeason(0);
   $("screen-start").hidden = true; $("screen-end").hidden = true; $("screen-game").hidden = false;
   document.body.classList.add("gr-playing");          // the game fills the whole screen, so the score and hearts are always in view
   try { if (matchMedia("(pointer: coarse)").matches && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); } catch (e) {}
@@ -862,4 +930,4 @@ $("btn-sound").addEventListener("click", () => { sfxOn = !sfxOn; try { localStor
 showMusic(); showDaily(); loadOnline("start"); renderAchList(); renderTop($("start-top")); newGoals(); resize();
 reset(); G.phase = "menu"; for (const it of items) scene.remove(it.mesh); items.length = 0; last = performance.now(); raf = requestAnimationFrame(frame);
 $("screen-game").hidden = true;
-window.__run = { G, P, items, referee, defender, mower, start, get layout() { return items.filter((i) => i.kind !== "coin" || true).slice(0, 40).map((i) => i.kind + ":" + (i.type || "") + ":" + i.x.toFixed(1) + ":" + Math.round(i.z)).join("|"); }, get george() { return george; }, hurt, givePower, camera, makeChunk, kick: () => givePower("ball"), jump, slide, goLane, feedItem };
+window.__run = { G, P, items, funItem, get song() { return curSong; }, referee, defender, mower, start, get layout() { return items.filter((i) => i.kind !== "coin" || true).slice(0, 40).map((i) => i.kind + ":" + (i.type || "") + ":" + i.x.toFixed(1) + ":" + Math.round(i.z)).join("|"); }, get george() { return george; }, hurt, givePower, camera, makeChunk, kick: () => givePower("ball"), jump, slide, goLane, feedItem };

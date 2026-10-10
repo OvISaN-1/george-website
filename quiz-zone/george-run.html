@@ -99,6 +99,10 @@
   body.gr-playing .gr-hud{width:100%;max-width:820px;margin-bottom:6px;padding:6px 12px;} body.gr-playing .gr-hud .big{font-size:24px;}
   body.gr-playing .gr-stage{flex:1;height:auto;min-height:0;width:100%;max-width:820px;}
   body.gr-playing .gr-keys{margin:4px 0 0;}
+  .gr-season{position:absolute;left:50%;top:32%;transform:translate(-50%,-50%);z-index:5;pointer-events:none;text-align:center;width:92%;font-family:'Rajdhani',sans-serif;font-weight:700;color:#fff;}
+  .gr-season[hidden]{display:none;} .gr-season.show{animation:grSeason 2.9s ease-out forwards;}
+  .gr-season small{display:block;font-size:15px;letter-spacing:.3em;color:#ffd84a;text-shadow:0 2px 0 rgba(0,0,0,.6);} .gr-season b{display:block;font-size:clamp(40px,12vw,70px);line-height:1;text-shadow:0 4px 0 #7a0d20,0 0 30px rgba(0,0,0,.6);} .gr-season em{display:block;font-style:normal;font-size:16px;margin-top:4px;text-shadow:0 2px 0 rgba(0,0,0,.7);}
+  @keyframes grSeason{0%{opacity:0;transform:translate(-50%,-50%) scale(.6);}12%{opacity:1;transform:translate(-50%,-50%) scale(1.06);}20%{transform:translate(-50%,-50%) scale(1);}82%{opacity:1;}100%{opacity:0;transform:translate(-50%,-60%) scale(1);}}
   .gr-bar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px;}
   @media (prefers-reduced-motion: reduce){.gr-pop.show{animation:none;opacity:1;}}
 </style>
@@ -153,6 +157,7 @@
       <li><span class="gr-ico">👈👉</span><span><strong>Swipe left or right</strong> to change lane. (Arrow keys or A and D on a keyboard.)</span></li>
       <li><span class="gr-ico">👆</span><span><strong>Swipe up</strong> to jump over barriers. (Up arrow, W or Space.)</span></li>
       <li><span class="gr-ico">👇</span><span><strong>Swipe down</strong> to slide under bars. (Down arrow or S.)</span></li>
+      <li><span class="gr-ico">🗓️</span><span><strong>Four seasons, four songs.</strong> Every 800 m the season changes: summer, autumn, winter, spring. Run through leaf piles, snow piles and puddles for bonus coins.</span></li>
       <li><span class="gr-ico">🔟</span><span><strong>Your shirt number is your coin value.</strong> Every coin is worth your number, so pick up number boosts. A card knocks it down by 5.</span></li>
     </ul>
     <details class="gr-achlist"><summary>⚽ Power-ups and cards</summary>
@@ -200,6 +205,7 @@
       <div class="gr-pause" id="pause" hidden><div><h2>Paused</h2><p>Take a breather, George.</p><button class="btn-primary" id="btn-resume" type="button">Keep running</button><br><button class="gr-pill gr-quit" id="btn-quit" type="button">End run</button></div></div>
       <div class="gr-pause" id="cont" hidden><div><h2>Keep playing?</h2><p>Spend 50 shop coins for one more life.<br>You have <b id="cont-have">0</b> 🪙</p><button class="btn-primary" id="btn-cont" type="button">Yes! (50 🪙)</button><br><button class="gr-pill gr-quit" id="btn-nocont" type="button">No thanks</button><p class="gr-count" id="cont-n" aria-live="polite">6</p></div></div>
       <div class="gr-flash" id="flash" aria-hidden="true"></div>
+      <div class="gr-season" id="season" hidden aria-live="polite"><small id="season-n"></small><b id="season-name"></b><em id="season-sub"></em></div>
       <div class="gr-ach" id="ach-banner" hidden role="status"><i id="ach-ico">🏆</i><span><small>ACHIEVEMENT UNLOCKED</small><b id="ach-name"></b><em id="ach-text"></em></span></div>
       <div class="gr-power" id="hud-power" aria-live="polite"></div>
     </div>
