@@ -193,9 +193,15 @@ function makeGeorge() {
   };
   drawNumber(num);
   const nm = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), new THREE.MeshBasicMaterial({ map: numTex, transparent: true, depthWrite: false })); nm.position.set(0, 1.37, -0.138); nm.rotation.y = Math.PI; g.add(nm);
+  // a 10-year-old: shorter legs and arms and a bigger head than a grown-up footballer
+  const LEG = 0.8, DROP = 0.96 * (1 - LEG);
+  for (const c of g.children) if (c !== lL.hip && c !== lR.hip) c.position.y -= DROP;
+  for (const h of [lL.hip, lR.hip]) { h.scale.setScalar(LEG); h.position.y = 0.96 * LEG; }
+  for (const a of [aL.sh, aR.sh]) a.scale.setScalar(0.88);
+  head.scale.setScalar(1.24); head.position.y -= 0.05;
   const blob = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.4), new THREE.MeshBasicMaterial({ map: canvasTex(64, 64, (c) => { const gr = c.createRadialGradient(32, 32, 4, 32, 32, 30); gr.addColorStop(0, "rgba(0,0,0,.5)"); gr.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = gr; c.fillRect(0, 0, 64, 64); }), transparent: true, depthWrite: false }));
   blob.rotation.x = -Math.PI / 2; blob.position.y = 0.03;
-  const root = new THREE.Group(); root.add(g, blob); root.scale.setScalar(1.28); root.rotation.y = Math.PI;   // a little larger than life so the shirt print reads; he runs away from the camera (towards -z)
+  const root = new THREE.Group(); root.add(g, blob); root.scale.setScalar(1.15); root.rotation.y = Math.PI;   // a little larger than life so the shirt print reads; he runs away from the camera (towards -z)
   return { root, body: g, head, cape, capeGeo, capeBase, legL: lL.hip, legR: lR.hip, kneeL: lL.knee, kneeR: lR.knee, armL: aL.sh, armR: aR.sh, elbowL: aL.elbow, elbowR: aR.elbow, mats, blob, drawNumber, baseNum: num };
 }
 let george = makeGeorge(); scene.add(george.root);
@@ -391,11 +397,11 @@ function person(shirt, shorts, socks) {
 }
 const warnTex = canvasTex(64, 64, (g) => { g.fillStyle = "#e1102c"; g.beginPath(); g.arc(32, 32, 29, 0, 7); g.fill(); g.lineWidth = 4; g.strokeStyle = "#fff"; g.stroke(); g.fillStyle = "#fff"; g.font = "700 44px Arial Black, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("!", 32, 35); });
 function referee(a, z) {                           // jogs back and forth across two lanes, holding up a yellow card: use the third lane
-  const g = person(0x151515, 0x151515, 0x151515), card = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.32, 0.03), yellowMat); card.position.y = -0.66; g.userData.arms[1].add(card); g.userData.arms[1].rotation.x = -2.7;
+  const g = person(0x151515, 0x151515, 0x151515); g.scale.setScalar(1.2); const card = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.32, 0.03), yellowMat); card.position.y = -0.66; g.userData.arms[1].add(card); g.userData.arms[1].rotation.x = -2.7;
   add("obs", g, (LANES[a] + LANES[a + 1]) / 2, 0, z, { type: "ref", laneA: a, t: R() * 6 });
 }
 function defender(lane, z) {                       // waits beside the pitch, then slides into the outside lane: jump over him
-  const side = lane === 0 ? -1 : 1, g = person(0x6cabdd, 0xffffff, 0x6cabdd);
+  const side = lane === 0 ? -1 : 1, g = person(0x6cabdd, 0xffffff, 0x6cabdd); g.scale.setScalar(1.2);
   const w = new THREE.Sprite(new THREE.SpriteMaterial({ map: warnTex, depthTest: false })); w.scale.set(0.8, 0.8, 1); w.position.y = 2.6; g.add(w); g.userData.warn = w;
   add("obs", g, side * 5.4, 0, z, { type: "def", lane, side, slideT: -1 });
 }
@@ -405,7 +411,7 @@ function mower(lane, z) {                          // a ride-on mower driving to
   const deck = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.2, 0.9), M(0x1d1d1d)); deck.position.set(0, 0.22, 0.55); g.add(deck);
   for (const [x, zz, r] of [[-0.62, -0.5, 0.36], [0.62, -0.5, 0.36], [-0.6, 0.6, 0.24], [0.6, 0.6, 0.24]]) { const wh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.22, 14), M(0x151515)); wh.rotation.z = Math.PI / 2; wh.position.set(x, r, zz); g.add(wh); }
   const seat = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15, 0.5), M(0x151515)); seat.position.set(0, 0.92, -0.35); g.add(seat);
-  const man = person(0xd8ff3a, 0x24324a, 0x24324a); man.scale.setScalar(0.75); man.position.set(0, 0.25, -0.35); man.userData.legs.forEach((l) => (l.rotation.x = -1.4)); g.add(man);
+  const man = person(0xd8ff3a, 0x24324a, 0x24324a); man.scale.setScalar(0.9); man.position.set(0, 0.25, -0.35); man.userData.legs.forEach((l) => (l.rotation.x = -1.4)); g.add(man);
   add("obs", g, LANES[lane], 0, z, { type: "mower", vz: 3.5 });
 }
 
@@ -557,7 +563,7 @@ function animate(dt) {
     }
   }
   if (sliding > 0) {                                                    // slide tackle: one leg out straight, the other tucked under
-    g.body.rotation.x = -1.0; g.body.position.y = -0.6; g.legR.rotation.x = -1.5; g.kneeR.rotation.x = 0; g.legL.rotation.x = -0.6; g.kneeL.rotation.x = 1.7;
+    g.body.rotation.x = -1.0; g.body.position.y = -0.5; g.legR.rotation.x = -1.5; g.kneeR.rotation.x = 0; g.legL.rotation.x = -0.6; g.kneeL.rotation.x = 1.7;
     g.armL.rotation.x = 0.3; g.armL.rotation.z = -1.3; g.armR.rotation.x = 0.9; g.armR.rotation.z = 0.5; g.head.rotation.x = 0.25;
   }
   if (kickT > 0) { kickT -= dt; const u = 1 - kickT / 0.45; g.legR.rotation.x = -0.4 - 1.5 * Math.sin(Math.min(1, u * 1.6) * Math.PI * 0.8); g.kneeR.rotation.x = u < 0.3 ? 1.3 : 0.1; g.body.rotation.x = 0.1; g.armL.rotation.z = -0.8; g.armR.rotation.z = 0.8; }
@@ -588,7 +594,7 @@ function animate(dt) {
     else { g.armL.rotation.x = g.armR.rotation.x = -3.0; g.armL.rotation.z = -0.4; g.armR.rotation.z = 0.4; g.body.position.y = Math.abs(Math.sin(clock * 12)) * 0.25; }
   }
   if (stumble > 0) { stumble -= dt; const u = 1 - stumble / 0.9; g.body.rotation.x = 0.4 + Math.sin(u * Math.PI) * 1.0; g.armL.rotation.x = g.armR.rotation.x = -1.2; g.armL.rotation.z = -1.0; g.armR.rotation.z = 1.0; g.legL.rotation.x = 0.8; g.legR.rotation.x = -0.6; g.body.rotation.y = u * 2.2; }
-  if (!run) { g.body.rotation.set(1.1, 0, 0); g.body.position.y = -0.5; g.legL.rotation.x = g.legR.rotation.x = 0.4; g.armL.rotation.z = -1.1; g.armR.rotation.z = 1.1; g.armL.rotation.x = g.armR.rotation.x = -0.3; }
+  if (!run) { g.body.rotation.set(1.1, 0, 0); g.body.position.y = -0.4; g.legL.rotation.x = g.legR.rotation.x = 0.4; g.armL.rotation.z = -1.1; g.armR.rotation.z = 1.1; g.armL.rotation.x = g.armR.rotation.x = -0.3; }
 }
 
 /* ---------------- sky: day, sunset, night and back again ---------------- */
