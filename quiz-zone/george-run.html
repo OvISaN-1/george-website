@@ -57,9 +57,8 @@
   .gr-stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;}
   .gr-sub{position:absolute;left:10px;top:10px;z-index:3;pointer-events:none;font-family:'Rajdhani',sans-serif;font-weight:700;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.6);}
   .gr-sub .coins{font-size:22px;color:#ffd84a;} .gr-sub .dist{font-size:16px;opacity:.95;}
-  .gr-board{position:absolute;right:10px;top:10px;z-index:3;pointer-events:none;background:rgba(13,11,16,.55);border-radius:12px;padding:6px 10px;color:#fff;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;min-width:96px;max-width:40%;}
-  .gr-board h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#ffd84a;margin:0 0 2px;} .gr-board ol{list-style:none;margin:0;padding:0;} .gr-board li{display:flex;gap:6px;align-items:center;font-size:14px;} .gr-board small{display:none;} .gr-board b{font-size:13px;}
-  #hud-rank{position:absolute;right:10px;top:78px;z-index:3;pointer-events:none;font-family:'Rajdhani',sans-serif;font-weight:700;color:#ffd84a;text-shadow:0 2px 0 rgba(0,0,0,.6);font-size:15px;}
+  .gr-best{position:absolute;right:10px;top:10px;z-index:3;pointer-events:none;font-family:'Rajdhani',sans-serif;font-weight:700;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.6);font-size:16px;}
+  #hud-rank{position:absolute;right:10px;top:32px;z-index:3;pointer-events:none;font-family:'Rajdhani',sans-serif;font-weight:700;color:#ffd84a;text-shadow:0 2px 0 rgba(0,0,0,.6);font-size:15px;}
   .gr-power{position:absolute;left:0;right:0;bottom:12px;text-align:center;z-index:3;pointer-events:none;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:22px;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.65);min-height:1.3em;}
   .gr-pop{position:absolute;left:50%;top:24%;transform:translate(-50%,-50%) scale(.4);opacity:0;pointer-events:none;text-align:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:clamp(32px,9vw,56px);letter-spacing:.04em;white-space:nowrap;color:#fff;text-shadow:0 4px 0 #7a0d20,0 0 30px rgba(225,16,44,.8);z-index:4;}
   .gr-pop small{display:block;font-size:.4em;letter-spacing:.08em;text-shadow:0 2px 0 #241f29;}
@@ -163,8 +162,6 @@
       <li><b>👟 Golden boots:</b> a sprint with double distance points.</li>
       <li><b>📣 Referee whistle:</b> play slows down.</li>
       <li><b>🧤 Keeper gloves:</b> a shield against one card.</li>
-      <li><b>🏅 Gold medal:</b> every coin counts double.</li>
-      <li><b>💨 Vanishing spray:</b> invisible, walk through the cards.</li>
       <li><b>🏆 Golden trophy:</b> coins fly to you.</li>
       <li><b>🚀 Rocket boots:</b> fly over everything.</li>
       <li><b>🧣 Fan scarf:</b> an extra life.</li>
@@ -179,10 +176,11 @@
     <ul class="gr-missions" id="missions"></ul>
     <h3 class="gr-h3">🏆 Top three on this device</h3>
     <ol class="gr-top" id="start-top"></ol>
+    <details class="gr-achlist"><summary>🌍 Online leaderboards</summary>
     <div class="gr-boards">
       <div><h3 class="gr-h3">🌍 Online · all time</h3><ol class="gr-top" id="start-online-all"><li class="empty"><span>Loading…</span></li></ol></div>
       <div><h3 class="gr-h3">📅 Online · today's challenge</h3><ol class="gr-top" id="start-online-day"><li class="empty"><span>Loading…</span></li></ol></div>
-    </div>
+    </div></details>
     <p class="gr-keys">Run far and win shirts for George: 1,000 m, 150 coins in a run, or 5 power-ups in a run. Wear them in My Player.</p>
   </section>
 
@@ -196,7 +194,7 @@
       <canvas id="gl" aria-label="George running down the road. Swipe left or right to change lane, up to jump, down to slide."></canvas>
       <div class="gr-sub"><div class="dist" id="hud-dist">0 m</div></div>
       <ul class="gr-feed" id="feed" aria-live="polite"></ul>
-      <div class="gr-board"><h3>🏆 Top three</h3><ol class="gr-top" id="hud-top"></ol></div>
+      <div class="gr-best" id="hud-best"></div>
       <div id="hud-rank"></div>
       <button class="gr-pausebtn" id="btn-pause" type="button" aria-label="Pause">⏸</button>
       <div class="gr-pause" id="pause" hidden><div><h2>Paused</h2><p>Take a breather, George.</p><button class="btn-primary" id="btn-resume" type="button">Keep running</button><br><button class="gr-pill gr-quit" id="btn-quit" type="button">End run</button></div></div>

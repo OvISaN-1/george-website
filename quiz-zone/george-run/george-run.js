@@ -31,8 +31,8 @@ const ACH = [
   ["invincibles", "🛡️", "The Invincibles", "Collect 100 coins without a card"], ["century", "💯", "Century", "Collect 100 coins in one run"],
   ["warmup", "🏃", "Warm-up", "Run 100 m"], ["halftime", "⏱️", "Half-time", "Run 500 m"], ["fulltime", "🔔", "Full Time", "Run 1,000 m"], ["extratime", "⏳", "Extra Time", "Run 2,000 m"], ["penalties", "🥅", "Penalty Shoot-out", "Run 3,000 m"],
   ["topbins", "🥅", "Top Bins", "Kick the football"], ["freekick", "🎯", "Free-kick Specialist", "Kick the football 3 times in one run"],
-  ["fairplay", "📣", "Fair Play", "Use the referee whistle"], ["safehands", "🧤", "Safe Hands", "Use the keeper gloves"], ["motm", "🏅", "Man of the Match", "Use the gold medal"], ["bootroom", "👟", "Boot Room", "Use the golden boots"],
-  ["champions", "🏆", "Champions!", "Use the golden trophy"], ["moon", "🚀", "Out of This World", "Use the rocket boots"], ["fan", "🧣", "Fan Favourite", "Use the fan scarf"], ["invisible", "💨", "Now You See Him", "Use the vanishing spray"],
+  ["fairplay", "📣", "Fair Play", "Use the referee whistle"], ["safehands", "🧤", "Safe Hands", "Use the keeper gloves"], ["bootroom", "👟", "Boot Room", "Use the golden boots"],
+  ["champions", "🏆", "Champions!", "Use the golden trophy"], ["moon", "🚀", "Out of This World", "Use the rocket boots"], ["fan", "🧣", "Fan Favourite", "Use the fan scarf"],
   ["squad", "🔢", "Squad Number", "Get your shirt number to 15"], ["legend", "⭐", "Forest Legend", "Get your shirt number to 25"], ["retired", "🎖️", "Retired Number", "Get your shirt number to 50"],
   ["cleansheet", "🧱", "Clean Sheet", "Run 300 m without a card"], ["acrobat", "🤸", "Bicycle Kick", "Jump 20 times in one run"], ["slider", "🛷", "Sliding Tackle", "Slide 10 times in one run"], ["dribbler", "💃", "Dribbler", "Change lane 30 times in one run"],
   ["bigscore", "📈", "Man of the Match Score", "Score 5,000 points in one run"], ["season", "🎟️", "Season Ticket", "Play 5 runs"], ["clublegend", "🏟️", "Club Legend", "Play 25 runs"],
@@ -342,8 +342,6 @@ const TOYS = {
   boots: { name: "GOLDEN BOOTS", sub: "Sprint! Double distance points", icon: "👟", col: 0xffc933 },
   whistle: { name: "REFEREE WHISTLE", sub: "Play slows down", icon: "📣", col: 0xcfd5df },
   gloves: { name: "KEEPER GLOVES", sub: "Saves you from one card", icon: "🧤", col: 0x39d17a },
-  medal: { name: "GOLD MEDAL", sub: "Every coin counts double", icon: "🏅", col: 0xffd23f },
-  spray: { name: "VANISHING SPRAY", sub: "Invisible: walk through the cards", icon: "💨", col: 0xdde6ff },
   trophy: { name: "GOLDEN TROPHY", sub: "Coins fly to you", icon: "🏆", col: 0xffc933 },
   rocket: { name: "ROCKET BOOTS", sub: "Fly over everything", icon: "🚀", col: 0xe5384a },
   scarf: { name: "FAN SCARF", sub: "An extra life", icon: "🧣", col: 0xff4d6d },
@@ -363,8 +361,6 @@ function toyMesh(type) {
   else if (type === "boots") { B(0.34, 0.2, 0.8, 0xffc933, 0, -0.12, 0.08); C(0.17, 0.2, 0.5, 0xffc933, 0, 0.12, -0.15); B(0.36, 0.06, 0.82, 0x6b4a00, 0, -0.25, 0.08); for (const sx of [-0.1, 0.1]) { B(0.04, 0.08, 0.06, 0xdddddd, sx, -0.3, 0.3); B(0.04, 0.08, 0.06, 0xdddddd, sx, -0.3, -0.1); } const w = B(0.04, 0.3, 0.5, 0xffffff, 0.2, 0.2, -0.2); w.rotation.z = -0.3; const w2 = B(0.04, 0.3, 0.5, 0xffffff, -0.2, 0.2, -0.2); w2.rotation.z = 0.3; g.rotation.y = 0.6; }
   else if (type === "whistle") { const b = C(0.24, 0.24, 0.5, 0x22252c, 0, 0, 0); b.rotation.z = Math.PI / 2; B(0.4, 0.2, 0.26, 0x22252c, 0.38, -0.02, 0); const r = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.04, 6, 14), L(0xcfd5df)); r.position.set(-0.3, 0.2, 0); g.add(r); S(0.07, 0xffffff, 0, 0.22, 0.2); }
   else if (type === "gloves") { S(0.3, 0x39d17a, 0, 0, 0, 1, 1.1, 0.7); for (let k = -2; k <= 1; k++) S(0.09, 0x39d17a, k * 0.13 + 0.065, 0.36, 0, 1, 1.9, 1); S(0.1, 0x39d17a, 0.32, 0.05, 0, 1.6, 0.9, 1); B(0.5, 0.14, 0.3, 0xffffff, 0, -0.34, 0); }
-  else if (type === "medal") { const d = C(0.36, 0.36, 0.09, 0xffd23f, 0, 0, 0); d.rotation.x = Math.PI / 2; const d2 = C(0.26, 0.26, 0.11, 0xffe680, 0, 0, 0); d2.rotation.x = Math.PI / 2; B(0.16, 0.5, 0.04, 0xe1102c, 0, 0.5, 0); }
-  else if (type === "spray") { C(0.2, 0.2, 0.7, 0xf4f4f4, 0, 0, 0); C(0.12, 0.2, 0.2, 0x2f6fe0, 0, 0.42, 0); C(0.03, 0.03, 0.18, 0x222222, 0, 0.58, 0.04); S(0.08, 0xcfe6ff, 0.25, 0.5, 0.1); S(0.12, 0xcfe6ff, 0.38, 0.55, 0.15); }
   else if (type === "trophy") { const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.16, 0.5, 16), L(0xffc933)); cup.position.y = 0.2; g.add(cup); C(0.06, 0.08, 0.3, 0xffc933, 0, -0.2, 0); C(0.22, 0.26, 0.1, 0xffc933, 0, -0.4, 0); for (const sx of [-1, 1]) { const h = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.04, 6, 12), L(0xffc933)); h.position.set(sx * 0.4, 0.22, 0); g.add(h); } }
   else if (type === "rocket") { C(0.22, 0.28, 0.9, 0xeeeeee, 0, 0, 0); const n = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.4, 12), L(0xe5384a)); n.position.y = 0.65; g.add(n); for (const sx of [-1, 1]) B(0.4, 0.3, 0.05, 0xe5384a, sx * 0.28, -0.35, 0); g.rotation.z = 0.5; }
   else if (type === "scarf") { const t = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.13, 8, 18), L(0xd7102b)); g.add(t); for (let k = 0; k < 4; k++) { const st = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.135, 8, 3, 0.5), L(0xffffff)); st.rotation.z = k * 1.57; g.add(st); } B(0.2, 0.5, 0.06, 0xd7102b, 0.22, -0.4, 0.1); B(0.2, 0.5, 0.06, 0xffffff, 0.44, -0.4, 0.1); }
@@ -436,7 +432,7 @@ function makeChunk(z0) {
   const extra = R() < 0.5, extraLane = Math.floor(R() * 3);
   if (!special && d > 0.5 && extra) wall(extraLane, z0 - 30);
   // a pick-up now and then: at most one per stretch of road, so it never gets crowded
-  const give = R() < 0.5, bag = ["ball", "ball", "ball", "boots", "boots", "whistle", "whistle", "gloves", "gloves", "medal", "medal", "spray", "spray", "trophy", "trophy", "rocket", "rocket", "scarf", "num5", "num5", "num5", "num10", "numx2"];
+  const give = R() < 0.5, bag = ["ball", "ball", "ball", "boots", "boots", "whistle", "whistle", "gloves", "gloves", "trophy", "trophy", "rocket", "rocket", "scarf", "num5", "num5", "num5", "num10", "numx2"];
   const t = pR(bag), tl = Math.floor(R() * 3), tz = z0 - rR(10, 26);
   if (give && (t !== "scarf" || G.lives < MAXL)) toy(t, tl, tz);
 }
@@ -463,11 +459,10 @@ function updateSparks(dt) {
 }
 
 /* ---------------- power-ups and the top-of-screen feed ---------------- */
-const P = { magnet: 0, medal: 0, spray: 0, rocket: 0, boots: 0, whistle: 0 };
+const P = { magnet: 0, rocket: 0, boots: 0, whistle: 0 };
 const bubble = new THREE.Mesh(new THREE.SphereGeometry(1.25, 18, 12), new THREE.MeshBasicMaterial({ color: 0x9fe3ff, transparent: true, opacity: 0.28 })); bubble.visible = false; scene.add(bubble);
 const flame = []; for (let i = 0; i < 14; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.13, 6, 5), new THREE.MeshBasicMaterial({ color: 0xff8a1f, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); m.visible = false; scene.add(m); flame.push({ m, life: 0 }); }
 let flameIdx = 0;
-function setGhost(on) { for (const m of george.mats) { m.transparent = on; m.opacity = on ? 0.32 : 1; m.needsUpdate = true; } }
 // short messages that slide in at the top left, one line each, and fade away on their own
 const feedEl = $("feed");
 function feedItem(icon, text, sub, cls) {
@@ -479,15 +474,13 @@ function feedItem(icon, text, sub, cls) {
 }
 function setNum(n) { G.num = clamp(Math.round(n), george.baseNum, 99); george.drawNumber(G.num); G.maxNum = Math.max(G.maxNum, G.num); }
 function setAct(type, dur) { act = { type, t: dur, dur }; }
-const AM = { ball: "topbins", boots: "bootroom", whistle: "fairplay", gloves: "safehands", medal: "motm", spray: "invisible", trophy: "champions", rocket: "moon", scarf: "fan" };
+const AM = { ball: "topbins", boots: "bootroom", whistle: "fairplay", gloves: "safehands", trophy: "champions", rocket: "moon", scarf: "fan" };
 function givePower(type) {
   const T = TOYS[type]; if (AM[type]) ach(AM[type]); G.usedPower++; sfx.power(); burst(px, 1.2, 0, T.col, 14);
   if (type === "ball") { feedItem(T.icon, T.name, T.sub, "power"); kickT = 0.45; G.kicks++; sfx.kick(); ballFly = { z: -1.5, t: 0, last: -1.5, got: 0 }; return; }
   if (type === "boots") { P.boots = 6; setAct("flex", 0.6); }
   else if (type === "whistle") { P.whistle = 3; setAct("whistle", 0.9); }
   else if (type === "gloves") { G.shield = true; setAct("gloves", 0.9); }
-  else if (type === "medal") { P.medal = 10; setAct("medal", 0.9); }
-  else if (type === "spray") { P.spray = 8; setGhost(true); setAct("spray", 0.8); }
   else if (type === "trophy") { P.magnet = 10; setAct("trophy", 0.9); }
   else if (type === "rocket") { P.rocket = 4.5; }
   else if (type === "scarf") { if (G.lives < MAXL) G.lives++; sfx.life(); setAct("cheer", 0.8); }
@@ -499,7 +492,7 @@ function givePower(type) {
 }
 function takeCoin(it, bonus) {
   it.gone = true; G.streak++;
-  const n = P.medal > 0 ? 2 : 1, value = G.num * n * (bonus || 1);
+  const n = 1, value = G.num * (bonus || 1);
   G.coins += n; G.score += value; reachT = 0.22; ach("firsttouch"); if (G.streak >= 3) ach("hattrick"); if (G.streak >= 11) ach("fullteam"); if (G.streak >= 25) ach("goldenboot"); if (G.streak >= 50) ach("unplayable"); if (G.streak >= 100) ach("invincibles"); sfx.coin(G.streak); burst(it.mesh.position.x, it.mesh.position.y, it.mesh.position.z, 0xffd84a, 3);
   if (G.streak === 25 || G.streak === 50 || G.streak === 100 || G.streak === 200) feedItem("🔥", "COIN FEVER!", G.streak + " coins without a card", "big");
 }
@@ -569,7 +562,6 @@ function animate(dt) {
   }
   if (kickT > 0) { kickT -= dt; const u = 1 - kickT / 0.45; g.legR.rotation.x = -0.4 - 1.5 * Math.sin(Math.min(1, u * 1.6) * Math.PI * 0.8); g.kneeR.rotation.x = u < 0.3 ? 1.3 : 0.1; g.body.rotation.x = 0.1; g.armL.rotation.z = -0.8; g.armR.rotation.z = 0.8; }
   if (P.magnet > 0 && !flying) { g.armL.rotation.z = -1.3; g.armR.rotation.z = 1.3; g.armL.rotation.x = g.armR.rotation.x = -0.5; }
-  if (P.spray > 0) { g.body.rotation.x = 0.45; g.armL.rotation.x = g.armR.rotation.x = 0.7; g.elbowL.rotation.x = g.elbowR.rotation.x = -0.3; g.body.rotation.y = s * 0.3; }
   g.cape.visible = flying;
   if (flying) {                                                         // Superman: horizontal, fist forward, cape streaming
     const bob = Math.sin(clock * 3);
@@ -584,9 +576,7 @@ function animate(dt) {
     act.t -= dt; const u = clamp(1 - act.t / act.dur, 0, 1), ps = Math.sin(u * Math.PI);
     if (act.type === "whistle") { g.armR.rotation.x = -2.3 * ps; g.elbowR.rotation.x = -2.4 * ps; g.armR.rotation.z = -0.25 * ps; g.head.rotation.x = -0.12 - 0.25 * ps; }
     else if (act.type === "gloves") { g.armL.rotation.z = -1.4 * ps; g.armR.rotation.z = 1.4 * ps; g.armL.rotation.x = g.armR.rotation.x = -0.9 * ps; g.body.rotation.x = 0.2 + 0.3 * ps; g.legL.rotation.z = -0.35 * ps; g.legR.rotation.z = 0.35 * ps; }
-    else if (act.type === "medal") { g.armR.rotation.x = -1.2 * ps; g.elbowR.rotation.x = -2.4 * ps; g.armR.rotation.z = -0.5 * ps; g.head.rotation.x = -0.12 + 0.5 * ps; }
     else if (act.type === "trophy") { g.armL.rotation.x = g.armR.rotation.x = -3.0 * ps; g.armL.rotation.z = -0.3 * ps; g.armR.rotation.z = 0.3 * ps; g.body.position.y += ps * 0.2; }
-    else if (act.type === "spray") { g.armR.rotation.x = -1.5 * ps; g.elbowR.rotation.x = -0.4 * ps; g.body.rotation.y += Math.sin(u * Math.PI * 4) * 0.7 * ps; }
     else if (act.type === "cheer") { g.armL.rotation.x = g.armR.rotation.x = -3.0 * ps; g.body.position.y = Math.abs(Math.sin(clock * 12)) * 0.25 * ps; }
     else if (act.type === "flex") { g.armL.rotation.z = -1.3 * ps; g.armR.rotation.z = 1.3 * ps; g.elbowL.rotation.x = g.elbowR.rotation.x = -2.2 * ps; g.armL.rotation.x = g.armR.rotation.x = -0.3 * ps; }
   }
@@ -636,7 +626,7 @@ function renderTop(el) {
 }
 function chips() {
   const c = [];
-  if (G.shield) c.push("🧤"); if (P.medal > 0) c.push("🏅 " + Math.ceil(P.medal)); if (P.spray > 0) c.push("💨 " + Math.ceil(P.spray)); if (P.rocket > 0) c.push("🚀 " + Math.ceil(P.rocket));
+  if (G.shield) c.push("🧤"); if (P.rocket > 0) c.push("🚀 " + Math.ceil(P.rocket));
   if (P.magnet > 0) c.push("🏆 " + Math.ceil(P.magnet)); if (P.boots > 0) c.push("👟 " + Math.ceil(P.boots)); if (P.whistle > 0) c.push("📣"); if (ballFly) c.push("⚽");
   return c.join("   ");
 }
@@ -653,7 +643,7 @@ let bestShown = false;
 function reset() {
   for (const it of items) scene.remove(it.mesh); items.length = 0; feedEl.innerHTML = "";
   G.speed = 15; G.dist = 0; G.coins = 0; G.score = 0; G.lives = 4; G.t = 0; G.streak = 0; G.invuln = 0; G.shield = false; G.nextMile = 500; G.usedPower = 0; G.kicks = 0; G.noHit = true; G.jumps = G.slides = G.lanes = 0; G.achT = 0; jumpBuf = coyote = 0; newAch = []; landT = reachT = 0;
-  P.magnet = P.medal = P.spray = P.rocket = P.boots = P.whistle = 0; setGhost(false); ballFly = null; laneIdx = 1; px = 0; py = 0; vy = 0; sliding = 0; grounded = true; stumble = kickT = celeT = 0; act.t = 0; tempoBoost = 0;
+  P.magnet = P.rocket = P.boots = P.whistle = 0; ballFly = null; laneIdx = 1; px = 0; py = 0; vy = 0; sliding = 0; grounded = true; stumble = kickT = celeT = 0; act.t = 0; tempoBoost = 0;
   G.num = george.baseNum; G.maxNum = G.num; george.drawNumber(G.num);
   rng = G.daily ? seeded(seedOf("georges-run:" + todayUTC())) : Math.random; chunkNo = 0; G.continued = false; skyT = 0;
   safeChunks = 3; bestShown = false; spawnFront = -30; fillAhead(); applySky();
@@ -693,7 +683,7 @@ function update(dt) {
   if (!bestShown && SAVE.best > 0 && G.score > SAVE.best) { bestShown = true; feedItem("🏆", "NEW PERSONAL BEST!", "Keep going!", "big"); sfx.milestone(); burst(px, 1.6, 0, 0xffd84a, 14); }
   G.achT -= dt; if (G.achT <= 0) { G.achT = 0.3; const d = G.dist; if (d >= 100) ach("warmup"); if (d >= 500) ach("halftime"); if (d >= 1000) ach("fulltime"); if (d >= 2000) ach("extratime"); if (d >= 3000) ach("penalties"); if (G.noHit && d >= 300) ach("cleansheet"); if (G.num >= 15) ach("squad"); if (G.num >= 25) ach("legend"); if (G.num >= 50) ach("retired"); if (G.score >= 5000) ach("bigscore"); if (G.jumps >= 20) ach("acrobat"); if (G.slides >= 10) ach("slider"); if (G.lanes >= 30) ach("dribbler"); if (G.kicks >= 3) ach("freekick"); if (G.coins >= 100) ach("century"); }
   if (G.dist >= G.nextMile) { feedItem("📍", G.nextMile + " m!", "Keep going!", "big"); sfx.milestone(); celeT = 0.8; celeFlip = G.nextMile % 1000 === 0; if (celeFlip && G.lives < MAXL) { G.lives++; sfx.life(); feedItem("❤", "EXTRA LIFE!", "Reward for 1,000 m", "power"); } G.nextMile += 500; }
-  for (const k of ["magnet", "medal", "spray", "rocket", "boots", "whistle"]) if (P[k] > 0) { P[k] -= dt; if (P[k] <= 0) { P[k] = 0; if (k === "spray") setGhost(false); } }
+  for (const k of ["magnet", "rocket", "boots", "whistle"]) if (P[k] > 0) { P[k] -= dt; if (P[k] <= 0) P[k] = 0; }
   G.invuln = Math.max(0, G.invuln - dt);
   // George: lane, jump, slide
   px = lerp(px, LANES[laneIdx], 1 - Math.exp(-14 * dt));
@@ -734,7 +724,7 @@ function update(dt) {
     } else if (it.kind === "power" && !it.gone) {
       if (across(1.3) && Math.abs(it.x - px) < 1.4 && Math.abs(1.1 - (py + 0.9)) < 1.8) { it.gone = true; givePower(it.type); }
     } else if (it.kind === "obs" && !it.gone && across(it.type === "mower" ? 1.0 : 0.7) && Math.abs(it.x - px) < (it.type === "mower" ? 1.0 : 0.82)) {
-      const safe = P.spray > 0 || P.rocket > 0 || G.invuln > 0, standing = sliding <= 0;
+      const safe = P.rocket > 0 || G.invuln > 0, standing = sliding <= 0;
       const hit = it.type === "wall" ? py < 2.5 : it.type === "ref" ? py < 2.2 : it.type === "mower" ? py < 1.3 : (it.type === "barrier" || it.type === "def") ? py < 0.62 : (standing && py < 1.5);
       if (hit && !safe) hurt(it);
     }
@@ -749,7 +739,7 @@ function update(dt) {
   updateSparks(dt); updateFx();
   // the figure
   george.root.position.set(px, py, 0);
-  george.root.visible = !(G.invuln > 0 && P.spray <= 0 && Math.floor(clock * 14) % 2 === 0 && G.phase === "play" && stumble <= 0);
+  george.root.visible = !(G.invuln > 0 && Math.floor(clock * 14) % 2 === 0 && G.phase === "play" && stumble <= 0);
   george.blob.position.y = 0.03 - py; george.blob.scale.setScalar(clamp(1 - py * 0.12, 0.5, 1));
   george.root.rotation.z = (px - LANES[laneIdx]) * -0.07; george.root.rotation.y = Math.PI + clamp((px - LANES[laneIdx]) * 0.12, -0.35, 0.35);   // leans into a lane change
   bubble.visible = G.shield; if (G.shield) { bubble.position.set(px, py + 1, 0); const bs = 1 + Math.sin(clock * 5) * 0.04; bubble.scale.set(bs, bs, bs); }
@@ -856,7 +846,7 @@ function start(daily) {
   $("screen-start").hidden = true; $("screen-end").hidden = true; $("screen-game").hidden = false;
   document.body.classList.add("gr-playing");          // the game fills the whole screen, so the score and hearts are always in view
   try { if (matchMedia("(pointer: coarse)").matches && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); } catch (e) {}
-  resize(); requestAnimationFrame(resize); renderTop($("hud-top")); startMusic(); feedItem(G.daily ? "📅" : "🏃", G.daily ? "DAILY CHALLENGE" : "GO GEORGE!", G.daily ? "Same pitch for everyone today" : "Swipe to move, jump and slide", "big");
+  resize(); requestAnimationFrame(resize); { const t = top3(); $("hud-best").textContent = t.length ? "🏆 Best " + t[0].s.toLocaleString("en-GB") : ""; } startMusic(); feedItem(G.daily ? "📅" : "🏃", G.daily ? "DAILY CHALLENGE" : "GO GEORGE!", G.daily ? "Same pitch for everyone today" : "Swipe to move, jump and slide", "big");
 }
 $("btn-start").addEventListener("click", () => start(false)); $("btn-daily").addEventListener("click", () => start(true)); $("btn-daily2").addEventListener("click", () => start(true));
 $("btn-again").addEventListener("click", () => start(G.daily));
@@ -866,4 +856,4 @@ $("btn-sound").addEventListener("click", () => { sfxOn = !sfxOn; try { localStor
 showMusic(); showDaily(); loadOnline("start"); renderAchList(); renderTop($("start-top")); newGoals(); resize();
 reset(); G.phase = "menu"; for (const it of items) scene.remove(it.mesh); items.length = 0; last = performance.now(); raf = requestAnimationFrame(frame);
 $("screen-game").hidden = true;
-window.__run = { G, P, items, referee, defender, mower, start, get layout() { return items.filter((i) => i.kind !== "coin" || true).slice(0, 40).map((i) => i.kind + ":" + (i.type || "") + ":" + i.x.toFixed(1) + ":" + Math.round(i.z)).join("|"); }, get george() { return george; }, hurt, givePower, camera, makeChunk, setGhost, kick: () => givePower("ball"), jump, slide, goLane, feedItem };
+window.__run = { G, P, items, referee, defender, mower, start, get layout() { return items.filter((i) => i.kind !== "coin" || true).slice(0, 40).map((i) => i.kind + ":" + (i.type || "") + ":" + i.x.toFixed(1) + ":" + Math.round(i.z)).join("|"); }, get george() { return george; }, hurt, givePower, camera, makeChunk, kick: () => givePower("ball"), jump, slide, goLane, feedItem };
