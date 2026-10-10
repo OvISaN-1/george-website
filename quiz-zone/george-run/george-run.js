@@ -480,7 +480,7 @@ function updateFx() {
   if (sliding > 0 && grounded && Math.random() < 0.7) dust(px);
 }
 function updateSparks(dt) {
-  for (let i = sparks.length - 1; i >= 0; i--) { const s = sparks[i]; s.life -= dt; s.m.position.x += s.vx * dt; s.m.position.y += s.vy * dt; s.m.position.z += s.vz * dt + G.speed * dt; s.vy -= 9 * dt; s.m.material.opacity = Math.max(0, s.life / s.max); if (s.life <= 0) { scene.remove(s.m); s.m.material.dispose(); sparks.splice(i, 1); } }
+  for (let i = sparks.length - 1; i >= 0; i--) { const s = sparks[i]; s.life -= dt; s.m.position.x += s.vx * dt; s.m.position.y += s.vy * dt; s.m.position.z += s.vz * dt + G.speed * dt; s.vy -= 9 * dt; s.m.material.opacity = Math.max(0, s.life / s.max) * clamp((3.5 - s.m.position.z) / 2, 0, 1); if (s.life <= 0 || s.m.position.z > 3.5) { scene.remove(s.m); s.m.material.dispose(); sparks.splice(i, 1); } }
 }
 
 /* ---------------- power-ups and the top-of-screen feed ---------------- */
@@ -582,7 +582,7 @@ function animate(dt) {
     }
   }
   if (sliding > 0) {                                                    // slide tackle: one leg out straight, the other tucked under
-    g.body.rotation.x = -1.0; g.body.position.y = -0.5; g.legR.rotation.x = -1.5; g.kneeR.rotation.x = 0; g.legL.rotation.x = -0.6; g.kneeL.rotation.x = 1.7;
+    g.body.rotation.x = -1.0; g.body.position.y = -0.3; g.legR.rotation.x = -0.75; g.kneeR.rotation.x = 0; g.legL.rotation.x = 0.15; g.kneeL.rotation.x = 1.9;
     g.armL.rotation.x = 0.3; g.armL.rotation.z = -1.3; g.armR.rotation.x = 0.9; g.armR.rotation.z = 0.5; g.head.rotation.x = 0.25;
   }
   if (kickT > 0) { kickT -= dt; const u = 1 - kickT / 0.45; g.legR.rotation.x = -0.4 - 1.5 * Math.sin(Math.min(1, u * 1.6) * Math.PI * 0.8); g.kneeR.rotation.x = u < 0.3 ? 1.3 : 0.1; g.body.rotation.x = 0.1; g.armL.rotation.z = -0.8; g.armR.rotation.z = 0.8; }
@@ -808,7 +808,7 @@ function update(dt) {
   if (ballFly) { ballMesh.visible = true; ballMesh.position.set(px, 0.8 + Math.abs(Math.sin(ballFly.t * 9)) * 0.5, ballFly.z); ballMesh.rotation.x -= 0.6; } else ballMesh.visible = false;
   // rocket flames
   if (P.rocket > 0 && !reduced) { for (let k = 0; k < 2; k++) { const f = flame[flameIdx++ % flame.length]; f.m.position.set(px + rand(-0.15, 0.15), py + 0.7 + rand(-0.1, 0.1), 0.9); f.life = 0.35; f.m.visible = true; } }
-  for (const f of flame) { if (f.life > 0) { f.life -= dt; f.m.position.z += (sp * 0.9) * dt; f.m.material.opacity = Math.max(0, f.life / 0.35); const sc = 0.6 + (1 - f.life / 0.35); f.m.scale.setScalar(sc); if (f.life <= 0) f.m.visible = false; } }
+  for (const f of flame) { if (f.life > 0) { f.life -= dt; f.m.position.z += 5 * dt; f.m.position.y -= 0.6 * dt; f.m.material.opacity = Math.max(0, f.life / 0.35); const sc = 0.5 + 0.6 * (1 - f.life / 0.35); f.m.scale.setScalar(sc); if (f.life <= 0) f.m.visible = false; } }
   updateSparks(dt); updateFx(); updateWeather(dt, sp);
   { const sn = seasonAt(G.dist); if (sn !== G.season) { G.season = sn; announceSeason(sn); } }
   // the figure
