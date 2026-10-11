@@ -241,6 +241,7 @@ const sfx = {
   splash(k) { if (sfxOn) { noise(0.3, 0.22, k === "puddle" ? 1800 : 900); tone(k === "snow" ? 900 : 600, 0.12, "sine", 0.06, 300); } },
   goal() { if (sfxOn) { noise(1.6, 0.28, 1400); [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.25, "triangle", 0.09, 0, 0.1 + i * 0.08)); } },
   twang() { if (sfxOn) [0, 0.05, 0.1].forEach((d) => tone(240, 0.3, "triangle", 0.12, 110, d)); },
+  thunk() { if (sfxOn) { tone(150, 0.15, "triangle", 0.22, 70); noise(0.12, 0.2, 700); } },
   crowd() { if (sfxOn) { noise(2.2, 0.28, 1500); [392, 523, 659].forEach((f, i) => tone(f, 0.5, "sawtooth", 0.03, 0, 0.3 + i * 0.25)); } },
   over() { if (sfxOn) [392, 330, 262].forEach((f, i) => tone(f, 0.3, "triangle", 0.12, 0, i * 0.18)); },
 };
@@ -520,6 +521,7 @@ function mower(lane, z) {                          // a ride-on mower driving to
 
 const CHUNK = 34;
 function difficulty() { return clamp((G.speed - 14) / 24, 0, 1); }
+let recentToys = [];
 let safeChunks = 0, skyT = 0, skyLane = 1, skyN = 0;
 function makeChunk(z0) {
   const safe = safeChunks > 0; if (safe) safeChunks--; chunkNo++;
@@ -542,8 +544,9 @@ function makeChunk(z0) {
   if (!special && d > 0.5 && extra) wall(extraLane, z0 - 30);
   // a pick-up now and then: at most one per stretch of road, so it never gets crowded
   const give = R() < 0.5, bag = ["ball", "ball", "ball", "boots", "boots", "whistle", "whistle", "gloves", "gloves", "trophy", "trophy", "rocket", "rocket", "bow", "wave", "scarf", "num5", "num5", "num5", "numx2"];
-  const t = pR(bag), tl = Math.floor(R() * 3), tz = z0 - rR(10, 26);
-  if (give && (t !== "scarf" || G.lives < MAXL)) toy(t, tl, tz);
+  let t = pR(bag); const t2 = pR(bag); if (recentToys.includes(t)) t = t2;   // a second pick if it came up recently
+  const tl = Math.floor(R() * 3), tz = z0 - rR(10, 26);
+  if (give && (t !== "scarf" || G.lives < MAXL) && !recentToys.includes(t)) { toy(t, tl, tz); recentToys.push(t); if (recentToys.length > 3) recentToys.shift(); }
   const funRoll = R(), funLane = Math.floor(R() * 3), funZ = z0 - rR(6, 30), fs = SEASONS[seasonAt(G.dist - funZ) % 4].fun;   // the season George will be in when he gets here
   // never right next to another obstacle in the same lane, so there is always a way through
   if (fs && !safe && !special && funRoll < 0.55 && !items.some((o) => o.kind === "obs" && Math.abs(o.z - funZ) < 9 && Math.abs(o.x - LANES[funLane]) < 1.3)) funItem(fs, funLane, funZ);
@@ -606,7 +609,7 @@ function givePower(type) {
   const T = TOYS[type]; if (AM[type]) ach(AM[type]); G.usedPower++; sfx.power(); burst(px, 1.2, 0, T.col, 14);
   if (type === "ball") { feedItem(T.icon, T.name, T.sub, "power"); kickT = 0.45; G.kicks++; sfx.kick(); ballFly = { z: -1.5, t: 0, last: -1.5, got: 0 }; return; }
   if (type === "bow") { fireArrows(); P.surge = 4; setAct("bow", 0.7); feedItem(T.icon, T.name, T.sub, "power"); return; }
-  if (type === "wave") { waveZ = -140; G.waveGot = 0; P.surge = 4; setAct("cheer", 1.2); sfx.crowd(); feedItem(T.icon, T.name, T.sub, "power"); return; }
+  if (type === "wave") { startWave(); P.surge = 4; setAct("cheer", 1.2); sfx.crowd(); feedItem(T.icon, T.name, T.sub, "power"); return; }
   if (type === "boots") { P.boots = powerTime("boots"); setAct("flex", 0.6); }
   else if (type === "whistle") { P.whistle = 3; setAct("whistle", 0.9); }
   else if (type === "gloves") { G.shield = true; setAct("gloves", 0.9); }
@@ -828,9 +831,9 @@ function drawBest(m) {
 function reset() {
   for (const it of items) drop(it.mesh); items.length = 0; feedEl.innerHTML = "";
   G.speed = 15; G.dist = 0; G.coins = 0; G.score = 0; G.lives = 4; G.t = 0; G.streak = 0; G.invuln = 0; G.shield = false; G.nextMile = 1000; G.usedPower = 0; G.kicks = 0; G.noHit = true; G.jumps = G.slides = G.lanes = 0; G.achT = 0; G.goalsDone = new Set(); G.funs = 0; G.season = 0; wantSong = 0; songLap = 0; jumpBuf = coyote = 0; newAch = []; landT = reachT = 0;
-  P.magnet = P.rocket = P.boots = P.whistle = P.surge = 0; ballFly = null; arrows = null; arrowMeshes.forEach((m) => (m.visible = false)); waveZ = null; standBands.forEach((b) => (b.band.visible = false)); goalT = 0; goalGrp.visible = false; coach.visible = false; hintT = 0; $("hint").hidden = true; laneIdx = 1; px = 0; py = 0; vy = 0; sliding = 0; grounded = true; stumble = kickT = celeT = 0; act.t = 0; tempoBoost = 0;
+  P.magnet = P.rocket = P.boots = P.whistle = P.surge = 0; ballFly = null; bow = null; bowFx.visible = false; arrowMeshes.forEach((m) => (m.visible = false)); waveZ = null; fanShirts.count = fanSkin.count = 0; standBands.forEach((b) => (b.band.visible = false)); goalT = 0; goalGrp.visible = false; coach.visible = false; hintT = 0; $("hint").hidden = true; laneIdx = 1; px = 0; py = 0; vy = 0; sliding = 0; grounded = true; stumble = kickT = celeT = 0; act.t = 0; tempoBoost = 0;
   G.num = george.baseNum; G.maxNum = G.num; george.drawNumber(G.num);
-  rng = G.daily ? seeded(seedOf("georges-run:" + todayUTC())) : Math.random; chunkNo = 0; G.continued = false; skyT = 0;
+  recentToys = []; rng = G.daily ? seeded(seedOf("georges-run:" + todayUTC())) : Math.random; chunkNo = 0; G.continued = false; skyT = 0;
   safeChunks = 3; bestShown = false; bestM = SAVE.bestDist || Math.max(0, ...readJSON(TOP_KEY, []).map((r) => r.m || 0)); bestGate.visible = false; if (bestM > 100) drawBest(bestM); spawnFront = -30; fillAhead(); applySky();
 }
 // once per run, George can pay some of his shop coins to keep going
@@ -939,7 +942,7 @@ function update(dt) {
     if (it.kind === "coin" && !it.gone) {
       if (P.magnet > 0 && it.z > -14 && it.z < 1.5 && Math.abs(it.x - px) < 6.5) { const k = 1 - Math.exp(-9 * dt); it.x = lerp(it.x, px, k); it.baseY = lerp(it.baseY, py + 0.9, k); it.mesh.position.x = it.x; }
       if (ballFly && it.z < ballFly.last + 3 && it.z > ballFly.z - 3 && it.z < 0) { takeCoin(it, 2); ballFly.got++; }
-      else if (arrows && it.z < arrows.last + 3 && it.z > arrows.z - 3 && it.z < 0) { takeCoin(it); it.flyTo = true; arrows.got++; }
+      else if (bow && !bow.hit && it.z < bow.last + 3 && it.z > bow.z - 3 && it.z < 0) { takeCoin(it); it.flyTo = true; bow.got++; }
       else if (across(1.0) && Math.abs(it.x - px) < 1.4 && Math.abs((it.baseY || 0.9) - (py + 0.9)) < 1.5) takeCoin(it);
     } else if (it.kind === "power" && !it.gone) {
       if (across(1.3) && Math.abs(it.x - px) < 1.4 && Math.abs(1.1 - (py + 0.9)) < 1.8) { it.gone = true; givePower(it.type); }
@@ -956,7 +959,7 @@ function update(dt) {
   // rocket flames
   if (P.rocket > 0 && !reduced) { for (let k = 0; k < 2; k++) { const f = flame[flameIdx++ % flame.length]; f.m.position.set(px + rand(-0.15, 0.15), py + 0.7 + rand(-0.1, 0.1), 0.9); f.life = 0.35; f.m.visible = true; } }
   for (const f of flame) { if (f.life > 0) { f.life -= dt; f.m.position.z += 5 * dt; f.m.position.y -= 0.6 * dt; f.m.material.opacity = Math.max(0, f.life / 0.35); const sc = 0.5 + 0.6 * (1 - f.life / 0.35); f.m.scale.setScalar(sc); if (f.life <= 0) f.m.visible = false; } }
-  updateSparks(dt); updateFx(); updateWeather(dt, sp); updateGoal(dt, sp); updateCoach(dt, sp); updateArrows(dt, sp); updateWave(dt);
+  updateSparks(dt); updateFx(); updateWeather(dt, sp); updateGoal(dt, sp); updateCoach(dt, sp); updateArrows(dt, sp); updateWave(dt, sp);
   { const sn = seasonAt(G.dist); if (sn !== G.season) { G.season = sn; announceSeason(sn); } }
   // the figure
   george.root.position.set(px, py, 0);
@@ -999,29 +1002,96 @@ function updateCoach(dt, sp) {
   const c = 0.2 + 0.35 * Math.abs(Math.sin(clock * 14)), ar = coach.userData.arms;
   ar[0].rotation.x = ar[1].rotation.x = -1.2; ar[0].rotation.z = c; ar[1].rotation.z = -c; coach.position.y = Math.abs(Math.sin(clock * 7)) * 0.08;
 }
-// Robin Hood's bow: three golden arrows, one down each lane; every coin they pass flies back to George
-const arrowMeshes = [0, 1, 2].map(() => {
-  const g = new THREE.Group(), gold = new THREE.MeshLambertMaterial({ color: 0xffc933, emissive: 0x8a6400, emissiveIntensity: 0.6 });
-  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.6, 8), gold); shaft.rotation.x = Math.PI / 2; g.add(shaft);
-  const head = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.3, 10), gold); head.rotation.x = -Math.PI / 2; head.position.z = -0.95; g.add(head);
-  for (const [r, c] of [[0, 0xd7102b], [Math.PI / 2, 0xffffff]]) { const f = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.22, 0.32), new THREE.MeshLambertMaterial({ color: c })); f.rotation.z = r; f.position.z = 0.7; g.add(f); }
-  const trail = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 7), new THREE.MeshBasicMaterial({ color: 0xffd84a, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending, depthWrite: false })); trail.position.z = 4.2; g.add(trail);   // a golden streak so you can see them fly
-  g.scale.setScalar(1.5); g.visible = false; scene.add(g); return g;
+// Robin Hood's bow: three big golden arrows arc high over the pitch, fanning out into the three lanes, and thud into
+// three archery targets up ahead. Every coin they fly over goes back to George. Then the targets fade away.
+const ringTex = canvasTex(128, 128, (g) => { ["#ffffff", "#222222", "#2f7fd6", "#e1102c", "#ffd84a"].forEach((c, i) => { g.fillStyle = c; g.beginPath(); g.arc(64, 64, 62 - i * 12.4, 0, 7); g.fill(); }); });
+const bowMats = [], BM = (o) => { const m = new THREE.MeshLambertMaterial(Object.assign({ transparent: true }, o)); bowMats.push(m); return m; };
+const bowFx = new THREE.Group(); bowFx.visible = false; scene.add(bowFx);
+const boards = [0, 1, 2].map((l) => {
+  const g = new THREE.Group(); g.position.set(LANES[l], 0, 0); bowFx.add(g);
+  const face = new THREE.Mesh(new THREE.CircleGeometry(0.95, 30), BM({ map: ringTex, side: THREE.DoubleSide, emissive: 0x333333 })); face.position.y = 2.1; g.add(face);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.97, 0.08, 6, 30), BM({ color: 0x8a5a2b })); rim.position.y = 2.1; g.add(rim);
+  for (const sx of [-0.55, 0.55]) { const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.4, 6), BM({ color: 0x8a5a2b })); leg.position.set(sx, 1.1, -0.25); leg.rotation.z = -sx * 0.3; g.add(leg); }
+  return face;
 });
-let arrows = null, waveZ = null;
-function fireArrows() { arrows = { z: -1, last: -1, got: 0 }; arrowMeshes.forEach((m) => (m.visible = true)); sfx.twang(); }
-function updateArrows(dt, sp) {
-  if (!arrows) return; arrows.last = arrows.z; arrows.z -= (sp + 60) * dt;
-  arrowMeshes.forEach((m, l) => m.position.set(LANES[l], 1.0, arrows.z));
-  if (!reduced && Math.random() < 0.8) burst(LANES[Math.floor(Math.random() * 3)], 1.0, arrows.z + 1, 0xffd84a, 1);
-  if (arrows.z < -90) { feedItem("🏹", "SHERWOOD STRIKE!", "+" + arrows.got + " coins", "big"); arrows = null; arrowMeshes.forEach((m) => (m.visible = false)); }
+const arrowMeshes = [0, 1, 2].map(() => {
+  const g = new THREE.Group(), gold = BM({ color: 0xffc933, emissive: 0x8a6400, emissiveIntensity: 0.8 });
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.6, 8), gold); shaft.rotation.x = Math.PI / 2; g.add(shaft);
+  const head = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.5, 10), gold); head.rotation.x = Math.PI / 2; head.position.z = 1.5; g.add(head);
+  for (const [r, c] of [[0, 0xd7102b], [Math.PI / 2, 0xffffff]]) { const fl = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.4, 0.55), BM({ color: c })); fl.rotation.z = r; fl.position.z = -1.1; g.add(fl); }
+  const trail = new THREE.Mesh(new THREE.ConeGeometry(0.22, 4.5, 10, 1, true), new THREE.MeshBasicMaterial({ color: 0xffd84a, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false })); trail.rotation.x = Math.PI / 2; trail.position.z = -3.4; g.add(trail); bowMats.push(trail.material);
+  g.scale.setScalar(1.6); g.visible = false; scene.add(g); return g;
+});
+let bow = null;
+function fireArrows() {
+  bow = { z: -1, last: -1, x0: px, d0: 72, got: 0, hit: false, fade: 0 };
+  bowFx.position.set(0, 0, -73); bowFx.visible = true; arrowMeshes.forEach((m) => (m.visible = true)); bowMats.forEach((m) => (m.opacity = m.blending === THREE.AdditiveBlending ? 0.55 : 1)); sfx.twang();
 }
-// the Mexican wave sweeps along both stands towards George; as it passes, every coin flies to him
-function updateWave(dt) {
-  if (waveZ === null) return; waveZ += 95 * dt;
-  for (const { band, sd } of standBands) { band.visible = true; band.position.x = (waveZ + 200) * sd; band.material.opacity = 0.9 * clamp((waveZ + 140) / 15, 0, 1) * clamp((8 - waveZ) / 10, 0, 1); band.scale.y = 1 + 0.06 * Math.sin(clock * 22); }
+const _aim = new THREE.Vector3();
+function updateArrows(dt, sp) {
+  if (!bow) return;
+  bowFx.position.z += sp * dt;
+  if (!bow.hit) {
+    bow.last = bow.z; bow.z += (sp - 42) * dt;                                // 42 m/s faster than the pitch, so you can watch them go
+    const u = clamp(1 - (bow.z - bowFx.position.z) / bow.d0, 0, 1), fan = u < 0.35 ? (u / 0.35) * (u / 0.35) * (3 - 2 * u / 0.35) : 1;
+    arrowMeshes.forEach((m, l) => {
+      const x = lerp(bow.x0, LANES[l], fan), y = lerp(1.6, 2.1, u) + Math.sin(u * Math.PI) * 2.2;
+      m.position.set(x, y, bow.z);
+      const dy = 0.5 + 2.2 * Math.PI * Math.cos(u * Math.PI);   // point the arrow along its flight
+      m.lookAt(_aim.set(x + (LANES[l] - bow.x0) * (u < 0.35 ? 0.02 : 0), y + dy * 0.02, bow.z - bow.d0 * 0.02));
+      if (!reduced && Math.random() < 0.5) burst(x, y, bow.z + 1.5, 0xffd84a, 1);
+    });
+    if (u >= 1) {
+      bow.hit = true; bow.fade = 1.7; sfx.thunk(); sfx.goal();
+      arrowMeshes.forEach((m, l) => { m.position.set(LANES[l], 2.1, bowFx.position.z + 0.9); m.lookAt(_aim.set(LANES[l], 2.1, bowFx.position.z - 5)); burst(LANES[l], 2.1, bowFx.position.z, 0xffd84a, 10); });
+      feedItem("🎯", "BULLSEYE!", "+" + bow.got + " coins", "big");
+    }
+  } else {
+    bow.fade -= dt; const op = clamp(bow.fade / 0.6, 0, 1);
+    arrowMeshes.forEach((m) => { m.position.z += sp * dt; });
+    boards.forEach((b, l) => { b.parent.rotation.x = Math.sin((1.7 - bow.fade) * 26 + l) * 0.12 * Math.max(0, bow.fade - 0.9); });
+    bowMats.forEach((m) => (m.opacity = op * (m.blending === THREE.AdditiveBlending ? 0 : 1)));
+    if (bow.fade <= 0) { bow = null; bowFx.visible = false; arrowMeshes.forEach((m) => (m.visible = false)); }
+  }
+}
+// The Mexican wave: real fans along the front rows of both stands jump up, arms in the air, one after another,
+// and the wave races along the stands towards George. As it passes, every coin flies to him.
+function mergeGeos(list) {
+  const parts = list.map((g) => (g.index ? g.toNonIndexed() : g)), n = parts.reduce((a, g) => a + g.attributes.position.count, 0);
+  const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3); let o = 0;
+  for (const g of parts) { pos.set(g.attributes.position.array, o * 3); nor.set(g.attributes.normal.array, o * 3); o += g.attributes.position.count; }
+  const m = new THREE.BufferGeometry(); m.setAttribute("position", new THREE.BufferAttribute(pos, 3)); m.setAttribute("normal", new THREE.BufferAttribute(nor, 3)); return m;
+}
+const MAX_FANS = 320;
+const shirtGeo = mergeGeos([new THREE.BoxGeometry(0.06, 0.62, 0.95).translate(0.48, 1.62, 0.3), new THREE.BoxGeometry(0.5, 0.7, 0.32).translate(0, 0.35, 0), new THREE.BoxGeometry(0.12, 0.6, 0.12).rotateZ(0.3).translate(-0.33, 0.95, 0), new THREE.BoxGeometry(0.12, 0.6, 0.12).rotateZ(-0.3).translate(0.33, 0.95, 0)]);
+const skinGeo = mergeGeos([new THREE.SphereGeometry(0.17, 10, 8).translate(0, 0.88, 0), new THREE.SphereGeometry(0.08, 6, 5).translate(-0.43, 1.25, 0), new THREE.SphereGeometry(0.08, 6, 5).translate(0.43, 1.25, 0)]);
+const fanShirts = new THREE.InstancedMesh(shirtGeo, new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x444444 }), MAX_FANS), fanSkin = new THREE.InstancedMesh(skinGeo, new THREE.MeshLambertMaterial({ color: 0xf0c39c, emissive: 0x3a2a1a }), MAX_FANS);
+for (const m of [fanShirts, fanSkin]) { m.count = 0; m.frustumCulled = false; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(m); }
+const RED = new THREE.Color(0xd7102b), WHITE = new THREE.Color(0xffffff), _fan = new THREE.Object3D();
+for (let k = 0; k < MAX_FANS; k++) fanShirts.setColorAt(k, RED);
+let waveZ = null, fanBase = 0;
+function startWave() {
+  waveZ = -105; fanBase = 14; G.waveGot = 0;
+  // and a wave of fans across the bottom of the screen, so you can't miss it on a phone
+  const el = $("wave2d"); el.innerHTML = Array.from({ length: 13 }, (_, i) => `<i style="--d:${(i * 0.07).toFixed(2)}s" class="${i % 2 ? "w" : "r"}">🙌</i>`).join(""); el.hidden = false; clearTimeout(el._t); el._t = setTimeout(() => { el.hidden = true; }, 2700);
+}
+function updateWave(dt, sp) {
+  if (waveZ === null) { fanShirts.count = fanSkin.count = 0; return; }
+  waveZ += Math.max(34, sp + 8) * dt; fanBase += sp * dt;   // the wave is kept slow enough to watch it roll along the stands
+  const W = 11; let n = 0;
+  for (const sd of [-1, 1]) for (const [row, d] of [[0, -4.2], [1, 1.3], [2, 2.9], [3, 4.5]]) {   // one row on the terrace in front of the stand, three in the stand
+    const off = row * 0.45, k0 = Math.max(0, Math.floor(fanBase - waveZ - W)), k1 = Math.ceil(fanBase - waveZ + W);
+    for (let k = k0; k <= k1 && n < MAX_FANS; k++) {
+      const z = fanBase - k * 1.0 - off, h = Math.abs(z - waveZ) < W ? 0.5 + 0.5 * Math.cos(Math.PI * (z - waveZ) / W) : 0;
+      if (h < 0.05) continue;
+      _fan.position.set(sd * (14.5 + 0.84 * d), (d < 0 ? 0 : 0.9 + 0.54 * d) - 1.3 + h * 2.0, z); _fan.rotation.set(0, sd * 1.2, (Math.random() - 0.5) * 0.05); _fan.scale.setScalar(2.0); _fan.updateMatrix();
+      fanShirts.setMatrixAt(n, _fan.matrix); fanSkin.setMatrixAt(n, _fan.matrix); fanShirts.setColorAt(n, (k * 7 + row * 3) % 5 < 3 ? RED : WHITE); n++;
+    }
+  }
+  fanShirts.count = fanSkin.count = n; fanShirts.instanceMatrix.needsUpdate = fanSkin.instanceMatrix.needsUpdate = true; if (fanShirts.instanceColor) fanShirts.instanceColor.needsUpdate = true;
+  for (const { band, sd } of standBands) { band.visible = true; band.position.x = (waveZ + 200) * sd; band.material.opacity = 0.7 * clamp((waveZ + 105) / 10, 0, 1) * clamp((-12 - waveZ) / 10, 0, 1); }
   for (const it of items) if (it.kind === "coin" && !it.gone && it.z < 2 && it.z <= waveZ && it.z > waveZ - 14) { takeCoin(it); it.flyTo = true; G.waveGot++; }
-  if (waveZ > 8) { waveZ = null; standBands.forEach((b) => (b.band.visible = false)); feedItem("🙌", "WHAT A WAVE!", "+" + G.waveGot + " coins", "big"); }
+  if (waveZ > -12) { waveZ = null; fanShirts.count = fanSkin.count = 0; standBands.forEach((b) => (b.band.visible = false)); feedItem("🙌", "WHAT A WAVE!", "+" + G.waveGot + " coins", "big"); }
 }
 function cameraStep(dt) {
   const tx = px * 0.55, ty = (P.rocket > 0 ? 5.4 : 3.7) + py * 0.3, tz = 6.7;
