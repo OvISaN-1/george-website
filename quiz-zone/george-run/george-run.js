@@ -96,6 +96,7 @@ const boardTex = canvasTex(1024, 64, (g, w, h) => {
   for (let i = 0; i < 6; i++) { const bg = red[i % 2]; g.fillStyle = bg; g.fillRect(i * w / 6, 0, w / 6, h); g.fillStyle = bg === "#ffffff" ? "#d7102b" : "#ffffff"; g.font = "700 30px Rajdhani, Arial Black, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(names[i], i * w / 6 + w / 12, h / 2 + 2); }
 }, [700 / 36, 1]);
 const boardMats = [], crowdMats = [], crowdTexes = [], boardTexes = [];
+const standBands = []; let waveTex = null;
 function sideScenery(sd) {
   const bt = boardTex.clone(); bt.needsUpdate = true; bt.repeat.set(700 / 36, 1); bt.wrapS = bt.wrapT = THREE.RepeatWrapping;
   const bm = new THREE.MeshBasicMaterial({ map: bt, side: THREE.DoubleSide }); const b = new THREE.Mesh(new THREE.PlaneGeometry(700, 1.1), bm);
@@ -108,6 +109,13 @@ function sideScenery(sd) {
   const cm = new THREE.MeshBasicMaterial({ map: ct, color: 0xffffff, side: THREE.DoubleSide });
   const stand = new THREE.Group(); stand.position.set(sd * 14.5, 0, -200); stand.rotation.y = -sd * Math.PI / 2; scene.add(stand);
   const st = new THREE.Mesh(new THREE.PlaneGeometry(700, 13), cm); st.rotation.x = -1.0; st.position.set(0, 0.9 + 6.5 * Math.cos(1.0), -6.5 * Math.sin(1.0)); stand.add(st);
+  // the Mexican wave: a band of fans jumping up, which sweeps along the stand
+  if (!waveTex) waveTex = canvasTex(128, 256, (g, w, h) => {
+    g.fillStyle = "rgba(255,216,74,0.8)"; g.fillRect(0, 0, w, h);
+    for (let y = 6; y < h; y += 12) for (let x = 2; x < w; x += 9) { g.fillStyle = Math.random() < 0.5 ? "#ffffff" : "#d7102b"; g.fillRect(x, y, 6, 7); g.fillRect(x - 1, y - 6, 2, 6); g.fillRect(x + 5, y - 6, 2, 6); g.fillStyle = "#f0c39c"; g.fillRect(x + 1, y - 3, 4, 3); }   // fans on their feet, arms up
+  });
+  const band = new THREE.Mesh(new THREE.PlaneGeometry(14, 13), new THREE.MeshBasicMaterial({ map: waveTex, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
+  band.rotation.x = -1.0; band.position.set(0, st.position.y + 0.5, st.position.z + 0.32); band.visible = false; stand.add(band); standBands.push({ band, sd });
   const wallM = new THREE.MeshLambertMaterial({ color: 0x7a0d20 }); crowdMats.push(cm); crowdTexes.push(ct);
   const front = new THREE.Mesh(new THREE.BoxGeometry(700, 0.9, 0.4), wallM); front.position.set(0, 0.45, 0); stand.add(front);
   const back = new THREE.Mesh(new THREE.BoxGeometry(700, 9, 0.3), new THREE.MeshLambertMaterial({ color: 0x2a1218 })); back.position.set(0, 4.5, -13 * Math.sin(1.0) - 0.3); stand.add(back);
@@ -232,6 +240,8 @@ const sfx = {
   season() { if (sfxOn) { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.2, "triangle", 0.1, 0, i * 0.07)); noise(0.6, 0.12, 6000); } },
   splash(k) { if (sfxOn) { noise(0.3, 0.22, k === "puddle" ? 1800 : 900); tone(k === "snow" ? 900 : 600, 0.12, "sine", 0.06, 300); } },
   goal() { if (sfxOn) { noise(1.6, 0.28, 1400); [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.25, "triangle", 0.09, 0, 0.1 + i * 0.08)); } },
+  twang() { if (sfxOn) [0, 0.05, 0.1].forEach((d) => tone(240, 0.3, "triangle", 0.12, 110, d)); },
+  crowd() { if (sfxOn) { noise(2.2, 0.28, 1500); [392, 523, 659].forEach((f, i) => tone(f, 0.5, "sawtooth", 0.03, 0, 0.3 + i * 0.25)); } },
   over() { if (sfxOn) [392, 330, 262].forEach((f, i) => tone(f, 0.3, "triangle", 0.12, 0, i * 0.18)); },
 };
 // The tune: a stadium stomp-and-clap beat, a chant-like tune, and more instruments joining in as George gets faster.
@@ -440,6 +450,8 @@ const TOYS = {
   gloves: { name: "KEEPER GLOVES", sub: "Saves you from one card", icon: "🧤", col: 0x39d17a },
   trophy: { name: "GOLDEN TROPHY", sub: "Coins fly to you", icon: "🏆", col: 0xffc933 },
   rocket: { name: "ROCKET BOOTS", sub: "Fly over everything", icon: "🚀", col: 0xe5384a },
+  bow: { name: "ROBIN HOOD'S BOW", sub: "Arrows sweep all three lanes", icon: "🏹", col: 0x2e8b3a },
+  wave: { name: "MEXICAN WAVE", sub: "The crowd sends you every coin", icon: "🙌", col: 0xffd84a },
   scarf: { name: "FAN SCARF", sub: "An extra life", icon: "🧣", col: 0xff4d6d },
   num5: { name: "SHIRT NUMBER +5", sub: "Every coin is worth more", icon: "#", col: 0x3ddc7c },
   numx2: { name: "NUMBER DOUBLE!", sub: "Your shirt number doubles", icon: "#", col: 0xb04dff },
@@ -458,6 +470,8 @@ function toyMesh(type) {
   else if (type === "gloves") { S(0.3, 0x39d17a, 0, 0, 0, 1, 1.1, 0.7); for (let k = -2; k <= 1; k++) S(0.09, 0x39d17a, k * 0.13 + 0.065, 0.36, 0, 1, 1.9, 1); S(0.1, 0x39d17a, 0.32, 0.05, 0, 1.6, 0.9, 1); B(0.5, 0.14, 0.3, 0xffffff, 0, -0.34, 0); }
   else if (type === "trophy") { const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.16, 0.5, 16), L(0xffc933)); cup.position.y = 0.2; g.add(cup); C(0.06, 0.08, 0.3, 0xffc933, 0, -0.2, 0); C(0.22, 0.26, 0.1, 0xffc933, 0, -0.4, 0); for (const sx of [-1, 1]) { const h = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.04, 6, 12), L(0xffc933)); h.position.set(sx * 0.4, 0.22, 0); g.add(h); } }
   else if (type === "rocket") { C(0.22, 0.28, 0.9, 0xeeeeee, 0, 0, 0); const n = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.4, 12), L(0xe5384a)); n.position.y = 0.65; g.add(n); for (const sx of [-1, 1]) B(0.4, 0.3, 0.05, 0xe5384a, sx * 0.28, -0.35, 0); g.rotation.z = 0.5; }
+  else if (type === "bow") { const arc = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.05, 6, 20, Math.PI), L(0x8a5a2b)); arc.rotation.z = -Math.PI / 2; g.add(arc); C(0.012, 0.012, 1.0, 0xffffff, 0, 0, 0); const ar = C(0.025, 0.025, 1.1, 0xffc933, 0.15, 0, 0); ar.rotation.z = Math.PI / 2; const hd = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.18, 8), L(0xffc933)); hd.rotation.z = -Math.PI / 2; hd.position.set(0.75, 0, 0); g.add(hd); }
+  else if (type === "wave") { const horn = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.8, 16, 1, true), new THREE.MeshLambertMaterial({ color: 0xd7102b, emissive: 0xd7102b, emissiveIntensity: 0.15, side: THREE.DoubleSide })); horn.rotation.z = Math.PI / 2; g.add(horn); C(0.36, 0.36, 0.08, 0xffffff, -0.38, 0, 0).rotation.z = Math.PI / 2; B(0.1, 0.32, 0.1, 0x222222, 0.1, -0.24, 0); }
   else if (type === "scarf") { const t = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.13, 8, 18), L(0xd7102b)); g.add(t); for (let k = 0; k < 4; k++) { const st = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.135, 8, 3, 0.5), L(0xffffff)); st.rotation.z = k * 1.57; g.add(st); } B(0.2, 0.5, 0.06, 0xd7102b, 0.22, -0.4, 0.1); B(0.2, 0.5, 0.06, 0xffffff, 0.44, -0.4, 0.1); }
   else { const lab = type === "num5" ? "+5" : type === "num10" ? "+10" : "x2", col = TOYS[type].col; const tex = badgeTex(lab, col); for (const sz of [1, -1]) { const m = new THREE.Mesh(new THREE.CircleGeometry(0.62, 28), new THREE.MeshBasicMaterial({ map: tex, transparent: true })); m.position.z = 0.04 * sz; if (sz < 0) m.rotation.y = Math.PI; g.add(m); } billboard = true; }
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.72, 0.82, 24), new THREE.MeshBasicMaterial({ color: TOYS[type].col, transparent: true, opacity: 0.5, side: THREE.DoubleSide })); g.add(ring);
@@ -527,7 +541,7 @@ function makeChunk(z0) {
   const extra = R() < 0.5, extraLane = Math.floor(R() * 3);
   if (!special && d > 0.5 && extra) wall(extraLane, z0 - 30);
   // a pick-up now and then: at most one per stretch of road, so it never gets crowded
-  const give = R() < 0.5, bag = ["ball", "ball", "ball", "boots", "boots", "whistle", "whistle", "gloves", "gloves", "trophy", "trophy", "rocket", "rocket", "scarf", "num5", "num5", "num5", "numx2"];
+  const give = R() < 0.5, bag = ["ball", "ball", "ball", "boots", "boots", "whistle", "whistle", "gloves", "gloves", "trophy", "trophy", "rocket", "rocket", "bow", "wave", "scarf", "num5", "num5", "num5", "numx2"];
   const t = pR(bag), tl = Math.floor(R() * 3), tz = z0 - rR(10, 26);
   if (give && (t !== "scarf" || G.lives < MAXL)) toy(t, tl, tz);
   const funRoll = R(), funLane = Math.floor(R() * 3), funZ = z0 - rR(6, 30), fs = SEASONS[seasonAt(G.dist - funZ) % 4].fun;   // the season George will be in when he gets here
@@ -557,7 +571,7 @@ function updateSparks(dt) {
 }
 
 /* ---------------- power-ups and the top-of-screen feed ---------------- */
-const P = { magnet: 0, rocket: 0, boots: 0, whistle: 0 };
+const P = { magnet: 0, rocket: 0, boots: 0, whistle: 0, surge: 0 };
 const bubble = new THREE.Mesh(new THREE.SphereGeometry(1.25, 18, 12), new THREE.MeshBasicMaterial({ color: 0x9fe3ff, transparent: true, opacity: 0.28 })); bubble.visible = false; scene.add(bubble);
 const flame = []; for (let i = 0; i < 14; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.13, 6, 5), new THREE.MeshBasicMaterial({ color: 0xff8a1f, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); m.visible = false; scene.add(m); flame.push({ m, life: 0 }); }
 let flameIdx = 0;
@@ -591,6 +605,8 @@ document.addEventListener("click", (e) => {
 function givePower(type) {
   const T = TOYS[type]; if (AM[type]) ach(AM[type]); G.usedPower++; sfx.power(); burst(px, 1.2, 0, T.col, 14);
   if (type === "ball") { feedItem(T.icon, T.name, T.sub, "power"); kickT = 0.45; G.kicks++; sfx.kick(); ballFly = { z: -1.5, t: 0, last: -1.5, got: 0 }; return; }
+  if (type === "bow") { fireArrows(); P.surge = 4; setAct("bow", 0.7); feedItem(T.icon, T.name, T.sub, "power"); return; }
+  if (type === "wave") { waveZ = -140; G.waveGot = 0; P.surge = 4; setAct("cheer", 1.2); sfx.crowd(); feedItem(T.icon, T.name, T.sub, "power"); return; }
   if (type === "boots") { P.boots = powerTime("boots"); setAct("flex", 0.6); }
   else if (type === "whistle") { P.whistle = 3; setAct("whistle", 0.9); }
   else if (type === "gloves") { G.shield = true; setAct("gloves", 0.9); }
@@ -690,6 +706,7 @@ function animate(dt) {
     if (act.type === "whistle") { g.armR.rotation.x = -2.3 * ps; g.elbowR.rotation.x = -2.4 * ps; g.armR.rotation.z = -0.25 * ps; g.head.rotation.x = -0.12 - 0.25 * ps; }
     else if (act.type === "gloves") { g.armL.rotation.z = -1.4 * ps; g.armR.rotation.z = 1.4 * ps; g.armL.rotation.x = g.armR.rotation.x = -0.9 * ps; g.body.rotation.x = 0.2 + 0.3 * ps; g.legL.rotation.z = -0.35 * ps; g.legR.rotation.z = 0.35 * ps; }
     else if (act.type === "trophy") { g.armL.rotation.x = g.armR.rotation.x = -3.0 * ps; g.armL.rotation.z = -0.3 * ps; g.armR.rotation.z = 0.3 * ps; g.body.position.y += ps * 0.2; }
+    else if (act.type === "bow") { g.armL.rotation.x = -1.55 * ps; g.armL.rotation.z = -0.15 * ps; g.armR.rotation.x = -1.5 * ps; g.elbowR.rotation.x = -2.3 * ps; g.armR.rotation.z = 0.35 * ps; g.body.rotation.y += 0.5 * ps; }
     else if (act.type === "cheer") { g.armL.rotation.x = g.armR.rotation.x = -3.0 * ps; g.body.position.y = Math.abs(Math.sin(clock * 12)) * 0.25 * ps; }
     else if (act.type === "flex") { g.armL.rotation.z = -1.3 * ps; g.armR.rotation.z = 1.3 * ps; g.elbowL.rotation.x = g.elbowR.rotation.x = -2.2 * ps; g.armL.rotation.x = g.armR.rotation.x = -0.3 * ps; }
   }
@@ -782,7 +799,7 @@ function renderTop(el) {
 function chips() {
   const c = [];
   if (G.shield) c.push("🧤"); if (P.rocket > 0) c.push("🚀 " + Math.ceil(P.rocket));
-  if (P.magnet > 0) c.push("🏆 " + Math.ceil(P.magnet)); if (P.boots > 0) c.push("👟 " + Math.ceil(P.boots)); if (P.whistle > 0) c.push("📣"); if (ballFly) c.push("⚽");
+  if (P.magnet > 0) c.push("🏆 " + Math.ceil(P.magnet)); if (P.boots > 0) c.push("👟 " + Math.ceil(P.boots)); if (P.whistle > 0) c.push("📣"); if (ballFly) c.push("⚽"); if (P.surge > 0) c.push("⚡ " + Math.ceil(P.surge));
   return c.join("   ");
 }
 function setHud() {
@@ -811,7 +828,7 @@ function drawBest(m) {
 function reset() {
   for (const it of items) drop(it.mesh); items.length = 0; feedEl.innerHTML = "";
   G.speed = 15; G.dist = 0; G.coins = 0; G.score = 0; G.lives = 4; G.t = 0; G.streak = 0; G.invuln = 0; G.shield = false; G.nextMile = 1000; G.usedPower = 0; G.kicks = 0; G.noHit = true; G.jumps = G.slides = G.lanes = 0; G.achT = 0; G.goalsDone = new Set(); G.funs = 0; G.season = 0; wantSong = 0; songLap = 0; jumpBuf = coyote = 0; newAch = []; landT = reachT = 0;
-  P.magnet = P.rocket = P.boots = P.whistle = 0; ballFly = null; goalT = 0; goalGrp.visible = false; coach.visible = false; hintT = 0; $("hint").hidden = true; laneIdx = 1; px = 0; py = 0; vy = 0; sliding = 0; grounded = true; stumble = kickT = celeT = 0; act.t = 0; tempoBoost = 0;
+  P.magnet = P.rocket = P.boots = P.whistle = P.surge = 0; ballFly = null; arrows = null; arrowMeshes.forEach((m) => (m.visible = false)); waveZ = null; standBands.forEach((b) => (b.band.visible = false)); goalT = 0; goalGrp.visible = false; coach.visible = false; hintT = 0; $("hint").hidden = true; laneIdx = 1; px = 0; py = 0; vy = 0; sliding = 0; grounded = true; stumble = kickT = celeT = 0; act.t = 0; tempoBoost = 0;
   G.num = george.baseNum; G.maxNum = G.num; george.drawNumber(G.num);
   rng = G.daily ? seeded(seedOf("georges-run:" + todayUTC())) : Math.random; chunkNo = 0; G.continued = false; skyT = 0;
   safeChunks = 3; bestShown = false; bestM = SAVE.bestDist || Math.max(0, ...readJSON(TOP_KEY, []).map((r) => r.m || 0)); bestGate.visible = false; if (bestM > 100) drawBest(bestM); spawnFront = -30; fillAhead(); applySky();
@@ -858,7 +875,7 @@ function update(dt) {
   G.t += dt;
   // faster and faster
   G.speed = Math.min(40, G.speed + dt * (P.rocket > 0 ? 0 : 0.15 + difficulty() * 0.06));
-  const sp = G.speed * (P.rocket > 0 ? 1.45 : P.boots > 0 ? 1.35 : 1);
+  const sp = G.speed * (P.rocket > 0 ? 1.45 : P.boots > 0 ? 1.35 : 1) * (P.surge > 0 ? 1.1 : 1);   // the bow and the wave also give a 10% burst of speed
   G.dist += sp * dt; G.score += sp * dt * 0.5 * (P.boots > 0 ? 2 : 1);
   tempoBoost = Math.min(34, (G.speed - 15) * 1.2);
   if (bestM > 100) {
@@ -869,7 +886,7 @@ function update(dt) {
     const run = { dist: G.dist, coins: G.coins, power: G.usedPower, kicks: G.kicks, maxNum: G.maxNum, noHit: G.noHit };
     for (const m of goals) if (!G.goalsDone.has(m.id) && m.ok(run)) { G.goalsDone.add(m.id); feedItem("✅", "GOAL DONE!", m.text + " · +10 🪙", "power"); sfx.milestone(); } G.achT = 0.3; const d = G.dist; if (d >= 100) ach("warmup"); if (d >= 500) ach("halftime"); if (d >= 1000) ach("fulltime"); if (d >= 2000) ach("extratime"); if (d >= 3000) ach("penalties"); if (G.noHit && d >= 300) ach("cleansheet"); if (G.num >= 15) ach("squad"); if (G.num >= 25) ach("legend"); if (G.num >= 50) ach("retired"); if (G.score >= 5000) ach("bigscore"); if (G.jumps >= 20) ach("acrobat"); if (G.slides >= 10) ach("slider"); if (G.lanes >= 30) ach("dribbler"); if (G.kicks >= 3) ach("freekick"); if (G.coins >= 100) ach("century"); }
   if (G.dist >= G.nextMile) { sfx.milestone(); celeT = 0.8; celeFlip = true; if (G.lives < MAXL) { G.lives++; sfx.life(); feedItem("❤", "EXTRA LIFE!", "Reward for " + G.nextMile.toLocaleString("en-GB") + " m", "power"); coachCheer(); } G.nextMile += 1000; }
-  for (const k of ["magnet", "rocket", "boots", "whistle"]) if (P[k] > 0) { P[k] -= dt; if (P[k] <= 0) P[k] = 0; }
+  for (const k of ["magnet", "rocket", "boots", "whistle", "surge"]) if (P[k] > 0) { P[k] -= dt; if (P[k] <= 0) P[k] = 0; }
   G.invuln = Math.max(0, G.invuln - dt);
   // George: lane, jump, slide
   px = lerp(px, LANES[laneIdx], 1 - Math.exp(-14 * dt));
@@ -912,7 +929,9 @@ function update(dt) {
     else if (it.kind === "obs" && it.type === "mower") { it.mesh.children.forEach((c, k) => { if (k >= 2 && k <= 5) c.rotation.x += dt * 12; }); }
     if (it.spin) it.mesh.rotation.y += dt * 3.2; else if (it.kind === "power") it.mesh.rotation.y = Math.sin(clock * 2 + it.z) * 0.25;
     if (it.kind === "coin" && it.gone) {           // a picked-up coin pops up, grows and vanishes with a sparkle
-      it.pop = (it.pop === undefined ? 0.3 : it.pop) - dt; const k = 1 - it.pop / 0.3; it.mesh.position.y += 5 * dt; it.mesh.position.x = lerp(it.mesh.position.x, px, 0.2); it.mesh.scale.setScalar(Math.max(0.01, (1 + k * 0.7) * (1 - k * k))); it.mesh.rotation.y += dt * 14;
+      const PL = it.flyTo ? 0.55 : 0.3; it.pop = (it.pop === undefined ? PL : it.pop) - dt; const k = 1 - it.pop / PL; it.mesh.rotation.y += dt * 14;
+      if (it.flyTo) { const f = 1 - Math.exp(-7 * dt); it.z = lerp(it.z, 0.3, f); it.mesh.position.z = it.z; it.mesh.position.x = lerp(it.mesh.position.x, px, f * 1.5); it.mesh.position.y = lerp(it.mesh.position.y, py + 1.3 + Math.sin(k * Math.PI) * 2, f * 1.5); it.mesh.scale.setScalar(Math.max(0.01, 1 - k * k * 0.9)); }
+      else { it.mesh.position.y += 5 * dt; it.mesh.position.x = lerp(it.mesh.position.x, px, 0.2); it.mesh.scale.setScalar(Math.max(0.01, (1 + k * 0.7) * (1 - k * k))); }
       if (it.pop <= 0) { drop(it.mesh); items.splice(i, 1); }
       continue;
     }
@@ -920,6 +939,7 @@ function update(dt) {
     if (it.kind === "coin" && !it.gone) {
       if (P.magnet > 0 && it.z > -14 && it.z < 1.5 && Math.abs(it.x - px) < 6.5) { const k = 1 - Math.exp(-9 * dt); it.x = lerp(it.x, px, k); it.baseY = lerp(it.baseY, py + 0.9, k); it.mesh.position.x = it.x; }
       if (ballFly && it.z < ballFly.last + 3 && it.z > ballFly.z - 3 && it.z < 0) { takeCoin(it, 2); ballFly.got++; }
+      else if (arrows && it.z < arrows.last + 3 && it.z > arrows.z - 3 && it.z < 0) { takeCoin(it); it.flyTo = true; arrows.got++; }
       else if (across(1.0) && Math.abs(it.x - px) < 1.4 && Math.abs((it.baseY || 0.9) - (py + 0.9)) < 1.5) takeCoin(it);
     } else if (it.kind === "power" && !it.gone) {
       if (across(1.3) && Math.abs(it.x - px) < 1.4 && Math.abs(1.1 - (py + 0.9)) < 1.8) { it.gone = true; givePower(it.type); }
@@ -936,7 +956,7 @@ function update(dt) {
   // rocket flames
   if (P.rocket > 0 && !reduced) { for (let k = 0; k < 2; k++) { const f = flame[flameIdx++ % flame.length]; f.m.position.set(px + rand(-0.15, 0.15), py + 0.7 + rand(-0.1, 0.1), 0.9); f.life = 0.35; f.m.visible = true; } }
   for (const f of flame) { if (f.life > 0) { f.life -= dt; f.m.position.z += 5 * dt; f.m.position.y -= 0.6 * dt; f.m.material.opacity = Math.max(0, f.life / 0.35); const sc = 0.5 + 0.6 * (1 - f.life / 0.35); f.m.scale.setScalar(sc); if (f.life <= 0) f.m.visible = false; } }
-  updateSparks(dt); updateFx(); updateWeather(dt, sp); updateGoal(dt, sp); updateCoach(dt, sp);
+  updateSparks(dt); updateFx(); updateWeather(dt, sp); updateGoal(dt, sp); updateCoach(dt, sp); updateArrows(dt, sp); updateWave(dt);
   { const sn = seasonAt(G.dist); if (sn !== G.season) { G.season = sn; announceSeason(sn); } }
   // the figure
   george.root.position.set(px, py, 0);
@@ -978,6 +998,30 @@ function updateCoach(dt, sp) {
   if (!coach.visible) return; coach.position.z += sp * dt; if (coach.position.z > 6) { coach.visible = false; return; }
   const c = 0.2 + 0.35 * Math.abs(Math.sin(clock * 14)), ar = coach.userData.arms;
   ar[0].rotation.x = ar[1].rotation.x = -1.2; ar[0].rotation.z = c; ar[1].rotation.z = -c; coach.position.y = Math.abs(Math.sin(clock * 7)) * 0.08;
+}
+// Robin Hood's bow: three golden arrows, one down each lane; every coin they pass flies back to George
+const arrowMeshes = [0, 1, 2].map(() => {
+  const g = new THREE.Group(), gold = new THREE.MeshLambertMaterial({ color: 0xffc933, emissive: 0x8a6400, emissiveIntensity: 0.6 });
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.6, 8), gold); shaft.rotation.x = Math.PI / 2; g.add(shaft);
+  const head = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.3, 10), gold); head.rotation.x = -Math.PI / 2; head.position.z = -0.95; g.add(head);
+  for (const [r, c] of [[0, 0xd7102b], [Math.PI / 2, 0xffffff]]) { const f = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.22, 0.32), new THREE.MeshLambertMaterial({ color: c })); f.rotation.z = r; f.position.z = 0.7; g.add(f); }
+  const trail = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 7), new THREE.MeshBasicMaterial({ color: 0xffd84a, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending, depthWrite: false })); trail.position.z = 4.2; g.add(trail);   // a golden streak so you can see them fly
+  g.scale.setScalar(1.5); g.visible = false; scene.add(g); return g;
+});
+let arrows = null, waveZ = null;
+function fireArrows() { arrows = { z: -1, last: -1, got: 0 }; arrowMeshes.forEach((m) => (m.visible = true)); sfx.twang(); }
+function updateArrows(dt, sp) {
+  if (!arrows) return; arrows.last = arrows.z; arrows.z -= (sp + 60) * dt;
+  arrowMeshes.forEach((m, l) => m.position.set(LANES[l], 1.0, arrows.z));
+  if (!reduced && Math.random() < 0.8) burst(LANES[Math.floor(Math.random() * 3)], 1.0, arrows.z + 1, 0xffd84a, 1);
+  if (arrows.z < -90) { feedItem("🏹", "SHERWOOD STRIKE!", "+" + arrows.got + " coins", "big"); arrows = null; arrowMeshes.forEach((m) => (m.visible = false)); }
+}
+// the Mexican wave sweeps along both stands towards George; as it passes, every coin flies to him
+function updateWave(dt) {
+  if (waveZ === null) return; waveZ += 95 * dt;
+  for (const { band, sd } of standBands) { band.visible = true; band.position.x = (waveZ + 200) * sd; band.material.opacity = 0.9 * clamp((waveZ + 140) / 15, 0, 1) * clamp((8 - waveZ) / 10, 0, 1); band.scale.y = 1 + 0.06 * Math.sin(clock * 22); }
+  for (const it of items) if (it.kind === "coin" && !it.gone && it.z < 2 && it.z <= waveZ && it.z > waveZ - 14) { takeCoin(it); it.flyTo = true; G.waveGot++; }
+  if (waveZ > 8) { waveZ = null; standBands.forEach((b) => (b.band.visible = false)); feedItem("🙌", "WHAT A WAVE!", "+" + G.waveGot + " coins", "big"); }
 }
 function cameraStep(dt) {
   const tx = px * 0.55, ty = (P.rocket > 0 ? 5.4 : 3.7) + py * 0.3, tz = 6.7;
