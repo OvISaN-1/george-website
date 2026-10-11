@@ -107,7 +107,11 @@
   .gr-upg{list-style:none;margin:8px 0 4px;padding:0;display:grid;gap:6px;} .gr-upg li{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border-radius:12px;padding:6px 10px;} .gr-upg li i{font-style:normal;font-size:24px;} .gr-upg li span{flex:1;} .gr-upg li b{display:block;font-size:15px;} .gr-upg li small{display:block;font-size:12px;color:#b9b2ac;letter-spacing:.04em;} .gr-upg li em{font-style:normal;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--gold);}
   .gr-upg li.gr-upg-coins{background:none;padding:0 2px;font-size:13px;color:#b9b2ac;} .gr-upg .gr-pill{min-height:40px;} .gr-upg .gr-pill:disabled{opacity:.45;cursor:not-allowed;}
   .gr-hint{position:absolute;left:50%;bottom:20%;transform:translateX(-50%);z-index:5;pointer-events:none;background:rgba(13,11,16,.82);border:2px solid #ffd84a;border-radius:16px;padding:10px 16px;color:#fff;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;text-align:center;width:max-content;max-width:90%;}
-  .gr-hint[hidden]{display:none;} .gr-hint b{display:block;font-size:26px;color:#ffd84a;} .gr-hint.show{animation:grIn .25s ease-out;}
+  .gr-hint[hidden]{display:none;} .gr-hint b{display:block;font-size:26px;color:#ffd84a;} .gr-hint.show{animation:grHint .25s ease-out;} @keyframes grHint{from{opacity:0;transform:translate(-50%,12px);}to{opacity:1;transform:translate(-50%,0);}}
+  .gr-wave{position:absolute;left:0;right:0;bottom:54px;z-index:4;display:flex;justify-content:space-around;pointer-events:none;} .gr-wave[hidden]{display:none;}
+  .gr-wave i{font-style:normal;font-size:clamp(24px,7vw,38px);width:1.4em;height:1.4em;display:grid;place-items:center;border-radius:50%;opacity:0;transform:translateY(50px);animation:grWave 1.2s ease-in-out var(--d) 2;} .gr-wave i.r{background:#d7102b;} .gr-wave i.w{background:#fff;}
+  @keyframes grWave{0%{opacity:0;transform:translateY(50px);}30%{opacity:1;transform:translateY(-14px) scale(1.15);}60%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(50px);}}
+  @media (prefers-reduced-motion: reduce){.gr-wave i{animation:none;opacity:1;transform:none;}}
   .gr-bar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px;}
   @media (prefers-reduced-motion: reduce){.gr-pop.show{animation:none;opacity:1;}}
 </style>
@@ -215,6 +219,7 @@
       <div class="gr-pause" id="cont" hidden><div><h2>Keep playing?</h2><p>Spend 50 shop coins for one more life.<br>You have <b id="cont-have">0</b> 🪙</p><button class="btn-primary" id="btn-cont" type="button">Yes! (50 🪙)</button><br><button class="gr-pill gr-quit" id="btn-nocont" type="button">No thanks</button><p class="gr-count" id="cont-n" aria-live="polite">6</p></div></div>
       <div class="gr-flash" id="flash" aria-hidden="true"></div>
       <div class="gr-hint" id="hint" hidden role="status"></div>
+      <div class="gr-wave" id="wave2d" hidden aria-hidden="true"></div>
       <div class="gr-season" id="season" hidden aria-live="polite"><small id="season-n"></small><b id="season-name"></b><em id="season-sub"></em></div>
       <div class="gr-ach" id="ach-banner" hidden role="status"><i id="ach-ico">🏆</i><span><small>ACHIEVEMENT UNLOCKED</small><b id="ach-name"></b><em id="ach-text"></em></span></div>
       <div class="gr-power" id="hud-power" aria-live="polite"></div>
