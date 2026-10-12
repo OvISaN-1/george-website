@@ -1,0 +1,12 @@
+[
+  {"id": "m1", "from": "sarah.k@acme-corp.example", "subject": "URGENT: VPN down for whole Leeds office",
+   "body": "Nobody in Leeds can connect to the VPN since 8am. About 40 people blocked. Please advise ASAP."},
+  {"id": "m2", "from": "newsletters@gadgetdeals.example", "subject": "50% off USB hubs this weekend!",
+   "body": "Huge savings on USB hubs. Click here to claim your discount. Unsubscribe at the bottom."},
+  {"id": "m3", "from": "tom.r@acme-corp.example", "subject": "Request: access to the finance SharePoint",
+   "body": "Hi, I've joined the finance team today and need access to the Finance SharePoint site. My manager is Priya Shah."},
+  {"id": "m4", "from": "billing@cloudhost.example", "subject": "Your invoice #4821 is ready",
+   "body": "Your monthly invoice of 214.50 GBP is ready to view in the portal. No action needed."},
+  {"id": "m5", "from": "j.owen@acme-corp.example", "subject": "Laptop fan very loud",
+   "body": "My laptop fan has been really loud for a week and it gets hot. Not urgent but could someone look?"}
+]
