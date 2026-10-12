@@ -1203,6 +1203,8 @@ function start(daily) {
   try { if (matchMedia("(pointer: coarse)").matches && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); } catch (e) {}
   resize(); requestAnimationFrame(resize); { const t = top3(); $("hud-best").textContent = t.length ? "🏆 Best " + t[0].s.toLocaleString("en-GB") : ""; } startMusic(); feedItem(G.daily ? "📅" : "🏃", G.daily ? "DAILY CHALLENGE" : "GO GEORGE!", G.daily ? "Same pitch for everyone today" : "Swipe to move, jump and slide", "big");
 }
+// Arriving from the home page's "Today's challenge" button: point at the daily challenge
+try { if (new URLSearchParams(location.search).get("daily") === "1") { const d = $("btn-daily"); d.classList.add("pulse"); d.scrollIntoView({ block: "center" }); d.focus({ preventScroll: true }); } } catch (e) {}
 $("btn-start").addEventListener("click", () => start(false)); $("btn-daily").addEventListener("click", () => start(true)); $("btn-daily2").addEventListener("click", () => start(true));
 $("btn-again").addEventListener("click", () => start(G.daily));
 $("btn-music").addEventListener("click", () => { cycleMusic(); audio(); });

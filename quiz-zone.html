@@ -3,8 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#121014">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="George">
+<link rel="apple-touch-icon" href="/assets/images/app/apple-touch-icon.png">
 <title>Game Zone | George's World</title>
-<meta name="description" content="George's Game Zone: Free Kick Masters, Penalty Shootout, Capital Quest, Peak Challenge, Football Frenzy and Times Tables Blitz, plus a Keepy-Uppy mini game and live top scores.">
+<meta name="description" content="George's Game Zone: Free Kick Masters, Penalty Shootout, Capital Quest, Peak Challenge, Football Frenzy and Times Tables Blitz, plus George's Run, Keepy-Uppy and live top scores.">
 <meta name="robots" content="noindex, nofollow">
 <link rel="canonical" href="https://georgeneagu.win/quiz-zone.html">
 
@@ -12,13 +18,13 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://georgeneagu.win/quiz-zone.html">
 <meta property="og:title" content="Game Zone | George's World">
-<meta property="og:description" content="George's Game Zone: Free Kick Masters, Penalty Shootout, Capital Quest, Peak Challenge, Football Frenzy and Times Tables Blitz, plus a Keepy-Uppy mini game and live top scores.">
+<meta property="og:description" content="George's Game Zone: Free Kick Masters, Penalty Shootout, Capital Quest, Peak Challenge, Football Frenzy and Times Tables Blitz, plus George's Run, Keepy-Uppy and live top scores.">
 <meta property="og:image" content="https://georgeneagu.win/assets/images/share/quiz.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Game Zone | George's World">
-<meta name="twitter:description" content="George's Game Zone: Free Kick Masters, Penalty Shootout, Capital Quest, Peak Challenge, Football Frenzy and Times Tables Blitz, plus a Keepy-Uppy mini game and live top scores.">
+<meta name="twitter:description" content="George's Game Zone: Free Kick Masters, Penalty Shootout, Capital Quest, Peak Challenge, Football Frenzy and Times Tables Blitz, plus George's Run, Keepy-Uppy and live top scores.">
 <meta name="twitter:image" content="https://georgeneagu.win/assets/images/share/quiz.png">
 
 <link rel="stylesheet" href="css/shell.css">
@@ -167,6 +173,18 @@
   .gz-group-sub{margin:var(--s1) 0 0;color:var(--chalk-dim);}
   .gz-group .grid{margin-top:var(--s4);}
   .game-card p{margin:0;font-size:0.92rem;color:var(--chalk-dim);}
+  /* Top picks: bigger, brighter cards */
+  .grid.featured{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:var(--s4);}
+  .game-card.featured{background:linear-gradient(135deg,rgba(225,16,44,.22),rgba(157,92,255,.14) 60%,var(--surface));border-color:rgba(241,237,233,.16);padding:var(--s5) var(--s5) var(--s6);}
+  .game-card.featured .emoji-badge{width:72px;height:72px;font-size:40px;}
+  .game-card.featured h3{font-size:1.5rem;}
+  /* Everything else: small tiles, two across on a phone */
+  .grid.compact{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
+  .compact .game-card{padding:12px;flex-direction:row;align-items:center;gap:10px;min-height:68px;}
+  .compact .game-card .emoji-badge{width:42px;height:42px;font-size:22px;flex-shrink:0;}
+  .compact .game-card h3{font-size:1rem;margin:0;line-height:1.15;}
+  .compact .game-card p{display:none;}
+  .compact .game-card .new-chip,.compact .game-card .fan-chip{top:-8px;right:-4px;font-size:.62rem;padding:2px 7px;}
   .game-card .new-chip{
     position:absolute;top:14px;right:14px;font-family:var(--font-display);font-weight:700;font-size:0.75rem;
     padding:4px 10px;border-radius:var(--r-pill);background:var(--gold-ink);color:var(--gold);
@@ -216,51 +234,6 @@
   .champ-score{margin-left:auto;font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:var(--gold);flex-shrink:0;}
   .champ-empty{color:var(--chalk-faint);font-size:0.85rem;}
 
-  /* Keepy-uppy */
-  .keepy-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:4px;}
-  .keepy-header h2{margin:0;}
-  .keepy-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-  .keepy-best{
-    background:var(--gold-ink);border:1px solid rgba(245,185,66,0.3);
-    padding:6px 12px;border-radius:var(--r-pill);font-weight:700;font-size:0.85rem;color:var(--chalk);white-space:nowrap;
-  }
-  .keepy-best span{color:var(--gold);}
-  .sound-btn{
-    background:var(--surface-raised);border:1px solid var(--line-strong);border-radius:var(--r-pill);
-    color:var(--chalk);min-height:36px;padding:4px 12px;cursor:pointer;font-family:var(--font-display);font-weight:600;font-size:0.85rem;
-  }
-  .keepy-stage{
-    position:relative;height:280px;margin-top:var(--s3);
-    background:radial-gradient(circle at 20% 20%, rgba(157,92,255,0.22), transparent 55%), var(--cream);
-    border-radius:var(--r-md);overflow:hidden;cursor:pointer;touch-action:none;user-select:none;
-  }
-  .keepy-stage:focus-visible{outline:3px solid var(--gold);outline-offset:3px;}
-  .keepy-score{position:absolute;top:10px;left:14px;font-family:var(--font-display);font-weight:700;font-size:30px;color:#241f29;z-index:2;}
-  .keepy-speed{position:absolute;top:16px;right:14px;font-family:var(--font-display);font-weight:700;font-size:13px;color:#241f29;opacity:.7;z-index:2;}
-  .keepy-ball{position:absolute;width:44px;height:44px;font-size:38px;line-height:44px;text-align:center;left:0;top:0;z-index:1;will-change:transform;}
-  .keepy-ground{
-    position:absolute;left:0;right:0;bottom:0;height:10px;
-    background:repeating-linear-gradient(90deg, rgba(36,31,41,0.18) 0 14px, transparent 14px 28px);
-    border-top:2px dashed rgba(36,31,41,0.25);
-  }
-  .keepy-overlay{
-    position:absolute;inset:0;background:rgba(18,16,20,0.72);
-    display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;
-    z-index:3;text-align:center;padding:20px;
-  }
-  .keepy-overlay p{color:var(--chalk);font-weight:700;font-family:var(--font-display);font-size:1.15rem;margin:0;max-width:none;}
-  .keepy-overlay.hidden{display:none;}
-  .keepy-save[hidden]{display:none;}
-  .keepy-save{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
-  .keepy-save input{
-    border-radius:var(--r-pill);border:none;padding:10px 16px;min-height:44px;width:12rem;
-    background:var(--cream);color:#241f29;font-weight:600;
-  }
-  .keepy-save .btn{padding:10px 18px;}
-  .keepy-hint{font-size:0.85rem;color:var(--chalk-faint);margin:var(--s3) 0 0;max-width:none;}
-  .keepy-top{margin-top:var(--s3);font-size:0.9rem;color:var(--chalk-dim);}
-  .keepy-top ol{margin:6px 0 0;padding-left:1.4em;}
-  .keepy-top li{margin:2px 0;}
 
   @media (prefers-reduced-motion: reduce){
     .game-card,.fact-card{transition:none;}
@@ -381,58 +354,67 @@
         </div>
       </div>
 
-      <!-- Games you play, then quizzes (question-and-answer), each in its own group -->
+      <!-- George's favourites big at the top, then everything else as small tiles -->
       <section class="gz-group gz-games" aria-labelledby="gz-games-title">
-        <h2 class="gz-group-title" id="gz-games-title">🎮 Games</h2>
-        <p class="gz-group-sub">Take the shots, run the match, rip open packs.</p>
-        <div class="grid">
-          <a class="game-card" data-cat="football school" href="quiz-zone/matchday.html">
+        <h2 class="gz-group-title" id="gz-games-title">⭐ Top picks</h2>
+        <div class="grid featured">
+          <a class="game-card featured" data-cat="football fun" href="quiz-zone/george-run.html">
+            <span class="new-chip" data-new="2026-10-09">NEW</span>
+            <div class="emoji-badge" aria-hidden="true">🏃</div>
+            <h3>George's Run</h3>
+            <p>A 3D endless runner through four seasons at the City Ground. Dodge the cards, grab the coins, beat today's challenge.</p>
+          </a>
+          <a class="game-card featured" data-cat="football school" href="quiz-zone/matchday.html">
             <div class="emoji-badge" aria-hidden="true">🏟️</div>
             <h3 style="view-transition-name:t-matchday">Matchday</h3>
             <p>A full Forest match where every big moment is a question. Level up George's FC-style card, unlock kits and climb the Premier League table.</p>
           </a>
-          <a class="game-card" data-cat="football" href="quiz-zone/free-kick.html">
+          <a class="game-card featured" data-cat="football" href="quiz-zone/tiki-taka.html">
+            <span class="new-chip" data-new="2026-10-02">NEW</span>
+            <div class="emoji-badge" aria-hidden="true">🔁</div>
+            <h3 style="view-transition-name:t-tikitaka">Tiki-Taka</h3>
+            <p>Pass, pass, pass... shoot! Drag to pass the ball through the defence. Built in Rust.</p>
+          </a>
+          <a class="game-card featured" data-cat="football" href="quiz-zone/free-kick.html">
             <div class="emoji-badge" aria-hidden="true">🎯</div>
             <h3 style="view-transition-name:t-freekick">Free Kick Masters</h3>
             <p>Bend it round the wall. Season, daily challenge, unlockable kits and celebrations.</p>
           </a>
+        </div>
+      </section>
+      <section class="gz-group" aria-labelledby="gz-more-title">
+        <h2 class="gz-group-title" id="gz-more-title">🎮 More games</h2>
+        <div class="grid compact">
           <a class="game-card" data-cat="football" href="quiz-zone/penalty-shootout.html">
             <div class="emoji-badge" aria-hidden="true">🥅</div>
             <h3 style="view-transition-name:t-penalty">Penalty Shootout</h3>
             <p>George steps up for Forest in the George Cup. Score, save and lift the trophy.</p>
           </a>
-          <a class="game-card" data-cat="football" href="quiz-zone/tiki-taka.html">
-            <span class="new-chip">NEW</span>
-            <div class="emoji-badge" aria-hidden="true">🔁</div>
-            <h3 style="view-transition-name:t-tikitaka">Tiki-Taka</h3>
-            <p>Pass, pass, pass... shoot! Drag to pass the ball through the defence. Built in Rust.</p>
-          </a>
-          <a class="game-card" data-cat="football fun" href="quiz-zone/george-run.html">
-            <span class="new-chip">NEW</span>
-            <div class="emoji-badge" aria-hidden="true">🏃</div>
-            <h3>George's Run</h3>
-            <p>A 3D endless runner. Collect coins and toys, kick the football to grab every coin, and win new shirts.</p>
-          </a>
           <a class="game-card" data-cat="football" href="quiz-zone/line-striker.html">
-            <span class="new-chip">NEW</span>
+            <span class="new-chip" data-new="2026-10-09">NEW</span>
             <div class="emoji-badge" aria-hidden="true">✏️</div>
             <h3>Line Striker</h3>
             <p>A 3D test game. Time freezes, you draw the pass or shot with your finger, then watch it play out.</p>
           </a>
           <a class="game-card" data-cat="football fun" href="quiz-zone/pack-opener.html">
-            <span class="new-chip">NEW</span>
+            <span class="new-chip" data-new="2026-09-28">NEW</span>
             <div class="emoji-badge" aria-hidden="true">📦</div>
             <h3 style="view-transition-name:t-pack-opener">Pack Opener</h3>
             <p>Rip open a pack of five player cards. Bronze, Silver, Gold... or an Icon? Open as many as you like.</p>
+          </a>
+          <a class="game-card" data-cat="football fun" href="quiz-zone/keepy-uppy.html">
+            <div class="emoji-badge" aria-hidden="true">⚽</div>
+            <h3>Keepy-Uppy</h3>
+            <p>Tap the ball to keep it up. It drifts and speeds up the longer you go.</p>
           </a>
         </div>
       </section>
       <section class="gz-group" aria-labelledby="gz-quizzes-title">
         <h2 class="gz-group-title" id="gz-quizzes-title">🧠 Quizzes</h2>
         <p class="gz-group-sub">60 seconds, as many right answers as you can.</p>
-        <div class="grid">
+        <div class="grid compact">
           <a class="game-card" data-cat="school" href="quiz-zone/geography-quiz.html">
-            <span class="new-chip">NEW: FLAGS</span>
+            <span class="new-chip" data-new="2026-09-30">NEW: FLAGS</span>
             <div class="emoji-badge" aria-hidden="true">🌍</div>
             <h3 style="view-transition-name:t-capital">Capital Quest</h3>
             <p>Guess the capital city from the country shape, or name the country from its flag.</p>
@@ -453,7 +435,7 @@
             <p>A rock classic starts playing. Name the song before the timer runs out. Over 200 songs: Queen, AC/DC, Linkin Park, The Police, Springsteen and loads more.</p>
           </a>
           <a class="game-card" data-cat="football" href="quiz-zone/guess-the-player.html">
-            <span class="new-chip">NEW</span>
+            <span class="new-chip" data-new="2026-09-27">NEW</span>
             <div class="emoji-badge" aria-hidden="true">📸</div>
             <h3 style="view-transition-name:t-guess-player">Guess the Player</h3>
             <p>A photo, a nationality and a club. Name the footballer. World stars and a few Forest faces too.</p>
@@ -474,41 +456,13 @@
       <p class="gz-progress-link">🧑‍🎤 <a href="my-player.html">My Player: change George's hair, number, kit, boots and celebrations →</a></p>
       <p class="gz-progress-link">💾 Playing on more than one device? <a href="progress.html">Save my progress →</a></p>
 
-      <!-- Extras: Keepy-Uppy, trophies, top scores and facts, in tabs -->
+      <!-- Extras: trophies, top scores and facts, in tabs -->
       <div class="gz-tabs" role="tablist" aria-label="Game Zone extras">
-        <button type="button" role="tab" id="gzt-keepy" aria-controls="gzp-keepy" aria-selected="true">⚽ Keepy-Uppy</button>
-        <button type="button" role="tab" id="gzt-trophies" aria-controls="gzp-trophies" aria-selected="false" tabindex="-1">🏅 My trophies</button>
+        <button type="button" role="tab" id="gzt-trophies" aria-controls="gzp-trophies" aria-selected="true">🏅 My trophies</button>
         <button type="button" role="tab" id="gzt-scores" aria-controls="gzp-scores" aria-selected="false" tabindex="-1">📊 Top scores</button>
         <button type="button" role="tab" id="gzt-facts" aria-controls="gzp-facts" aria-selected="false" tabindex="-1">🤓 Did you know?</button>
       </div>
 
-      <div class="zone" role="tabpanel" id="gzp-keepy" aria-labelledby="gzt-keepy">
-        <div class="keepy-header">
-          <h2>⚽ Keepy-Uppy Break</h2>
-          <div class="keepy-tools">
-            <button class="sound-btn" id="keepy-sound" type="button" aria-pressed="true">🔊 Sound on</button>
-            <div class="keepy-best">My best: <span id="keepy-best">0</span></div>
-          </div>
-        </div>
-        <p class="zone-sub">Tap the ball to keep it up. It moves sideways and gets faster the longer you go. On a keyboard, press Space.</p>
-        <div class="keepy-stage" id="keepy-stage" tabindex="0" role="application" aria-label="Keepy-uppy game. Press Space or Enter to kick the ball.">
-          <div class="keepy-score" id="keepy-score" aria-live="off">0</div>
-          <div class="keepy-speed" id="keepy-speed"></div>
-          <div class="keepy-ball" id="keepy-ball" aria-hidden="true">⚽</div>
-          <div class="keepy-ground"></div>
-          <div class="keepy-overlay" id="keepy-overlay">
-            <p id="keepy-msg">Ready? Hit Start, or press Space.</p>
-            <form class="keepy-save" id="keepy-save" hidden>
-              <label class="visually-hidden" for="keepy-name">Your name</label>
-              <input type="text" id="keepy-name" maxlength="18" placeholder="Your name" autocomplete="off">
-              <button class="btn btn-primary" type="submit">Save score</button>
-            </form>
-            <button class="btn btn-primary" id="keepy-start-btn" type="button">Start</button>
-          </div>
-        </div>
-        <p class="visually-hidden" id="keepy-live" aria-live="polite"></p>
-        <div class="keepy-top" id="keepy-top"></div>
-      </div>
 
       <div class="zone" role="tabpanel" id="gzp-facts" aria-labelledby="gzt-facts" hidden>
         <h2>🤓 Did You Know?</h2>
@@ -523,7 +477,7 @@
         <button class="btn btn-primary" id="fact-btn" type="button">🎲 Another fact!</button>
       </div>
 
-      <div class="zone" role="tabpanel" id="gzp-trophies" aria-labelledby="gzt-trophies" hidden>
+      <div class="zone" role="tabpanel" id="gzp-trophies" aria-labelledby="gzt-trophies">
         <h2>🏅 My Trophy Cabinet</h2>
         <p class="zone-sub">Badges and streaks update every time you finish a game. They save on this device.</p>
         <div class="gz-streak-banner" id="streak-banner">Play today to start a streak! 🔥</div>
@@ -550,7 +504,7 @@
   <script src="quiz-zone/gz-rewards.js"></script>
   <script src="quiz-zone/stats.js"></script>
 <script>
-  // Extras tabs (Keepy-Uppy, trophies, top scores, facts), arrow keys too.
+  // Extras tabs (trophies, top scores, facts), arrow keys too.
   (function () {
     const tabs = [...document.querySelectorAll('.gz-tabs [role="tab"]')];
     const select = (t) => tabs.forEach((x) => {
@@ -589,7 +543,7 @@
       "flag-quest": ["Capital Quest", "quiz-zone/geography-quiz.html"], "quickfire-quiz": ["Quickfire Quiz", "quiz-zone/quickfire-quiz.html"],
       "mountain-peaks": ["Peak Challenge", "quiz-zone/mountain-quiz.html"], "name-that-riff": ["Name That Riff", "quiz-zone/name-that-riff.html"],
       "guess-the-player": ["Guess the Player", "quiz-zone/guess-the-player.html"], "football-frenzy": ["Football Frenzy", "quiz-zone/football-quiz.html"],
-      "times-tables": ["Times Tables Blitz", "quiz-zone/times-tables-quiz.html"]
+      "times-tables": ["Times Tables Blitz", "quiz-zone/times-tables-quiz.html"], "keepy-uppy": ["Keepy-Uppy", "quiz-zone/keepy-uppy.html"], "george-run": ["George's Run", "quiz-zone/george-run.html"]
     };
     const cards = [...document.querySelectorAll("a.game-card[data-cat]")];
     const groups = [...document.querySelectorAll(".gz-group")];
@@ -739,205 +693,6 @@
     factBtn.addEventListener("click", () => showFact(true));
   })();
 
-  /* ---------- Keepy-uppy mini game ----------
-     The ball drifts sideways (where you hit it decides which way), bounces
-     off the walls, and gravity gets stronger as your score goes up.
-     Works with touch, mouse, and Space/Enter on a keyboard. Scores can be
-     saved to the online leaderboard as game "keepy-uppy". */
-  (function () {
-    const stage = document.getElementById("keepy-stage");
-    const ballEl = document.getElementById("keepy-ball");
-    const scoreEl = document.getElementById("keepy-score");
-    const speedEl = document.getElementById("keepy-speed");
-    const bestEl = document.getElementById("keepy-best");
-    const overlay = document.getElementById("keepy-overlay");
-    const msgEl = document.getElementById("keepy-msg");
-    const startBtn = document.getElementById("keepy-start-btn");
-    const saveForm = document.getElementById("keepy-save");
-    const nameInput = document.getElementById("keepy-name");
-    const liveEl = document.getElementById("keepy-live");
-    const topEl = document.getElementById("keepy-top");
-    const soundBtn = document.getElementById("keepy-sound");
-
-    const GAME_ID = "keepy-uppy";
-    const GROUND_H = 10;
-    const BALL = 44;
-    const BASE_GRAVITY = 0.18;      // per frame at 60fps
-    const GRAVITY_STEP = 0.006;     // extra gravity per keepy-uppy
-    const MAX_GRAVITY = 0.42;
-    const KICK_VY = -6.2;
-    const HIT_PAD = 32;             // generous hit box so it's easy to connect
-
-    let x = 0, y = 0, vx = 0, vy = 0, running = false, score = 0, rafId = null, lastT = 0;
-
-    /* ---- Sound (tiny beeps made in the browser, no files) ---- */
-    let soundOn = true;
-    try { soundOn = localStorage.getItem("gz_keepy_sound") !== "off"; } catch (e) {}
-    let audioCtx = null;
-    function beep(freq, dur, type, vol) {
-      if (!soundOn) return;
-      try {
-        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-        o.type = type || "sine"; o.frequency.value = freq;
-        g.gain.setValueAtTime(vol || 0.15, audioCtx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
-        o.connect(g); g.connect(audioCtx.destination);
-        o.start(); o.stop(audioCtx.currentTime + dur);
-      } catch (e) { /* no audio, no problem */ }
-    }
-    function showSound() {
-      soundBtn.textContent = soundOn ? "🔊 Sound on" : "🔇 Sound off";
-      soundBtn.setAttribute("aria-pressed", String(soundOn));
-    }
-    soundBtn.addEventListener("click", () => {
-      soundOn = !soundOn;
-      try { localStorage.setItem("gz_keepy_sound", soundOn ? "on" : "off"); } catch (e) {}
-      showSound();
-    });
-    showSound();
-
-    function W() { return stage.clientWidth || 300; }
-    function H() { return stage.clientHeight || 280; }
-    function gravity() { return Math.min(MAX_GRAVITY, BASE_GRAVITY + score * GRAVITY_STEP); }
-    function place() { ballEl.style.transform = `translate(${x}px, ${y}px) rotate(${x * 2}deg)`; }
-
-    function resetBall() {
-      x = W() / 2 - BALL / 2;
-      y = H() / 2 - BALL / 2;
-      vx = 0; vy = 0;
-      place();
-    }
-
-    bestEl.textContent = GZ.load().keepyUppyBest || 0;
-    resetBall();
-    window.addEventListener("resize", () => { if (!running) resetBall(); });
-
-    function startGame() {
-      score = 0;
-      scoreEl.textContent = "0";
-      speedEl.textContent = "";
-      resetBall();
-      running = true;
-      overlay.classList.add("hidden");
-      saveForm.hidden = true;
-      stage.focus({ preventScroll: true });
-      cancelAnimationFrame(rafId);
-      lastT = performance.now();
-      rafId = requestAnimationFrame(tick);
-    }
-
-    function tick(t) {
-      if (!running) return;
-      // Frame-rate independent: a 120Hz iPad plays at the same speed as a 60Hz laptop.
-      const dt = Math.min(3, (t - lastT) / (1000 / 60));
-      lastT = t;
-      vy += gravity() * dt;
-      x += vx * dt;
-      y += vy * dt;
-      const maxX = W() - BALL;
-      if (x < 0) { x = 0; vx = Math.abs(vx) * 0.9; beep(300, 0.05, "triangle", 0.08); }
-      if (x > maxX) { x = maxX; vx = -Math.abs(vx) * 0.9; beep(300, 0.05, "triangle", 0.08); }
-      if (y <= 2) { y = 2; vy = Math.max(vy, 0); }
-      const maxY = H() - GROUND_H - BALL;
-      if (y >= maxY) {
-        y = maxY;
-        place();
-        gameOver();
-        return;
-      }
-      place();
-      rafId = requestAnimationFrame(tick);
-    }
-
-    function kick(offset) {
-      // offset: -1 (hit on the left of the ball) to 1 (hit on the right)
-      vy = KICK_VY - Math.min(2, score * 0.03);
-      const push = 1.2 + Math.min(2.4, score * 0.08);
-      vx = -offset * push + (Math.random() - 0.5) * 1.2;
-      score++;
-      scoreEl.textContent = score;
-      if (score % 5 === 0) speedEl.textContent = `Speed ${Math.round((gravity() / BASE_GRAVITY) * 10) / 10}x`;
-      beep(520 + Math.min(score, 40) * 12, 0.08, "sine", 0.18);
-    }
-
-    function tryKickAt(clientX, clientY) {
-      if (!running) return;
-      const rect = stage.getBoundingClientRect();
-      const px = clientX - rect.left;
-      const py = clientY - rect.top;
-      const cx = x + BALL / 2;
-      const cy = y + BALL / 2;
-      if (Math.abs(px - cx) <= BALL / 2 + HIT_PAD && Math.abs(py - cy) <= BALL / 2 + HIT_PAD) {
-        kick(Math.max(-1, Math.min(1, (px - cx) / (BALL / 2 + HIT_PAD))));
-      }
-    }
-
-    async function loadTop() {
-      try {
-        const rows = await DB.topScores(GAME_ID, 5);
-        topEl.innerHTML = rows.length
-          ? `<strong>Online top 5:</strong><ol>${rows.map(r => `<li>${escapeText(r.player_name)}: ${Number(r.score)}</li>`).join("")}</ol>`
-          : "No online keepy-uppy scores yet. Be the first!";
-      } catch (e) {
-        topEl.textContent = "Couldn't load the online keepy-uppy scores right now.";
-      }
-    }
-    function escapeText(str) {
-      const d = document.createElement("div"); d.textContent = String(str); return d.innerHTML;
-    }
-
-    function gameOver() {
-      running = false;
-      cancelAnimationFrame(rafId);
-      beep(160, 0.35, "sawtooth", 0.12);
-      const nickname = GZ.randomNickname();
-      const { isNewBest, newBadges } = GZ.recordKeepyUppy(score);
-      bestEl.textContent = GZ.load().keepyUppyBest || 0;
-      const text = `${isNewBest && score > 0 ? "New best! " : ""}${score} keepy-upp${score === 1 ? "y" : "ies"}, ${nickname}!`;
-      msgEl.textContent = text;
-      liveEl.textContent = text;
-      saveForm.hidden = score === 0;
-      startBtn.textContent = "Play again";
-      overlay.classList.remove("hidden");
-      if (score > 0) nameInput.focus({ preventScroll: true }); else startBtn.focus({ preventScroll: true });
-      GZ.announceBadges(newBadges);
-    }
-
-    saveForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const name = nameInput.value.trim();
-      if (!name) { nameInput.focus(); return; }
-      const btn = saveForm.querySelector("button");
-      btn.disabled = true;
-      try {
-        await DB.saveScore(GAME_ID, name, score);
-        saveForm.hidden = true;
-        msgEl.textContent = `Saved! ${score} for ${name}.`;
-        loadTop();
-        if (window.renderTopScores) window.renderTopScores();
-      } catch (err) {
-        msgEl.textContent = "Couldn't save online right now. Try again later.";
-      } finally {
-        btn.disabled = false;
-      }
-    });
-
-    stage.addEventListener("pointerdown", (e) => {
-      if (e.target.closest("button, input, form")) return;
-      tryKickAt(e.clientX, e.clientY);
-    });
-    stage.addEventListener("keydown", (e) => {
-      if (e.target !== stage) return;
-      if (e.key === " " || e.key === "Enter") {
-        e.preventDefault();
-        if (!running) { startGame(); return; }
-        kick((Math.random() - 0.5) * 1.2);
-      }
-    });
-    startBtn.addEventListener("click", startGame);
-    loadTop();
-  })();
 </script>
 </body>
 </html>
