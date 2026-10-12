@@ -653,6 +653,9 @@ function release(raw) {
 
 function routeLength(pts) { let l = 0; for (let i = 1; i < pts.length; i++) l += hyp(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z); return l; }
 
+// A kick has a wind-up: the leg goes back, the ball stays on the foot, then the boot swings through it and the ball goes.
+const KICK_T = 0.3, KICK_HIT = 0.105;
+function beginKick(c) { c.kickT = KICK_T; c.kickLob = !!(run && run.lob); run.kwait = KICK_HIT; }
 function startRun(pts, kind, recv) {
   const L = routeLength(pts);
   const pw = releasePw !== null ? releasePw : (kind === "shot" ? 0.55 : 0.4); releasePw = null;
@@ -687,7 +690,7 @@ function startRun(pts, kind, recv) {
       if (pr >= 0) pop(run.skill ? "SKILL MOVE!" : "TURNING...", run.skill ? "He might beat the defender" : "A defender is closing in", "soft");
     }
   }
-  if (run.state !== "turn") { att[G.carrier].kickT = 0.25; sfx.kick(); }
+  if (run.state !== "turn") { if (run.aerial) { att[G.carrier].kickT = 0.25; sfx.kick(); } else beginKick(att[G.carrier]); }
   if (kind === "pass") G.chain++;
 }
 
@@ -948,7 +951,9 @@ function stepRun(dt) {
       if (run.skill) { pr.stun = 1.0; run.skill = false; pop("SKILL!", "He has beaten the defender", "gold"); G.score += 5; setHud(); sfx.pass(); }
       else { startRecover(pr, "TACKLED!"); return; }
     }
-    if (run.turnT <= 0) { run.state = "fly"; c1.kickT = 0.25; sfx.kick(); }
+    if (run.turnT <= 0) { run.state = "fly"; beginKick(c1); }
+  } else if (run.kwait > 0 && run.state === "fly") {
+    run.kwait -= dt; if (run.kwait <= 0) sfx.kick();       // the ball stays at his feet until the boot hits it
   } else if (run.hold > 0 && run.state === "fly") {
     run.hold -= dt;                       // the ball drops in to the head or boot, which makes contact as the animation peaks
     { const c0 = att[G.carrier], u = clamp(1 - run.hold / 0.3, 0, 1), k = u * u * (3 - 2 * u); ball.x = lerp(run.b0.x, c0.x, k); ball.z = lerp(run.b0.z, c0.z - 0.15, k); ball.y = lerp(run.b0.y, run.y0, k); }
@@ -1171,8 +1176,11 @@ function afterResult() {
 
 /* ---------------- placing the 3D things each frame ---------------- */
 let clock = 0; const ballPrev = { x: 0, z: 0 }, rollAxis = new THREE.Vector3();
+const sm = (t) => t * t * (3 - 2 * t);
+// the body turns about its feet, so to rotate about the hips we move the body to keep the hips where we want them
+function hipLock(p, hipY, hipZ) { const th = p.body.rotation.x; p.body.position.y = hipY - 0.96 * Math.cos(th); p.body.position.z = hipZ - 0.96 * Math.sin(th); }
 function animateLimbs(e, dt) {
-  const p = e.p, sp = e.speed;
+  const p = e.p, sp = e.speed; p.body.position.z = 0;
   p.armL.rotation.z = p.armR.rotation.z = 0; p.legL.rotation.z = p.legR.rotation.z = 0; p.body.rotation.y = 0;
   if (sp > 0.5) {
     // a running stride: hips swing, knees fold as the leg comes through, arms pump with bent elbows, shoulders counter-twist
@@ -1191,7 +1199,15 @@ function animateLimbs(e, dt) {
     p.armL.rotation.x = -sw * 0.05; p.armR.rotation.x = sw * 0.05; p.elbowL.rotation.x = p.elbowR.rotation.x = -0.3;
     p.body.position.y = 0; p.body.rotation.x = 0.05; p.body.rotation.z = sw * 0.012;
   }
-  if (e.kickT > 0) { e.kickT -= dt; const k = Math.min(1, e.kickT / 0.12); p.legR.rotation.x = -1.2 * k; p.kneeR.rotation.x = 0.2 * k; }
+  if (e.kickT > 0) {                                  // wind up, strike through the ball, follow through
+    e.kickT -= dt; const u = clamp(1 - e.kickT / KICK_T, 0, 1), w = sm(clamp(u / 0.35, 0, 1)), st = sm(clamp((u - 0.35) / 0.18, 0, 1)), rl = sm(clamp((u - 0.62) / 0.38, 0, 1));
+    const lob = !!e.kickLob, back = lob ? 1.0 : 0.85, fwd = lob ? -1.9 : -1.15;
+    p.legR.rotation.x = lerp(lerp(0, back, w), fwd, st) * (1 - rl);
+    p.kneeR.rotation.x = lerp(lerp(0, lob ? 1.5 : 1.25, w), lob ? 0.05 : 0.2, st) * (1 - rl);
+    p.legL.rotation.x = -0.15 * w * (1 - rl); p.kneeL.rotation.x = Math.max(p.kneeL.rotation.x, 0.25 * w * (1 - rl));        // the standing leg takes the weight
+    p.body.rotation.x = (lob ? -0.28 * st : 0.12 * w * (1 - st)) * (1 - rl) + p.body.rotation.x * rl;                              // a lob is scooped: lean back as it goes through
+    p.armL.rotation.z = -(0.7 + 0.3 * st) * (1 - rl); p.armR.rotation.z = (0.7 + 0.3 * st) * (1 - rl); p.armL.rotation.x = p.armR.rotation.x = -0.25 * (1 - rl);
+  }
   if (e.touch > 0) {                                  // first touch: cushion the ball with the foot, or take it on the chest
     e.touch -= dt; const u = clamp(1 - e.touch / 0.45, 0, 1), ps = Math.sin(u * Math.PI);
     if (e.touchType === "chest") { p.body.rotation.x = -0.35 * ps; p.armL.rotation.z = -0.9 * ps; p.armR.rotation.z = 0.9 * ps; p.armL.rotation.x = p.armR.rotation.x = -0.3 * ps; p.body.position.y = 0.05 * ps; }
@@ -1208,12 +1224,17 @@ function animateLimbs(e, dt) {
       p.body.position.y = ps * 0.3 * am; p.body.rotation.x = -0.3 * ps;
       p.legR.rotation.x = u < 0.4 ? 0.9 * (u / 0.4) : 0.9 - 3.1 * Math.min(1, (u - 0.4) / 0.3); p.kneeR.rotation.x = u < 0.4 ? 1.2 * (u / 0.4) : Math.max(0, 1.2 - 3 * (u - 0.4)); p.legL.rotation.x = 0.3;
       p.armL.rotation.x = 0.4; p.armR.rotation.x = -0.4; p.armL.rotation.z = -1.0 * ps; p.armR.rotation.z = 1.0 * ps;
-    } else if (e.aerType === "bicycle") {            // throw the body back, one leg up, then the kicking leg over the top, landing on the back
-      const sm = u * u * (3 - 2 * u);
-      p.body.position.y = 0.3 + ps * 1.0 * am; p.body.rotation.x = -1.55 * sm;
-      p.legL.rotation.x = -1.3 * Math.sin(clamp(u / 0.55, 0, 1) * Math.PI); p.legR.rotation.x = -2.5 * Math.sin(clamp((u - 0.2) / 0.6, 0, 1) * Math.PI);
-      p.kneeL.rotation.x = 0.5; p.kneeR.rotation.x = 0.2;
-      p.armL.rotation.x = p.armR.rotation.x = -0.6; p.armL.rotation.z = -1.1 * ps; p.armR.rotation.z = 1.1 * ps;
+    } else if (e.aerType === "bicycle") {            // jump, throw the body back to horizontal, scissor the legs and hit the ball overhead, then land on the back
+      const hit = 0.48, up = u < hit;
+      const th = -1.5 * sm(clamp(u / 0.46, 0, 1)) - (u > 0.46 ? 0.07 * (u - 0.46) / 0.54 : 0);
+      p.body.rotation.x = th;
+      const hipY = up ? 0.96 + 0.8 * Math.sin((u / hit) * Math.PI / 2) : 1.76 - 1.56 * Math.pow((u - hit) / (1 - hit), 1.6);
+      hipLock(p, hipY, 0.05);
+      const cock = 0.55, over = -1.64;                                                                   // leg angles: cocked back, then straight up over the body
+      p.legR.rotation.x = u < 0.25 ? cock * sm(u / 0.25) : u < hit ? lerp(cock, over, sm((u - 0.25) / (hit - 0.25))) : lerp(over, -0.95, sm((u - hit) / 0.35));
+      p.kneeR.rotation.x = u < 0.25 ? 1.1 * sm(u / 0.25) : u < hit ? lerp(1.1, 0.05, sm((u - 0.25) / (hit - 0.25))) : lerp(0.05, 0.35, sm((u - hit) / 0.3));
+      p.legL.rotation.x = lerp(0, -1.15, sm(clamp(u / 0.35, 0, 1))) * (1 - 0.5 * sm(clamp((u - 0.5) / 0.4, 0, 1))); p.kneeL.rotation.x = 0.65 * sm(clamp(u / 0.35, 0, 1));
+      p.armL.rotation.x = p.armR.rotation.x = -0.35; p.armL.rotation.z = -(1.1 + 0.25 * sm(clamp((u - 0.5) / 0.3, 0, 1))); p.armR.rotation.z = -p.armL.rotation.z;
     } else {                                         // a header: jump, lean back, then snap the head forward into the ball
       p.body.position.y = ps * 0.85 * am;
       const lean = u < 0.45 ? -0.55 * (u / 0.45) : -0.55 + 1.35 * Math.min(1, (u - 0.45) / 0.3);
