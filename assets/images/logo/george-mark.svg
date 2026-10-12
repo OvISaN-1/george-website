@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="George">
+  <defs>
+    <linearGradient id="gm-red" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0213c"/><stop offset="1" stop-color="#a50c22"/>
+    </linearGradient>
+  </defs>
+  <!-- the crest -->
+  <path d="M50 3 L90 15 V49 C90 74 72 90 50 97 C28 90 10 74 10 49 V15 Z" fill="url(#gm-red)"/>
+  <path d="M50 9 L84 19.5 V49 C84 70 69 84 50 90.5 C31 84 16 70 16 49 V19.5 Z" fill="none" stroke="#ffffff" stroke-opacity=".35" stroke-width="1.6"/>
+  <!-- the G -->
+  <path transform="translate(-3 -4)" d="M64.2 34.6 A20.5 20.5 0 1 0 69.5 52 H53" fill="none" stroke="#ffffff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- the full stop is a football -->
+  <g transform="translate(73 73) scale(0.88) translate(-72 -71)">
+  <circle cx="72" cy="71" r="7.6" fill="#ffffff"/>
+  <path d="M72 67.2 L75.6 69.8 L74.2 74 H69.8 L68.4 69.8 Z" fill="#1a1418"/>
+  <path d="M72 67.2 V63.6 M75.6 69.8 L79 68.6 M74.2 74 L76.4 77 M69.8 74 L67.6 77 M68.4 69.8 L65 68.6" stroke="#1a1418" stroke-width="1.1"/>
+  <circle cx="72" cy="71" r="7.6" fill="none" stroke="#1a1418" stroke-width="0.8"/>
+  </g>
+</svg>
