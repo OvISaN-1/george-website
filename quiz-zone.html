@@ -174,7 +174,9 @@
   .gz-group .grid{margin-top:var(--s4);}
   .game-card p{margin:0;font-size:0.92rem;color:var(--chalk-dim);}
   /* Top picks: bigger, brighter cards */
-  .grid.featured{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:var(--s4);}
+  .grid.featured{grid-template-columns:1fr;gap:var(--s4);}
+  @media (min-width:600px){.grid.featured{grid-template-columns:repeat(2,1fr);}}
+  @media (min-width:1000px){.grid.featured{grid-template-columns:repeat(4,1fr);}}
   .game-card.featured{background:linear-gradient(135deg,rgba(225,16,44,.22),rgba(157,92,255,.14) 60%,var(--surface));border-color:rgba(241,237,233,.16);padding:var(--s5) var(--s5) var(--s6);}
   .game-card.featured .emoji-badge{width:72px;height:72px;font-size:40px;}
   .game-card.featured h3{font-size:1.5rem;}
