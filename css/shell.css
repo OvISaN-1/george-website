@@ -107,6 +107,8 @@ body[data-page="quiz-zone"], body[data-page="quiz-game"]{
 .gz-login-note b{ color: #f1ede9; }
 .gz-login-note a{ color: #f5b942; text-decoration: underline; }
 .logo span { color: var(--garibaldi); }
+.logo { display: inline-flex; align-items: center; }
+.logo-mark { width: 30px; height: 30px; flex-shrink: 0; display: block; margin-right: 8px; }
 .nav-links{ display: flex; gap: var(--s5); }
 .nav-links a{
   font-family: var(--font-display); font-weight: 600; font-size: 0.9rem; text-transform: uppercase;
