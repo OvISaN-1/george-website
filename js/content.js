@@ -51,7 +51,7 @@ window.SITE = {
       {
         title: 'Neco Williams',
         meta: 'Left-back',
-        description: 'Plays for Wales too and he gets forward and crosses it in like a winger, not just a defender.',
+        description: 'Plays for Wales too. He's a defender, but he gets forward and crosses it in like a winger.',
         photo: 'assets/images/players/neco-williams.webp',
         photoAlt: 'Neco Williams',
       },
