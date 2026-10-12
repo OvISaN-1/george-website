@@ -182,7 +182,7 @@ body[data-page="quiz-zone"], body[data-page="quiz-game"]{
 }
 .footer-row{
   max-width: 1080px; margin: 0 auto; padding-inline: var(--s4);
-  display: flex; justify-content: space-between; gap: var(--s4); flex-wrap: wrap;
+  display: flex; justify-content: space-between; align-items: center; gap: var(--s4); flex-wrap: wrap;
 }
 .footer-row a { color: var(--chalk-dim); }
 .footer-row a:hover { color: var(--accent-text); }
