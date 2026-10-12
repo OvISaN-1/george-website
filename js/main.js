@@ -1137,3 +1137,21 @@ window.GZWake = (function () {
   }
   setInterval(note, 700);
 })();
+
+/* ---- "NEW" labels switch themselves off two weeks after the date they carry ----
+   <span class="new-chip" data-new="2026-10-09">NEW</span> disappears from 23 October. */
+(function () {
+  const now = Date.now();
+  document.querySelectorAll("[data-new]").forEach((el) => {
+    const t = Date.parse(el.getAttribute("data-new"));
+    if (t && now - t > 14 * 86400000) el.remove();
+  });
+})();
+
+/* ---- Installable app: lets George add the site to his home screen ----
+   sw.js only helps when there's no internet (it never serves an old page when
+   the internet works), so new versions of the site show up straight away. */
+(function () {
+  if (!("serviceWorker" in navigator) || location.protocol !== "https:") return;
+  window.addEventListener("load", () => { navigator.serviceWorker.register("/sw.js").catch(() => {}); });
+})();

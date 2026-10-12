@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <script>document.documentElement.classList.add('js');</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#121014">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="George">
+<link rel="apple-touch-icon" href="/assets/images/app/apple-touch-icon.png">
   <title>George's World | Football, Gaming &amp; School Wins</title>
   <meta name="description" content="George's own corner of the internet. Nottingham Forest, top game scores, and school wins, all in one place. Have a look around.">
   <meta name="robots" content="noindex, nofollow">
@@ -69,6 +75,7 @@
               <a class="btn btn-ghost btn-big" href="football.html"><span aria-hidden="true">🌳</span> Forest</a>
               <a class="btn btn-ghost btn-big" href="space.html"><span aria-hidden="true">🚀</span> Space</a>
             </div>
+            <a class="daily-cta" href="quiz-zone/george-run.html?daily=1"><span class="daily-ico" aria-hidden="true">📅</span><span><b>Today's challenge</b><small id="daily-cta-sub">George's Run · same pitch for everyone today</small></span><span class="daily-go" aria-hidden="true">▶</span></a>
             <div data-gzr="level" style="margin-top:16px"></div>
           </div>
           <figure class="hero-photo reveal">
@@ -108,7 +115,7 @@
             <span class="hub-deco" aria-hidden="true"><span style="top:10%;left:12%;">⚽</span><span style="top:60%;left:18%;">🎸</span><span style="top:28%;left:68%;">🧠</span><span style="top:78%;left:64%;">📸</span></span>
             <span class="hub-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 4h8v4a4 4 0 0 1-8 0z"/><path d="M8 5H5a3 3 0 0 0 3 4M16 5h3a3 3 0 0 1-3 4"/><path d="M12 12v4M9 20h6M10 16h4v4h-4z"/></svg></span>
             <h2>Game Zone</h2>
-            <p>Ten football games and quizzes. Beat my high scores if you can.</p>
+            <p>Football games, quizzes and George's Run. Beat my high scores if you can.</p>
             <span class="card-arrow" aria-hidden="true">Play a game <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           </a>
           <a class="hub-tile school reveal" href="school.html" aria-label="School Zone: check out my achievements">
@@ -177,5 +184,9 @@
   <script src="js/content.js"></script>
   <script src="js/main.js"></script>
   <script src="quiz-zone/gz-rewards.js"></script>
+<script>
+  // Today's best in the George's Run daily challenge, if George has played it today
+  try { const r = JSON.parse(localStorage.getItem("gz_run_daily_v1") || "{}"); if (r.date === new Date().toISOString().slice(0, 10) && r.best) document.getElementById("daily-cta-sub").textContent = "George's Run · your best today: " + Number(r.best).toLocaleString("en-GB"); } catch (e) {}
+</script>
 </body>
 </html>

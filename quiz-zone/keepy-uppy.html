@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#121014">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="George">
+<link rel="apple-touch-icon" href="/assets/images/app/apple-touch-icon.png">
+<title>Keepy-Uppy | George's Game Zone</title>
+<meta name="description" content="Keep the ball up as long as you can. It drifts sideways and gets faster the longer you go.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="../css/shell.css">
+<link rel="stylesheet" href="../css/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121014'/%3E%3Ctext x='16' y='23' font-family='Arial, sans-serif' font-weight='700' font-size='19' fill='%23e1102c' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E">
+<script>document.documentElement.classList.add('js');</script>
+<link rel="stylesheet" href="../css/fonts.css">
+<link rel="stylesheet" href="stats.css">
+<link rel="stylesheet" href="gz-rewards.css">
+<style>
+  :root{--navy:#121014;--navy-light:#1c1820;--cream:#f1ede9;--gold:#f5b942;--teal:#9d5cff;--pink:#e84c61;--forest:#e1102c;}
+  .ku-wrap{width:100%;max-width:720px;margin:0 auto;padding:24px 16px 60px;}
+  .ku-title{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px;}
+  .ku-title .eyebrow{display:block;font-family:var(--font-display);font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#a264ff;margin-bottom:2px;}
+  .ku-title h1{font-family:var(--font-display);font-size:30px;line-height:1.05;margin:0;color:var(--chalk);}
+  .ku-title .back{font-family:var(--font-display);font-weight:700;font-size:15px;text-decoration:none;color:var(--chalk);border:1px solid var(--line-strong);border-radius:999px;padding:10px 18px;min-height:44px;display:inline-flex;align-items:center;}
+  .zone{
+    margin-top:var(--s6);
+    background:var(--surface);
+    border-radius:var(--r-lg);padding:var(--s5);
+    border:1px solid var(--line);
+  }
+  .zone h2{font-family:var(--font-display);font-size:1.35rem;color:var(--chalk);margin:0 0 4px;}
+  .zone .zone-sub{font-size:0.9rem;color:var(--chalk-faint);margin:0 0 var(--s4);max-width:none;}
+  /* Keepy-uppy */
+  .keepy-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:4px;}
+  .keepy-header h2{margin:0;}
+  .keepy-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .keepy-best{
+    background:var(--gold-ink);border:1px solid rgba(245,185,66,0.3);
+    padding:6px 12px;border-radius:var(--r-pill);font-weight:700;font-size:0.85rem;color:var(--chalk);white-space:nowrap;
+  }
+  .keepy-best span{color:var(--gold);}
+  .sound-btn{
+    background:var(--surface-raised);border:1px solid var(--line-strong);border-radius:var(--r-pill);
+    color:var(--chalk);min-height:36px;padding:4px 12px;cursor:pointer;font-family:var(--font-display);font-weight:600;font-size:0.85rem;
+  }
+  .keepy-stage{
+    position:relative;height:280px;margin-top:var(--s3);
+    background:radial-gradient(circle at 20% 20%, rgba(157,92,255,0.22), transparent 55%), var(--cream);
+    border-radius:var(--r-md);overflow:hidden;cursor:pointer;touch-action:none;user-select:none;
+  }
+  .keepy-stage:focus-visible{outline:3px solid var(--gold);outline-offset:3px;}
+  .keepy-score{position:absolute;top:10px;left:14px;font-family:var(--font-display);font-weight:700;font-size:30px;color:#241f29;z-index:2;}
+  .keepy-speed{position:absolute;top:16px;right:14px;font-family:var(--font-display);font-weight:700;font-size:13px;color:#241f29;opacity:.7;z-index:2;}
+  .keepy-ball{position:absolute;width:44px;height:44px;font-size:38px;line-height:44px;text-align:center;left:0;top:0;z-index:1;will-change:transform;}
+  .keepy-ground{
+    position:absolute;left:0;right:0;bottom:0;height:10px;
+    background:repeating-linear-gradient(90deg, rgba(36,31,41,0.18) 0 14px, transparent 14px 28px);
+    border-top:2px dashed rgba(36,31,41,0.25);
+  }
+  .keepy-overlay{
+    position:absolute;inset:0;background:rgba(18,16,20,0.72);
+    display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;
+    z-index:3;text-align:center;padding:20px;
+  }
+  .keepy-overlay p{color:var(--chalk);font-weight:700;font-family:var(--font-display);font-size:1.15rem;margin:0;max-width:none;}
+  .keepy-overlay.hidden{display:none;}
+  .keepy-save[hidden]{display:none;}
+  .keepy-save{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+  .keepy-save input{
+    border-radius:var(--r-pill);border:none;padding:10px 16px;min-height:44px;width:12rem;
+    background:var(--cream);color:#241f29;font-weight:600;
+  }
+  .keepy-save .btn{padding:10px 18px;}
+  .keepy-hint{font-size:0.85rem;color:var(--chalk-faint);margin:var(--s3) 0 0;max-width:none;}
+  .keepy-top{margin-top:var(--s3);font-size:0.9rem;color:var(--chalk-dim);}
+  .keepy-top ol{margin:6px 0 0;padding-left:1.4em;}
+  .keepy-top li{margin:2px 0;}
+  .keepy-stage{height:min(60vh,460px)!important;}
+</style>
+</head>
+<body data-page="quiz-game">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <nav class="nav-bar" aria-label="Main">
+      <a class="logo" href="../index.html">GEORGE<span>.</span></a>
+      <ul class="nav-links">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../football.html">Football</a></li>
+        <li><a href="../games.html">Video Games</a></li>
+        <li><a href="../quiz-zone.html" aria-current="page">Game Zone</a></li>
+        <li><a href="../school.html">School Zone</a></li>
+        <li><a href="../about.html">About Me</a></li>
+      </ul>
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </nav>
+    <div class="mobile-nav" id="mobile-nav">
+      <a href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/></svg>Home</a>
+      <a href="../football.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/></svg>Football</a>
+      <a href="../games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="10" rx="4"/></svg>Video Games</a>
+      <a href="../quiz-zone.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>Game Zone</a>
+      <a href="../school.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4l9 4-9 4-9-4z"/></svg>School Zone</a>
+      <a href="../about.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>About Me</a>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="ku-wrap">
+      <div class="ku-title">
+        <div><span class="eyebrow">Game Zone</span><h1>Keepy-Uppy</h1></div>
+        <a class="back" href="../quiz-zone.html">&larr; All games</a>
+      </div>
+      <div class="zone">
+        <div class="keepy-header">
+          <h2>⚽ Keepy-Uppy Break</h2>
+          <div class="keepy-tools">
+            <button class="sound-btn" id="keepy-sound" type="button" aria-pressed="true">🔊 Sound on</button>
+            <div class="keepy-best">My best: <span id="keepy-best">0</span></div>
+          </div>
+        </div>
+        <p class="zone-sub">Tap the ball to keep it up. It moves sideways and gets faster the longer you go. On a keyboard, press Space.</p>
+        <div class="keepy-stage" id="keepy-stage" tabindex="0" role="application" aria-label="Keepy-uppy game. Press Space or Enter to kick the ball.">
+          <div class="keepy-score" id="keepy-score" aria-live="off">0</div>
+          <div class="keepy-speed" id="keepy-speed"></div>
+          <div class="keepy-ball" id="keepy-ball" aria-hidden="true">⚽</div>
+          <div class="keepy-ground"></div>
+          <div class="keepy-overlay" id="keepy-overlay">
+            <p id="keepy-msg">Ready? Hit Start, or press Space.</p>
+            <form class="keepy-save" id="keepy-save" hidden>
+              <label class="visually-hidden" for="keepy-name">Your name</label>
+              <input type="text" id="keepy-name" maxlength="18" placeholder="Your name" autocomplete="off">
+              <button class="btn btn-primary" type="submit">Save score</button>
+            </form>
+            <button class="btn btn-primary" id="keepy-start-btn" type="button">Start</button>
+          </div>
+        </div>
+        <p class="visually-hidden" id="keepy-live" aria-live="polite"></p>
+        <div class="keepy-top" id="keepy-top"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-row">
+      <span>Built with <span class="heart" aria-label="love">&hearts;</span> by Dad, for George.</span>
+      <a href="../quiz-zone.html">Game Zone</a>
+    </div>
+  </footer>
+
+  <script src="../js/main.js"></script>
+  <script src="../js/db.js"></script>
+  <script src="gz-rewards.js"></script>
+  <script src="stats.js"></script>
+<script>
+  /* ---------- Keepy-uppy mini game ----------
+     The ball drifts sideways (where you hit it decides which way), bounces
+     off the walls, and gravity gets stronger as your score goes up.
+     Works with touch, mouse, and Space/Enter on a keyboard. Scores can be
+     saved to the online leaderboard as game "keepy-uppy". */
+  (function () {
+    const stage = document.getElementById("keepy-stage");
+    const ballEl = document.getElementById("keepy-ball");
+    const scoreEl = document.getElementById("keepy-score");
+    const speedEl = document.getElementById("keepy-speed");
+    const bestEl = document.getElementById("keepy-best");
+    const overlay = document.getElementById("keepy-overlay");
+    const msgEl = document.getElementById("keepy-msg");
+    const startBtn = document.getElementById("keepy-start-btn");
+    const saveForm = document.getElementById("keepy-save");
+    const nameInput = document.getElementById("keepy-name");
+    const liveEl = document.getElementById("keepy-live");
+    const topEl = document.getElementById("keepy-top");
+    const soundBtn = document.getElementById("keepy-sound");
+
+    const GAME_ID = "keepy-uppy";
+    const GROUND_H = 10;
+    const BALL = 44;
+    const BASE_GRAVITY = 0.18;      // per frame at 60fps
+    const GRAVITY_STEP = 0.006;     // extra gravity per keepy-uppy
+    const MAX_GRAVITY = 0.42;
+    const KICK_VY = -6.2;
+    const HIT_PAD = 32;             // generous hit box so it's easy to connect
+
+    let x = 0, y = 0, vx = 0, vy = 0, running = false, score = 0, rafId = null, lastT = 0;
+
+    /* ---- Sound (tiny beeps made in the browser, no files) ---- */
+    let soundOn = true;
+    try { soundOn = localStorage.getItem("gz_keepy_sound") !== "off"; } catch (e) {}
+    let audioCtx = null;
+    function beep(freq, dur, type, vol) {
+      if (!soundOn) return;
+      try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = type || "sine"; o.frequency.value = freq;
+        g.gain.setValueAtTime(vol || 0.15, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(); o.stop(audioCtx.currentTime + dur);
+      } catch (e) { /* no audio, no problem */ }
+    }
+    function showSound() {
+      soundBtn.textContent = soundOn ? "🔊 Sound on" : "🔇 Sound off";
+      soundBtn.setAttribute("aria-pressed", String(soundOn));
+    }
+    soundBtn.addEventListener("click", () => {
+      soundOn = !soundOn;
+      try { localStorage.setItem("gz_keepy_sound", soundOn ? "on" : "off"); } catch (e) {}
+      showSound();
+    });
+    showSound();
+
+    function W() { return stage.clientWidth || 300; }
+    function H() { return stage.clientHeight || 280; }
+    function gravity() { return Math.min(MAX_GRAVITY, BASE_GRAVITY + score * GRAVITY_STEP); }
+    function place() { ballEl.style.transform = `translate(${x}px, ${y}px) rotate(${x * 2}deg)`; }
+
+    function resetBall() {
+      x = W() / 2 - BALL / 2;
+      y = H() / 2 - BALL / 2;
+      vx = 0; vy = 0;
+      place();
+    }
+
+    bestEl.textContent = GZ.load().keepyUppyBest || 0;
+    resetBall();
+    window.addEventListener("resize", () => { if (!running) resetBall(); });
+
+    function startGame() {
+      score = 0;
+      scoreEl.textContent = "0";
+      speedEl.textContent = "";
+      resetBall();
+      running = true;
+      overlay.classList.add("hidden");
+      saveForm.hidden = true;
+      stage.focus({ preventScroll: true });
+      cancelAnimationFrame(rafId);
+      lastT = performance.now();
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function tick(t) {
+      if (!running) return;
+      // Frame-rate independent: a 120Hz iPad plays at the same speed as a 60Hz laptop.
+      const dt = Math.min(3, (t - lastT) / (1000 / 60));
+      lastT = t;
+      vy += gravity() * dt;
+      x += vx * dt;
+      y += vy * dt;
+      const maxX = W() - BALL;
+      if (x < 0) { x = 0; vx = Math.abs(vx) * 0.9; beep(300, 0.05, "triangle", 0.08); }
+      if (x > maxX) { x = maxX; vx = -Math.abs(vx) * 0.9; beep(300, 0.05, "triangle", 0.08); }
+      if (y <= 2) { y = 2; vy = Math.max(vy, 0); }
+      const maxY = H() - GROUND_H - BALL;
+      if (y >= maxY) {
+        y = maxY;
+        place();
+        gameOver();
+        return;
+      }
+      place();
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function kick(offset) {
+      // offset: -1 (hit on the left of the ball) to 1 (hit on the right)
+      vy = KICK_VY - Math.min(2, score * 0.03);
+      const push = 1.2 + Math.min(2.4, score * 0.08);
+      vx = -offset * push + (Math.random() - 0.5) * 1.2;
+      score++;
+      scoreEl.textContent = score;
+      if (score % 5 === 0) speedEl.textContent = `Speed ${Math.round((gravity() / BASE_GRAVITY) * 10) / 10}x`;
+      beep(520 + Math.min(score, 40) * 12, 0.08, "sine", 0.18);
+    }
+
+    function tryKickAt(clientX, clientY) {
+      if (!running) return;
+      const rect = stage.getBoundingClientRect();
+      const px = clientX - rect.left;
+      const py = clientY - rect.top;
+      const cx = x + BALL / 2;
+      const cy = y + BALL / 2;
+      if (Math.abs(px - cx) <= BALL / 2 + HIT_PAD && Math.abs(py - cy) <= BALL / 2 + HIT_PAD) {
+        kick(Math.max(-1, Math.min(1, (px - cx) / (BALL / 2 + HIT_PAD))));
+      }
+    }
+
+    async function loadTop() {
+      try {
+        const rows = await DB.topScores(GAME_ID, 5);
+        topEl.innerHTML = rows.length
+          ? `<strong>Online top 5:</strong><ol>${rows.map(r => `<li>${escapeText(r.player_name)}: ${Number(r.score)}</li>`).join("")}</ol>`
+          : "No online keepy-uppy scores yet. Be the first!";
+      } catch (e) {
+        topEl.textContent = "Couldn't load the online keepy-uppy scores right now.";
+      }
+    }
+    function escapeText(str) {
+      const d = document.createElement("div"); d.textContent = String(str); return d.innerHTML;
+    }
+
+    function gameOver() {
+      running = false;
+      cancelAnimationFrame(rafId);
+      beep(160, 0.35, "sawtooth", 0.12);
+      const nickname = GZ.randomNickname();
+      const { isNewBest, newBadges } = GZ.recordKeepyUppy(score);
+      bestEl.textContent = GZ.load().keepyUppyBest || 0;
+      const text = `${isNewBest && score > 0 ? "New best! " : ""}${score} keepy-upp${score === 1 ? "y" : "ies"}, ${nickname}!`;
+      msgEl.textContent = text;
+      liveEl.textContent = text;
+      saveForm.hidden = score === 0;
+      startBtn.textContent = "Play again";
+      overlay.classList.remove("hidden");
+      if (score > 0) nameInput.focus({ preventScroll: true }); else startBtn.focus({ preventScroll: true });
+      GZ.announceBadges(newBadges);
+    }
+
+    saveForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = nameInput.value.trim();
+      if (!name) { nameInput.focus(); return; }
+      const btn = saveForm.querySelector("button");
+      btn.disabled = true;
+      try {
+        await DB.saveScore(GAME_ID, name, score);
+        saveForm.hidden = true;
+        msgEl.textContent = `Saved! ${score} for ${name}.`;
+        loadTop();
+        if (window.renderTopScores) window.renderTopScores();
+      } catch (err) {
+        msgEl.textContent = "Couldn't save online right now. Try again later.";
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    stage.addEventListener("pointerdown", (e) => {
+      if (e.target.closest("button, input, form")) return;
+      tryKickAt(e.clientX, e.clientY);
+    });
+    stage.addEventListener("keydown", (e) => {
+      if (e.target !== stage) return;
+      if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        if (!running) { startGame(); return; }
+        kick((Math.random() - 0.5) * 1.2);
+      }
+    });
+    startBtn.addEventListener("click", startGame);
+    loadTop();
+  })();
+</script>
+</body>
+</html>
