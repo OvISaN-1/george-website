@@ -27,7 +27,7 @@ const writeJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); 
 /* ---------------- achievements (football themed, and nothing too hard) ---------------- */
 const ACH = [
   ["kickoff", "⚽", "Kick-off", "Play your first run"], ["firsttouch", "🪙", "First Touch", "Collect a coin"],
-  ["fullteam", "👥", "Full Team", "Collect 11 coins without a card"], ["goldenboot", "👟", "Golden Boot", "Collect 25 coins without a card"], ["invincibles", "🛡️", "The Invincibles", "Collect 100 coins without a card"],
+  ["fullteam", "👥", "Full Team", "Collect 11 coins without losing a life"], ["goldenboot", "👟", "Golden Boot", "Collect 25 coins without losing a life"], ["invincibles", "🛡️", "The Invincibles", "Collect 100 coins without losing a life"],
   ["halftime", "⏱️", "Half-time", "Run 500 m"], ["fulltime", "🔔", "Full Time", "Run 1,000 m"], ["extratime", "⏳", "Extra Time", "Run 2,000 m"], ["allseasons", "🗓️", "Four Seasons", "Reach spring in one run"],
   ["topbins", "🥅", "Top Bins", "Score a goal with the football"], ["safehands", "🧤", "Safe Hands", "Use the keeper gloves"], ["moon", "🚀", "Out of This World", "Use the rocket boots"],
   ["legend", "⭐", "Forest Legend", "Get your shirt number to 25"], ["cleansheet", "🧱", "Clean Sheet", "Run 300 m without losing a life"], ["season", "🎟️", "Season Ticket", "Play 5 runs"],
@@ -448,7 +448,7 @@ const TOYS = {
   ball: { name: "FOOTBALL", sub: "Kicked ahead: it collects every coin", icon: "⚽", col: 0x9fd0ff },
   boots: { name: "GOLDEN BOOTS", sub: "Sprint! Double distance points", icon: "👟", col: 0xffc933 },
   whistle: { name: "REFEREE WHISTLE", sub: "Play slows down", icon: "📣", col: 0xcfd5df },
-  gloves: { name: "KEEPER GLOVES", sub: "Saves you from one card", icon: "🧤", col: 0x39d17a },
+  gloves: { name: "KEEPER GLOVES", sub: "Saves you from one hit", icon: "🧤", col: 0x39d17a },
   trophy: { name: "GOLDEN TROPHY", sub: "Coins fly to you", icon: "🏆", col: 0xffc933 },
   rocket: { name: "ROCKET BOOTS", sub: "Fly over everything", icon: "🚀", col: 0xe5384a },
   bow: { name: "ROBIN HOOD'S BOW", sub: "Arrows sweep all three lanes", icon: "🏹", col: 0x2e8b3a },
@@ -626,7 +626,7 @@ function takeCoin(it, bonus) {
   it.gone = true; G.streak++;
   const n = 1, value = G.num * (bonus || 1);
   G.coins += n; G.score += value; reachT = 0.22; ach("firsttouch"); if (G.streak >= 3) ach("hattrick"); if (G.streak >= 11) ach("fullteam"); if (G.streak >= 25) ach("goldenboot"); if (G.streak >= 50) ach("unplayable"); if (G.streak >= 100) ach("invincibles"); sfx.coin(G.streak); burst(it.mesh.position.x, it.mesh.position.y, it.mesh.position.z, 0xffd84a, 3);
-  if (G.streak === 25 || G.streak === 50 || G.streak === 100 || G.streak === 200) feedItem("🔥", "COIN FEVER!", G.streak + " coins without a card", "big");
+  if (G.streak === 25 || G.streak === 50 || G.streak === 100 || G.streak === 200) feedItem("🔥", "COIN FEVER!", G.streak + " coins without losing a life", "big");
 }
 
 /* ---------------- input ---------------- */
@@ -786,7 +786,7 @@ const MISSIONS = [
   { id: "c40", text: "Collect 40 coins", ok: (r) => r.coins >= 40 }, { id: "c100", text: "Collect 100 coins", ok: (r) => r.coins >= 100 },
   { id: "d600", text: "Run 600 m", ok: (r) => r.dist >= 600 }, { id: "d1200", text: "Run 1,200 m", ok: (r) => r.dist >= 1200 },
   { id: "p3", text: "Pick up 3 power-ups", ok: (r) => r.power >= 3 }, { id: "k2", text: "Kick the football twice", ok: (r) => r.kicks >= 2 },
-  { id: "n20", text: "Get your shirt number up to 20", ok: (r) => r.maxNum >= 20 }, { id: "nohit", text: "Run 300 m without a card", ok: (r) => r.noHit && r.dist >= 300 },
+  { id: "n20", text: "Get your shirt number up to 20", ok: (r) => r.maxNum >= 20 }, { id: "nohit", text: "Run 300 m without losing a life", ok: (r) => r.noHit && r.dist >= 300 },
 ];
 let goals = [];
 function newGoals() { goals = MISSIONS.slice().sort(() => Math.random() - 0.5).slice(0, 3); $("missions").innerHTML = goals.map((m) => `<li>🎯 ${m.text}</li>`).join(""); }
@@ -866,7 +866,7 @@ function showHint(type) {
 }
 function hurt(it) {
   if (G.phase !== "play" || G.invuln > 0) return;
-  if (G.shield) { G.shield = false; G.invuln = 1.2; burst(px, 1.2, 0, 0x9fe3ff, 18); sfx.power(); feedItem("🧤", "SAVED!", "The gloves stopped the card", "power"); it.gone = true; drop(it.mesh); return; }
+  if (G.shield) { G.shield = false; G.invuln = 1.2; burst(px, 1.2, 0, 0x9fe3ff, 18); sfx.power(); feedItem("🧤", "SAVED!", "The gloves saved you", "power"); it.gone = true; drop(it.mesh); return; }
   flash("hit"); G.lives--; try { if (navigator.vibrate) navigator.vibrate(G.lives <= 0 ? [90, 60, 180] : 120); } catch (e) {} G.noHit = false; G.invuln = 3; stumble = 0.9; G.streak = 0; shake = 0.5; G.speed = Math.max(14, G.speed * 0.78); sfx.hit(); burst(px, 1, 0, 0xff6b6b, 14);
   const was = G.num; setNum(Math.max(george.baseNum, G.num - 5));
   if (G.lives <= 0) { if (canContinue()) offerContinue(); else gameOver(); return; }

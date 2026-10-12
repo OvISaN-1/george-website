@@ -44,7 +44,7 @@ window.SITE = {
       {
         title: 'Morgan Gibbs-White',
         meta: 'Attacking midfielder',
-        description: 'Our captain and he wears number 10, which is the best number. He sets up so many goals.',
+        description: 'Our captain, and he wears number 10, which is the best number. He sets up so many goals.',
         photo: 'assets/images/players/gibbs-white.webp',
         photoAlt: 'Morgan Gibbs-White',
       },
@@ -58,7 +58,7 @@ window.SITE = {
       {
         title: 'Murillo',
         meta: 'Centre-back',
-        description: 'One of the best defenders in the league and he is only young. Wins everything in the air.',
+        description: 'One of the best defenders in the league, and he is only young. Wins everything in the air.',
         // The red-shirt graphic shows first; "livePhoto" then swaps in his photo
         // from TheSportsDB (same source as Guess the Player) if it's really the
         // Forest Murillo. Replace "photo" with a real one and delete the two
