@@ -1087,7 +1087,7 @@ window.GZWake = (function () {
 
 /* Progress account (see progress.html). Logging in is optional:
    - logged in: a small "logged in as" box in the header, the sync script, and a note under the name box
-   - not logged in: nothing changes, and the name box at the end of each game still works as before */
+   - not logged in: nothing is shown about it, and the name box at the end of each game still works as before */
 (function () {
   const me = document.currentScript || document.querySelector('script[src*="js/main.js"]');
   const root = me && me.src ? me.src.replace(/js\/main\.js.*$/, "") : "";
@@ -1127,11 +1127,10 @@ window.GZWake = (function () {
       const form = box && box.form;
       if (!form || !box.getClientRects().length || form.dataset.gzNote) return;
       form.dataset.gzNote = "1";
+      if (!loggedIn) return;                      // not logged in: no note, nothing about saving or logging in
       const p = document.createElement("p");
       p.className = "gz-login-note";
-      p.innerHTML = loggedIn
-        ? "👤 Logged in as <b>" + esc(account().display || account().user) + "</b>: your score is saved under your username automatically. George's progress is saved to your account."
-        : 'Not logged in: type any name for the top scores. Your progress only saves on this device. <a href="' + root + 'progress.html">Log in to keep it on every device</a>.';
+      p.innerHTML = "👤 Logged in as <b>" + esc(account().display || account().user) + "</b>: your score is saved under your username automatically. George's progress is saved to your account.";
       form.insertAdjacentElement("afterend", p);
     });
   }
