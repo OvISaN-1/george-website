@@ -830,3 +830,34 @@ details.predict-toggle[open] summary{ margin-bottom: var(--s3); }
 @keyframes mo-bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -7px; } }
 @keyframes mo-drift { 0%, 100% { translate: 0 0; rotate: 0deg; } 50% { translate: 3px -8px; rotate: 6deg; } }
 @keyframes mo-fill { from { transform: scaleX(0); } }
+
+/* ---- More motion (round two) ---- */
+@media (prefers-reduced-motion: no-preference) {
+  /* A thin red line along the top shows how far down the page you are. */
+  @supports (animation-timeline: scroll()) {
+    body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 3px; z-index: 1000; background: linear-gradient(90deg, var(--garibaldi, #e1102c), var(--gold, #f5b942)); transform-origin: left; transform: scaleX(0); animation: mo-progress linear both; animation-timeline: scroll(root); pointer-events: none; }
+    /* Section headings draw an underline as they arrive. */
+    .section-head h2 { position: relative; padding-bottom: 8px; }
+    .section-head h2::after { content: ""; position: absolute; left: 0; bottom: 0; width: 56px; height: 3px; border-radius: 3px; background: var(--garibaldi, #e1102c); transform-origin: left; animation: mo-underline linear both; animation-timeline: view(); animation-range: entry 10% entry 70%; }
+  }
+  /* Icons wiggle when you point at their tile. */
+  .hub-tile:hover .hub-icon { animation: mo-wiggle 0.6s ease; }
+  .game-card:hover .emoji-badge { animation: mo-wiggle 0.6s ease; }
+  .school-cell:hover .icon-badge, .card:hover .icon-badge { animation: mo-wiggle 0.6s ease; }
+  /* The header links slide a line in on hover. */
+  .nav-links a { background-image: linear-gradient(var(--accent, #e1102c), var(--accent, #e1102c)); background-repeat: no-repeat; background-position: 0 100%; background-size: 0% 2px; transition: background-size 0.25s ease, color 0.2s ease; }
+  .nav-links a:hover, .nav-links a:focus-visible { background-size: 100% 2px; }
+  /* The match card's "days to go" number and the live dot get a little life. */
+  .gzr-level.bump { animation: mo-bump 0.5s cubic-bezier(.3,1.6,.5,1); }
+  /* Quick facts and lists slide in from the side one by one. */
+  .quick-list li, .facts-list li { animation: mo-rise 0.5s ease backwards; }
+  .quick-list li:nth-child(2), .facts-list li:nth-child(2) { animation-delay: 0.08s; }
+  .quick-list li:nth-child(3), .facts-list li:nth-child(3) { animation-delay: 0.16s; }
+  .quick-list li:nth-child(4), .facts-list li:nth-child(4) { animation-delay: 0.24s; }
+  /* Player cards on the Football page tilt a touch towards you. */
+  .player-card:hover, .grid-3 > .card:hover { rotate: -0.6deg; }
+}
+@keyframes mo-progress { to { transform: scaleX(1); } }
+@keyframes mo-underline { from { transform: scaleX(0); } }
+@keyframes mo-wiggle { 0%, 100% { rotate: 0deg; scale: 1; } 25% { rotate: -10deg; scale: 1.1; } 55% { rotate: 8deg; scale: 1.1; } 80% { rotate: -4deg; } }
+@keyframes mo-bump { 0%, 100% { scale: 1; } 40% { scale: 1.12; } }
