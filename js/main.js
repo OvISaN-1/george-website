@@ -1154,3 +1154,44 @@ window.GZWake = (function () {
   if (!("serviceWorker" in navigator) || location.protocol !== "https:") return;
   window.addEventListener("load", () => { navigator.serviceWorker.register("/sw.js").catch(() => {}); });
 })();
+
+/* ---- Small bits of fun: numbers count up, and a level-up throws confetti ---- */
+(function () {
+  if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  // Count up the first big number and coin total that appear on a page (not every time they refresh).
+  const seen = { big: false, coins: false };
+  function countUp(tn) {
+    const m = tn.nodeValue.match(/\d[\d,]*/); if (!m) return;
+    const target = +m[0].replace(/,/g, ""); if (target < 5) return;
+    const pre = tn.nodeValue.slice(0, m.index), post = tn.nodeValue.slice(m.index + m[0].length), t0 = performance.now();
+    (function f(now) {
+      const k = Math.max(0, Math.min(1, (now - t0) / 1000)), e = 1 - Math.pow(1 - k, 3);
+      tn.nodeValue = pre + Math.round(target * e).toLocaleString("en-GB") + post;
+      if (k < 1) requestAnimationFrame(f);
+    })(t0);
+  }
+  function scan() {
+    for (const [key, sel] of [["big", ".gzr-big"], ["coins", ".gzr-coins"]]) {
+      if (seen[key]) continue;
+      const el = document.querySelector(sel); if (!el) continue;
+      const tn = [...el.childNodes].find((n) => n.nodeType === 3 && /\d/.test(n.nodeValue)); if (!tn) continue;
+      seen[key] = true; countUp(tn);
+    }
+  }
+  function confetti() {
+    const cols = ["#e1102c", "#ffffff", "#f5b942", "#9d5cff", "#3ddc97"];
+    for (let i = 0; i < 46; i++) {
+      const d = document.createElement("i"), x = window.innerWidth / 2;
+      d.style.cssText = "position:fixed;z-index:3000;pointer-events:none;top:38%;left:" + x + "px;width:" + (6 + Math.random() * 6) + "px;height:" + (8 + Math.random() * 8) + "px;background:" + cols[i % cols.length] + ";border-radius:2px";
+      document.body.appendChild(d);
+      const dx = (Math.random() - 0.5) * Math.min(900, window.innerWidth), up = 80 + Math.random() * 180, fall = 260 + Math.random() * 340;
+      d.animate([{ transform: "translate(0,0) rotate(0)", opacity: 1 }, { transform: "translate(" + dx * 0.6 + "px," + -up + "px) rotate(" + Math.random() * 360 + "deg)", opacity: 1, offset: 0.3 }, { transform: "translate(" + dx + "px," + fall + "px) rotate(" + Math.random() * 900 + "deg)", opacity: 0 }], { duration: 1500 + Math.random() * 900, easing: "cubic-bezier(.2,.7,.4,1)" }).onfinish = () => d.remove();
+    }
+  }
+  let queued = false;
+  new MutationObserver((muts) => {
+    for (const m of muts) for (const n of m.addedNodes) if (n.nodeType === 1 && n.classList && n.classList.contains("gzr-float") && n.classList.contains("lv")) confetti();
+    if (!queued && (!seen.big || !seen.coins)) { queued = true; requestAnimationFrame(() => { queued = false; scan(); }); }
+  }).observe(document.documentElement, { childList: true, subtree: true });
+  window.addEventListener("load", scan);
+})();
