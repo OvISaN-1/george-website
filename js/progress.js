@@ -133,11 +133,11 @@
     const msg = (t, ok) => { $("acct-msg").textContent = t; $("acct-msg").className = "msg " + (ok ? "good" : "bad"); };
     const ERR = {
       bad_username: "Username: 3 to 18 letters, numbers, - or _ (no spaces).",
-      bad_password: "Password: at least 4 characters.",
+      bad_password: "Password: at least 6 characters, and not your username or something easy like 123456.",
       taken: "Someone already has that username. Try another one.",
       wrong: "Wrong username or password. Check the spelling.",
       locked: "Too many wrong tries. Please wait 15 minutes, then try again.",
-      busy: "Lots of people are signing up right now. Try again in a minute.",
+      busy: "Sign-ups are paused for a moment. Try again in a minute, or ask Dad.",
       too_big: "Your save is too big to store. Ask Dad.",
       offline: "Can't reach the internet. Check your connection and try again.",
       setup: "Logins aren't switched on yet. Ask Dad to finish the setup.",
