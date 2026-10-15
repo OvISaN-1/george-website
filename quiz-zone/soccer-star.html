@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#121014">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="George">
+<link rel="apple-touch-icon" href="../assets/images/app/apple-touch-icon.png">
+<title>Soccer Star | George's Game Zone</title>
+<meta name="description" content="Swipe to curve a free kick over the wall and past the keeper. Eight teams, harder every level, and George plays in his own Forest kit.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="../css/shell.css">
+<link rel="stylesheet" href="../css/styles.css">
+<link rel="icon" type="image/svg+xml" href="../assets/images/logo/george-mark.svg">
+<script>document.documentElement.classList.add('js');</script>
+<link rel="stylesheet" href="../css/fonts.css">
+<link rel="stylesheet" href="stats.css">
+<link rel="stylesheet" href="gz-rewards.css">
+<style>
+  :root{--navy:#121014;--navy-light:#1c1820;--cream:#f1ede9;--gold:#f5b942;--teal:#9d5cff;--pink:#e84c61;--forest:#e1102c;}
+  .ss-wrap{width:100%;max-width:520px;margin:0 auto;padding:24px 16px 60px;}
+  .ss-title{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+  .ss-title .eyebrow{display:block;font-family:var(--font-display);font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#a264ff;margin-bottom:2px;}
+  .ss-title h1{font-family:var(--font-display);font-size:30px;line-height:1.05;margin:0;color:var(--chalk);}
+  .ss-title .back{font-family:var(--font-display);font-weight:700;font-size:15px;text-decoration:none;color:var(--chalk);border:1px solid var(--line-strong);border-radius:999px;padding:10px 18px;min-height:44px;display:inline-flex;align-items:center;}
+  /* the game: a 400 x 700 canvas that scales to fit the screen */
+  .ss-stage{position:relative;width:100%;aspect-ratio:400/700;max-height:calc(100dvh - 150px);margin:0 auto;border-radius:16px;overflow:hidden;background:#05080c;color:#fff;font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none;}
+  .ss-stage canvas{width:100%;height:100%;display:block;touch-action:none;}
+  #ss-toast{position:absolute;top:30%;left:0;right:0;text-align:center;font-weight:900;font-style:italic;pointer-events:none;font-size:clamp(30px,9vmin,54px);color:#fff;text-shadow:0 3px 0 #0b3d91,0 6px 14px #000a;opacity:0;transform:scale(.7);transition:opacity .15s,transform .15s;}
+  #ss-toast.show{opacity:1;transform:scale(1);}
+  .ss-overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:24px;background:linear-gradient(#000b,#000d);}
+  .ss-overlay.show{display:flex;}
+  .ss-logo{font-size:clamp(34px,10vmin,56px);font-weight:900;font-style:italic;line-height:.95;letter-spacing:-1px;text-shadow:0 4px 0 #0b3d91,0 8px 18px #000;}
+  .ss-logo span{color:#ffd23f;}
+  .ss-overlay p{margin:10px 0 18px;opacity:.85;max-width:30ch;line-height:1.4;font-size:clamp(13px,3.6vmin,17px);color:#fff;}
+  .ss-stars{font-size:clamp(36px,10vmin,56px);letter-spacing:6px;color:#ffd23f;margin:6px 0 4px;}
+  .ss-stage button{background:linear-gradient(#ffe66d,#ffb703);color:#2a1c00;border:0;font-family:inherit;font-weight:900;font-style:italic;font-size:clamp(17px,4.6vmin,24px);padding:13px 38px;min-height:48px;border-radius:12px;cursor:pointer;margin:5px;box-shadow:0 5px 0 #b37700;}
+  .ss-stage button.ghost{background:#ffffff26;color:#fff;box-shadow:0 5px 0 #0006;}
+  .ss-stage button:active{transform:translateY(3px);box-shadow:0 2px 0 #b37700;}
+  .ss-hint{font-size:.85rem;color:var(--chalk-faint);text-align:center;margin:12px 0 0;}
+</style>
+</head>
+<body data-page="quiz-game">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <nav class="nav-bar" aria-label="Main">
+      <a class="logo" href="../index.html"><svg class="logo-mark" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><defs><linearGradient id="gm-red-h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0213c"/><stop offset="1" stop-color="#a50c22"/></linearGradient></defs><path d="M50 3 L90 15 V49 C90 74 72 90 50 97 C28 90 10 74 10 49 V15 Z" fill="url(#gm-red-h)"/><path d="M50 9 L84 19.5 V49 C84 70 69 84 50 90.5 C31 84 16 70 16 49 V19.5 Z" fill="none" stroke="#ffffff" stroke-opacity=".35" stroke-width="1.6"/><path transform="translate(-3 -4)" d="M64.2 34.6 A20.5 20.5 0 1 0 69.5 52 H53" fill="none" stroke="#ffffff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><g transform="translate(73 73) scale(0.88) translate(-72 -71)"><circle cx="72" cy="71" r="7.6" fill="#ffffff"/><path d="M72 67.2 L75.6 69.8 L74.2 74 H69.8 L68.4 69.8 Z" fill="#1a1418"/><path d="M72 67.2 V63.6 M75.6 69.8 L79 68.6 M74.2 74 L76.4 77 M69.8 74 L67.6 77 M68.4 69.8 L65 68.6" stroke="#1a1418" stroke-width="1.1"/><circle cx="72" cy="71" r="7.6" fill="none" stroke="#1a1418" stroke-width="0.8"/></g></svg>GEORGE<span>.</span></a>
+      <ul class="nav-links">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../football.html">Football</a></li>
+        <li><a href="../games.html">Video Games</a></li>
+        <li><a href="../quiz-zone.html" aria-current="page">Game Zone</a></li>
+        <li><a href="../school.html">School Zone</a></li>
+        <li><a href="../about.html">About Me</a></li>
+      </ul>
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </nav>
+    <div class="mobile-nav" id="mobile-nav">
+      <a href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/></svg>Home</a>
+      <a href="../football.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/></svg>Football</a>
+      <a href="../games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="10" rx="4"/></svg>Video Games</a>
+      <a href="../quiz-zone.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>Game Zone</a>
+      <a href="../school.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4l9 4-9 4-9-4z"/></svg>School Zone</a>
+      <a href="../about.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>About Me</a>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="ss-wrap">
+      <div class="ss-title">
+        <div><span class="eyebrow">Game Zone</span><h1>Soccer Star</h1></div>
+        <a class="back" href="../quiz-zone.html">&larr; All games</a>
+      </div>
+      <div class="ss-stage" id="stage">
+        <canvas id="ss-c" aria-label="Free kick. Swipe up from the bottom of the screen to shoot. A curved swipe curves the ball."></canvas>
+        <div id="ss-toast"></div>
+        <div class="ss-overlay show" id="start">
+          <div class="ss-logo">SOCCER<br><span>STAR</span></div>
+          <p>Swipe to curve the ball over the wall and past the keeper. A longer swipe is higher and harder.</p>
+          <button id="btnPlay" type="button">PLAY</button>
+        </div>
+        <div class="ss-overlay" id="result">
+          <div class="ss-logo" id="resTitle">GOAL!</div>
+          <div class="ss-stars" id="resStars">★★★</div>
+          <p id="resMsg"></p>
+          <div>
+            <button id="btnNext" type="button">NEXT</button>
+            <button class="ghost" id="btnRetry" type="button">RETRY</button>
+          </div>
+        </div>
+      </div>
+      <p class="ss-hint">Three shots a level. Score first time for three stars. Stars and goals earn shop coins.</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-row">
+      <span>Built with <span class="heart" aria-label="love">&hearts;</span> by Dad, for George.</span>
+      <a href="../quiz-zone.html">Game Zone</a>
+    </div>
+  </footer>
+
+  <script src="../js/main.js"></script>
+  <script src="george-look.js"></script>
+  <script src="george-kit.js"></script>
+  <script src="gz-rewards.js"></script>
+<script>
+
+(() => {
+  // ================= setup =================
+  const W = 400, H = 700;
+  const F = 380, HORIZON = 232, CAM_H = 2.3, CAM_BACK = 4.6;   // camera model
+  const GZ = 40;                       // goal line z (world metres)
+  const GOAL_HALF = 3.66, GOAL_H = 2.44, NET_D = 2.2;
+  const G = 9.81, BALL_R = 0.11;
+  const SHOTS_PER_LEVEL = 3;
+
+  const canvas = document.getElementById('ss-c'), ctx = canvas.getContext('2d');
+  const $ = id => document.getElementById(id);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+  };
+
+  const TEAMS = [
+    { name: 'POR', kit: '#c1121f', shorts: '#0a6b2c', socks: '#c1121f', flag: ['#0a6b2c', '#0a6b2c', '#c1121f', '#c1121f', '#c1121f'] },
+    { name: 'ARG', kit: '#bfe3ff', shorts: '#111',    socks: '#fff',    flag: ['#74c0fc', '#fff', '#74c0fc'] },
+    { name: 'BRA', kit: '#ffd60a', shorts: '#1d4ed8', socks: '#fff',    flag: ['#16a34a', '#facc15', '#16a34a'] },
+    { name: 'FRA', kit: '#1d3b8b', shorts: '#fff',    socks: '#c1121f', flag: ['#1d4ed8', '#fff', '#dc2626'] },
+    { name: 'GER', kit: '#f4f4f4', shorts: '#111',    socks: '#f4f4f4', flag: ['#111', '#dc2626', '#facc15'] },
+    { name: 'ESP', kit: '#d62828', shorts: '#1d3b8b', socks: '#d62828', flag: ['#c1121f', '#facc15', '#c1121f'] },
+    { name: 'NED', kit: '#ff7b00', shorts: '#fff',    socks: '#ff7b00', flag: ['#dc2626', '#fff', '#1d4ed8'] },
+    { name: 'ITA', kit: '#1c6dd0', shorts: '#fff',    socks: '#1c6dd0', flag: ['#16a34a', '#fff', '#dc2626'] },
+  ];
+
+  // George's kit, hair and number come from My Player
+  let GEORGE_TEAM = { name: 'NFFC', kit: '#d7102b', shorts: '#f4f1ee', socks: '#d7102b', flag: ['#d7102b', '#fff', '#d7102b'] }, GEORGE_NUM = 10, GEORGE_HAIR = '#a57d52';
+  try {
+    if (window.GL && window.GK) {
+      const k = GK.KITS[GL.pick('kit', 'home')] || GK.KITS.home;
+      GEORGE_TEAM = { name: 'NFFC', kit: k.shirt, shorts: k.shorts, socks: k.socks, flag: ['#d7102b', '#fff', '#d7102b'] };
+      GEORGE_NUM = GL.number(); GEORGE_HAIR = GL.hairColour().base;
+    }
+  } catch (e) {}
+
+  let level = store.get('gz_soccerstar_level', 1);
+  let starsMap = store.get('gz_soccerstar_stars', {});
+
+  // ================= audio =================
+  let actx = null;
+  function beep(f, d = .12, type = 'sine', v = .12) {
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type; o.frequency.value = f;
+      g.gain.setValueAtTime(v, actx.currentTime);
+      g.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + d);
+      o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + d);
+    } catch {}
+  }
+
+  // ================= level generation =================
+  function rng(seed) {
+    let a = seed * 7919 + 1013;
+    return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  }
+
+  function buildLevel(n) {
+    const r = rng(n);
+    const open = n % 4 === 0;                          // every 4th level: shot in open play
+    const dist = open ? 13 + r() * 6 : 17 + r() * 12 + Math.min(n, 12) * 0.3;
+    const lat = (r() - .5) * 2 * Math.min(15, 3 + n * 0.8);
+    const ballX = lat, ballZ = GZ - dist;
+    const home = GEORGE_TEAM;                                   // George always plays for Forest, in his own kit
+    const rivals = TEAMS.filter((t) => t.name !== 'POR' && t.name !== 'ESP');   // no red kits against Forest
+    const away = rivals[(n * 5 + 1) % rivals.length];
+
+    // defenders
+    const defenders = [];
+    if (!open) {
+      const count = Math.min(5, 2 + Math.floor(n / 3));
+      // wall stands 9.15 m from the ball on the line to goal centre
+      const vx = (0 - ballX), vz = (GZ - ballZ), vl = Math.hypot(vx, vz);
+      const wx = ballX + vx / vl * 9.15, wz = ballZ + vz / vl * 9.15;
+      const px = -vz / vl, pz = vx / vl;               // perpendicular
+      for (let i = 0; i < count; i++) {
+        const o = (i - (count - 1) / 2) * 0.62;
+        defenders.push({ x: wx + px * o, z: wz + pz * o, h: 1.78 + (i % 2) * .05 });
+      }
+    } else {
+      const count = 3 + Math.floor(n / 8);
+      for (let i = 0; i < count; i++) {
+        defenders.push({ x: (r() - .5) * 14, z: GZ - 6 - r() * 8, h: 1.8, sway: r() * 6 });
+      }
+    }
+    // keeper difficulty: error shrinks and speed grows with level
+    const keeper = { x: 0, speed: Math.min(3.5 + n * 0.22, 7.5), err: Math.max(0.15, 3.2 - n * 0.12), skill: 0 };
+    return { n, open, dist, ballX, ballZ, home, away, defenders, keeper,
+             camX: ballX * 0.72, camZ: ballZ - CAM_BACK };
+  }
+
+  // ================= state =================
+  let L, ball, kicker, keeper, shotsLeft, state, trail = [], drag = null, t = 0, score = 0, timer = null, shotInfo = null;
+  let clockMin = 0, particles = [];
+
+  function startLevel() {
+    L = buildLevel(level);
+    keeper = { x: 0, z: GZ - 0.4, tx: 0, ty: 1, dive: 0, speed: L.keeper.speed };
+    shotsLeft = SHOTS_PER_LEVEL; score = 0; particles = [];
+    clockMin = 10 + (level * 7) % 70;
+    resetBall(true);
+    hide('result');
+  }
+
+  function resetBall() {
+    ball = { x: L.ballX, y: BALL_R, z: L.ballZ, vx: 0, vy: 0, vz: 0, spin: 0, rot: 0 };
+    kicker = { x: L.ballX - 0.55, z: L.ballZ - 1.9, kick: 0 };
+    keeper.x = 0; keeper.dive = 0; keeper.ty = 1; keeper.tx = 0;
+    state = 'aim'; trail = []; shotInfo = null;
+  }
+
+  // ================= UI =================
+  const show = id => $(id).classList.add('show'), hide = id => $(id).classList.remove('show');
+  let toastTimer;
+  function toast(msg, ms = 1000) {
+    const el = $('ss-toast'); el.textContent = msg; el.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), ms);
+  }
+
+  // ================= input =================
+  const pos = e => { const r = canvas.getBoundingClientRect();
+    return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H }; };
+  canvas.addEventListener('pointerdown', e => {
+    if (state !== 'aim') return;
+    canvas.setPointerCapture(e.pointerId); drag = { pts: [pos(e)] };
+  });
+  canvas.addEventListener('pointermove', e => { if (drag) drag.pts.push(pos(e)); });
+  canvas.addEventListener('pointerup', e => {
+    if (!drag) return; drag.pts.push(pos(e)); const p = drag.pts; drag = null; shoot(p);
+  });
+  canvas.addEventListener('pointercancel', () => { drag = null; });
+
+  function shoot(pts) {
+    const a = pts[0], b = pts[pts.length - 1];
+    const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
+    if (len < 25 || dy > -5) return;                      // must swipe upward
+    let dev = 0;                                          // signed arc deviation
+    for (const p of pts) {
+      const c = ((p.x - a.x) * dy - (p.y - a.y) * dx) / len;
+      if (Math.abs(c) > Math.abs(dev)) dev = c;
+    }
+    const curv = Math.max(-.5, Math.min(.5, dev / len));
+    const p = Math.max(0, Math.min(1, (len - 30) / 190));
+    const baseYaw = Math.atan2(0 - ball.x, GZ - ball.z);  // toward goal centre
+    const yaw = baseYaw + Math.max(-1, Math.min(1, dx / len)) * 0.30;
+    const elev = 0.17 + 0.14 * p;
+    const speed = 22 + 5 * p;
+    const hs = Math.cos(elev) * speed;
+    ball.vx = Math.sin(yaw) * hs;
+    ball.vz = Math.cos(yaw) * hs;
+    ball.vy = Math.sin(elev) * speed;
+    ball.spin = curv * 1.25;                              // rad/s rotating heading
+    state = 'fly'; kicker.kick = 1; shotsLeft--; trail = [];
+    planKeeper();
+    beep(180, .09, 'square', .09);
+  }
+
+  // ================= physics =================
+  function integrate(b, dt) {
+    const c = Math.cos(b.spin * dt), s = Math.sin(b.spin * dt);
+    const vx = b.vx * c + b.vz * s, vz = -b.vx * s + b.vz * c;
+    b.vx = vx; b.vz = vz;
+    b.vy -= G * dt;
+    b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt;
+    if (b.y < BALL_R) {
+      b.y = BALL_R;
+      if (b.vy < -1) b.vy = -b.vy * 0.5; else b.vy = 0;
+      b.vx *= 0.97; b.vz *= 0.97;
+    }
+    b.spin *= Math.pow(0.9, dt);
+  }
+
+  // simulate shot without obstacles to know where it crosses the goal line (keeper reaction)
+  function planKeeper() {
+    const s = { x: ball.x, y: ball.y, z: ball.z, vx: ball.vx, vy: ball.vy, vz: ball.vz, spin: ball.spin };
+    let tt = 0;
+    while (s.z < GZ && tt < 4) { integrate(s, 1 / 120); tt += 1 / 120; }
+    const err = (Math.random() - .5) * 2 * L.keeper.err;
+    keeper.tx = Math.max(-5, Math.min(5, s.x + err));
+    keeper.ty = Math.max(.6, Math.min(2.2, s.y + (Math.random() - .5) * 0.8));
+    keeper.react = 0.15 + Math.random() * 0.2;            // reaction delay
+    keeper.age = 0;
+  }
+
+  function update(dt) {
+    t += dt;
+    updateParticles(dt);
+    if (kicker.kick > 0) { kicker.kick = Math.max(0, kicker.kick - dt * 3.2); }
+
+    if (state === 'fly') {
+      keeper.age += dt;
+      if (keeper.age > keeper.react) {
+        const d = keeper.tx - keeper.x, mv = Math.sign(d) * Math.min(Math.abs(d), keeper.speed * dt);
+        keeper.x += mv;
+        keeper.dive = Math.min(1, keeper.dive + dt * 4);
+      }
+      const sub = 4;
+      for (let i = 0; i < sub && state === 'fly'; i++) {
+        const prevZ = ball.z;
+        integrate(ball, dt / sub);
+        ball.rot += Math.hypot(ball.vx, ball.vz) * dt / sub * 3;
+        trail.push({ x: ball.x, y: ball.y, z: ball.z });
+        if (trail.length > 90) trail.shift();
+        collide(prevZ);
+      }
+      if (state === 'fly' && (ball.z > GZ + 8 || ball.y > 30 || Math.abs(ball.x) > 60 ||
+          (ball.vz < 0.2 && ball.z < L.ballZ + 1 && ball.y < 0.2 && t > 0))) {
+        // fell short / stopped
+        if (Math.hypot(ball.vx, ball.vz) < 0.3) miss('NO LUCK');
+      }
+      if (state === 'fly' && ball.y <= BALL_R + .001 && Math.hypot(ball.vx, ball.vz) < 0.8) miss('NO LUCK');
+    }
+  }
+
+  function collide(prevZ) {
+    // defenders (capsules)
+    for (const d of L.defenders) {
+      const dx = d.x + (d.sway !== undefined ? Math.sin(t * 1.4 + d.sway) * 0.6 : 0);
+      if (Math.abs(ball.x - dx) < 0.36 && Math.abs(ball.z - d.z) < 0.35 && ball.y < d.h) {
+        ball.vz = -Math.abs(ball.vz) * 0.35; ball.vx = (ball.x - dx) * 4; ball.vy = Math.abs(ball.vy) * .3 + 1;
+        beep(130, .08, 'triangle', .12);
+        return miss('BLOCKED!');
+      }
+    }
+    // goal plane crossing
+    if (prevZ < GZ && ball.z >= GZ) {
+      const x = ball.x, y = ball.y;
+      const nearPost = Math.abs(Math.abs(x) - GOAL_HALF) < 0.13 && y < GOAL_H + .1;
+      const nearBar = Math.abs(y - GOAL_H) < 0.13 && Math.abs(x) < GOAL_HALF + .1;
+      if (nearPost || nearBar) {
+        ball.vz = -Math.abs(ball.vz) * .5; ball.vx *= .5; beep(660, .15, 'triangle', .12);
+        return miss(nearBar ? 'CROSSBAR!' : 'POST!');
+      }
+      if (Math.abs(x) < GOAL_HALF && y < GOAL_H) {
+        // keeper save?
+        const dxk = (x - keeper.x) / 1.15, dyk = (y - (keeper.dive > .5 ? Math.min(keeper.ty, 1.6) : 1.0)) / 1.05;
+        if (dxk * dxk + dyk * dyk < 1) {
+          ball.vz = -Math.abs(ball.vz) * .3; ball.vx = (x - keeper.x) * 3; ball.vy = 2;
+          beep(150, .15, 'sawtooth', .1);
+          return miss('SAVED!');
+        }
+        return goal();
+      }
+      return miss(y >= GOAL_H ? 'OVER!' : 'WIDE!');
+    }
+  }
+
+  function miss(msg) {
+    if (state !== 'fly') return;
+    state = 'miss'; toast(msg, 900);
+    beep(110, .3, 'sawtooth', .09);
+    timer = setTimeout(() => {
+      if (shotsLeft <= 0) {
+        $('resTitle').textContent = 'MISSED';
+        $('resStars').textContent = '☆☆☆';
+        $('resMsg').textContent = 'Out of shots. Try again!';
+        $('btnNext').style.display = 'none';
+        show('result');
+      } else resetBall();
+    }, 1000);
+  }
+
+  function goal() {
+    state = 'goal'; score = 1;
+    const used = SHOTS_PER_LEVEL - shotsLeft;
+    const earned = used === 1 ? 3 : used === 2 ? 2 : 1;
+    starsMap[level] = Math.max(starsMap[level] || 0, earned);
+    store.set('gz_soccerstar_stars', starsMap); store.set('gz_soccerstar_level', Math.max(level + 1, store.get('gz_soccerstar_level', 1)));
+    toast('GOAL!', 1500);
+    try {
+      if (window.GZR && GZR.ready) {
+        GZR.gameFinished('soccer-star');                              // counts as a game for today's missions
+        GZR.earn({ coins: earned * 3 + Math.min(10, level), xp: earned * 4 });
+      }
+    } catch (e) {}
+    [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, .2, 'triangle', .13), i * 110));
+    for (let i = 0; i < 90; i++) particles.push({
+      x: (Math.random() - .5) * 6, y: 2 + Math.random() * 3, z: GZ - 6, vx: (Math.random() - .5) * 6,
+      vy: 3 + Math.random() * 6, vz: -Math.random() * 3, c: ['#ffd23f', '#fff', '#ff595e', '#4cc9f0'][i % 4], life: 2 });
+    timer = setTimeout(() => {
+      $('resTitle').textContent = 'GOAL!';
+      $('resStars').textContent = '★'.repeat(earned) + '☆'.repeat(3 - earned);
+      $('resMsg').textContent = used === 1 ? 'First time!' : 'Scored on shot ' + used + '.';
+      $('btnNext').style.display = '';
+      show('result');
+    }, 1400);
+  }
+
+  function updateParticles(dt) {
+    for (const p of particles) {
+      p.vy -= G * dt * .6; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt; p.life -= dt;
+    }
+    particles = particles.filter(p => p.life > 0);
+  }
+
+  // ================= rendering =================
+  const proj = (x, y, z) => {
+    const d = Math.max(.3, z - L.camZ), s = F / d;
+    return { x: W / 2 + (x - L.camX) * s, y: HORIZON + (CAM_H - y) * s, s };
+  };
+
+  // static stadium prerender
+  const stadium = document.createElement('canvas');
+  function buildStadium() {
+    const dpr = 2;
+    stadium.width = W * dpr; stadium.height = HORIZON * dpr;
+    const g = stadium.getContext('2d'); g.scale(dpr, dpr);
+    const sky = g.createLinearGradient(0, 0, 0, HORIZON);
+    sky.addColorStop(0, '#0a1330'); sky.addColorStop(1, '#27436e');
+    g.fillStyle = sky; g.fillRect(0, 0, W, HORIZON);
+    // tiers of crowd
+    const r = rng(77);
+    const palette = ['#c1121f', '#f4f4f4', '#1d3b8b', '#ffd60a', '#2a2a2a', '#e5e5e5', '#7a0f1c', '#3a6ea5'];
+    for (let row = 0; row < 11; row++) {
+      const y0 = 40 + row * 15, shade = 0.55 + row * 0.04;
+      g.fillStyle = `rgba(0,0,0,${0.45 - row * .03})`; g.fillRect(0, y0, W, 15);
+      for (let x = 0; x < W; x += 4) {
+        g.globalAlpha = shade;
+        g.fillStyle = palette[Math.floor(r() * palette.length)];
+        g.fillRect(x + (row % 2) * 2, y0 + 3 + r() * 3, 3, 8);
+        g.fillStyle = '#e8c39e'; g.fillRect(x + (row % 2) * 2, y0 + 1 + r() * 2, 3, 3);
+      }
+    }
+    g.globalAlpha = 1;
+    // roof / floodlights
+    g.fillStyle = '#0c0f18'; g.fillRect(0, 0, W, 34);
+    for (const fx of [40, 120, 280, 360]) {
+      const gl = g.createRadialGradient(fx, 18, 2, fx, 18, 60);
+      gl.addColorStop(0, 'rgba(255,255,230,.95)'); gl.addColorStop(1, 'rgba(255,255,230,0)');
+      g.fillStyle = gl; g.fillRect(fx - 60, 0, 120, 100);
+    }
+    // ad boards along the pitch
+    for (let x = 0; x < W; x += 80) {
+      g.fillStyle = (x / 80) % 2 ? '#1d4ed8' : '#d62828'; g.fillRect(x, HORIZON - 16, 80, 16);
+      g.fillStyle = '#fff'; g.font = 'italic 900 11px "Segoe UI",sans-serif';
+      g.fillText('SOCCER STAR', x + 6, HORIZON - 4);
+    }
+  }
+  buildStadium();
+
+  function drawGround() {
+    // grass stripes in perspective
+    const zFar = GZ + 40;
+    for (let z = Math.floor(L.camZ / 4) * 4, i = 0; z < zFar; z += 4, i++) {
+      const a = proj(0, 0, Math.max(z, L.camZ + .3)).y, b = proj(0, 0, z + 4).y;
+      ctx.fillStyle = (Math.floor(z / 4) % 2) ? '#2f9e44' : '#37b24d';
+      ctx.fillRect(0, b, W, a - b + 1);
+    }
+    // fill beyond goal
+    ctx.fillStyle = '#2b8a3e'; ctx.fillRect(0, HORIZON - 1, W, 4);
+    // lines
+    ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 2;
+    const seg = (x1, z1, x2, z2) => {
+      if (z1 < L.camZ + .4 && z2 < L.camZ + .4) return;
+      const a = proj(x1, 0, z1), b = proj(x2, 0, z2);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    };
+    seg(-40, GZ, 40, GZ);                         // goal line
+    seg(-9.16, GZ - 5.5, 9.16, GZ - 5.5); seg(-9.16, GZ, -9.16, GZ - 5.5); seg(9.16, GZ, 9.16, GZ - 5.5);
+    seg(-20.16, GZ - 16.5, 20.16, GZ - 16.5); seg(-20.16, GZ, -20.16, GZ - 16.5); seg(20.16, GZ, 20.16, GZ - 16.5);
+    const sp = proj(0, 0, GZ - 11); ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.ellipse(sp.x, sp.y, 3 * sp.s / 10 + 1, 1.5 * sp.s / 10 + .6, 0, 0, 7); ctx.fill();
+  }
+
+  function drawGoalBack() {
+    const bl = proj(-GOAL_HALF, 0, GZ + NET_D), br = proj(GOAL_HALF, 0, GZ + NET_D);
+    const tl = proj(-GOAL_HALF, GOAL_H, GZ + NET_D), tr = proj(GOAL_HALF, GOAL_H, GZ + NET_D);
+    const fl = proj(-GOAL_HALF, GOAL_H, GZ), fr = proj(GOAL_HALF, GOAL_H, GZ);
+    const gl = proj(-GOAL_HALF, 0, GZ), gr = proj(GOAL_HALF, 0, GZ);
+    ctx.fillStyle = 'rgba(10,20,10,.55)';
+    ctx.beginPath(); ctx.moveTo(gl.x, gl.y); ctx.lineTo(fl.x, fl.y); ctx.lineTo(tl.x, tl.y); ctx.lineTo(bl.x, bl.y); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(gr.x, gr.y); ctx.lineTo(fr.x, fr.y); ctx.lineTo(tr.x, tr.y); ctx.lineTo(br.x, br.y); ctx.closePath(); ctx.fill();
+    ctx.fillRect(tl.x, tl.y, tr.x - tl.x, bl.y - tl.y);
+    // net hatch
+    ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1;
+    const n = 12;
+    for (let i = 0; i <= n; i++) {
+      const x = tl.x + (tr.x - tl.x) * i / n;
+      ctx.beginPath(); ctx.moveTo(x, tl.y); ctx.lineTo(x, bl.y); ctx.stroke();
+    }
+    for (let i = 0; i <= 6; i++) {
+      const y = tl.y + (bl.y - tl.y) * i / 6;
+      ctx.beginPath(); ctx.moveTo(tl.x, y); ctx.lineTo(tr.x, y); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(255,255,255,.55)';
+    ctx.beginPath(); ctx.moveTo(fl.x, fl.y); ctx.lineTo(tl.x, tl.y); ctx.moveTo(fr.x, fr.y); ctx.lineTo(tr.x, tr.y); ctx.stroke();
+  }
+
+  function drawGoalFront() {
+    const gl = proj(-GOAL_HALF, 0, GZ), gr = proj(GOAL_HALF, 0, GZ);
+    const tl = proj(-GOAL_HALF, GOAL_H, GZ), tr = proj(GOAL_HALF, GOAL_H, GZ);
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(2, gl.s * .12); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(gl.x, gl.y); ctx.lineTo(tl.x, tl.y); ctx.lineTo(tr.x, tr.y); ctx.lineTo(gr.x, gr.y); ctx.stroke();
+  }
+
+  function human(x, z, o) {
+    const p = proj(x, 0, z); if (z - L.camZ < .6) return;
+    const s = p.s, sx = p.x, gy = p.y;
+    const lean = o.lean || 0;
+    // shadow
+    ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(sx, gy, .45 * s, .13 * s, 0, 0, 7); ctx.fill();
+    ctx.save(); ctx.translate(sx + (o.dx || 0) * s, gy + (o.dy || 0) * s);
+    if (o.rot) { ctx.translate(0, -.9 * s); ctx.rotate(o.rot); ctx.translate(0, .9 * s); }
+    const r = (a, b, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(a * s, -b * s, w * s, -h * s); };
+    const sw = o.swing || 0;
+    // legs (skin + sock) ; swing = kick amount
+    r(-.19, 0, .15, .5, o.socks); r(-.19, .5, .15, .38, '#d9a066');
+    ctx.save(); ctx.translate(.12 * s, -.9 * s); ctx.rotate(-sw * .9); ctx.translate(-.12 * s, .9 * s);
+    r(.04, 0, .15, .5, o.socks); r(.04, .5, .15, .38, '#d9a066'); ctx.restore();
+    // shorts
+    r(-.22, .98, .44, .3, o.shorts);
+    // arms
+    const arm = o.arms || 0;
+    ctx.save(); ctx.translate(-.3 * s, -1.45 * s); ctx.rotate(.12 + arm); r(-.07, 0, .13, -.62, o.kit); r(-.07, -.62, .13, -.12, '#d9a066'); ctx.restore();
+    ctx.save(); ctx.translate(.3 * s, -1.45 * s); ctx.rotate(-.12 - arm); r(-.06, 0, .13, -.62, o.kit); r(-.06, -.62, .13, -.12, '#d9a066'); ctx.restore();
+    // torso
+    ctx.fillStyle = o.kit; ctx.beginPath();
+    ctx.moveTo(-.28 * s, -1.5 * s); ctx.lineTo(.28 * s, -1.5 * s); ctx.lineTo(.22 * s, -.96 * s); ctx.lineTo(-.22 * s, -.96 * s); ctx.fill();
+    if (o.num !== undefined && s > 14) {
+      ctx.fillStyle = o.numColor || '#fff'; ctx.font = `900 ${Math.max(8, .34 * s)}px "Segoe UI",sans-serif`;
+      ctx.textAlign = 'center'; ctx.fillText(o.num, 0, -1.15 * s);
+    }
+    // head
+    ctx.fillStyle = '#d9a066'; ctx.beginPath(); ctx.arc(0, -1.68 * s, .14 * s, 0, 7); ctx.fill();
+    ctx.fillStyle = o.hair || '#2b1b10'; ctx.beginPath(); ctx.arc(0, -1.71 * s, .14 * s, Math.PI, 0); ctx.fill();
+    ctx.fillRect(-.14 * s, -1.71 * s, .28 * s, .06 * s);
+    ctx.restore();
+  }
+
+  function drawBall() {
+    const p = proj(ball.x, ball.y, ball.z), g = proj(ball.x, 0, ball.z);
+    const r = Math.max(2.5, BALL_R * p.s);
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(g.x, g.y, r, r * .35, 0, 0, 7); ctx.fill();
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(ball.rot);
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fill();
+    ctx.fillStyle = '#222';
+    for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.arc(Math.cos(i * 1.2566) * r * .55, Math.sin(i * 1.2566) * r * .55, r * .22, 0, 7); ctx.fill(); }
+    ctx.beginPath(); ctx.arc(0, 0, r * .25, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawTrail() {
+    if (trail.length < 2) return;
+    for (let i = 1; i < trail.length; i++) {
+      const a = proj(trail[i - 1].x, trail[i - 1].y, trail[i - 1].z), b = proj(trail[i].x, trail[i].y, trail[i].z);
+      ctx.strokeStyle = `rgba(255,255,255,${i / trail.length * .85})`; ctx.lineWidth = 1 + i / trail.length * 3;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+  }
+
+  function drawHud() {
+    // scoreboard (top-left, like broadcast overlay)
+    ctx.fillStyle = 'rgba(0,0,0,.72)'; ctx.fillRect(8, 8, 150, 26);
+    ctx.fillStyle = '#fff'; ctx.font = '800 12px "Segoe UI",sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText(clockMin + "'", 14, 25);
+    const flag = (x, t) => { const h = 12 / t.flag.length; t.flag.forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(x, 14 + i * h, 20, h + .5); }); };
+    flag(44, L.home); flag(110, L.away);
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+    ctx.fillText(score + ' - 0', 90, 25);
+    // level / shots
+    ctx.textAlign = 'right'; ctx.font = '800 13px "Segoe UI",sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,.72)'; ctx.fillRect(W - 130, 8, 122, 26);
+    ctx.fillStyle = '#fff'; ctx.fillText('LEVEL ' + level, W - 14, 25);
+    // shots remaining (balls)
+    for (let i = 0; i < SHOTS_PER_LEVEL; i++) {
+      ctx.fillStyle = i < shotsLeft ? '#fff' : 'rgba(255,255,255,.25)';
+      ctx.beginPath(); ctx.arc(18 + i * 18, 52, 6, 0, 7); ctx.fill();
+    }
+    if (state === 'aim' && drag && drag.pts.length > 1) {
+      ctx.strokeStyle = '#ffe600'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.setLineDash([1, 9]);
+      ctx.beginPath(); drag.pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.stroke();
+      ctx.setLineDash([]);
+    } else if (state === 'aim' && level === 1 && shotsLeft === SHOTS_PER_LEVEL) {
+      ctx.fillStyle = '#fff'; ctx.font = '800 16px "Segoe UI",sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('Swipe up – curve it over the wall', W / 2, H - 40);
+      // pulsing arrow
+      const k = (Math.sin(t * 4) + 1) / 2;
+      ctx.strokeStyle = '#ffe600'; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(W / 2, H - 80); ctx.quickCurveTo = null;
+      ctx.bezierCurveTo(W / 2 - 30, H - 120 - k * 20, W / 2 + 30, H - 150 - k * 20, W / 2 + 10, H - 190 - k * 20); ctx.stroke();
+    }
+  }
+
+  function drawParticles() {
+    for (const p of particles) {
+      const q = proj(p.x, p.y, p.z);
+      ctx.globalAlpha = Math.min(1, p.life); ctx.fillStyle = p.c; ctx.fillRect(q.x, q.y, 4, 4);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.drawImage(stadium, 0, 0, W, HORIZON);
+    drawGround();
+    drawGoalBack();
+
+    // entities sorted back-to-front
+    const ents = [];
+    const k = keeper, dv = k.dive;
+    ents.push({ z: GZ - .3, f: () => human(k.x + (k.tx - 0 > k.x ? 0 : 0), GZ - .3, {
+      kit: '#2bd96b', shorts: '#111', socks: '#2bd96b', num: 1, arms: .5 + dv * 1.2,
+      rot: (k.x - 0) * -.0 + (keeper.tx - k.x) * -.08 * dv, dy: -dv * 0.15, hair: '#222' }) });
+    L.defenders.forEach((d, i) => {
+      const dx = d.x + (d.sway !== undefined ? Math.sin(t * 1.4 + d.sway) * 0.6 : 0);
+      ents.push({ z: d.z, f: () => human(dx, d.z, { kit: L.away.kit, shorts: L.away.shorts, socks: L.away.socks,
+        num: [4, 5, 6, 8, 3, 2][i % 6], numColor: '#111', arms: .05 }) });
+    });
+    ents.push({ z: ball.z, f: drawBall });
+    ents.push({ z: kicker.z + 0.1, f: () => human(kicker.x, kicker.z + (1 - kicker.kick) * 0 + (state === 'aim' ? 0 : .5), {
+      kit: L.home.kit, shorts: L.home.shorts, socks: L.home.socks, num: GEORGE_NUM, hair: GEORGE_HAIR, swing: kicker.kick > 0 ? kicker.kick : (state === 'aim' ? Math.sin(t * 2) * .03 : 0),
+      arms: .15 }) });
+    ents.sort((a, b) => b.z - a.z).forEach(e => e.f());
+
+    drawGoalFront();
+    drawTrail();
+    drawParticles();
+    drawHud();
+  }
+
+  // ================= loop & layout =================
+  function resize() {
+    const r = canvas.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 3);
+    canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr);
+    ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    update(dt); draw();
+    requestAnimationFrame(frame);
+  }
+
+  // ================= buttons =================
+  $('btnPlay').onclick = () => { hide('start'); startLevel(); beep(440, .1); };
+  $('btnRetry').onclick = () => { clearTimeout(timer); startLevel(); };
+  $('btnNext').onclick = () => { clearTimeout(timer); level = store.get('gz_soccerstar_level', level); startLevel(); };
+
+  // start
+  if (level > 1) $('btnPlay').textContent = 'CONTINUE · LEVEL ' + level;
+  L = buildLevel(level);
+  keeper = { x: 0, z: GZ - .4, tx: 0, ty: 1, dive: 0, speed: L.keeper.speed };
+  shotsLeft = SHOTS_PER_LEVEL; clockMin = 10;
+  resetBall();
+  resize();
+  requestAnimationFrame(frame);
+
+  window.__ss = { get state() { return state; }, tick: n => { for (let i = 0; i < n; i++) update(1 / 60); },
+    shoot: (len, dx, curv) => {
+      const a = { x: 200, y: 600 };
+      const pts = [a];
+      for (let i = 1; i <= 8; i++) {
+        const f = i / 8;
+        pts.push({ x: a.x + dx * f + Math.sin(f * Math.PI) * curv * len, y: a.y - len * f });
+      }
+      shoot(pts);
+    }, get level() { return L; } };
+})();
+
+</script>
+</body>
+</html>
