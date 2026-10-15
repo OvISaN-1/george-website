@@ -7,6 +7,9 @@
 --
 --   * The website can only call the five functions below. It can never
 --     read or change the table directly.
+--   * Passwords must be at least 6 characters (not the username or an
+--     obvious one like 123456). Sign-ups are slowed and capped so nobody
+--     can fill the free database with fake accounts.
 --   * Passwords are scrambled (bcrypt) in the database, never stored as
 --     typed. After 8 wrong guesses an account is locked for 15 minutes.
 --   * Each device gets its own random key when it logs in, so the
@@ -61,9 +64,15 @@ declare
   stamp timestamptz := now();
 begin
   if u !~ '^[a-z0-9_-]{3,18}$' then return jsonb_build_object('ok', false, 'error', 'bad_username'); end if;
-  if length(coalesce(p_pass, '')) < 4 or length(p_pass) > 72 then return jsonb_build_object('ok', false, 'error', 'bad_password'); end if;
-  if octet_length(coalesce(p_data, '{}'::jsonb)::text) > 1500000 then return jsonb_build_object('ok', false, 'error', 'too_big'); end if;
-  if (select count(*) from public.progress_accounts where created_at > now() - interval '1 minute') >= 10 then
+  -- At least 6 characters, and not just the username or an obvious one.
+  if length(coalesce(p_pass, '')) < 6 or length(p_pass) > 72
+     or lower(p_pass) = u or lower(p_pass) in ('123456','1234567','12345678','password','qwerty','qwerty123','football','forest123','letmein') then
+    return jsonb_build_object('ok', false, 'error', 'bad_password');
+  end if;
+  if octet_length(coalesce(p_data, '{}'::jsonb)::text) > 600000 then return jsonb_build_object('ok', false, 'error', 'too_big'); end if;
+  -- Stops anyone filling the free database with fake accounts: slow sign-ups and a ceiling.
+  if (select count(*) from public.progress_accounts where created_at > now() - interval '1 minute') >= 3
+     or (select count(*) from public.progress_accounts) >= 2000 then
     return jsonb_build_object('ok', false, 'error', 'busy');
   end if;
   if exists (select 1 from public.progress_accounts where username = u) then
@@ -163,7 +172,7 @@ begin
   if a.username is null or not (encode(digest(coalesce(p_token, ''), 'sha256'), 'hex') = any (a.tokens)) then
     return jsonb_build_object('ok', false, 'error', 'auth');
   end if;
-  if octet_length(coalesce(p_data, '{}'::jsonb)::text) > 1500000 then
+  if octet_length(coalesce(p_data, '{}'::jsonb)::text) > 600000 then
     return jsonb_build_object('ok', false, 'error', 'too_big');
   end if;
   if not coalesce(p_force, false) and p_base is not null and a.updated_at > p_base then
