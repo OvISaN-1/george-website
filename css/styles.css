@@ -861,3 +861,29 @@ details.predict-toggle[open] summary{ margin-bottom: var(--s3); }
 @keyframes mo-underline { from { transform: scaleX(0); } }
 @keyframes mo-wiggle { 0%, 100% { rotate: 0deg; scale: 1; } 25% { rotate: -10deg; scale: 1.1; } 55% { rotate: 8deg; scale: 1.1; } 80% { rotate: -4deg; } }
 @keyframes mo-bump { 0%, 100% { scale: 1; } 40% { scale: 1.12; } }
+
+/* ---- Photo motion ---- */
+@media (prefers-reduced-motion: no-preference) {
+  /* The big photo at the top of a page floats and glows softly. (It keeps its scroll-in animation too.) */
+  html.js .hero-photo.reveal { animation-name: sd-rise, mo-float; animation-timeline: view(), auto; animation-range: entry 0% entry 60%, normal; animation-duration: auto, 6s; animation-timing-function: linear, ease-in-out; animation-iteration-count: 1, infinite; animation-fill-mode: both, none; }
+  .hero-photo { transition: scale 0.3s ease, rotate 0.3s ease; }
+  .hero-photo:hover { scale: 1.04; rotate: -1deg; }
+  /* Gallery photos lift and tilt a little when you point at them. */
+  .gallery-item img, .feature-photo img { transition: translate 0.3s cubic-bezier(.2,.8,.2,1), rotate 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease; }
+  .gallery-item:hover img { translate: 0 -6px; box-shadow: 0 14px 30px rgba(0,0,0,0.45); }
+  .gallery-item:nth-child(odd):hover img { rotate: -1.2deg; }
+  .gallery-item:nth-child(even):hover img { rotate: 1.2deg; }
+  .feature-photo:hover img { translate: 0 -5px; }
+  /* The dog photo already has a frame that clips it, so it can zoom inside. */
+  .dog-photo img { transition: scale 0.45s cubic-bezier(.2,.8,.2,1); }
+  .dog-photo:hover img { scale: 1.08; }
+  /* Gallery photos "develop" from dull and blurry to full colour as they scroll in. */
+  @supports (animation-timeline: view()) {
+    .gallery-item img { animation: mo-develop linear both; animation-timeline: view(); animation-range: entry 5% entry 85%; }
+  }
+  /* The club badge does a full spin when you point at it. */
+  img[alt*="club badge"] { transition: rotate 0.6s cubic-bezier(.3,1.6,.5,1), scale 0.3s ease; }
+  img[alt*="club badge"]:hover { rotate: 360deg; scale: 1.12; }
+}
+@keyframes mo-float { 0%, 100% { translate: 0 0; filter: drop-shadow(0 0 10px rgba(225,16,44,0.15)); } 50% { translate: 0 -7px; filter: drop-shadow(0 6px 22px rgba(225,16,44,0.38)); } }
+@keyframes mo-develop { from { filter: grayscale(1) blur(5px) brightness(0.7); } to { filter: none; } }
