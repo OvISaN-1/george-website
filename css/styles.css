@@ -780,3 +780,53 @@ details.predict-toggle[open] summary{ margin-bottom: var(--s3); }
 .daily-cta:hover,.daily-cta:focus-visible{transform:translateY(-2px);border-color:var(--gold);}
 .daily-cta .daily-ico{font-size:26px;} .daily-cta b{display:block;font-family:var(--font-display);font-size:1.15rem;color:var(--gold);} .daily-cta small{display:block;font-size:.82rem;color:var(--chalk-dim);}
 .daily-cta .daily-go{margin-left:auto;color:var(--gold);font-size:1.1rem;}
+
+/* =====================================================================
+   EXTRA MOTION
+   A handful of small touches, all switched off for anyone who has asked
+   their device for reduced motion. Hover lifts use the separate `translate`
+   property, so they still work on elements that scroll-driven animations
+   are already moving with `transform`.
+   ===================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  /* The top of every page builds itself, one piece after another. */
+  .hero-copy > * { animation: mo-rise 0.7s cubic-bezier(.2,.8,.2,1) backwards; }
+  .hero-copy > :nth-child(2) { animation-delay: 0.08s; }
+  .hero-copy > :nth-child(3) { animation-delay: 0.16s; }
+  .hero-copy > :nth-child(4) { animation-delay: 0.24s; }
+  .hero-copy > :nth-child(5) { animation-delay: 0.32s; }
+  .hero-actions .btn { animation: mo-pop 0.55s cubic-bezier(.3,1.5,.5,1) backwards; }
+  .hero-actions .btn:nth-child(1) { animation-delay: 0.3s; }
+  .hero-actions .btn:nth-child(2) { animation-delay: 0.4s; }
+  .hero-actions .btn:nth-child(3) { animation-delay: 0.5s; }
+  /* The big picture icons and the little emojis around them float. */
+  .banner-figure .icon-badge { animation: mo-bob 4.2s ease-in-out infinite; }
+  .banner-deco span { animation: mo-drift 5.5s ease-in-out infinite; }
+  .banner-deco span:nth-child(2) { animation-delay: -1.4s; }
+  .banner-deco span:nth-child(3) { animation-delay: -2.8s; }
+  .banner-deco span:nth-child(4) { animation-delay: -4.1s; }
+  /* Buttons: a shine sweeps across on hover, and they press in. */
+  .btn { position: relative; overflow: hidden; }
+  .btn::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.28) 50%, transparent 65%); translate: -120% 0; transition: translate 0.55s ease; pointer-events: none; }
+  .btn:hover::after, .btn:focus-visible::after { translate: 120% 0; }
+  .btn:active { scale: 0.97; }
+  /* Cards and tiles lift towards you. */
+  .hub-tile, .card, .game-card { transition: translate 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
+  .hub-tile:hover, .card:hover { translate: 0 -4px; }
+  /* The crest in the header tips its hat. */
+  .logo .logo-mark { transition: rotate 0.35s cubic-bezier(.3,1.6,.5,1), scale 0.35s cubic-bezier(.3,1.6,.5,1); }
+  .logo:hover .logo-mark { rotate: -8deg; scale: 1.12; }
+  /* Game Zone tiles pop in one after another when the page opens. */
+  .grid.featured .game-card, .grid.compact .game-card { animation: mo-pop 0.5s cubic-bezier(.3,1.4,.5,1) backwards; }
+  .grid .game-card:nth-child(1) { animation-delay: 0.05s; } .grid .game-card:nth-child(2) { animation-delay: 0.1s; }
+  .grid .game-card:nth-child(3) { animation-delay: 0.15s; } .grid .game-card:nth-child(4) { animation-delay: 0.2s; }
+  .grid .game-card:nth-child(5) { animation-delay: 0.25s; } .grid .game-card:nth-child(6) { animation-delay: 0.3s; }
+  .grid .game-card:nth-child(n+7) { animation-delay: 0.35s; }
+  /* Missions and level bars fill up when they appear. */
+  .gzr-bar i, .gzr-xp i { animation: mo-fill 0.9s 0.25s cubic-bezier(.2,.8,.2,1) backwards; transform-origin: left; }
+}
+@keyframes mo-rise { from { opacity: 0; transform: translateY(18px); } }
+@keyframes mo-pop { from { opacity: 0; transform: translateY(14px) scale(0.92); } }
+@keyframes mo-bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -7px; } }
+@keyframes mo-drift { 0%, 100% { translate: 0 0; rotate: 0deg; } 50% { translate: 3px -8px; rotate: 6deg; } }
+@keyframes mo-fill { from { transform: scaleX(0); } }
