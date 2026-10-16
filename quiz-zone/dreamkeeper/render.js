@@ -64,14 +64,17 @@ function drawThoughts(ctx, now) {
     const m = measure(ctx, o, text, kind === "happy"), p = place(o, m, ox, oy, now);
     if (p.hard > CROWDED) {
       if (kind === "worry") { o.bubOn = 0; o.bub = 3 + Math.random() * 4; o._p = null; }              // too crowded: stay quiet, try again soon
-      else { o.l = Math.min(o.l, 0.35); o._p = null; }
+      else { o.l = Math.min(o.l, 1.2); o._p = null; }
       return;
     }
     placedRects.push({ x0: p.x, y0: p.y, x1: p.x + m.w, y1: p.y + m.h });
     items.push({ m, p, ox, oy, orad, alpha, kind });
   };
-  for (const e of S.enemies) if (e.bubOn > 0 && (!e.hidden || e.revealed > 0)) consider(e, e.say[0], e.x, e.y, e.r + 6, clamp(e.bubOn * 1.5, 0, 1), "worry");
-  for (const b of S.bubbles) consider(b, "💛 " + b.text, b.ox, b.oy, 12, clamp(b.l / 0.8, 0, 1) * clamp((b.m - b.l) * 2.5 + 0.2, 0, 1), "happy");
+  for (const e of S.enemies) if (!e.dead && e.bubOn > 0 && (!e.hidden || e.revealed > 0)) consider(e, e.say[0], e.x, e.y, e.r + 6, clamp(e.bubOn * 0.7, 0, 1) * clamp(((e.bubM || 4.5) - e.bubOn) * 1.4, 0, 1), "worry");
+  for (const b of S.bubbles) {
+    if (b.ghost) consider(b, b.text, b.ox, b.oy, 14, clamp(b.l / b.m, 0, 1) * 0.95, "worry");      // the worried thought dissolves slowly
+    else consider(b, "💛 " + b.text, b.ox, b.oy, 12, clamp(b.l / 1.8, 0, 1) * clamp((b.m - b.l) * 1.4, 0, 1), "happy");
+  }
   // the thin lines first, so every thought sits on top of them
   for (const it of items) {
     const { m, p } = it, qx = clamp(it.ox, p.x, p.x + m.w), qy = clamp(it.oy, p.y, p.y + m.h), dx = it.ox - qx, dy = it.oy - qy, L = Math.hypot(dx, dy);
