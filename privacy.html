@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <script>document.documentElement.classList.add('js');</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#121014">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="George">
+<link rel="apple-touch-icon" href="assets/images/app/apple-touch-icon.png">
+  <title>Privacy | George's World</title>
+  <meta name="description" content="What this site keeps, in plain English: no email addresses, no adverts, no tracking.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="https://georgeneagu.win/privacy.html">
+
+  <!-- Social preview (Open Graph + Twitter Card) -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://georgeneagu.win/privacy.html">
+  <meta property="og:title" content="Privacy | George's World">
+  <meta property="og:description" content="What this site keeps, in plain English: no email addresses, no adverts, no tracking.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Privacy | George's World">
+  <meta name="twitter:description" content="What this site keeps, in plain English: no email addresses, no adverts, no tracking.">
+
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/shell.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" type="image/svg+xml" href="assets/images/logo/george-mark.svg">
+  <style>
+    .pv h3{ margin: 22px 0 4px; font-size: 1.05rem; color: var(--chalk); }
+    .pv p, .pv li{ color: var(--chalk-dim); line-height: 1.6; max-width: 70ch; }
+    .pv ul{ padding-left: 1.2em; display: grid; gap: 6px; }
+    .pv b{ color: var(--chalk); }
+    .pv-date{ color: var(--chalk-faint); font-size: .85rem; margin-top: 18px; }
+  </style>
+</head>
+<body data-page="home">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <nav class="nav-bar" aria-label="Main">
+      <a class="logo" href="index.html"><svg class="logo-mark" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><defs><linearGradient id="gm-red-h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0213c"/><stop offset="1" stop-color="#a50c22"/></linearGradient></defs><path d="M50 3 L90 15 V49 C90 74 72 90 50 97 C28 90 10 74 10 49 V15 Z" fill="url(#gm-red-h)"/><path d="M50 9 L84 19.5 V49 C84 70 69 84 50 90.5 C31 84 16 70 16 49 V19.5 Z" fill="none" stroke="#ffffff" stroke-opacity=".35" stroke-width="1.6"/><path transform="translate(-3 -4)" d="M64.2 34.6 A20.5 20.5 0 1 0 69.5 52 H53" fill="none" stroke="#ffffff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><g transform="translate(73 73) scale(0.88) translate(-72 -71)"><circle cx="72" cy="71" r="7.6" fill="#ffffff"/><path d="M72 67.2 L75.6 69.8 L74.2 74 H69.8 L68.4 69.8 Z" fill="#1a1418"/><path d="M72 67.2 V63.6 M75.6 69.8 L79 68.6 M74.2 74 L76.4 77 M69.8 74 L67.6 77 M68.4 69.8 L65 68.6" stroke="#1a1418" stroke-width="1.1"/><circle cx="72" cy="71" r="7.6" fill="none" stroke="#1a1418" stroke-width="0.8"/></g></svg>GEORGE<span>.</span></a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="football.html">Football</a></li>
+        <li><a href="games.html">Video Games</a></li>
+        <li><a href="quiz-zone.html">Game Zone</a></li>
+        <li><a href="school.html">School Zone</a></li>
+        <li><a href="about.html" >About Me</a></li>
+      </ul>
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </nav>
+    <div class="mobile-nav" id="mobile-nav">
+      <a href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/></svg>Home</a>
+      <a href="football.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/></svg>Football</a>
+      <a href="games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="10" rx="4"/></svg>Video Games</a>
+      <a href="quiz-zone.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>Game Zone</a>
+      <a href="school.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4l9 4-9 4-9-4z"/></svg>School Zone</a>
+      <a href="about.html" ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>About Me</a>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-banner" style="border-top:none;">
+      <div class="wrap">
+        <div class="hero-copy">
+          <h1>Privacy: what this site keeps</h1>
+          <p class="lede">Short version: as little as possible. No email addresses, no adverts, no tracking, and nobody has to give a real name.</p>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="pv-short">
+      <div class="wrap pv">
+        <div class="section-head"><h2 id="pv-short">The short version (for George and his friends)</h2></div>
+        <ul>
+          <li>Use a <b>nickname</b>, not your real name. Never put your school, address or phone number on here.</li>
+          <li>Don't use a password you use anywhere else.</li>
+          <li>High scores can be seen by <b>anyone</b>.</li>
+          <li>Not sure about something? Ask a grown-up first.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section aria-labelledby="pv-saved">
+      <div class="wrap pv">
+        <div class="section-head"><h2 id="pv-saved">What gets saved</h2></div>
+        <h3>On your own device</h3>
+        <p>Your game progress, coins, settings and how your player looks are kept in your browser. They stay on your device. Clearing your browser's site data removes them.</p>
+        <h3>High scores</h3>
+        <p>If you type a name after a game, the name, your score, which game it was and the time are saved online and shown to everyone on the Top scores and Latest scores pages. Names are checked for rude words, but please use a nickname.</p>
+        <h3>Your login (optional)</h3>
+        <p>If you choose "Save my progress", the site keeps the username you pick, a scrambled version of your password (nobody can read it) and a copy of your game progress so it follows you to other devices. There is no email address. If you forget your password, a grown-up has to reset it.</p>
+        <h3>Ask the Coach</h3>
+        <p>When you ask the Coach to explain a SATs question, that question and your answer are sent to an AI helper to write the explanation. No name or device details are sent.</p>
+        <h3>Football predictions</h3>
+        <p>Only a grown-up with the PIN can add or change predictions. Visitors can only read them.</p>
+      </div>
+    </section>
+
+    <section aria-labelledby="pv-others">
+      <div class="wrap pv">
+        <div class="section-head"><h2 id="pv-others">Other websites and services</h2></div>
+        <ul>
+          <li>The site is delivered by <b>Cloudflare</b>, and scores and logins are stored with <b>Supabase</b>. Like any website, they can see the internet address of a device that visits.</li>
+          <li>A few features show things from other services: dog pictures, word meanings, a daily bit of advice, music clips, and space and football information. When a page asks one of them directly, that service can also see the visitor's internet address.</li>
+          <li>There are <b>no adverts</b>, no tracking or analytics cookies and no social media buttons.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section aria-labelledby="pv-delete">
+      <div class="wrap pv">
+        <div class="section-head"><h2 id="pv-delete">Getting something removed</h2></div>
+        <p>To have a high score, a login or saved progress deleted, ask the grown-up who runs this site, George's dad. He can remove it from the database. There is no email address on this site on purpose, so ask in person or through whoever shared the link with you.</p>
+        <p class="pv-date">Last checked: October 2026.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-row">
+      <span>Made by me, George, with a bit of help from my dad. Everything on here is real, and it gets updated whenever there's something new.</span>
+      <a href="index.html">Home</a> <a class="footer-progress" href="progress.html">💾 Save my progress</a>
+      <a href="privacy.html">Privacy</a>
+    </div>
+  </footer>
+
+  <script src="js/content.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -186,7 +186,7 @@
      (The leaderboard only takes letters, numbers, spaces, ' - and . so anything else in a
      username, like _, becomes a space. It can be switched off on the progress page; if a
      save fails, the box stays open with his name in it.) */
-  const BOXES = ["player-name", "r-name", "keepy-name"];
+  const BOXES = ["player-name", "r-name", "keepy-name", "ss-name"];
   const autoOn = () => lsGet("gz_autoname") !== "0";
   function scoreName() {
     const a = account();

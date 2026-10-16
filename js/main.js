@@ -1117,7 +1117,7 @@ window.GZWake = (function () {
   }
 
   // Note under the name box on each game's results screen.
-  const BOXES = ["player-name", "r-name", "keepy-name"];
+  const BOXES = ["player-name", "r-name", "keepy-name", "ss-name"];
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   function note() {
     if (document.hidden || onProgress || !root) return;
@@ -1194,4 +1194,37 @@ window.GZWake = (function () {
     if (!queued && (!seen.big || !seen.coins)) { queued = true; requestAnimationFrame(() => { queued = false; scan(); }); }
   }).observe(document.documentElement, { childList: true, subtree: true });
   window.addEventListener("load", scan);
+})();
+
+
+/* ---- A gentle "take a break" reminder after about 40 minutes of being on the site ----
+   Counts only time the page is open and being used, forgets a break of 10 minutes or more,
+   never blocks the screen, and asks again no sooner than another 40 minutes. */
+(function () {
+  const LIMIT = 40 * 60 * 1000, IDLE = 10 * 60 * 1000, TICK = 10 * 1000, KEY = "gz_break_ms";
+  let last = Date.now();
+  const touch = () => { last = Date.now(); };
+  ["pointerdown", "keydown", "touchstart"].forEach((e) => addEventListener(e, touch, { passive: true }));
+  const get = () => { try { return +sessionStorage.getItem(KEY) || 0; } catch (e) { return 0; } };
+  const set = (v) => { try { sessionStorage.setItem(KEY, String(v)); } catch (e) {} };
+  function show() {
+    if (document.getElementById("gz-break-note")) return;
+    const d = document.createElement("div");
+    d.id = "gz-break-note"; d.setAttribute("role", "status");
+    const lift = document.body.classList.contains("has-bottom-tabbar") ? "bottom:76px;" : "bottom:12px;";
+    d.style.cssText = "position:fixed;left:12px;right:12px;" + lift + "z-index:9998;max-width:520px;margin:0 auto;background:#241f29;color:#f1ede9;border:1px solid #3ddc97;border-radius:14px;padding:12px 14px;font:600 14px/1.4 Manrope,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.5);display:flex;gap:12px;align-items:center;flex-wrap:wrap";
+    d.innerHTML = '<span style="flex:1 1 240px">⏰ You have been on here for a while. Time for a stretch, a drink of water and a rest for your eyes! 💧</span>';
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = "Got it";
+    b.style.cssText = "background:#3ddc97;color:#121014;border:0;border-radius:999px;padding:10px 18px;min-height:44px;font:800 14px Manrope,sans-serif;cursor:pointer";
+    b.addEventListener("click", () => d.remove());
+    d.appendChild(b); document.body.appendChild(d);
+  }
+  setInterval(() => {
+    if (document.hidden) return;
+    if (Date.now() - last > IDLE) { set(0); return; }          // had a proper break: start again
+    if (Date.now() - last > 2 * 60 * 1000) return;              // not touching anything right now
+    const t = get() + TICK;
+    if (t >= LIMIT) { set(0); show(); } else set(t);
+  }, TICK);
 })();
