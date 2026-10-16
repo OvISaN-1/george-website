@@ -887,3 +887,6 @@ details.predict-toggle[open] summary{ margin-bottom: var(--s3); }
 }
 @keyframes mo-float { 0%, 100% { translate: 0 0; filter: drop-shadow(0 0 10px rgba(225,16,44,0.15)); } 50% { translate: 0 -7px; filter: drop-shadow(0 6px 22px rgba(225,16,44,0.38)); } }
 @keyframes mo-develop { from { filter: grayscale(1) blur(5px) brightness(0.7); } to { filter: none; } }
+
+/* The gallery photos slide in from the sides as you scroll; keep that from making the page wobble sideways on phones. */
+.gallery-grid { overflow-x: clip; }
