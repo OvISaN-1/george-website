@@ -32,7 +32,7 @@ window.SITE = {
 
   /* ---------- FOOTBALL ---------- */
   football: {
-    matchdayCaption: 'Me in action, drawn with AI',
+    matchdayCaption: 'Ready for match day.',
 
     // How George became a Forest fan, in his own words.
     fanStory: 'I started supporting Forest in September 2024, when they beat Liverpool 1-0 at Anfield. Callum Hudson-Odoi scored the winner, and Liverpool went on to win the league that season. I have been Forest ever since.',
@@ -165,7 +165,8 @@ window.SITE = {
         title: 'Star of the Week',
         meta: 'At school',
         description: 'Picked as Star of the Week in class.',
-        photoAlt: '⭐ Star of the Week',
+        photo: 'assets/images/gallery/george-trophy.webp',
+        photoAlt: 'A drawing of George holding up a gold trophy, with confetti',
       },
     ],
     termGoal: {
