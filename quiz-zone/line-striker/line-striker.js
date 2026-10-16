@@ -355,7 +355,7 @@ function setRibbon(pts, width) {
 
 /* ---------------- sound (tiny, made with the browser's audio) ---------------- */
 let ac = null, soundOn = true;
-function audio() { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = false; } } return ac; }
+function audio() { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = false; } } if (ac && ac.state !== "running" && !document.hidden) { try { ac.resume(); } catch (e) {} } return ac; }
 function tone(f, d, type, vol, slide, delay) {
   const a = audio(); if (!a || !soundOn) return;
   const t0 = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();

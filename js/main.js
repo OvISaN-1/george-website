@@ -1228,3 +1228,25 @@ window.GZWake = (function () {
     if (t >= LIMIT) { set(0); show(); } else set(t);
   }, TICK);
 })();
+
+/* ---- Sound that sometimes stayed silent ----
+   Browsers (iPhones especially) start every game's audio engine "paused" until the first tap, and can pause it
+   again after a call, a tab switch or the screen locking. Games that forgot to wake it stayed quiet. This wakes
+   any audio engine that was blocked or interrupted, on the first tap, key press or return to the tab. It never
+   touches one a game paused on purpose (like the pause button in George's Run). */
+(function () {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC || AC.__gzWake) return;
+  const all = [];
+  function Wrapped() {
+    const c = new (Function.prototype.bind.apply(AC, [null].concat([].slice.call(arguments))))();
+    all.push(c);
+    try { c.addEventListener("statechange", () => { if (c.state === "running") c.__ran = true; }); } catch (e) {}
+    return c;
+  }
+  Wrapped.prototype = AC.prototype; Wrapped.__gzWake = true;
+  window.AudioContext = Wrapped; if (window.webkitAudioContext) window.webkitAudioContext = Wrapped;
+  const wake = () => all.forEach((c) => { try { if (c.state === "interrupted" || (c.state === "suspended" && !c.__ran)) c.resume(); } catch (e) {} });
+  ["pointerdown", "touchend", "keydown", "click"].forEach((e) => addEventListener(e, wake, { passive: true, capture: true }));
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) all.forEach((c) => { try { if (c.state === "interrupted") c.resume(); } catch (e) {} }); });
+})();

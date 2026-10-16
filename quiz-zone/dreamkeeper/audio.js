@@ -6,10 +6,16 @@ let soundOn = true, musicOn = true, rainOn = false, cricketsOn = true;
 let fade = 1;                                   // 1 = normal, goes down as bedtime gets closer
 const last = {};
 
+const hiddenNow = () => typeof document !== "undefined" && document.hidden;
+// Quiet while the tab is hidden, back when it returns.
+document.addEventListener("visibilitychange", () => { if (!ctx) return; try { if (document.hidden) ctx.suspend(); else ctx.resume(); } catch (e) {} });
+
 function ensure() {
-  if (ctx) { if (ctx.state === "suspended") ctx.resume(); return ctx; }
+  if (ctx) { if (ctx.state !== "running" && !hiddenNow()) ctx.resume(); return ctx; }
   const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
   ctx = new AC();
+  try { const b = ctx.createBuffer(1, 1, 22050), s = ctx.createBufferSource(); s.buffer = b; s.connect(ctx.destination); s.start(0); } catch (e) {}   // wakes older iPhones
+  if (ctx.state !== "running") ctx.resume();
   master = ctx.createGain(); master.gain.value = 0.8 * fade; master.connect(ctx.destination);
   dry = ctx.createGain(); dry.gain.value = 0.7; dry.connect(master);
   wet = ctx.createGain(); wet.gain.value = 0.55; wet.connect(master);
@@ -81,6 +87,7 @@ let timer = 0, running = false, level = 0, nextT = 0, beat = 0, bpm = 52, cricke
 function schedule() {
   if (!ctx || !running) return;
   const sp = 60 / bpm;
+  if (nextT < ctx.currentTime - 0.1) nextT = ctx.currentTime + 0.05;          // after a pause or a hidden tab: carry on from now, never play the missed notes in a burst
   while (nextT < ctx.currentTime + 0.5) {
     const when = Math.max(0, nextT - ctx.currentTime), root = ROOTS[level % 10], bar = Math.floor(beat / 8) % 4, b = beat % 8;
     if (b === 0) {

@@ -215,7 +215,7 @@ let george = makeGeorge(); scene.add(george.root);
 let ac = null;
 const MKEY = "gz_music", MVOL = { loud: 1, quiet: 0.35, off: 0 };
 const musicLevel = () => { try { const v = localStorage.getItem(MKEY); return MVOL[v] != null ? v : "loud"; } catch (e) { return "loud"; } };
-function audio() { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = false; } } return ac; }
+function audio() { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = false; } } if (ac && ac.state === "interrupted") { try { ac.resume(); } catch (e) {} } return ac; }
 function tone(f, d, type, vol, slide, delay) {
   const a = audio(); if (!a) return;
   const t0 = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
@@ -335,6 +335,7 @@ function musicTick() {
   const vol = MVOL[musicLevel()]; if (!vol) { nextT = a.currentTime; return; }
   b.main.gain.value = 1;
   const lvl = G.speed < 19 ? 0 : G.speed < 26 ? 1 : G.speed < 34 ? 2 : 3;
+  if (nextT < a.currentTime - 0.15) nextT = a.currentTime + 0.05;                                // no burst of missed notes after a throttled tab
   while (nextT < a.currentTime + 0.18) {
     const t = nextT - a.currentTime;
     if (step % 16 === 0 && curSong !== wantSong) { curSong = wantSong; step = 0; songStep = 0; drum("crash", t, vol); }   // a new season starts its song on the next bar
