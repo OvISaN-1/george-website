@@ -32,7 +32,7 @@ window.SITE = {
 
   /* ---------- FOOTBALL ---------- */
   football: {
-    matchdayCaption: 'My boots. Ready for Sunday.',
+    matchdayCaption: 'My boots. Ready for match day.',
 
     // How George became a Forest fan, in his own words.
     fanStory: 'I started supporting Forest in September 2024, when they beat Liverpool 1-0 at Anfield. Callum Hudson-Odoi scored the winner, and Liverpool went on to win the league that season. I have been Forest ever since.',
@@ -71,7 +71,7 @@ window.SITE = {
     ],
 
     myTeam: {
-      name: 'Thamesmead Rangers U11 FC',
+      name: 'My local team',
       position: 'Striker (and goalie when I play with my dad)',
       // George's own words. Shown instead of goal numbers.
       quote: 'I\'m not always the one scoring, but I\'m always in the game.',
@@ -169,12 +169,12 @@ window.SITE = {
       },
     ],
     termGoal: {
-      title: 'Do well in Year 6 and pass my SATs',
+      title: 'Do well this year and pass my SATs',
       // The three steps along the progress bar.
       steps: [['📚', 'Autumn term'], ['✏️', 'Spring term'], ['🎓', 'SATs in May']],
       // How many steps are finished: 0, 1, 2 or 3 (3 = goal done!)
       badgesDone: 0,
-      progressNote: 'Year 6 has just started. I get lots of questions right, and when I get some wrong I learn from them.',
+      progressNote: 'The new school year has just started. I get lots of questions right, and when I get some wrong I learn from them.',
     },
   },
 
@@ -186,7 +186,6 @@ window.SITE = {
       { emoji: '🎸', title: 'Rock music', text: 'AC/DC are my favourite band. Turn it up!', jukebox: true },
       // dogPhoto: shows a new Golden Retriever photo (dog.ceo) on every visit.
       { emoji: '🐶', title: 'Dogs', text: 'Golden Retrievers are the best breed, because they are kind, chill and always happy.', dogPhoto: true },
-      { emoji: '🇷🇴', title: 'Romanian food', text: 'Sarmale. Nothing beats them.' },
       { emoji: '💡', title: 'My invention', text: 'If I could invent anything, it would be a ball made for scoring from the halfway line.' },
     ],
     funFacts: [
@@ -202,7 +201,6 @@ window.SITE = {
       { q: 'Best thing about school?', a: 'PE, and seeing my mates.' },
       { q: 'Favourite band?', a: 'AC/DC.' },
       { q: 'Best dog breed?', a: 'Golden Retriever.' },
-      { q: 'Best Romanian food?', a: 'Sarmale.' },
       { q: 'Club and country?', a: 'Nottingham Forest and England. It\'s coming home!' },
     ],
   },
