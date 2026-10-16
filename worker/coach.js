@@ -21,7 +21,7 @@ const BACKUP_MODEL = '@cf/meta/llama-3.1-8b-instruct';
 const DAILY_CAP = 40;          // for everyone together; the page allows 20 per device
 const PER_MINUTE = 6;          // stops anyone firing requests in a loop
 
-const SYSTEM = `You are "Coach", a friendly, patient maths and English tutor for a 10-year-old boy in Year 6 in England who is preparing for his KS2 SATs.
+const SYSTEM = `You are "Coach", a friendly, patient maths and English tutor for a child in England who is preparing for his KS2 SATs.
 You will be given ONE SATs practice question he answered wrongly, the correct answer, his answer, and the normal explanation.
 Your only job: explain how to get the correct answer in a different, simpler way than the normal explanation.
 Rules:

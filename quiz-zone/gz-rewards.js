@@ -19,7 +19,7 @@
   const KEY = "gz_rewards_v1";
   const SATS_KEY = "gz_sats_v1";
 
-  // The SATs week for Year 6. Change this one line if the school says different.
+  // The SATs week. Change this one line if the school says different.
   const SATS_DATE = "2027-05-10";
   const SATS_LABEL = "week of 10 May 2027";
 
