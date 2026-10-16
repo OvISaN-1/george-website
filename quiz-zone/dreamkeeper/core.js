@@ -19,7 +19,7 @@ function loadSave() {
     maxLevel: clamp(+s.maxLevel || 1, 1, 10), rating: s.rating && typeof s.rating === "object" ? s.rating : {}, cards: s.cards && typeof s.cards === "object" ? s.cards : {}, ach: s.ach && typeof s.ach === "object" ? s.ach : {},
     bosses: Array.isArray(s.bosses) ? s.bosses : [], built: Array.isArray(s.built) ? s.built : [], rewarded: Array.isArray(s.rewarded) ? s.rewarded : [],
     st: { days: Array.isArray(st.days) ? st.days.slice(-10) : [], good: +st.good || 0 },
-    opt: Object.assign({ music: true, sound: true, rain: false, crickets: true, auto: true, speed: 1, dim: 1, sleep: 15 }, s.opt || {}),
+    opt: Object.assign({ music: true, sound: true, rain: false, crickets: true, auto: true, speed: 1, dim: 2, sleep: 15 }, s.opt || {}),
   };
 }
 export const SAVE = loadSave();

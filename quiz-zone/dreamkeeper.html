@@ -49,7 +49,9 @@
   .dk-mini{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:0 12px;min-height:38px;font-size:14px;}
   .dk-mini[aria-pressed="true"]{background:rgba(168,214,196,.3);}
   .dk-hint{font-size:13.5px;color:#e3d9f5;flex:1;line-height:1.25;min-width:0;}
-  .dk-tws{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;}
+  .dk-tws{display:grid;grid-template-columns:repeat(5,1fr) 7px repeat(3,1fr);gap:4px;align-items:stretch;}
+  .tw-sep{align-self:stretch;margin:3px 0;border-left:2px dotted rgba(242,211,124,.4);justify-self:center;}
+  .tw.sup{background:rgba(168,214,196,.1);}
   .tw{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:11px;padding:2px 0 1px;display:flex;flex-direction:column;align-items:center;line-height:1.05;min-height:50px;}
   .tw span{font-size:23px;} .tw small{font-size:12.5px;color:var(--gold);font-weight:800;}
   .tw[aria-pressed="true"]{background:rgba(242,211,124,.28);border-color:var(--gold);}
@@ -155,7 +157,7 @@
         <h2 class="dk-logo"><small>GEORGE'S</small>Dreamkeeper</h2>
         <p class="dk-lede">A slow, cosy garden to wind down in. Worries drift in. Your helpers turn them into happy thoughts, and every happy thought brings you stars to spend.</p>
         <button class="dk-big" id="btn-play" type="button">Begin tonight's garden</button>
-        <ul class="dk-list" style="margin:12px 0 0"><li><i>1️⃣</i><span><small>Pick a helper at the bottom, then tap a glowing tile to plant it.</small></span></li><li><i>2️⃣</i><span><small>Worries drift along the path. Helpers turn them into happy thoughts and stars. Tap a helper to upgrade it.</small></span></li><li><i>3️⃣</i><span><small>Mix helpers: slow them down, light them up and calm them, then everything hits harder.</small></span></li><li><i>💛</i><span><small>Every worry becomes a happy thought, and the stars come with it. If one reaches the nest it still turns into a happy thought, but you get fewer stars and the garden is a little less calm.</small></span></li></ul>
+        <ul class="dk-list" style="margin:12px 0 0"><li><i>1️⃣</i><span><small>Pick a helper at the bottom, then tap a glowing tile to plant it. The helpers on the left do the most damage. The three after the dotted line are support: they help the others.</small></span></li><li><i>2️⃣</i><span><small>Worries drift along the path. Helpers turn them into happy thoughts and stars. Tap a helper to upgrade it.</small></span></li><li><i>3️⃣</i><span><small>Mix helpers: slow them down, light them up and calm them, then everything hits harder.</small></span></li><li><i>💛</i><span><small>Every worry becomes a happy thought, and the stars come with it. If one reaches the nest it still turns into a happy thought, but you get fewer stars and the garden is a little less calm.</small></span></li></ul>
         <h3 class="dk-h3">Choose a level</h3>
         <div class="dk-lvgrid" id="lv-grid"></div>
         <div class="dk-row"><button class="dk-pill" id="btn-cards" type="button">🃏 My Calm Cards <span id="card-n"></span></button><button class="dk-pill" id="btn-breathe2" type="button">🌬️ Just breathe</button></div>
@@ -168,17 +170,17 @@
           <button class="dk-pill" id="tg-sleep" type="button">⏰ Sleep timer: 15 min</button>
         </div>
         <p class="dk-note"><b>Best before bed, not in it.</b> Sit up, keep the screen dim, and put it away when the timer says goodnight. Screens close to sleep can make it harder to drift off, so this game is made slow and gentle, and it asks you to stop.</p>
-        <p class="dk-note">If a worry feels big, tell a grown-up you trust. A game can help you feel calmer, but talking helps most.</p>
+        <p class="dk-note">If a worry feels big, tell a grown-up you trust. A game can help you feel calmer, but talking helps most. You can also call <b>Childline</b> free on <b>0800 1111</b> any time.</p>
       </div>
     </section>
 
-    <section class="dk-screen" id="scr-pause" hidden><div class="dk-card"><p class="dk-kick">Paused</p><h2 class="dk-big2">Take your time</h2><button class="dk-big" id="btn-resume" type="button">Carry on</button><div class="dk-row"><button class="dk-pill" id="btn-quit" type="button">Back to menu</button></div></div></section>
+    <section class="dk-screen" id="scr-pause" hidden><div class="dk-card"><p class="dk-kick">Paused</p><h2 class="dk-big2">Take your time</h2><button class="dk-big" id="btn-resume" type="button">Carry on</button><div class="dk-row"><button class="dk-pill" id="btn-finish" type="button">🌙 Finish for tonight</button><button class="dk-pill" id="btn-quit" type="button">Back to menu</button></div></div></section>
 
     <section class="dk-screen" id="scr-win" hidden><div class="dk-card">
       <p class="dk-kick" id="win-kick">Level complete</p><h2 class="dk-big2" id="win-title">A quiet garden</h2><div class="dk-flowers" id="win-flowers" aria-label="Calm rating"></div>
       <p class="dk-lede" id="win-text"></p><ul class="dk-list" id="win-cards"></ul><p class="dk-note" id="win-tip"></p>
       <button class="dk-big" id="btn-next" type="button">Next level</button>
-      <div class="dk-row"><button class="dk-pill" id="btn-win-breathe" type="button">🌬️ Breathe</button><button class="dk-pill" id="btn-win-menu" type="button">Menu</button></div>
+      <div class="dk-row"><button class="dk-pill" id="btn-win-breathe" type="button">🌬️ Breathe</button><button class="dk-pill" id="btn-win-night" type="button">🌙 Goodnight</button><button class="dk-pill" id="btn-win-menu" type="button">Menu</button></div>
     </div></section>
 
     <section class="dk-screen" id="scr-breather" hidden><div class="dk-card">
@@ -214,7 +216,7 @@
       <li><i>🌬️</i><span><b>Slow breathing</b><small>The breathing break is box breathing (in 4, hold 4, out 4, hold 4), a standard calming exercise (see <a href="https://raisingchildren.net.au/articles/pip_bedtime_worries.html" target="_blank" rel="noopener" style="color:#f2d37c">Raising Children Network</a>).</small></span></li>
       <li><i>💛</i><span><b>Three good things</b><small>Ending the night on something positive is a low-risk routine. The research behind it is mostly with adults, so treat it as a nice habit, not a cure (see <a href="https://www.psychologytoday.com/us/blog/confessions-of-a-techie/201409/three-bedtime-reflection-routines-that-will-help-you-sleep" target="_blank" rel="noopener" style="color:#f2d37c">Psychology Today</a>). It uses pick-lists only, so nothing personal is typed or saved.</small></span></li>
       <li><i>📵</i><span><b>Screens and sleep</b><small>Health bodies advise screen-free time before bed (see <a href="https://www.nhs.uk/live-well/sleep-and-tiredness/healthy-sleep-tips-for-children/" target="_blank" rel="noopener" style="color:#f2d37c">NHS</a> and <a href="https://www.thensf.org/effects-of-screen-use-on-childrens-sleep/" target="_blank" rel="noopener" style="color:#f2d37c">National Sleep Foundation</a>). So this game is slow, dim and warm, never flashes, has no scores or timers to chase, and ends itself with the sleep timer. It works best earlier in the wind-down, sitting up, not in bed.</small></span></li>
-      <li><i>🛏️</i><span><b>Worry talks belong in the daytime</b><small>Talking through bigger worries is best done earlier in the day, not in bed (see <a href="https://www.connecticutchildrens.org/growing-healthy/3-bedtime-challenges-how-to-solve-them" target="_blank" rel="noopener" style="color:#f2d37c">Connecticut Children's</a>). If a worry is big or keeps coming back, please talk to your child, and to your GP or school if it's affecting sleep or school.</small></span></li>
+      <li><i>🛏️</i><span><b>Worry talks belong in the daytime</b><small>Talking through bigger worries is best done earlier in the day, not in bed (see <a href="https://www.connecticutchildrens.org/growing-healthy/3-bedtime-challenges-how-to-solve-them" target="_blank" rel="noopener" style="color:#f2d37c">Connecticut Children's</a>). If a worry is big or keeps coming back, please talk to your child, and to your GP or school if it's affecting sleep or school. Childline (0800 1111, free, UK) is there for children at any time.</small></span></li>
     </ul>
   </section>
 

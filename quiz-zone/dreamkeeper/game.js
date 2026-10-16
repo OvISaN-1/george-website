@@ -28,7 +28,7 @@ export const canBuild = (c, r) => c >= 0 && c < COLS && r >= 0 && r < ROWS && !i
 /* =========================== a level =========================== */
 export function beginLevel(i) {
   const L = LEVELS[i];
-  S.level = i; S.state = "intro"; S.introT = 3.6; S.waves = makeWaves(i); S.wave = -1; S.queue.length = 0; S.waveActive = false; S.nextIn = 14;
+  S.level = i; S.state = "intro"; S.introT = 3.6; S.waves = makeWaves(i); S.wave = -1; S.queue.length = 0; S.waveActive = false; S.nextIn = 30;
   S.stars = L.stars0; S.calm = 100; S.leaks = 0; S.breathers = 0; S.towers.length = 0; S.enemies.length = 0; S.shots.length = 0; S.fx.length = 0; S.rings.length = 0; S.beams.length = 0; S.pops.length = 0; S.bubbles.length = 0;
   S.armed = null; S.sel = null; S.snap = null; S.bossRef = null; S.runAch = []; S.newCards = []; S.seen = new Set(); S.waveT = 0; S.levelKills = 0;
   setPath(i); S.hooks.level && S.hooks.level(i); markToday();
@@ -234,7 +234,7 @@ export function update(rawDt) {
   if (!S.waveActive && S.wave + 1 < S.waves.length && SAVE.opt.auto) { S.nextIn -= dt; if (S.nextIn <= 0) startWave(); }
   if (S.waveActive) {
     S.waveT += dt; while (S.queue.length && S.queue[0].at <= S.waveT) spawn(S.queue.shift().type);
-    if (!S.queue.length && !S.enemies.length) { S.waveActive = false; S.stars += 16 + S.level * 5; popup(S.nestPos.x, S.nestPos.y - 40, "Wave calm", "#b7e8d8", 16); if (S.wave + 1 >= S.waves.length) { levelComplete(); return; } S.nextIn = 20; }
+    if (!S.queue.length && !S.enemies.length) { S.waveActive = false; S.stars += 16 + S.level * 5; popup(S.nestPos.x, S.nestPos.y - 40, "Wave calm", "#b7e8d8", 16); if (S.wave + 1 >= S.waves.length) { levelComplete(); return; } S.nextIn = 30; }
   }
   updateEnemies(dt); updateTowers(dt); updateShots(dt);
   if (S.calm <= 0 && S.state === "play") { S.state = "breather"; S.breathers++; S.hooks.breather && S.hooks.breather(); }

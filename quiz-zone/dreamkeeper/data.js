@@ -64,7 +64,9 @@ export const TOWER = {
   blanket:  { name: "Cosy Blanket",  e: "🧸", col: "#e8a5a5", cost: [100, 110, 150], range: [130, 150, 170], buff: [0.2, 0.3, 0.4], speed: [0, 0.1, 0.15],
               desc: "Doesn't attack. Makes every tower near it stronger. Place it in the middle of friends.", up: ["Warmer hug", "Warmest hug"] },
 };
-export const TOWER_IDS = ["firefly", "lantern", "chime", "dandelion", "lavender", "moonbeam", "catcher", "blanket"];
+/* In the tray, from the most damage on the left to the least on the right; the last three are support helpers. */
+export const TOWER_IDS = ["moonbeam", "catcher", "firefly", "dandelion", "lavender", "lantern", "chime", "blanket"];
+export const SUPPORT_FROM = 5;                     // index where the support helpers start
 
 /* ---------------- the paths (tile coordinates; -1 means just off the edge) ---------------- */
 const PATHS = [
