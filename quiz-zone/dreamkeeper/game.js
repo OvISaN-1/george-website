@@ -189,17 +189,17 @@ function learn(e, key) {
   if (!SAVE.cards[key]) { SAVE.cards[key] = Date.now(); saveNow(); S.newCards.push(key); S.hooks.card && S.hooks.card(key); const n = cardCount(); if (n >= 5) unlock("cards-5"); if (n >= CARD_ORDER.length) unlock("cards-all"); }
 }
 /* a worry that was showing its thought leaves it behind to dissolve slowly, while the kind reply fades in, so the text never snaps away */
+const liveHappy = () => S.bubbles.filter((b) => !b.ghost && b.l > 2.5).length;
 function echo(e) {
   if (!(e.bubOn > 0) || !e.say || !e._p || !e._m) return;
-  S.bubbles.push({ ghost: true, ox: e.x, oy: e.y, pair: e.say, text: e.say[0], _p: { ...e._p, t: S.now }, _m: e._m, l: 2.8, m: 2.8 });
+  S.bubbles.push({ ghost: true, ox: e.x, oy: e.y, pair: e.say, text: e.say[0], _p: { ...e._p, t: S.now }, _m: e._m, l: 3.5, m: 3.5 });
 }
 function happy(x, y, stars, pair, long) {
   if (!S.levelHappy.includes(pair[1])) S.levelHappy.push(pair[1]);
   SAVE.st.turned++; if (SAVE.st.turned % 5 === 0) saveNow();
   S.flyers.push({ x, y, l: 1.3, m: 1.3, v: stars });
-  S.bubbles.push({ x, y: y - 26, ox: x, oy: y + 14, pair, text: pair[1], l: long ? 7 : 5.2, m: long ? 7 : 5.2 });
-  for (let n = S.bubbles.filter((b) => !b.ghost).length; n > 3; n--) S.bubbles.splice(S.bubbles.findIndex((b) => !b.ghost), 1);
-  while (S.bubbles.length > 5) S.bubbles.shift();                      // never more than three at once, so the garden stays clear
+  // less text, kept longer: with two kind replies already showing, a further one is skipped (its stars still arrive) rather than cutting another short
+  if (liveHappy() < 2) S.bubbles.push({ x, y: y - 26, ox: x, oy: y + 14, pair, text: pair[1], l: long ? 11 : 9, m: long ? 11 : 9 });                      // never more than three at once, so the garden stays clear
   popup(x, y - 4, `+${stars} ⭐`, "#f2d37c", 17);
 }
 function die(e) {
@@ -220,6 +220,7 @@ function die(e) {
 function updateEnemies(dt) {
   S.harmonyTick = 0; let showing = 0;
   for (const e of S.enemies) if (e.bubOn > 0) showing++;
+  showing += liveHappy();
   for (const e of S.enemies) {
     if (e.dead) continue;
     for (const k of ["slow", "lit", "calm"]) if (e[k]) { e[k].t -= dt; if (e[k].t <= 0) e[k] = null; }
@@ -228,7 +229,7 @@ function updateEnemies(dt) {
     let sp = e.spd * (1 - Math.min(0.65, (e.slow ? e.slow.a : 0) + (e.calm ? 0.05 : 0)));
     e.d += sp * dt; const p = posAt(e.d); e.x = p.x; e.y = p.y; e.wob += dt;
     // thoughts: at most two worries speak at a time
-    if (e.bubOn > 0) { e.bubOn -= dt; if (e.bubOn <= 0) { e.bub = rand(9, 18); } } else { e.bub -= dt; if (e.bub <= 0 && showing < (S.towers.length + S.enemies.length > 14 ? 1 : 2) && visible(e)) { e.say = pickSay(e.def); e._p = null; e.bubOn = e.boss ? 7 : 4.5; e.bubM = e.bubOn; showing++; } }
+    if (e.bubOn > 0) { e.bubOn -= dt; if (e.bubOn <= 0) { e.bub = rand(9, 18); } } else { e.bub -= dt; if (e.bub <= 0 && showing < (S.towers.length + S.enemies.length > 14 ? 1 : 2) && visible(e)) { e.say = pickSay(e.def); e._p = null; e.bubOn = e.boss ? 10 : 6.5; e.bubM = e.bubOn; showing++; } }
     if (e.boss) {
       e.spawnT -= dt; const def = e.def;
       if (def.spawn && e.spawnT <= 0) { e.spawnT = def.id === "cloud" ? 6 : 9; const pool = LEVELS[S.level].pool, type = def.spawn === "mix" ? pool[Math.floor(Math.random() * pool.length)] : def.spawn; for (let i = 0; i < (def.id === "test" ? 3 : 2); i++) { const m = spawnMinion(type, e.d - 30 - i * 40); } }
