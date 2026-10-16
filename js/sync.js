@@ -10,8 +10,9 @@
      loaded (the page reloads once so the games pick it up).
    - While playing, changes are saved to the account every 20 seconds
      and when the tab is hidden or closed.
-   - If the account and this device have BOTH changed, nothing is
-     overwritten: a banner sends him to progress.html to choose.
+   - If the account and this device have BOTH changed, the two are
+     combined automatically (higher numbers, joined lists, settings kept
+     as they are here) and a backup of both is kept. No question is asked.
    - The password is never kept: each device holds its own random key.
    Everything here fails quietly when offline.
    ================================================================ */
@@ -96,15 +97,57 @@
     else if (hasLocal && !hasTheirs) { state = "saved"; }                       // this device's progress goes up
     else if (hashOf(local) === hashOf(theirs)) { acc.hash = hashOf(local); state = "same"; }
     else if (!hasLocal && !hasTheirs) { acc.hash = hashOf(local); state = "same"; }
-    else { acc.conflict = true; state = "choose"; }                              // both have progress: George picks
+    else { state = "merge"; }                                                    // both have progress: they are combined for him
     setAccount(acc);
     if (state === "saved") await push(true);
+    if (state === "merge") { await reconcile(); state = "merged"; }
     return { ok: true, state, display: r.display, theirs };
   }
   async function logout() {
     const a = account();
     if (a) await rpc("progress_logout", { p_user: a.user, p_token: a.token });
     setAccount(null);
+  }
+
+  /* ---- merging, so George never has to choose ----
+     When this device and the account both changed, the two are combined key by key:
+     numbers (coins, best scores, levels) keep the higher one, lists and unlocks are joined,
+     yes/no unlocks stay unlocked, and settings stay as they are on this device.
+     A backup of both sides is kept on this device in case a merge ever looks wrong. */
+  const SETTINGS_KEY = /(autoname|_sfx|_music|_sound|_calm|_theme|_name|_speed|_opt|_settings|_prefs)$/;
+  const SETTINGS_FIELD = /^(opt|opts|options|settings|prefs|preferences|calm|music|sound|sfx|theme|name|nick|nickname|dim|speed|sleep|auto)$/i;
+  const isObj = (v) => v && typeof v === "object" && !Array.isArray(v);
+  function mergeVal(l, r, field) {
+    if (field && SETTINGS_FIELD.test(field)) return l;
+    if (isObj(l) && isObj(r)) { const o = {}; new Set([...Object.keys(l), ...Object.keys(r)]).forEach((k) => { o[k] = k in l && k in r ? mergeVal(l[k], r[k], k) : k in l ? l[k] : r[k]; }); return o; }
+    if (Array.isArray(l) && Array.isArray(r)) { const seen = new Set(), out = []; [...l, ...r].forEach((x) => { const k = JSON.stringify(x); if (!seen.has(k)) { seen.add(k); out.push(x); } }); return out; }
+    if (typeof l === "number" && typeof r === "number") return Math.max(l, r);
+    if (typeof l === "boolean" && typeof r === "boolean") return l || r;
+    return l;
+  }
+  function mergeData(local, remote) {
+    const out = {};
+    new Set([...Object.keys(local), ...Object.keys(remote || {})]).forEach((k) => {
+      const l = local[k], r = (remote || {})[k];
+      if (r === undefined) { out[k] = l; return; }
+      if (l === undefined) { out[k] = r; return; }
+      if (l === r) { out[k] = l; return; }
+      if (SETTINGS_KEY.test(k)) { out[k] = l; return; }
+      try { out[k] = JSON.stringify(mergeVal(JSON.parse(l), JSON.parse(r), "")); } catch (e) { out[k] = l; }
+    });
+    return out;
+  }
+  // Combine this device and the account, quietly. Returns the push result.
+  async function reconcile() {
+    const a = account();
+    if (!a) return { ok: false, error: "none" };
+    const r = await rpc("progress_pull", { p_user: a.user, p_token: a.token, p_since: null });
+    if (!r.ok) { if (r.error === "auth") setAccount(null); return r; }
+    const local = collect(), merged = mergeData(local, r.data || {});
+    try { lsSet("gz_sync_backup", JSON.stringify({ at: new Date().toISOString(), device: local, account: r.data || {} })); } catch (e) {}
+    apply(merged);
+    a.base = r.updated_at; a.hash = ""; delete a.conflict; setAccount(a);
+    return push(true);
   }
 
   /* ---- keeping in step ---- */
@@ -116,7 +159,7 @@
     const local = collect();
     const r = await rpc("progress_save", { p_user: a.user, p_token: a.token, p_data: local, p_base: force ? null : a.base, p_force: !!force }, keepalive);
     if (r.ok) { a.base = r.updated_at; a.hash = hashOf(local); delete a.conflict; setAccount(a); }
-    else if (r.error === "conflict") { a.conflict = true; setAccount(a); }
+    else if (r.error === "conflict") { a.conflict = true; setAccount(a); }   // sync() combines the two on its next turn
     else if (r.error === "auth") { setAccount(null); }
     return r;
   }
@@ -140,6 +183,7 @@
   // The "keep this device" / "use my account" choice after a conflict.
   async function resolve(which) {
     if (which === "device") return push(true);
+    if (which === "merge") return reconcile();
     return pullAll();
   }
 
@@ -148,7 +192,7 @@
     if (!a || busy) return;
     busy = true;
     try {
-      if (a.conflict) return notifyConflict();
+      if (a.conflict) { await reconcile(); return; }
       const changedHere = hashOf(collect()) !== a.hash;
       const r = await rpc("progress_pull", { p_user: a.user, p_token: a.token, p_since: a.base });
       if (!r.ok) { if (r.error === "auth") setAccount(null); return; }
@@ -161,23 +205,12 @@
           location.reload();
         }
       } else if (r.changed && changedHere) {
-        a.conflict = true; setAccount(a); notifyConflict();
+        await reconcile();                                        // both changed: combine them, no questions
       } else if (changedHere) {
         const p = await push(false);
-        if (p.error === "conflict") notifyConflict();
+        if (p.error === "conflict") await reconcile();
       }
     } finally { busy = false; }
-  }
-
-  /* ---- the banner when both sides changed ---- */
-  function notifyConflict() {
-    if (onProgressPage || document.getElementById("gz-sync-note")) return;
-    const d = document.createElement("div");
-    d.id = "gz-sync-note"; d.setAttribute("role", "status");
-    d.style.cssText = "position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;max-width:520px;margin:0 auto;background:#241f29;color:#f1ede9;border:1px solid #f5b942;border-radius:14px;padding:12px 14px;font:600 14px/1.4 Manrope,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.5);display:flex;gap:12px;align-items:center;flex-wrap:wrap";
-    const base = (document.querySelector('script[src*="js/sync.js"]') || { src: location.href }).src.replace(/js\/sync\.js.*$/, "");
-    d.innerHTML = '<span style="flex:1 1 220px">⚠️ This device and your account both have new progress. Nothing has been overwritten.</span><a href="' + base + 'progress.html" style="background:#f5b942;color:#241f29;border-radius:999px;padding:8px 16px;text-decoration:none;font-weight:800">Choose which to keep</a>';
-    document.body.appendChild(d);
   }
 
   /* ---- Scores: name filled in, score saved ----
@@ -225,7 +258,7 @@
     Storage.prototype.removeItem = function (k) { const r = rawDel.apply(this, arguments); if (this === window.localStorage && OURS.test(k) && !SKIP.test(k)) saveSoon(); return r; };
   } catch (e) { /* can't watch writes: the 20-second check still covers it */ }
 
-  window.GZSync = { account, collect, hashOf, apply, create, login, logout, push, pullAll, peek, resolve, sync };
+  window.GZSync = { account, collect, hashOf, apply, create, login, logout, push, pullAll, peek, resolve, sync, reconcile, mergeData };
 
   /* ---- go ---- */
   if (account()) {
