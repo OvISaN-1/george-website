@@ -49,7 +49,9 @@
   .dk-mini{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:0 12px;min-height:38px;font-size:14px;}
   .dk-mini[aria-pressed="true"]{background:rgba(168,214,196,.3);}
   .dk-hint{font-size:13.5px;color:#e3d9f5;flex:1;line-height:1.25;min-width:0;}
-  .dk-tws{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;}
+  .dk-tws{display:grid;grid-template-columns:repeat(5,1fr) 7px repeat(3,1fr);gap:4px;align-items:stretch;}
+  .tw-sep{align-self:stretch;margin:3px 0;border-left:2px dotted rgba(242,211,124,.4);justify-self:center;}
+  .tw.sup{background:rgba(168,214,196,.1);}
   .tw{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:11px;padding:2px 0 1px;display:flex;flex-direction:column;align-items:center;line-height:1.05;min-height:50px;}
   .tw span{font-size:23px;} .tw small{font-size:12.5px;color:var(--gold);font-weight:800;}
   .tw[aria-pressed="true"]{background:rgba(242,211,124,.28);border-color:var(--gold);}
@@ -155,7 +157,7 @@
         <h2 class="dk-logo"><small>GEORGE'S</small>Dreamkeeper</h2>
         <p class="dk-lede">A slow, cosy garden to wind down in. Worries drift in. Your helpers turn them into happy thoughts, and every happy thought brings you stars to spend.</p>
         <button class="dk-big" id="btn-play" type="button">Begin tonight's garden</button>
-        <ul class="dk-list" style="margin:12px 0 0"><li><i>1️⃣</i><span><small>Pick a helper at the bottom, then tap a glowing tile to plant it.</small></span></li><li><i>2️⃣</i><span><small>Worries drift along the path. Helpers turn them into happy thoughts and stars. Tap a helper to upgrade it.</small></span></li><li><i>3️⃣</i><span><small>Mix helpers: slow them down, light them up and calm them, then everything hits harder.</small></span></li><li><i>💛</i><span><small>Every worry becomes a happy thought, and the stars come with it. If one reaches the nest it still turns into a happy thought, but you get fewer stars and the garden is a little less calm.</small></span></li></ul>
+        <ul class="dk-list" style="margin:12px 0 0"><li><i>1️⃣</i><span><small>Pick a helper at the bottom, then tap a glowing tile to plant it. The helpers on the left do the most damage. The three after the dotted line are support: they help the others.</small></span></li><li><i>2️⃣</i><span><small>Worries drift along the path. Helpers turn them into happy thoughts and stars. Tap a helper to upgrade it.</small></span></li><li><i>3️⃣</i><span><small>Mix helpers: slow them down, light them up and calm them, then everything hits harder.</small></span></li><li><i>💛</i><span><small>Every worry becomes a happy thought, and the stars come with it. If one reaches the nest it still turns into a happy thought, but you get fewer stars and the garden is a little less calm.</small></span></li></ul>
         <h3 class="dk-h3">Choose a level</h3>
         <div class="dk-lvgrid" id="lv-grid"></div>
         <div class="dk-row"><button class="dk-pill" id="btn-cards" type="button">🃏 My Calm Cards <span id="card-n"></span></button><button class="dk-pill" id="btn-breathe2" type="button">🌬️ Just breathe</button></div>

@@ -1,6 +1,6 @@
 /* Dreamkeeper: puts it on the page. Controls, menus, the breathing exercise, the sleep timer and the goodnight routine. */
 import { S, SAVE, saveNow, W, clamp, unlock, cardCount, popup } from "./core.js";
-import { BOSS, TOWER, TOWER_IDS, LEVELS, COLS, ROWS, TILE, GY, CARD, CARD_ORDER, ACH, GOOD, pathFor } from "./data.js";
+import { BOSS, TOWER, TOWER_IDS, SUPPORT_FROM, LEVELS, COLS, ROWS, TILE, GY, CARD, CARD_ORDER, ACH, GOOD, pathFor } from "./data.js";
 import { buildSprites, drawGarden } from "./sprites.js";
 import * as game from "./game.js";
 import { render } from "./render.js";
@@ -51,7 +51,7 @@ function show(id) { screens.forEach((s) => ($(s).hidden = s !== id)); }
 function hideAll() { screens.forEach((s) => ($(s).hidden = true)); }
 
 function buildTray() {
-  $("tws").innerHTML = TOWER_IDS.map((id, i) => `<button class="tw" data-id="${id}" type="button" aria-pressed="false" aria-label="${TOWER[id].name}, ${TOWER[id].cost[0]} stars. Key ${i + 1}" title="${TOWER[id].name}: ${TOWER[id].desc}"><span>${TOWER[id].e}</span><small>${TOWER[id].cost[0]}</small></button>`).join("");
+  $("tws").innerHTML = TOWER_IDS.map((id, i) => (i === SUPPORT_FROM ? '<span class="tw-sep" aria-hidden="true"></span>' : "") + `<button class="tw${i >= SUPPORT_FROM ? " sup" : ""}" data-id="${id}" type="button" aria-pressed="false" aria-label="${TOWER[id].name}, ${i >= SUPPORT_FROM ? "support helper" : "damage helper"}, ${TOWER[id].cost[0]} stars. Key ${i + 1}" title="${TOWER[id].name}: ${TOWER[id].desc}"><span>${TOWER[id].e}</span><small>${TOWER[id].cost[0]}</small></button>`).join("");
 }
 $("tws").addEventListener("click", (e) => { const b = e.target.closest(".tw"); if (!b || b.disabled) return; audio.unlock(); audio.play("click"); arm(S.armed === b.dataset.id ? null : b.dataset.id); });
 function arm(id) { S.armed = id; S.sel = null; S.tileHover = null; lastTray = ""; lastPanel = ""; }
@@ -62,7 +62,7 @@ function setUi() {
   $("dk-btns").hidden = !playing; $("tray").hidden = !playing || !!S.sel; if (S.sel && !$("meet").hidden) $("meet").hidden = true;
   // tray buttons: affordable or not, picked or not
   const key = TOWER_IDS.map((id) => (S.stars >= TOWER[id].cost[0] ? 1 : 0) + (S.armed === id ? "a" : "")).join(",") + S.armed;
-  if (key !== lastTray) { lastTray = key; for (const b of $("tws").children) { const id = b.dataset.id; b.disabled = S.stars < TOWER[id].cost[0]; b.setAttribute("aria-pressed", S.armed === id); } }
+  if (key !== lastTray) { lastTray = key; for (const b of $("tws").querySelectorAll(".tw")) { const id = b.dataset.id; b.disabled = S.stars < TOWER[id].cost[0]; b.setAttribute("aria-pressed", S.armed === id); } }
   const hint = S.armed ? `${TOWER[S.armed].name}: ${TOWER[S.armed].desc.split(". ")[0]}.` : S.state === "intro" ? "Worries are drifting in." : S.waveActive ? "Tap a helper to upgrade it." : S.towers.length ? "Add helpers, then start." : "Pick a helper, then tap a tile.";
   if ($("hint").textContent !== hint) $("hint").textContent = hint;
   const go = S.waveActive || S.wave + 1 >= S.waves.length || S.state !== "play" ? "" : `▶ Start wave ${S.wave + 2}`;
