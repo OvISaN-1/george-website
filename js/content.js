@@ -165,8 +165,7 @@ window.SITE = {
         title: 'Star of the Week',
         meta: 'At school',
         description: 'Picked as Star of the Week in class.',
-        photo: 'assets/images/gallery/george-trophy.webp',
-        photoAlt: 'A drawing of George holding up a gold trophy, with confetti',
+        photoAlt: '⭐ Star of the Week',
       },
     ],
     termGoal: {
