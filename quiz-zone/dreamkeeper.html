@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#14112e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="George">
+<link rel="apple-touch-icon" href="../assets/images/app/apple-touch-icon.png">
+<title>Dreamkeeper | George's Game Zone</title>
+<meta name="description" content="A calm, slow tower defence for winding down. Turn everyday worries into stars with gentle garden helpers, learn kind thoughts, and breathe. Ten levels, five big worries, sleepy music.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="canonical" href="https://georgeneagu.win/quiz-zone/dreamkeeper.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Dreamkeeper | George's Game Zone">
+<meta property="og:description" content="A calm tower defence for winding down. Turn worries into stars.">
+<meta property="og:image" content="https://georgeneagu.win/assets/images/share/dreamkeeper.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="../assets/images/logo/george-mark.svg">
+<link rel="stylesheet" href="../css/fonts.css">
+<link rel="stylesheet" href="../css/shell.css">
+<style>
+  :root{--bg:#14112e;--ink:#e9e0cf;--soft:#cdbfe8;--gold:#f2d37c;--mint:#a8d6c4;--rose:#e8b4a0;--card:rgba(34,28,70,.82);}
+  *{box-sizing:border-box;}
+  body{margin:0;min-height:100vh;font-family:'Manrope',sans-serif;color:var(--ink);background:var(--bg);}
+  h1,h2,h3{font-family:'Rajdhani',sans-serif;margin:0;}
+  button{font-family:inherit;cursor:pointer;border:none;font-weight:700;color:inherit;}
+  main#main{display:flex;flex-direction:column;align-items:center;padding:16px 12px 60px;background:radial-gradient(circle at 20% 0%,rgba(150,120,220,.14),transparent 45%),radial-gradient(circle at 85% 100%,rgba(242,211,124,.07),transparent 50%);}
+  .dk-title{width:100%;max-width:760px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+  .dk-title .eyebrow{display:block;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);margin-bottom:2px;}
+  .dk-title h1{font-size:30px;line-height:1.05;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .chip-new{font-family:'Rajdhani',sans-serif;font-size:12px;letter-spacing:.12em;padding:3px 9px;border-radius:999px;background:linear-gradient(90deg,#b9a6e8,var(--gold));color:#1a1236;}
+  .back{color:var(--ink);opacity:.8;text-decoration:none;font-size:14px;padding:10px 6px;} .back:hover{opacity:1;}
+
+  .dk-stage{position:relative;width:min(100%,430px);width:min(100%,calc((100dvh - 140px) * .6667));min-width:280px;aspect-ratio:2/3;border-radius:22px;overflow:hidden;background:#14112e;
+    box-shadow:0 0 0 1px rgba(255,255,255,.08),0 0 50px rgba(150,120,220,.16),0 24px 60px rgba(0,0,0,.5);touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;transition:filter 3s ease;}
+  .dk-stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;}
+  .dk-btns{position:absolute;top:6px;right:6px;display:flex;gap:5px;z-index:4;}
+  .dk-ib{width:40px;height:40px;border-radius:13px;background:rgba(24,18,56,.6);border:1px solid rgba(255,255,255,.14);font-size:17px;backdrop-filter:blur(4px);}
+  .dk-ib:hover,.dk-ib:focus-visible{background:rgba(150,120,220,.4);outline:none;}
+  .dk-ib[aria-pressed="true"]{background:rgba(168,214,196,.35);}
+
+  .dk-tray{position:absolute;left:0;right:0;bottom:0;height:14.6%;z-index:3;padding:4px 8px 6px;background:linear-gradient(180deg,rgba(20,16,48,.0),rgba(20,16,48,.92) 22%);display:flex;flex-direction:column;gap:4px;justify-content:flex-end;}
+  .dk-trow{display:flex;gap:6px;align-items:center;justify-content:space-between;min-height:26px;}
+  .dk-go{background:linear-gradient(90deg,#b9a6e8,#f2d37c);color:#1a1236;border-radius:999px;padding:0 14px;min-height:30px;font-size:13px;}
+  .dk-go[disabled]{opacity:.45;}
+  .dk-mini{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:0 11px;min-height:30px;font-size:12px;}
+  .dk-mini[aria-pressed="true"]{background:rgba(168,214,196,.3);}
+  .dk-hint{font-size:11px;color:var(--soft);flex:1;line-height:1.25;min-width:0;}
+  .dk-tws{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;}
+  .tw{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:11px;padding:2px 0 1px;display:flex;flex-direction:column;align-items:center;line-height:1.05;min-height:40px;}
+  .tw span{font-size:19px;} .tw small{font-size:10px;color:var(--gold);font-weight:800;}
+  .tw[aria-pressed="true"]{background:rgba(242,211,124,.28);border-color:var(--gold);}
+  .tw[disabled]{opacity:.4;}
+  .tw:focus-visible,.dk-go:focus-visible,.dk-mini:focus-visible,.dk-pill:focus-visible,.dk-big:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
+  .dk-panel{position:absolute;left:0;right:0;bottom:0;height:auto;z-index:4;padding:8px 10px 10px;background:linear-gradient(180deg,rgba(20,16,48,.0),rgba(20,16,48,.95) 18%);display:none;}
+  .dk-panel.on{display:block;} .dk-panel h3{font-size:19px;} .dk-panel p{margin:2px 0 8px;font-size:12.5px;color:var(--soft);line-height:1.35;}
+  .dk-prow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .dk-pbtn{min-height:40px;border-radius:12px;padding:0 14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);font-size:13px;}
+  .dk-pbtn.up{background:linear-gradient(90deg,#b9a6e8,#f2d37c);color:#1a1236;border:0;} .dk-pbtn[disabled]{opacity:.45;}
+
+  .dk-screen{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;padding:14px;background:radial-gradient(circle at 50% 25%,rgba(44,36,96,.96),rgba(14,10,36,.98));overflow-y:auto;touch-action:pan-y;}
+  .dk-screen[hidden]{display:none;}
+  .dk-card{width:100%;max-width:420px;margin:auto;text-align:center;}
+  .dk-logo{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:clamp(36px,10vw,54px);line-height:.95;margin:2px 0 4px;color:var(--ink);text-shadow:0 0 22px rgba(185,166,232,.55);}
+  .dk-logo small{display:block;font-size:.34em;letter-spacing:.4em;color:var(--soft);margin-bottom:4px;font-weight:600;}
+  .dk-lede{margin:6px 0 12px;font-size:14.5px;line-height:1.5;color:#d6cdea;}
+  .dk-big{display:block;width:100%;min-height:54px;font-size:20px;border-radius:16px;color:#1a1236;background:linear-gradient(90deg,#b9a6e8,#f2d37c);box-shadow:0 0 24px rgba(185,166,232,.35);}
+  .dk-row{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin:10px 0;}
+  .dk-pill{min-height:42px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);font-size:13.5px;}
+  .dk-pill[aria-pressed="true"]{background:rgba(168,214,196,.28);border-color:rgba(168,214,196,.6);}
+  .dk-h3{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);margin:14px 0 6px;}
+  .dk-lvgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
+  .dk-lv{min-height:50px;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);font-size:17px;line-height:1.1;position:relative;}
+  .dk-lv small{display:block;font-size:9px;letter-spacing:.04em;color:var(--gold);min-height:11px;}
+  .dk-lv.boss::after{content:"☁️";position:absolute;top:-6px;right:-2px;font-size:12px;} .dk-lv[disabled]{opacity:.3;cursor:not-allowed;} .dk-lv.sel{background:rgba(185,166,232,.35);border-color:#fff;}
+  .dk-note{font-size:12px;color:#b7a9d8;line-height:1.5;margin:10px 0 0;} .dk-note b{color:var(--ink);}
+  .dk-big2{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:clamp(30px,8vw,42px);line-height:1;margin:6px 0;}
+  .dk-kick{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--soft);margin:0 0 2px;}
+  .dk-flowers{font-size:40px;letter-spacing:6px;margin:6px 0;} .dk-flowers .off{opacity:.2;filter:grayscale(1);}
+  .dk-list{list-style:none;padding:0;margin:8px 0;display:grid;gap:6px;text-align:left;}
+  .dk-list li{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.06);font-size:13px;line-height:1.35;}
+  .dk-list li i{font-style:normal;font-size:22px;width:30px;text-align:center;} .dk-list li b{display:block;font-size:14px;} .dk-list li small{color:#b7a9d8;}
+  .dk-list li.got{background:linear-gradient(90deg,rgba(168,214,196,.16),rgba(185,166,232,.12));border:1px solid rgba(168,214,196,.3);}
+  .dk-orbwrap{position:relative;width:200px;height:200px;margin:14px auto;display:grid;place-items:center;}
+  .dk-orb{width:90px;height:90px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f2e8d0,#b9a6e8 55%,#6a5aa8);box-shadow:0 0 50px rgba(185,166,232,.6);transition:transform 4s ease-in-out;transform:scale(1);}
+  .dk-orb.in{transform:scale(1.9);} .dk-orb.hold{transition:none;}
+  .dk-phase{font-size:18px;min-height:2.6em;color:var(--ink);}
+  .dk-goods{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:8px 0;} .dk-good{min-height:42px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);font-size:13.5px;} .dk-good[aria-pressed="true"]{background:rgba(242,211,124,.3);border-color:var(--gold);}
+  .dk-meet{position:absolute;left:10px;right:10px;bottom:15%;z-index:5;padding:10px 14px;border-radius:16px;background:rgba(40,32,88,.92);border:1px solid rgba(185,166,232,.45);font-size:13px;line-height:1.4;animation:dkIn .8s ease both;}
+  .dk-meet b{color:var(--gold);} .dk-meet small{color:var(--soft);display:block;margin-top:3px;}
+  .dk-toasts{position:absolute;left:8px;right:8px;top:92px;z-index:5;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;}
+  .dk-toast{display:flex;gap:8px;align-items:center;padding:6px 12px 6px 8px;border-radius:12px;background:rgba(185,166,232,.9);color:#1a1236;font-weight:800;font-size:12.5px;animation:dkToast 3.6s ease both;}
+  .dk-toast i{font-style:normal;font-size:18px;} .dk-toast small{display:block;font-weight:600;font-size:10.5px;opacity:.8;letter-spacing:.06em;text-transform:uppercase;}
+  @keyframes dkIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  @keyframes dkToast{0%{opacity:0;transform:translateY(-10px);}12%{opacity:1;transform:none;}85%{opacity:1;}100%{opacity:0;}}
+  .dk-below{width:100%;max-width:760px;margin-top:20px;} .dk-below h2{font-size:22px;margin-bottom:4px;} .dk-below p.sub{margin:0 0 10px;color:#b7a9d8;font-size:14px;}
+  .dk-agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;} .dk-agrid .dk-list{display:contents;} .dk-agrid li:not(.got){opacity:.6;}
+  @media (prefers-reduced-motion:reduce){.dk-orb{transition-duration:.01s;} .dk-meet,.dk-toast{animation:none;}}
+</style>
+</head>
+<body>
+<header class="site-header">
+    <nav class="nav-bar" aria-label="Main">
+      <a class="logo" href="../index.html"><svg class="logo-mark" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><defs><linearGradient id="gm-red-h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0213c"/><stop offset="1" stop-color="#a50c22"/></linearGradient></defs><path d="M50 3 L90 15 V49 C90 74 72 90 50 97 C28 90 10 74 10 49 V15 Z" fill="url(#gm-red-h)"/><path d="M50 9 L84 19.5 V49 C84 70 69 84 50 90.5 C31 84 16 70 16 49 V19.5 Z" fill="none" stroke="#ffffff" stroke-opacity=".35" stroke-width="1.6"/><path transform="translate(-3 -4)" d="M64.2 34.6 A20.5 20.5 0 1 0 69.5 52 H53" fill="none" stroke="#ffffff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><g transform="translate(73 73) scale(0.88) translate(-72 -71)"><circle cx="72" cy="71" r="7.6" fill="#ffffff"/><path d="M72 67.2 L75.6 69.8 L74.2 74 H69.8 L68.4 69.8 Z" fill="#1a1418"/><path d="M72 67.2 V63.6 M75.6 69.8 L79 68.6 M74.2 74 L76.4 77 M69.8 74 L67.6 77 M68.4 69.8 L65 68.6" stroke="#1a1418" stroke-width="1.1"/><circle cx="72" cy="71" r="7.6" fill="none" stroke="#1a1418" stroke-width="0.8"/></g></svg>GEORGE<span>.</span></a>
+      <ul class="nav-links">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../football.html">Football</a></li>
+        <li><a href="../games.html">Video Games</a></li>
+        <li><a href="../quiz-zone.html" aria-current="page">Game Zone</a></li>
+        <li><a href="../school.html">School Zone</a></li>
+        <li><a href="../about.html">About Me</a></li>
+      </ul>
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </nav>
+    <div class="mobile-nav" id="mobile-nav">
+      <a href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/></svg>Home</a>
+      <a href="../football.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/></svg>Football</a>
+      <a href="../games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="10" rx="4"/></svg>Video Games</a>
+      <a href="../quiz-zone.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>Game Zone</a>
+      <a href="../school.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4l9 4-9 4-9-4z"/></svg>School Zone</a>
+      <a href="../about.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>About Me</a>
+    </div>
+  </header>
+
+<main id="main">
+  <div class="dk-title">
+    <div><span class="eyebrow">Game Zone · wind-down</span><h1>Dreamkeeper <span class="chip-new">NEW</span></h1></div>
+    <a class="back" href="../quiz-zone.html">&larr; All games</a>
+  </div>
+
+  <div class="dk-stage" id="stage">
+    <canvas id="cv" aria-label="Dreamkeeper garden"></canvas>
+    <div class="dk-btns" id="dk-btns" hidden>
+      <button class="dk-ib" id="btn-speed" type="button" aria-label="Speed" title="Speed">1×</button>
+      <button class="dk-ib" id="btn-breathe" type="button" aria-label="Breathing break" title="Breathe">🌬️</button>
+      <button class="dk-ib" id="btn-snd" type="button" aria-label="Sound on or off" title="Sound">🔊</button>
+      <button class="dk-ib" id="btn-pause" type="button" aria-label="Pause" title="Pause">⏸︎</button>
+    </div>
+    <div class="dk-toasts" id="toasts" aria-live="polite"></div>
+    <div class="dk-meet" id="meet" hidden></div>
+
+    <div class="dk-tray" id="tray" hidden>
+      <div class="dk-trow"><p class="dk-hint" id="hint">Pick a helper, then tap a glowing tile.</p><button class="dk-mini" id="btn-auto" type="button" aria-pressed="true">Auto waves</button><button class="dk-go" id="btn-go" type="button">▶ Start wave</button></div>
+      <div class="dk-tws" id="tws"></div>
+    </div>
+    <div class="dk-panel" id="panel"></div>
+
+    <section class="dk-screen" id="scr-start">
+      <div class="dk-card">
+        <h2 class="dk-logo"><small>GEORGE'S</small>Dreamkeeper</h2>
+        <p class="dk-lede">A slow, cosy garden to wind down in. Worries drift in. Your helpers turn them into stars, and every star leaves behind a kinder thought.</p>
+        <button class="dk-big" id="btn-play" type="button">Begin tonight's garden</button>
+        <ul class="dk-list" style="margin:12px 0 0"><li><i>1️⃣</i><span><small>Pick a helper at the bottom, then tap a glowing tile to plant it.</small></span></li><li><i>2️⃣</i><span><small>Worries drift along the path. Helpers turn them into stars. Tap a helper to upgrade it.</small></span></li><li><i>3️⃣</i><span><small>Mix helpers: slow them down, light them up and calm them, then everything hits harder.</small></span></li></ul>
+        <h3 class="dk-h3">Choose a level</h3>
+        <div class="dk-lvgrid" id="lv-grid"></div>
+        <div class="dk-row"><button class="dk-pill" id="btn-cards" type="button">🃏 My Calm Cards <span id="card-n"></span></button><button class="dk-pill" id="btn-breathe2" type="button">🌬️ Just breathe</button></div>
+        <h3 class="dk-h3">Make it sleepy</h3>
+        <div class="dk-row">
+          <button class="dk-pill" id="tg-music" type="button" aria-pressed="true">🎵 Music</button>
+          <button class="dk-pill" id="tg-sound" type="button" aria-pressed="true">🔔 Sounds</button>
+          <button class="dk-pill" id="tg-rain" type="button" aria-pressed="false">🌧️ Rain</button>
+          <button class="dk-pill" id="tg-dim" type="button">🌙 Night light: Dim</button>
+          <button class="dk-pill" id="tg-sleep" type="button">⏰ Sleep timer: 15 min</button>
+        </div>
+        <p class="dk-note"><b>Best before bed, not in it.</b> Sit up, keep the screen dim, and put it away when the timer says goodnight. Screens close to sleep can make it harder to drift off, so this game is made slow and gentle, and it asks you to stop.</p>
+        <p class="dk-note">If a worry feels big, tell a grown-up you trust. A game can help you feel calmer, but talking helps most.</p>
+      </div>
+    </section>
+
+    <section class="dk-screen" id="scr-pause" hidden><div class="dk-card"><p class="dk-kick">Paused</p><h2 class="dk-big2">Take your time</h2><button class="dk-big" id="btn-resume" type="button">Carry on</button><div class="dk-row"><button class="dk-pill" id="btn-quit" type="button">Back to menu</button></div></div></section>
+
+    <section class="dk-screen" id="scr-win" hidden><div class="dk-card">
+      <p class="dk-kick" id="win-kick">Level complete</p><h2 class="dk-big2" id="win-title">A quiet garden</h2><div class="dk-flowers" id="win-flowers" aria-label="Calm rating"></div>
+      <p class="dk-lede" id="win-text"></p><ul class="dk-list" id="win-cards"></ul><p class="dk-note" id="win-tip"></p>
+      <button class="dk-big" id="btn-next" type="button">Next level</button>
+      <div class="dk-row"><button class="dk-pill" id="btn-win-breathe" type="button">🌬️ Breathe</button><button class="dk-pill" id="btn-win-menu" type="button">Menu</button></div>
+    </div></section>
+
+    <section class="dk-screen" id="scr-breather" hidden><div class="dk-card">
+      <p class="dk-kick">The garden needs a rest</p><h2 class="dk-big2">Let's breathe together</h2>
+      <div class="dk-orbwrap"><div class="dk-orb" id="orb2"></div></div><p class="dk-phase" id="phase2">Breathe in slowly…</p><p class="dk-note">Then we'll try this wave again. Your helpers are still here.</p>
+    </div></section>
+
+    <section class="dk-screen" id="scr-breathe" hidden><div class="dk-card">
+      <p class="dk-kick" id="br-round">Moon breathing</p><h2 class="dk-big2">Breathe with the moon</h2>
+      <div class="dk-orbwrap"><div class="dk-orb" id="orb"></div></div><p class="dk-phase" id="phase">Get comfy. We'll start in a moment.</p>
+      <div class="dk-row"><button class="dk-pill" id="btn-br-done" type="button">I'm done</button></div>
+    </div></section>
+
+    <section class="dk-screen" id="scr-bye" hidden><div class="dk-card">
+      <p class="dk-kick">Goodnight, George</p><h2 class="dk-big2">Time to rest your eyes</h2>
+      <p class="dk-lede" id="bye-text">The garden is quiet now. Put the screen away, let your eyes rest, and let your brain wind down.</p>
+      <h3 class="dk-h3">Three good things from today</h3><div class="dk-goods" id="goods"></div><p class="dk-note" id="good-msg">Tap three that fit your day.</p>
+      <div class="dk-row"><button class="dk-pill" id="btn-bye-breathe" type="button">🌬️ Breathe first</button><button class="dk-pill" id="btn-bye-more" type="button">5 more minutes</button></div>
+      <button class="dk-big" id="btn-bye-done" type="button">Goodnight</button>
+    </div></section>
+
+    <section class="dk-screen" id="scr-cards" hidden><div class="dk-card">
+      <p class="dk-kick">Calm Cards</p><h2 class="dk-big2" id="cards-title">Kind thoughts</h2><p class="dk-note">Turn a worry into a star to collect its card.</p><ul class="dk-list" id="cards-list"></ul>
+      <button class="dk-big" id="btn-cards-close" type="button">Back</button>
+    </div></section>
+  </div>
+
+  <section class="dk-below" aria-labelledby="par-h">
+    <h2 id="par-h">For parents: why it works this way</h2>
+    <p class="sub">Dreamkeeper is a game, not a treatment, and it is not a replacement for talking. These are the ideas behind it.</p>
+    <ul class="dk-list" style="text-align:left">
+      <li><i>🧠</i><span><b>Worries are named, then answered</b><small>Each enemy is a common "thinking trap" kids' CBT resources use (Fortune Teller, Mind Reader, All-or-Nothing, All My Fault and so on, see <a href="https://www.choosingtherapy.com/therapy-worksheets/cognitive-distortions-worksheet-for-kids/" target="_blank" rel="noopener" style="color:#f2d37c">Choosing Therapy</a> and <a href="https://childmind.org/article/how-to-change-negative-thinking-patterns/" target="_blank" rel="noopener" style="color:#f2d37c">Child Mind Institute</a>). When one becomes a star, a kinder thought replaces it.</small></span></li>
+      <li><i>🌬️</i><span><b>Slow breathing</b><small>The breathing break is box breathing (in 4, hold 4, out 4, hold 4), a standard calming exercise (see <a href="https://raisingchildren.net.au/articles/pip_bedtime_worries.html" target="_blank" rel="noopener" style="color:#f2d37c">Raising Children Network</a>).</small></span></li>
+      <li><i>💛</i><span><b>Three good things</b><small>Ending the night on something positive is a low-risk routine. The research behind it is mostly with adults, so treat it as a nice habit, not a cure (see <a href="https://www.psychologytoday.com/us/blog/confessions-of-a-techie/201409/three-bedtime-reflection-routines-that-will-help-you-sleep" target="_blank" rel="noopener" style="color:#f2d37c">Psychology Today</a>). It uses pick-lists only, so nothing personal is typed or saved.</small></span></li>
+      <li><i>📵</i><span><b>Screens and sleep</b><small>Health bodies advise screen-free time before bed (see <a href="https://www.nhs.uk/live-well/sleep-and-tiredness/healthy-sleep-tips-for-children/" target="_blank" rel="noopener" style="color:#f2d37c">NHS</a> and <a href="https://www.thensf.org/effects-of-screen-use-on-childrens-sleep/" target="_blank" rel="noopener" style="color:#f2d37c">National Sleep Foundation</a>). So this game is slow, dim and warm, never flashes, has no scores or timers to chase, and ends itself with the sleep timer. It works best earlier in the wind-down, sitting up, not in bed.</small></span></li>
+      <li><i>🛏️</i><span><b>Worry talks belong in the daytime</b><small>Talking through bigger worries is best done earlier in the day, not in bed (see <a href="https://www.connecticutchildrens.org/growing-healthy/3-bedtime-challenges-how-to-solve-them" target="_blank" rel="noopener" style="color:#f2d37c">Connecticut Children's</a>). If a worry is big or keeps coming back, please talk to your child, and to your GP or school if it's affecting sleep or school.</small></span></li>
+    </ul>
+  </section>
+
+  <section class="dk-below" aria-labelledby="ach-h">
+    <h2 id="ach-h">🏅 Achievements <span id="ach-count" style="font-size:.7em;color:#f2d37c"></span></h2>
+    <p class="sub">Gentle ones. Nothing is timed, and there are no scores to chase.</p>
+    <div class="dk-agrid"><ul class="dk-list" id="ach-list"></ul></div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-row">
+    <span>Built with ♥ by Dad, for George.</span>
+    <a href="../quiz-zone.html">Game Zone</a>
+    <a href="../privacy.html">Privacy</a>
+  </div>
+</footer>
+
+<script src="../js/main.js"></script>
+<script src="gz-rewards.js"></script>
+<script type="module" src="dreamkeeper/main.js"></script>
+</body>
+</html>
