@@ -70,10 +70,10 @@ function drawThoughts(ctx, now) {
     placedRects.push({ x0: p.x, y0: p.y, x1: p.x + m.w, y1: p.y + m.h });
     items.push({ m, p, ox, oy, orad, alpha, kind });
   };
-  for (const e of S.enemies) if (!e.dead && e.bubOn > 0 && (!e.hidden || e.revealed > 0)) consider(e, e.say[0], e.x, e.y, e.r + 6, clamp(e.bubOn * 0.7, 0, 1) * clamp(((e.bubM || 4.5) - e.bubOn) * 1.4, 0, 1), "worry");
+  for (const e of S.enemies) if (!e.dead && e.bubOn > 0 && (!e.hidden || e.revealed > 0)) consider(e, e.say[0], e.x, e.y, e.r + 6, clamp(e.bubOn * 0.6, 0, 1) * clamp(((e.bubM || 6.5) - e.bubOn) * 1.4, 0, 1), "worry");
   for (const b of S.bubbles) {
     if (b.ghost) consider(b, b.text, b.ox, b.oy, 14, clamp(b.l / b.m, 0, 1) * 0.95, "worry");      // the worried thought dissolves slowly
-    else consider(b, "💛 " + b.text, b.ox, b.oy, 12, clamp(b.l / 1.8, 0, 1) * clamp((b.m - b.l) * 1.4, 0, 1), "happy");
+    else consider(b, "💛 " + b.text, b.ox, b.oy, 12, clamp(b.l / 2.2, 0, 1) * clamp((b.m - b.l) * 1.4, 0, 1), "happy");
   }
   // the thin lines first, so every thought sits on top of them
   for (const it of items) {
