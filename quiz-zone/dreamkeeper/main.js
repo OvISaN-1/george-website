@@ -34,13 +34,13 @@ function toast(emoji, small, big) { const t = document.createElement("div"); t.c
 S.hooks.toast = (a) => { toast(a[1], "Achievement", a[2]); renderAch(); };
 S.hooks.card = (key) => { toast("🃏", "New Calm Card", CARD[key][0]); $("card-n").textContent = `(${cardCount()}/${CARD_ORDER.length})`; };
 let meetTimer = 0;
-function meet(html) { const m = $("meet"); m.innerHTML = html; m.hidden = false; clearTimeout(meetTimer); meetTimer = setTimeout(() => (m.hidden = true), 9000); }
+function meet(html) { const m = $("meet"); m.innerHTML = html; m.hidden = false; clearTimeout(meetTimer); meetTimer = setTimeout(() => (m.hidden = true), 7000); }
 S.hooks.meet = (key) => {
   const c = CARD[key]; if (!c) return; let extra = "";
   if ((key === "shadow" || key === "bed") && !S.towers.some((t) => t.id === "lantern")) extra = " <small>Shadows hide in the dark. A Lantern 🏮 shows them.</small>";
-  meet(`<b>A new worry: ${c[0]}</b><small>${c[1]} Turn it into a star to learn a kind thought.</small>${extra}`);
+  meet(`<b>A new worry: ${c[0]}</b><small>${c[1]}</small>${extra}`);
 };
-S.hooks.boss = (e) => meet(`<b>A big worry: ${e.def.name}</b><small>It's slow and strong. Use lots of helpers together.</small>`);
+S.hooks.boss = (e) => meet(`<b>A big worry: ${e.def.name}</b><small>Slow and strong. Use your helpers together.</small>`);
 
 /* ---------------- the lullaby and the level ---------------- */
 S.hooks.level = (i) => { S.garden = drawGarden(LEVELS[i], S.H, pathFor(i), i); $("meet").hidden = true; music.set(i); if (SAVE.opt.music) music.start(i); };
@@ -63,7 +63,7 @@ function setUi() {
   // tray buttons: affordable or not, picked or not
   const key = TOWER_IDS.map((id) => (S.stars >= TOWER[id].cost[0] ? 1 : 0) + (S.armed === id ? "a" : "")).join(",") + S.armed;
   if (key !== lastTray) { lastTray = key; for (const b of $("tws").children) { const id = b.dataset.id; b.disabled = S.stars < TOWER[id].cost[0]; b.setAttribute("aria-pressed", S.armed === id); } }
-  const hint = S.armed ? `${TOWER[S.armed].name}: ${TOWER[S.armed].desc}` : S.state === "intro" ? "Worries drift in from the cloud bank." : S.waveActive ? "Tap a helper to see what it does." : S.towers.length ? "Add or upgrade helpers, then start the wave." : "Pick a helper, then tap a glowing tile.";
+  const hint = S.armed ? `${TOWER[S.armed].name}: ${TOWER[S.armed].desc.split(". ")[0]}.` : S.state === "intro" ? "Worries are drifting in." : S.waveActive ? "Tap a helper to upgrade it." : S.towers.length ? "Add helpers, then start." : "Pick a helper, then tap a tile.";
   if ($("hint").textContent !== hint) $("hint").textContent = hint;
   const go = S.waveActive || S.wave + 1 >= S.waves.length || S.state !== "play" ? "" : `▶ Start wave ${S.wave + 2}`;
   if (go !== lastGo) { lastGo = go; $("btn-go").disabled = !go; $("btn-go").textContent = go || (S.waveActive ? "Wave on…" : "▶ Start wave"); }

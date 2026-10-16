@@ -42,23 +42,23 @@
   .dk-ib:hover,.dk-ib:focus-visible{background:rgba(150,120,220,.4);outline:none;}
   .dk-ib[aria-pressed="true"]{background:rgba(168,214,196,.35);}
 
-  .dk-tray{position:absolute;left:0;right:0;bottom:0;height:14.6%;z-index:3;padding:4px 8px 6px;background:linear-gradient(180deg,rgba(20,16,48,.0),rgba(20,16,48,.92) 22%);display:flex;flex-direction:column;gap:4px;justify-content:flex-end;}
-  .dk-trow{display:flex;gap:6px;align-items:center;justify-content:space-between;min-height:26px;}
-  .dk-go{background:linear-gradient(90deg,#b9a6e8,#f2d37c);color:#1a1236;border-radius:999px;padding:0 14px;min-height:30px;font-size:13px;}
+  .dk-tray{position:absolute;left:0;right:0;bottom:0;height:auto;z-index:3;padding:4px 8px 6px;background:linear-gradient(180deg,rgba(20,16,48,.0),rgba(20,16,48,.92) 22%);display:flex;flex-direction:column;gap:4px;justify-content:flex-end;}
+  .dk-trow{display:flex;gap:6px;align-items:center;justify-content:space-between;min-height:38px;}
+  .dk-go{background:linear-gradient(90deg,#b9a6e8,#f2d37c);color:#1a1236;border-radius:999px;padding:0 16px;min-height:38px;font-size:15.5px;}
   .dk-go[disabled]{opacity:.45;}
-  .dk-mini{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:0 11px;min-height:30px;font-size:12px;}
+  .dk-mini{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:0 12px;min-height:38px;font-size:14px;}
   .dk-mini[aria-pressed="true"]{background:rgba(168,214,196,.3);}
-  .dk-hint{font-size:11px;color:var(--soft);flex:1;line-height:1.25;min-width:0;}
+  .dk-hint{font-size:13.5px;color:#e3d9f5;flex:1;line-height:1.25;min-width:0;}
   .dk-tws{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;}
-  .tw{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:11px;padding:2px 0 1px;display:flex;flex-direction:column;align-items:center;line-height:1.05;min-height:40px;}
-  .tw span{font-size:19px;} .tw small{font-size:10px;color:var(--gold);font-weight:800;}
+  .tw{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:11px;padding:2px 0 1px;display:flex;flex-direction:column;align-items:center;line-height:1.05;min-height:50px;}
+  .tw span{font-size:23px;} .tw small{font-size:12.5px;color:var(--gold);font-weight:800;}
   .tw[aria-pressed="true"]{background:rgba(242,211,124,.28);border-color:var(--gold);}
   .tw[disabled]{opacity:.4;}
   .tw:focus-visible,.dk-go:focus-visible,.dk-mini:focus-visible,.dk-pill:focus-visible,.dk-big:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
   .dk-panel{position:absolute;left:0;right:0;bottom:0;height:auto;z-index:4;padding:8px 10px 10px;background:linear-gradient(180deg,rgba(20,16,48,.0),rgba(20,16,48,.95) 18%);display:none;}
-  .dk-panel.on{display:block;} .dk-panel h3{font-size:19px;} .dk-panel p{margin:2px 0 8px;font-size:12.5px;color:var(--soft);line-height:1.35;}
+  .dk-panel.on{display:block;} .dk-panel h3{font-size:23px;} .dk-panel p{margin:2px 0 10px;font-size:15px;color:#e3d9f5;line-height:1.4;}
   .dk-prow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
-  .dk-pbtn{min-height:40px;border-radius:12px;padding:0 14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);font-size:13px;}
+  .dk-pbtn{min-height:46px;border-radius:13px;padding:0 15px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);font-size:15.5px;}
   .dk-pbtn.up{background:linear-gradient(90deg,#b9a6e8,#f2d37c);color:#1a1236;border:0;} .dk-pbtn[disabled]{opacity:.45;}
 
   .dk-screen{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;padding:14px;background:radial-gradient(circle at 50% 25%,rgba(44,36,96,.96),rgba(14,10,36,.98));overflow-y:auto;touch-action:pan-y;}
@@ -66,37 +66,37 @@
   .dk-card{width:100%;max-width:420px;margin:auto;text-align:center;}
   .dk-logo{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:clamp(36px,10vw,54px);line-height:.95;margin:2px 0 4px;color:var(--ink);text-shadow:0 0 22px rgba(185,166,232,.55);}
   .dk-logo small{display:block;font-size:.34em;letter-spacing:.4em;color:var(--soft);margin-bottom:4px;font-weight:600;}
-  .dk-lede{margin:6px 0 12px;font-size:14.5px;line-height:1.5;color:#d6cdea;}
-  .dk-big{display:block;width:100%;min-height:54px;font-size:20px;border-radius:16px;color:#1a1236;background:linear-gradient(90deg,#b9a6e8,#f2d37c);box-shadow:0 0 24px rgba(185,166,232,.35);}
+  .dk-lede{margin:8px 0 14px;font-size:17px;line-height:1.5;color:#e6def4;}
+  .dk-big{display:block;width:100%;min-height:58px;font-size:22px;border-radius:16px;color:#1a1236;background:linear-gradient(90deg,#b9a6e8,#f2d37c);box-shadow:0 0 24px rgba(185,166,232,.35);}
   .dk-row{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin:10px 0;}
-  .dk-pill{min-height:42px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);font-size:13.5px;}
+  .dk-pill{min-height:46px;padding:0 16px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);font-size:15.5px;}
   .dk-pill[aria-pressed="true"]{background:rgba(168,214,196,.28);border-color:rgba(168,214,196,.6);}
-  .dk-h3{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);margin:14px 0 6px;}
+  .dk-h3{font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:#d8ccf0;margin:16px 0 8px;}
   .dk-lvgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
-  .dk-lv{min-height:50px;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);font-size:17px;line-height:1.1;position:relative;}
-  .dk-lv small{display:block;font-size:9px;letter-spacing:.04em;color:var(--gold);min-height:11px;}
+  .dk-lv{min-height:56px;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);font-size:21px;line-height:1.1;position:relative;}
+  .dk-lv small{display:block;font-size:12px;letter-spacing:.04em;color:var(--gold);min-height:11px;}
   .dk-lv.boss::after{content:"☁️";position:absolute;top:-6px;right:-2px;font-size:12px;} .dk-lv[disabled]{opacity:.3;cursor:not-allowed;} .dk-lv.sel{background:rgba(185,166,232,.35);border-color:#fff;}
-  .dk-note{font-size:12px;color:#b7a9d8;line-height:1.5;margin:10px 0 0;} .dk-note b{color:var(--ink);}
+  .dk-note{font-size:14.5px;color:#d2c7ea;line-height:1.5;margin:12px 0 0;} .dk-note b{color:var(--ink);}
   .dk-big2{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:clamp(30px,8vw,42px);line-height:1;margin:6px 0;}
-  .dk-kick{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--soft);margin:0 0 2px;}
+  .dk-kick{font-size:14.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);margin:0 0 2px;}
   .dk-flowers{font-size:40px;letter-spacing:6px;margin:6px 0;} .dk-flowers .off{opacity:.2;filter:grayscale(1);}
   .dk-list{list-style:none;padding:0;margin:8px 0;display:grid;gap:6px;text-align:left;}
-  .dk-list li{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.06);font-size:13px;line-height:1.35;}
-  .dk-list li i{font-style:normal;font-size:22px;width:30px;text-align:center;} .dk-list li b{display:block;font-size:14px;} .dk-list li small{color:#b7a9d8;}
+  .dk-list li{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.06);font-size:15.5px;line-height:1.4;}
+  .dk-list li i{font-style:normal;font-size:22px;width:30px;text-align:center;} .dk-list li b{display:block;font-size:17px;} .dk-list li small{color:#d2c7ea;font-size:15px;}
   .dk-list li.got{background:linear-gradient(90deg,rgba(168,214,196,.16),rgba(185,166,232,.12));border:1px solid rgba(168,214,196,.3);}
   .dk-orbwrap{position:relative;width:200px;height:200px;margin:14px auto;display:grid;place-items:center;}
   .dk-orb{width:90px;height:90px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f2e8d0,#b9a6e8 55%,#6a5aa8);box-shadow:0 0 50px rgba(185,166,232,.6);transition:transform 4s ease-in-out;transform:scale(1);}
   .dk-orb.in{transform:scale(1.9);} .dk-orb.hold{transition:none;}
-  .dk-phase{font-size:18px;min-height:2.6em;color:var(--ink);}
-  .dk-goods{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:8px 0;} .dk-good{min-height:42px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);font-size:13.5px;} .dk-good[aria-pressed="true"]{background:rgba(242,211,124,.3);border-color:var(--gold);}
-  .dk-meet{position:absolute;left:10px;right:10px;bottom:15%;z-index:5;padding:10px 14px;border-radius:16px;background:rgba(40,32,88,.92);border:1px solid rgba(185,166,232,.45);font-size:13px;line-height:1.4;animation:dkIn .8s ease both;}
-  .dk-meet b{color:var(--gold);} .dk-meet small{color:var(--soft);display:block;margin-top:3px;}
+  .dk-phase{font-size:22px;min-height:2.6em;color:var(--ink);}
+  .dk-goods{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:8px 0;} .dk-good{min-height:46px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);font-size:16px;} .dk-good[aria-pressed="true"]{background:rgba(242,211,124,.3);border-color:var(--gold);}
+  .dk-meet{position:absolute;left:10px;right:10px;top:104px;bottom:auto;z-index:5;padding:10px 14px;border-radius:16px;background:rgba(40,32,88,.95);border:1px solid rgba(185,166,232,.45);font-size:16px;line-height:1.4;animation:dkIn .8s ease both;}
+  .dk-meet b{color:var(--gold);} .dk-meet small{color:#e3d9f5;display:block;margin-top:4px;font-size:15px;}
   .dk-toasts{position:absolute;left:8px;right:8px;top:92px;z-index:5;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;}
-  .dk-toast{display:flex;gap:8px;align-items:center;padding:6px 12px 6px 8px;border-radius:12px;background:rgba(185,166,232,.9);color:#1a1236;font-weight:800;font-size:12.5px;animation:dkToast 3.6s ease both;}
-  .dk-toast i{font-style:normal;font-size:18px;} .dk-toast small{display:block;font-weight:600;font-size:10.5px;opacity:.8;letter-spacing:.06em;text-transform:uppercase;}
+  .dk-toast{display:flex;gap:8px;align-items:center;padding:6px 12px 6px 8px;border-radius:12px;background:rgba(185,166,232,.9);color:#1a1236;font-weight:800;font-size:15px;animation:dkToast 3.6s ease both;}
+  .dk-toast i{font-style:normal;font-size:18px;} .dk-toast small{display:block;font-weight:600;font-size:12px;opacity:.8;letter-spacing:.06em;text-transform:uppercase;}
   @keyframes dkIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
   @keyframes dkToast{0%{opacity:0;transform:translateY(-10px);}12%{opacity:1;transform:none;}85%{opacity:1;}100%{opacity:0;}}
-  .dk-below{width:100%;max-width:760px;margin-top:20px;} .dk-below h2{font-size:22px;margin-bottom:4px;} .dk-below p.sub{margin:0 0 10px;color:#b7a9d8;font-size:14px;}
+  .dk-below{width:100%;max-width:760px;margin-top:20px;} .dk-below h2{font-size:22px;margin-bottom:4px;} .dk-below p.sub{margin:0 0 12px;color:#d2c7ea;font-size:16px;}
   .dk-agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;} .dk-agrid .dk-list{display:contents;} .dk-agrid li:not(.got){opacity:.6;}
   @media (prefers-reduced-motion:reduce){.dk-orb{transition-duration:.01s;} .dk-meet,.dk-toast{animation:none;}}
 </style>
@@ -153,9 +153,9 @@
     <section class="dk-screen" id="scr-start">
       <div class="dk-card">
         <h2 class="dk-logo"><small>GEORGE'S</small>Dreamkeeper</h2>
-        <p class="dk-lede">A slow, cosy garden to wind down in. Worries drift in. Your helpers turn them into stars, and every star leaves behind a kinder thought.</p>
+        <p class="dk-lede">A slow, cosy garden to wind down in. Worries drift in. Your helpers turn them into happy thoughts, and every happy thought brings you stars to spend.</p>
         <button class="dk-big" id="btn-play" type="button">Begin tonight's garden</button>
-        <ul class="dk-list" style="margin:12px 0 0"><li><i>1️⃣</i><span><small>Pick a helper at the bottom, then tap a glowing tile to plant it.</small></span></li><li><i>2️⃣</i><span><small>Worries drift along the path. Helpers turn them into stars. Tap a helper to upgrade it.</small></span></li><li><i>3️⃣</i><span><small>Mix helpers: slow them down, light them up and calm them, then everything hits harder.</small></span></li></ul>
+        <ul class="dk-list" style="margin:12px 0 0"><li><i>1️⃣</i><span><small>Pick a helper at the bottom, then tap a glowing tile to plant it.</small></span></li><li><i>2️⃣</i><span><small>Worries drift along the path. Helpers turn them into happy thoughts and stars. Tap a helper to upgrade it.</small></span></li><li><i>3️⃣</i><span><small>Mix helpers: slow them down, light them up and calm them, then everything hits harder.</small></span></li><li><i>💛</i><span><small>Every worry becomes a happy thought, and the stars come with it. If one reaches the nest it still turns into a happy thought, but you get fewer stars and the garden is a little less calm.</small></span></li></ul>
         <h3 class="dk-h3">Choose a level</h3>
         <div class="dk-lvgrid" id="lv-grid"></div>
         <div class="dk-row"><button class="dk-pill" id="btn-cards" type="button">🃏 My Calm Cards <span id="card-n"></span></button><button class="dk-pill" id="btn-breathe2" type="button">🌬️ Just breathe</button></div>
