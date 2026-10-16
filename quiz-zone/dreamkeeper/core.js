@@ -18,7 +18,8 @@ function loadSave() {
   return {
     maxLevel: clamp(+s.maxLevel || 1, 1, 10), rating: s.rating && typeof s.rating === "object" ? s.rating : {}, cards: s.cards && typeof s.cards === "object" ? s.cards : {}, ach: s.ach && typeof s.ach === "object" ? s.ach : {},
     bosses: Array.isArray(s.bosses) ? s.bosses : [], built: Array.isArray(s.built) ? s.built : [], rewarded: Array.isArray(s.rewarded) ? s.rewarded : [],
-    st: { days: Array.isArray(st.days) ? st.days.slice(-10) : [], good: +st.good || 0 },
+    st: { days: Array.isArray(st.days) ? st.days.slice(-10) : [], good: +st.good || 0, turned: +st.turned || 0 },
+    aff: Array.isArray(s.aff) ? s.aff.slice(-14) : [], value: typeof s.value === "string" ? s.value : "",
     opt: Object.assign({ music: true, sound: true, rain: false, crickets: true, auto: true, speed: 1, dim: 2, sleep: 15 }, s.opt || {}),
   };
 }
@@ -31,6 +32,7 @@ export function markToday() {
 
 /* ---------------- the state everything shares ---------------- */
 export const S = {
+  levelHappy: [], earlyStarts: 0, winDelay: 0, winInfo: null,
   H: 900, state: "menu", level: 0, wave: -1, waves: [], queue: [], waveActive: false, nextIn: 0, speed: 1, paused: false,
   stars: 150, calm: 100, leaks: 0, breathers: 0, towers: [], enemies: [], shots: [], fx: [], rings: [], beams: [], pops: [], bubbles: [], flyers: [],
   pts: [], cum: [], plen: 0, armed: null, sel: null, snap: null, now: 0, tick: 0, introT: 0, seen: new Set(), newCards: [], runAch: [],

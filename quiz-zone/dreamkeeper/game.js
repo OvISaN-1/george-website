@@ -30,7 +30,7 @@ export function beginLevel(i) {
   const L = LEVELS[i];
   S.level = i; S.state = "intro"; S.introT = 3.6; S.waves = makeWaves(i); S.wave = -1; S.queue.length = 0; S.waveActive = false; S.nextIn = WAVE_GAP;
   S.stars = L.stars0; S.calm = 100; S.leaks = 0; S.breathers = 0; S.towers.length = 0; S.enemies.length = 0; S.shots.length = 0; S.fx.length = 0; S.rings.length = 0; S.beams.length = 0; S.pops.length = 0; S.bubbles.length = 0;
-  S.armed = null; S.sel = null; S.snap = null; S.bossRef = null; S.runAch = []; S.newCards = []; S.seen = new Set(); S.waveT = 0; S.levelKills = 0;
+  S.armed = null; S.sel = null; S.snap = null; S.bossRef = null; S.levelHappy = []; S.earlyStarts = 0; S.winDelay = 0; S.winInfo = null; S.runAch = []; S.newCards = []; S.seen = new Set(); S.waveT = 0; S.levelKills = 0;
   setPath(i); S.hooks.level && S.hooks.level(i); markToday();
 }
 
@@ -51,7 +51,7 @@ export function startWave(early) {
   if (S.waveActive || S.wave + 1 >= S.waves.length || !["play"].includes(S.state)) return false;
   const bonus = early ? earlyBonus() : 0;
   S.wave++; snapshot(); S.waveActive = true; S.waveT = 0; S.queue.length = 0;
-  if (bonus >= 1) { S.flyers.push({ x: S.nestPos.x, y: S.nestPos.y - 30, l: 1.3, m: 1.3, v: bonus }); popup(S.nestPos.x, S.nestPos.y - 54, `Early start +${bonus} ⭐`, "#f2d37c", 17); }
+  if (bonus >= 1) { S.earlyStarts++; S.flyers.push({ x: S.nestPos.x, y: S.nestPos.y - 30, l: 1.3, m: 1.3, v: bonus }); popup(S.nestPos.x, S.nestPos.y - 54, `Early start +${bonus} ⭐`, "#f2d37c", 17); }
   for (const [type, n, gap, delay] of S.waves[S.wave]) for (let i = 0; i < n; i++) S.queue.push({ at: delay + i * gap, type });
   S.queue.sort((a, b) => a.at - b.at);
   audio.play("wave"); S.hooks.wave && S.hooks.wave(S.wave);
@@ -60,12 +60,26 @@ export function startWave(early) {
   return true;
 }
 
+/* Picking what a worry says: never a thought that is on screen right now, and not one used in the last 24 either, so the garden keeps
+   saying different things. If every thought of that kind was used lately, any that are not on screen come round again. */
+const recentSays = [];
+function pickSay(def) {
+  const bank = def.says, live = new Set();
+  for (const e of S.enemies) if (!e.dead && e.bubOn > 0 && e.say) live.add(e.say[0]);
+  for (const b of S.bubbles) if (b.pair) live.add(b.pair[0]);
+  let pool = bank.filter((p) => !live.has(p[0]) && !recentSays.includes(p[0]));
+  if (!pool.length) pool = bank.filter((p) => !live.has(p[0]));
+  if (!pool.length) pool = bank;
+  const p = pool[Math.floor(Math.random() * pool.length)];
+  recentSays.push(p[0]); while (recentSays.length > 24) recentSays.shift();
+  return p;
+}
+
 function spawn(type) {
   const boss = type === "__boss", def = boss ? BOSS[LEVELS[S.level].boss] : WORRY[type], L = S.level, w = Math.max(0, S.wave);
   const mul = 1 + 0.11 * L + 0.03 * w, hp = Math.round(def.hp * (boss ? 1 + 0.035 * L : mul));
-  const says = def.says[Math.floor(Math.random() * def.says.length)];
   const e = { id: ++S.uid, type: boss ? def.id : type, boss, d: 0, x: 0, y: 0, hp, maxhp: hp, armor: def.armor, spd: def.spd, r: def.r, col: def.col, slow: null, lit: null, calm: null, flash: 0, dead: false,
-    say: says, bub: rand(1, 8), bubOn: 0, hidden: !!def.hidden, revealed: 0, aura: def.aura || 0, leak: Math.max(2, Math.round(def.leak * (boss ? 1 : 0.7))), reward: Math.round(def.reward * (1 + 0.1 * L)), again: false, split: false, spawnT: rand(5, 8), wob: rand(0, TAU), def };
+    say: null, bub: rand(1, 8), bubOn: 0, hidden: !!def.hidden, revealed: 0, aura: def.aura || 0, leak: Math.max(2, Math.round(def.leak * (boss ? 1 : 0.7))), reward: Math.round(def.reward * (1 + 0.1 * L)), again: false, split: false, spawnT: rand(5, 8), wob: rand(0, TAU), def };
   S.enemies.push(e); if (boss) { S.bossRef = e; audio.play("boss"); S.hooks.boss && S.hooks.boss(e); }
   return e;
 }
@@ -174,9 +188,12 @@ function updateShots(dt) {
 function learn(e, key) {
   if (!SAVE.cards[key]) { SAVE.cards[key] = Date.now(); saveNow(); S.newCards.push(key); S.hooks.card && S.hooks.card(key); const n = cardCount(); if (n >= 5) unlock("cards-5"); if (n >= CARD_ORDER.length) unlock("cards-all"); }
 }
-function happy(x, y, stars, reply, long) {
+function happy(x, y, stars, pair, long) {
+  if (!S.levelHappy.includes(pair[1])) S.levelHappy.push(pair[1]);
+  SAVE.st.turned++; if (SAVE.st.turned % 5 === 0) saveNow();
   S.flyers.push({ x, y, l: 1.3, m: 1.3, v: stars });
-  S.bubbles.push({ x, y: y - 26, text: reply, l: long ? 6 : 4.2, m: long ? 6 : 4.2 });
+  S.bubbles.push({ x, y: y - 26, ox: x, oy: y + 14, pair, text: pair[1], l: long ? 6 : 4.2, m: long ? 6 : 4.2 });
+  while (S.bubbles.length > 3) S.bubbles.shift();                      // never more than three at once, so the garden stays clear
   popup(x, y - 4, `+${stars} ⭐`, "#f2d37c", 17);
 }
 function die(e) {
@@ -184,7 +201,8 @@ function die(e) {
   if (e.def.again && !e.again) { e.again = true; e.hp = e.maxhp * 0.5; e.flash = 0.4; popup(e.x, e.y - e.r - 14, "Again?!", "#f0b08c", 15); return; }
   e.dead = true; S.levelKills++;
   stardust(e.x, e.y, e.boss ? 40 : 14, "#f2d37c"); audio.play("star", 80);
-  happy(e.x, e.y - e.r - 6, e.reward, e.say[1], e.boss);
+  if (!e.say) e.say = pickSay(e.def);
+  happy(e.x, e.y - e.r - 6, e.reward, e.say, e.boss);
   unlock("first-star"); learn(e, e.type);
   if (e.boss) {
     if (S.bossRef === e) S.bossRef = null; for (const o of S.enemies) if (o.twin && !o.dead && o.type === e.type) S.bossRef = o;
@@ -204,7 +222,7 @@ function updateEnemies(dt) {
     let sp = e.spd * (1 - Math.min(0.65, (e.slow ? e.slow.a : 0) + (e.calm ? 0.05 : 0)));
     e.d += sp * dt; const p = posAt(e.d); e.x = p.x; e.y = p.y; e.wob += dt;
     // thoughts: at most two worries speak at a time
-    if (e.bubOn > 0) { e.bubOn -= dt; if (e.bubOn <= 0) { e.bub = rand(9, 18); } } else { e.bub -= dt; if (e.bub <= 0 && showing < 2 && visible(e)) { e.bubOn = e.boss ? 7 : 4.5; showing++; } }
+    if (e.bubOn > 0) { e.bubOn -= dt; if (e.bubOn <= 0) { e.bub = rand(9, 18); } } else { e.bub -= dt; if (e.bub <= 0 && showing < (S.towers.length + S.enemies.length > 14 ? 1 : 2) && visible(e)) { e.say = pickSay(e.def); e._p = null; e.bubOn = e.boss ? 7 : 4.5; showing++; } }
     if (e.boss) {
       e.spawnT -= dt; const def = e.def;
       if (def.spawn && e.spawnT <= 0) { e.spawnT = def.id === "cloud" ? 6 : 9; const pool = LEVELS[S.level].pool, type = def.spawn === "mix" ? pool[Math.floor(Math.random() * pool.length)] : def.spawn; for (let i = 0; i < (def.id === "test" ? 3 : 2); i++) { const m = spawnMinion(type, e.d - 30 - i * 40); } }
@@ -213,7 +231,8 @@ function updateEnemies(dt) {
     if (e.d >= S.plen) {
       e.dead = true; S.calm = Math.max(0, S.calm - e.leak); S.leaks++; ring(S.nestPos.x, S.nestPos.y, 70, 1, "#f0c890", 3); audio.play("leak", 300);
       const gain = Math.min(e.boss ? 20 : 99, Math.max(1, Math.floor(e.reward * 0.5)));
-      happy(S.nestPos.x, S.nestPos.y - 34, gain, e.say[1], false); learn(e, e.type);
+      if (!e.say) e.say = pickSay(e.def);
+      happy(S.nestPos.x, S.nestPos.y - 34, gain, e.say, false); learn(e, e.type);
       if (e.boss && S.bossRef === e) S.bossRef = null;
     }
   }
@@ -227,7 +246,10 @@ function levelComplete() {
   const stars = S.leaks === 0 && S.breathers === 0 ? 3 : S.leaks <= 4 && S.breathers === 0 ? 2 : 1;
   SAVE.rating[S.level] = Math.max(SAVE.rating[S.level] || 0, stars); SAVE.maxLevel = Math.max(SAVE.maxLevel, Math.min(10, S.level + 2)); saveNow();
   if (S.level === 0) unlock("lvl-1"); if (S.level === 4) unlock("lvl-5"); if (S.level === 9) unlock("lvl-10"); if (S.leaks === 0) unlock("quiet");
-  S.hooks.win && S.hooks.win({ stars, level: S.level, leaks: S.leaks, breathers: S.breathers, cards: S.newCards.slice() });
+  const bi = LEVELS[S.level].boss;
+  S.winInfo = { stars, level: S.level, leaks: S.leaks, breathers: S.breathers, cards: S.newCards.slice(), kills: S.levelKills, towers: S.towers.length, early: S.earlyStarts, boss: bi != null ? BOSS[bi].name : "", happy: S.levelHappy.slice(), total: SAVE.st.turned };
+  S.enemies.length = 0; S.shots.length = 0; S.bubbles.length = 0; S.winDelay = 3;
+  for (let i = 0; i < 26; i++) stardust(rand(30, 570), rand(120, 720), 1, i % 3 ? "#f2d37c" : "#ffe6c8");
 }
 
 export function update(rawDt) {
@@ -237,6 +259,11 @@ export function update(rawDt) {
   for (const r of S.rings) r.r += (r.r1 - r.r) * Math.min(1, rawDt * 3.5);
   if (S.paused) return;
   const dt = rawDt * S.speed;
+  if (S.state === "win" && S.winDelay > 0) {
+    S.winDelay -= rawDt; if (Math.random() < 0.5) stardust(rand(30, 570), rand(150, 740), 2, Math.random() < 0.5 ? "#f2d37c" : "#ffe6c8");
+    if (S.winDelay <= 0 && S.winInfo) { const i = S.winInfo; S.winInfo = null; S.hooks.win && S.hooks.win(i); }
+    return;
+  }
   if (S.state === "intro") { S.introT -= rawDt; if (S.introT <= 0) S.state = "play"; return; }
   if (S.state !== "play") return;
   if (!S.waveActive && S.wave + 1 < S.waves.length) { S.nextIn = Math.max(0, S.nextIn - dt); if (SAVE.opt.auto && S.nextIn <= 0) startWave(); }
