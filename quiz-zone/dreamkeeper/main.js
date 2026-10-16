@@ -112,18 +112,19 @@ function setPause(on) {
 $("btn-pause").onclick = () => setPause(true);
 $("btn-resume").onclick = () => setPause(false);
 $("btn-quit").onclick = () => { S.paused = false; toMenu(); };
+$("btn-finish").onclick = () => { $("scr-pause").hidden = true; S.sleepOn = true; goodnight(); };
 window.addEventListener("blur", () => { if (["intro", "play"].includes(S.state)) setPause(true); });
 document.addEventListener("visibilitychange", () => { if (document.hidden && ["intro", "play"].includes(S.state)) setPause(true); });
 
 /* ---------------- the menu ---------------- */
-const DIM = [["Normal", "sepia(.14) saturate(.95) brightness(.96)"], ["Dim", "sepia(.24) saturate(.9) brightness(.8)"], ["Very dim", "sepia(.32) saturate(.85) brightness(.62)"]];
+const DIM = [["Warm"], ["Dim"], ["Very dim"]];
 const SLEEP = [0, 10, 15, 20, 30];
 function renderMenu() {
   $("lv-grid").innerHTML = LEVELS.map((L, i) => { const r = SAVE.rating[i] || 0; return `<button class="dk-lv${L.boss != null ? " boss" : ""}${i === selLevel ? " sel" : ""}" data-i="${i}" type="button" ${i + 1 > SAVE.maxLevel ? "disabled" : ""} aria-label="Level ${i + 1}: ${L.name}${L.boss != null ? ", big worry at the end" : ""}${r ? ", calm rating " + r : ""}">${i + 1}<small>${r ? "🌸".repeat(r) : ""}</small></button>`; }).join("");
   $("btn-play").textContent = SAVE.maxLevel > 1 || SAVE.rating[0] ? `Play level ${selLevel + 1}: ${LEVELS[selLevel].name}` : "Begin tonight's garden";
   $("card-n").textContent = `(${cardCount()}/${CARD_ORDER.length})`;
   $("tg-music").setAttribute("aria-pressed", SAVE.opt.music); $("tg-sound").setAttribute("aria-pressed", SAVE.opt.sound); $("tg-rain").setAttribute("aria-pressed", SAVE.opt.rain);
-  $("tg-dim").textContent = `🌙 Night light: ${DIM[SAVE.opt.dim - 1][0]}`; $("tg-sleep").textContent = `⏰ Sleep timer: ${SAVE.opt.sleep ? SAVE.opt.sleep + " min" : "off"}`;
+  $("tg-dim").textContent = `🌙 Night light: ${DIM[clamp(SAVE.opt.dim, 1, 3) - 1][0]}`; $("tg-sleep").textContent = `⏰ Sleep timer: ${SAVE.opt.sleep ? SAVE.opt.sleep + " min" : "off"}`;
   $("btn-auto").setAttribute("aria-pressed", SAVE.opt.auto); $("btn-snd").textContent = SAVE.opt.sound ? "🔊" : "🔇"; $("btn-speed").textContent = S.speed + "×";
   applyLight();
 }
@@ -203,15 +204,26 @@ S.hooks.win = (info) => {
   renderAch(); show("scr-win");
 };
 $("btn-next").onclick = () => { hideAll(); selLevel = S.level + 1; game.beginLevel(S.level + 1); lastTray = ""; lastGo = ""; };
+$("btn-win-night").onclick = () => { $("scr-win").hidden = true; S.sleepOn = true; goodnight(); };
 $("btn-win-menu").onclick = () => { selLevel = Math.min(S.level + (S.state === "win" ? 1 : 0), 9, SAVE.maxLevel - 1); toMenu(); };
 $("btn-win-breathe").onclick = () => { $("scr-win").hidden = true; openBreathe(() => show("scr-win")); };
 
 /* ---------------- the sleep timer: the screen warms and dims, the music slows, then it says goodnight ---------------- */
+const LIGHT = [[255, 236, 212], [212, 176, 148], [150, 112, 98]];             // Normal, Dim, Very dim: a warm amber that multiplies the whole page
+let nl = null;
 function applyLight(extra = 1) {
-  const base = DIM[SAVE.opt.dim - 1][1]; const m = /brightness\(([\d.]+)\)/.exec(base);
-  $("main").style.filter = base.replace(/brightness\([\d.]+\)/, `brightness(${(+m[1] * extra).toFixed(3)})`);
+  if (!nl) { nl = document.createElement("div"); nl.setAttribute("aria-hidden", "true"); nl.style.cssText = "position:fixed;inset:0;z-index:9990;pointer-events:none;mix-blend-mode:multiply;transition:background-color 4s ease"; document.body.appendChild(nl); }
+  const [r, g, b] = LIGHT[clamp(SAVE.opt.dim, 1, 3) - 1], k = clamp(extra, 0.3, 1);
+  nl.style.backgroundColor = `rgb(${Math.round(r * k)},${Math.round(g * k)},${Math.round(b * k)})`;
 }
+let lastInput = performance.now(), pausedFor = 0;
+["pointerdown", "keydown", "touchstart"].forEach((e) => addEventListener(e, () => { lastInput = performance.now(); }, { passive: true, capture: true }));
 function sleepTick(dt) {
+  // asleep at the screen? A long pause, or a long time with no taps, means it is time to say goodnight
+  if (S.sleepOn && !sleepDone && ["intro", "play", "win", "breather"].includes(S.state)) {
+    pausedFor = S.paused && $("scr-pause").hidden === false ? pausedFor + dt : 0;
+    if (pausedFor > 180 || (!S.paused && performance.now() - lastInput > 8 * 60 * 1000)) { pausedFor = 0; goodnight(); return; }
+  }
   if (!S.sleepOn || sleepDone || !["intro", "play", "win", "breather"].includes(S.state) || S.paused) return;
   S.sleepLeft -= dt;
   const left = S.sleepLeft, dim = left < 180 ? 0.65 + 0.35 * (left / 180) : 1;
@@ -230,9 +242,17 @@ $("goods").addEventListener("click", (e) => {
   b.setAttribute("aria-pressed", at < 0); audio.play("click");
   if (goodPicked.length === 3) { SAVE.st.good++; saveNow(); unlock("good-things"); renderAch(); $("good-msg").textContent = "Lovely. Hold on to those as you drift off. 💛"; } else $("good-msg").textContent = `Pick ${3 - goodPicked.length} more.`;
 });
-$("btn-bye-more").onclick = () => { sleepExtended = true; sleepDone = false; S.sleepLeft = 300; sleepTick.last = 1; applyLight(0.65); S.paused = false; $("scr-bye").hidden = true; };
+$("btn-bye-more").onclick = () => { sleepExtended = true; sleepDone = false; S.sleepLeft = 300; sleepTick.last = 1; applyLight(0.75); S.paused = false; $("scr-bye").hidden = true; };
 $("btn-bye-breathe").onclick = () => { $("scr-bye").hidden = true; openBreathe(() => { show("scr-bye"); }); };
-$("btn-bye-done").onclick = () => { unlock("sweet"); renderAch(); music.stop(); audio.setFade(0, 6); sleepDone = true; S.sleepOn = false; S.paused = false; selLevel = Math.min(S.level, 9); toMenu(); $("main").style.filter = DIM[2][1]; };
+$("btn-bye-done").onclick = () => { unlock("sweet"); renderAch(); music.stop(); audio.setFade(0, 6); sleepDone = true; S.sleepOn = false; S.paused = false; selLevel = Math.min(S.level, 9); toMenu(); asleep(true); };
+/* the last screen of the night: dark and quiet, with nothing to press except a small way back */
+function asleep(on) {
+  let el = $("asleep"); if (!el) { el = document.createElement("div"); el.id = "asleep"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", "Goodnight"); el.style.cssText = "position:fixed;inset:0;z-index:9995;background:#07050f;color:#8f86ad;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:24px;font-family:Manrope,sans-serif;opacity:0;transition:opacity 3s ease";
+    el.innerHTML = '<div style="font-size:54px;opacity:.4;filter:grayscale(.5)">🌙</div><div style="font:700 30px Rajdhani,sans-serif;color:#b5acd2">Sleep well, George</div><div style="font-size:16px;max-width:30ch;line-height:1.5">The garden is quiet. Put the screen down and rest your eyes.</div><button id="asleep-back" type="button" style="margin-top:28px;background:none;border:1px solid rgba(143,134,173,.35);color:#8f86ad;border-radius:999px;padding:0 18px;min-height:46px;font:600 14px Manrope,sans-serif;cursor:pointer">I\'m still awake</button>';
+    document.body.appendChild(el); $("asleep-back").onclick = () => asleep(false); }
+  if (on) { el.style.display = "flex"; requestAnimationFrame(() => (el.style.opacity = "1")); applyLight(0.45); try { $("asleep-back").focus({ preventScroll: true }); } catch (e) {} }
+  else { el.style.opacity = "0"; setTimeout(() => (el.style.display = "none"), 800); sleepDone = false; audio.setFade(1, 2); applyLight(1); }
+}
 
 /* ---------------- the loop ---------------- */
 let last = performance.now();

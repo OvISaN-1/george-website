@@ -85,7 +85,6 @@ export function render(ctx, cv, scale) {
   // soft edges
   const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.4, W / 2, H / 2, H * 0.78); vg.addColorStop(0, "rgba(10,8,30,0)"); vg.addColorStop(1, "rgba(10,8,30,.35)"); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
   if (st === "intro") { const a = clamp(Math.min(3.6 - S.introT, S.introT) * 1.2, 0, 1); ctx.globalAlpha = a; text(ctx, `Level ${S.level + 1}`, W / 2, H * 0.34, 34, "#e3d9f5", "center", 700); text(ctx, L.name, W / 2, H * 0.34 + 56, 50, INK, "center", 800); text(ctx, L.tag, W / 2, H * 0.34 + 98, 22, "#e3d9f5", "center", 600); if (L.boss != null) text(ctx, "A big worry waits at the end", W / 2, H * 0.34 + 136, 20, "#f0c0b0", "center", 700); ctx.globalAlpha = 1; }
-  if (st === "play" && !S.towers.length && !S.waveActive) { ctx.globalAlpha = 0.6 + 0.3 * Math.sin(now * 1.2); text(ctx, "Pick a helper below, then tap a glowing tile", W / 2, GY + ROWS * TILE - 36, 21, "#f2d37c", "center", 700); ctx.globalAlpha = 1; }
 }
 
 function drawNestAndGate(ctx, now) {
@@ -120,7 +119,6 @@ function drawHud(ctx, L) {
   ctx.fillStyle = "rgba(14,10,36,.6)"; ctx.beginPath(); ctx.roundRect(14, 48, w, 15, 8); ctx.fill(); ctx.fillStyle = k > 0.35 ? "rgba(168,214,196,.95)" : "rgba(232,176,150,.95)"; ctx.beginPath(); ctx.roundRect(14, 48, Math.max(12, w * k), 15, 8); ctx.fill();
   text(ctx, "Calm", 22 + w, 62, 17, "#e3d9f5", "left", 700, false);
   text(ctx, `Wave ${Math.max(1, wave)} of ${S.waves.length}`, 14, 88, 18, "#e3d9f5", "left", 700, false);
-  if (!S.waveActive && S.state === "play" && S.wave + 1 < S.waves.length && SAVE.opt.auto !== false) text(ctx, `Next in ${Math.max(0, Math.ceil(S.nextIn))}s`, 168, 88, 17, "#cdbfe8", "left", 600, false);
   // the big worry's bar
   const b = S.bossRef; if (b && !b.dead) { const bw = 320, bx = W / 2 - bw / 2, by = GY + 26; text(ctx, b.def.name, W / 2, by - 6, 19, b.col, "center", 800); ctx.fillStyle = "rgba(14,10,36,.65)"; ctx.beginPath(); ctx.roundRect(bx, by, bw, 11, 6); ctx.fill(); ctx.fillStyle = b.col; ctx.beginPath(); ctx.roundRect(bx, by, Math.max(10, bw * clamp(b.hp / b.maxhp, 0, 1)), 11, 6); ctx.fill(); }
 }
