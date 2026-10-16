@@ -159,7 +159,8 @@
     $("tab-create").addEventListener("click", () => setMode("create"));
 
     async function render() {
-      const a = Sync.account();
+      let a = Sync.account();
+      if (a && a.conflict) { await Sync.reconcile(); a = Sync.account(); }       // an old "which to keep" is simply merged now
       $("acct-out").hidden = !!a;
       $("acct-in").hidden = !a || !!a.conflict;
       $("acct-choose").hidden = !a || !a.conflict;
@@ -188,7 +189,7 @@
       if (mode === "create") msg("✓ Your login is ready, and your progress is saved. Use the same username and password on any other device.", true);
       else if (r.state === "loaded") { msg("✓ Welcome back! Your progress is loaded on this device.", true); list($("who-here"), describe(Sync.collect())); }
       else if (r.state === "saved") msg("✓ Logged in. Your progress from this device is now saved to your account.", true);
-      else if (r.state === "choose") msg("", true);
+      else if (r.state === "merged") msg("✓ Logged in. This device and your account had different progress, so they were combined and nothing was lost.", true);
       else msg("✓ Logged in. Everything matches.", true);
     });
 

@@ -4,11 +4,17 @@ let ctx = null, master = null, sfxGain = null, musGain = null, noiseBuf = null;
 let soundOn = true, musicOn = true;
 const lastPlayed = {};
 
+const hiddenNow = () => typeof document !== "undefined" && document.hidden;
+// Quiet while the tab is hidden, back when it returns.
+document.addEventListener("visibilitychange", () => { if (!ctx) return; try { if (document.hidden) ctx.suspend(); else ctx.resume(); } catch (e) {} });
+
 function ensure() {
-  if (ctx) { if (ctx.state === "suspended") ctx.resume(); return ctx; }
+  if (ctx) { if (ctx.state !== "running" && !hiddenNow()) ctx.resume(); return ctx; }
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) return null;
   ctx = new AC();
+  try { const b = ctx.createBuffer(1, 1, 22050), s = ctx.createBufferSource(); s.buffer = b; s.connect(ctx.destination); s.start(0); } catch (e) {}   // wakes older iPhones
+  if (ctx.state !== "running") ctx.resume();
   master = ctx.createGain(); master.gain.value = 0.7; master.connect(ctx.destination);
   sfxGain = ctx.createGain(); sfxGain.gain.value = soundOn ? 0.8 : 0; sfxGain.connect(master);
   musGain = ctx.createGain(); musGain.gain.value = musicOn ? 0.32 : 0; musGain.connect(master);
@@ -75,6 +81,7 @@ const mtof = (root, semis) => root * Math.pow(2, semis / 12);
 function schedule() {
   if (!ctx || !running) return;
   const bpm = 118 + level * 4 + (boss ? 18 : 0), sp = 60 / bpm / 4;
+  if (nextT < ctx.currentTime - 0.1) nextT = ctx.currentTime + 0.05;          // after a pause or a hidden tab: carry on from now, never play the missed notes in a burst
   while (nextT < ctx.currentTime + 0.3) {
     const when = Math.max(0, nextT - ctx.currentTime), root = ROOTS[level % 10], s = step % 16;
     if (s % 4 === 0) { tone("sine", 140, 45, 0.16, 0.5, when, musGain); }                                           // kick

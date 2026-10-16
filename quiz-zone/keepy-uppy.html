@@ -197,6 +197,7 @@
       if (!soundOn) return;
       try {
         audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state !== "running") audioCtx.resume();
         const o = audioCtx.createOscillator(), g = audioCtx.createGain();
         o.type = type || "sine"; o.frequency.value = freq;
         g.gain.setValueAtTime(vol || 0.15, audioCtx.currentTime);
