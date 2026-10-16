@@ -10,7 +10,9 @@
   "assets": {
     "directory": "./",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*"],
+    // A friendly page (404.html) for addresses that do not exist.
+    "not_found_handling": "404-page"
   },
   "ai": { "binding": "AI" },
   // Keep variables added in the Cloudflare dashboard when a new version is

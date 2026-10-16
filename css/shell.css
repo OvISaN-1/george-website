@@ -17,7 +17,7 @@
   --line-strong: rgba(241,237,233,0.18);
   --chalk:#f1ede9;
   --chalk-dim:#b9b2ac;
-  --chalk-faint:#8a857e; /* was #7d7770 — 4.27:1 on ink, fails AA for the footer/caption text it's used on. This passes at 5.17:1. */
+  --chalk-faint:#9a958e; /* lifted from #8a857e so it also passes AA on the raised card colour (4.4:1 before) */
 
   --garibaldi:#e1102c;
   --garibaldi-ink:#3a0a12;
@@ -107,7 +107,7 @@ body[data-page="quiz-zone"], body[data-page="quiz-game"]{
 .gz-login-note b{ color: #f1ede9; }
 .gz-login-note a{ color: #f5b942; text-decoration: underline; }
 .logo span { color: var(--garibaldi); }
-.logo { display: inline-flex; align-items: center; }
+.logo { display: inline-flex; align-items: center; min-height: 44px; }
 .logo-mark { width: 30px; height: 30px; flex-shrink: 0; display: block; margin-right: 8px; }
 .nav-links{ display: flex; gap: var(--s5); }
 .nav-links a{
@@ -276,7 +276,9 @@ body[data-page="quiz-zone"], body[data-page="quiz-game"]{
   .page-banner::after, .hero::after, .match-card { animation: none; }
 }
 .footer-row .footer-progress { margin-left: var(--s4); }
+.footer-row > span { flex: 1 1 260px; }
+.footer-row > a { flex: none; }
 
 /* Links in the footer and in the "back / save my progress" rows are easy to hit with a thumb */
-.footer-row a, p.links a { display: inline-flex; align-items: center; min-height: 44px; padding-block: 6px; }
+.footer-row a, p.links a { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; justify-content: center; padding: 6px 8px; }
 p.links { display: flex; flex-wrap: wrap; gap: 0 20px; }

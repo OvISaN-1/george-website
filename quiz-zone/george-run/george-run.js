@@ -16,7 +16,9 @@ const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-const reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+const osReduced = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+// "Calm effects": no red hit flash, shake, weather or vibration. On automatically if the device asks for less motion.
+let reduced = osReduced || (() => { try { return localStorage.getItem("gz_run_calm") === "1"; } catch (e) { return false; } })();
 
 const LANES = [-2.6, 0, 2.6];
 const TOP_KEY = "gz_run_top3_v1", RUN_KEY = "gz_run_v1";
@@ -40,7 +42,7 @@ function ach(id) {
   if (SAVE.ach[id]) return; const a = ACH.find((x) => x[0] === id); if (!a) return;
   SAVE.ach[id] = true; writeJSON(RUN_KEY, SAVE); newAch.push(a); achQueue.push(a); showAch(); renderAchList();
 }
-function flash(kind) { const f = $("flash"); if (!f) return; f.className = "gr-flash"; void f.offsetWidth; f.className = "gr-flash " + kind; }
+function flash(kind) { const f = $("flash"); if (!f || reduced) return; f.className = "gr-flash"; void f.offsetWidth; f.className = "gr-flash " + kind; }
 let paused = false;
 function showAch() {
   if (achShowing || !achQueue.length) return; const a = achQueue.shift(), el = $("ach-banner"); achShowing = true;
@@ -867,7 +869,7 @@ function showHint(type) {
 function hurt(it) {
   if (G.phase !== "play" || G.invuln > 0) return;
   if (G.shield) { G.shield = false; G.invuln = 1.2; burst(px, 1.2, 0, 0x9fe3ff, 18); sfx.power(); feedItem("🧤", "SAVED!", "The gloves saved you", "power"); it.gone = true; drop(it.mesh); return; }
-  flash("hit"); G.lives--; try { if (navigator.vibrate) navigator.vibrate(G.lives <= 0 ? [90, 60, 180] : 120); } catch (e) {} G.noHit = false; G.invuln = 3; stumble = 0.9; G.streak = 0; shake = 0.5; G.speed = Math.max(14, G.speed * 0.78); sfx.hit(); burst(px, 1, 0, 0xff6b6b, 14);
+  flash("hit"); G.lives--; try { if (!reduced && navigator.vibrate) navigator.vibrate(G.lives <= 0 ? [90, 60, 180] : 120); } catch (e) {} G.noHit = false; G.invuln = 3; stumble = 0.9; G.streak = 0; shake = 0.5; G.speed = Math.max(14, G.speed * 0.78); sfx.hit(); burst(px, 1, 0, 0xff6b6b, 14);
   const was = G.num; setNum(Math.max(george.baseNum, G.num - 5));
   if (G.lives <= 0) { if (canContinue()) offerContinue(); else gameOver(); return; }
   const WX_HIT = { puddle: ["💦", "SPLASHED!", 0x7fb6ff], snow: ["☃️", "SNOWED UNDER!", 0xffffff], leaves: ["🍂", "LEAF PILE!", 0xe07a24] }[it.type];
@@ -1208,6 +1210,10 @@ try { if (new URLSearchParams(location.search).get("daily") === "1") { const d =
 $("btn-start").addEventListener("click", () => start(false)); $("btn-daily").addEventListener("click", () => start(true)); $("btn-daily2").addEventListener("click", () => start(true));
 $("btn-again").addEventListener("click", () => start(G.daily));
 $("btn-music").addEventListener("click", () => { cycleMusic(); audio(); });
+{ const cb = $("btn-calm"), showCalm = () => { cb.textContent = reduced ? "🌙 Calm effects" : "✨ Full effects"; cb.setAttribute("aria-pressed", reduced ? "true" : "false"); };
+  if (osReduced) { cb.disabled = true; cb.title = "Your device asks for less motion, so this is on."; }
+  showCalm();
+  cb.addEventListener("click", () => { reduced = !reduced; try { localStorage.setItem("gz_run_calm", reduced ? "1" : "0"); } catch (e) {} showCalm(); }); }
 try { if (localStorage.getItem("gz_run_sfx") === "0") { sfxOn = false; $("btn-sound").textContent = "🔇 Sounds off"; } } catch (e) {}
 $("btn-sound").addEventListener("click", () => { sfxOn = !sfxOn; try { localStorage.setItem("gz_run_sfx", sfxOn ? "1" : "0"); } catch (e) {} $("btn-sound").textContent = sfxOn ? "🔊 Sounds on" : "🔇 Sounds off"; });
 showMusic(); showDaily(); renderUpgrades(); loadOnline("start"); renderAchList(); renderTop($("start-top")); newGoals(); resize();
