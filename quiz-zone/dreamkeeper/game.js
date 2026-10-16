@@ -162,15 +162,22 @@ function updateShots(dt) {
 }
 
 /* =========================== worries =========================== */
+/* a worry turns into a happy thought: its kind reply pops up, its Calm Card is collected, and the stars arrive with the thought */
+function learn(e, key) {
+  if (!SAVE.cards[key]) { SAVE.cards[key] = Date.now(); saveNow(); S.newCards.push(key); S.hooks.card && S.hooks.card(key); const n = cardCount(); if (n >= 5) unlock("cards-5"); if (n >= CARD_ORDER.length) unlock("cards-all"); }
+}
+function happy(x, y, stars, reply, long) {
+  S.flyers.push({ x, y, l: 1.3, m: 1.3, v: stars });
+  S.bubbles.push({ x, y: y - 26, text: reply, l: long ? 6 : 4.2, m: long ? 6 : 4.2 });
+  popup(x, y - 4, `+${stars} ⭐`, "#f2d37c", 17);
+}
 function die(e) {
   if (e.dead) return;
   if (e.def.again && !e.again) { e.again = true; e.hp = e.maxhp * 0.5; e.flash = 0.4; popup(e.x, e.y - e.r - 14, "Again?!", "#f0b08c", 15); return; }
-  if (e.def.split && !e.split) { /* handled when hp is low; if killed in one hit it just ends */ }
-  e.dead = true; S.levelKills++; S.stars += e.reward;
-  const key = e.type; stardust(e.x, e.y, e.boss ? 40 : 14, "#f2d37c"); S.flyers.push({ x: e.x, y: e.y, l: 1.1, m: 1.1 });
-  audio.play("star", 80); S.bubbles.push({ x: e.x, y: e.y - e.r - 10, text: e.say[1], l: e.boss ? 5.5 : 3.6, m: e.boss ? 5.5 : 3.6, boss: e.boss });
-  unlock("first-star");
-  if (!SAVE.cards[key]) { SAVE.cards[key] = Date.now(); saveNow(); S.newCards.push(key); S.hooks.card && S.hooks.card(key); const n = cardCount(); if (n >= 5) unlock("cards-5"); if (n >= CARD_ORDER.length) unlock("cards-all"); }
+  e.dead = true; S.levelKills++;
+  stardust(e.x, e.y, e.boss ? 40 : 14, "#f2d37c"); audio.play("star", 80);
+  happy(e.x, e.y - e.r - 6, e.reward, e.say[1], e.boss);
+  unlock("first-star"); learn(e, e.type);
   if (e.boss) {
     if (S.bossRef === e) S.bossRef = null; for (const o of S.enemies) if (o.twin && !o.dead && o.type === e.type) S.bossRef = o;
     const idx = BOSS.findIndex((b) => b.id === e.type); if (!SAVE.bosses.includes(idx)) { SAVE.bosses.push(idx); saveNow(); } unlock("boss-1"); if (SAVE.bosses.length >= 5) unlock("boss-all");
@@ -195,7 +202,12 @@ function updateEnemies(dt) {
       if (def.spawn && e.spawnT <= 0) { e.spawnT = def.id === "cloud" ? 6 : 9; const pool = LEVELS[S.level].pool, type = def.spawn === "mix" ? pool[Math.floor(Math.random() * pool.length)] : def.spawn; for (let i = 0; i < (def.id === "test" ? 3 : 2); i++) { const m = spawnMinion(type, e.d - 30 - i * 40); } }
       if (def.split && !e.split && e.hp <= e.maxhp * 0.5) { e.split = true; e.hp = e.hp / 2; e.maxhp = e.maxhp / 2; const c = Object.assign({}, e, { id: ++S.uid, d: Math.max(0, e.d - 110), twin: true, slow: null, lit: null, calm: null, say: e.say }); e.twin = true; S.enemies.push(c); popup(e.x, e.y - e.r - 14, "They split in two!", "#e8a5a5", 15); }
     }
-    if (e.d >= S.plen) { e.dead = true; S.calm = Math.max(0, S.calm - e.leak); S.leaks++; ring(S.nestPos.x, S.nestPos.y, 70, 1, "#8a7ab8", 3); audio.play("leak", 300); if (e.boss && S.bossRef === e) S.bossRef = null; }
+    if (e.d >= S.plen) {
+      e.dead = true; S.calm = Math.max(0, S.calm - e.leak); S.leaks++; ring(S.nestPos.x, S.nestPos.y, 70, 1, "#f0c890", 3); audio.play("leak", 300);
+      const gain = Math.min(e.boss ? 20 : 99, Math.max(1, Math.floor(e.reward * 0.5)));
+      happy(S.nestPos.x, S.nestPos.y - 34, gain, e.say[1], false); learn(e, e.type);
+      if (e.boss && S.bossRef === e) S.bossRef = null;
+    }
   }
   S.enemies = S.enemies.filter((e) => !e.dead);
 }
@@ -213,7 +225,7 @@ function levelComplete() {
 export function update(rawDt) {
   S.tick++;
   S.now += rawDt;
-  for (const k of ["fx", "rings", "beams", "pops", "bubbles", "flyers"]) { const a = S[k]; for (const p of a) { p.l -= rawDt; if (k === "fx") { p.x += p.vx * rawDt; p.y += p.vy * rawDt; p.vy -= 3 * rawDt; } } S[k] = a.filter((p) => p.l > 0); }
+  for (const k of ["fx", "rings", "beams", "pops", "bubbles", "flyers"]) { const a = S[k]; for (const p of a) { p.l -= rawDt; if (k === "flyers" && p.l <= 0 && !p.paid) { p.paid = true; S.stars += p.v || 0; } if (k === "fx") { p.x += p.vx * rawDt; p.y += p.vy * rawDt; p.vy -= 3 * rawDt; } } S[k] = a.filter((p) => p.l > 0); }
   for (const r of S.rings) r.r += (r.r1 - r.r) * Math.min(1, rawDt * 3.5);
   if (S.paused) return;
   const dt = rawDt * S.speed;

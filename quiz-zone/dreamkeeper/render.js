@@ -19,12 +19,12 @@ function wrap(ctx, t, maxW) {
   if (cur) lines.push(cur); return lines;
 }
 function bubble(ctx, x, y, t, fill, ink, alpha, small) {
-  ctx.save(); ctx.globalAlpha = alpha; ctx.font = `600 ${small ? 13 : 14}px ${FONT}`;
-  const lines = wrap(ctx, t, 150), w = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 18, h = lines.length * 17 + 12;
+  ctx.save(); ctx.globalAlpha = alpha; ctx.font = `700 ${small ? 21 : 22}px ${FONT}`;
+  const lines = wrap(ctx, t, 230), w = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 28, h = lines.length * 28 + 20;
   let bx = clamp(x - w / 2, 6, W - w - 6), by = Math.max(GY - 20, y - h);
-  ctx.fillStyle = fill; ctx.beginPath(); ctx.roundRect(bx, by, w, h, 11); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(x - 6, by + h - 1); ctx.lineTo(x, by + h + 7); ctx.lineTo(x + 6, by + h - 1); ctx.fill();
-  ctx.fillStyle = ink; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; lines.forEach((l, i) => ctx.fillText(l, bx + w / 2, by + 17 + i * 17)); ctx.restore();
+  ctx.fillStyle = fill; ctx.beginPath(); ctx.roundRect(bx, by, w, h, 16); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x - 8, by + h - 1); ctx.lineTo(x, by + h + 9); ctx.lineTo(x + 8, by + h - 1); ctx.fill();
+  ctx.fillStyle = ink; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; lines.forEach((l, i) => ctx.fillText(l, bx + w / 2, by + 28 + i * 28)); ctx.restore();
 }
 
 export function render(ctx, cv, scale) {
@@ -76,16 +76,16 @@ export function render(ctx, cv, scale) {
   ctx.globalAlpha = 1;
   // thoughts: the worried one, then the kinder one
   for (const e of S.enemies) if (e.bubOn > 0 && (!e.hidden || e.revealed > 0)) bubble(ctx, e.x, e.y - e.r - 14, e.say[0], "rgba(226,218,238,.9)", "#3b3354", clamp(Math.min(e.bubOn, 4.5 - (4.5 - e.bubOn)) * 1.2, 0, 1) * clamp(e.bubOn * 1.5, 0, 1));
-  for (const b of S.bubbles) bubble(ctx, b.x, b.y, "✨ " + b.text, "rgba(196,232,214,.94)", "#244436", clamp(b.l / 0.8, 0, 1) * clamp((b.m - b.l) * 2.5 + 0.2, 0, 1), true);
-  for (const p of S.pops) { const k = clamp(p.l / p.m, 0, 1); ctx.globalAlpha = Math.min(1, k * 2); text(ctx, p.t, p.x, p.y - (1 - k) * 22, p.s, p.c, "center"); } ctx.globalAlpha = 1;
+  for (const b of S.bubbles) bubble(ctx, b.x, b.y, "💛 " + b.text, "rgba(255,236,204,.97)", "#4a3220", clamp(b.l / 0.8, 0, 1) * clamp((b.m - b.l) * 2.5 + 0.2, 0, 1), true);
+  for (const p of S.pops) { const k = clamp(p.l / p.m, 0, 1); ctx.globalAlpha = Math.min(1, k * 2); text(ctx, p.t, p.x, p.y - (1 - k) * 26, Math.round(p.s * 1.4), p.c, "center"); } ctx.globalAlpha = 1;
   // stars that float up into the counter
-  for (const f of S.flyers) { const k = 1 - f.l / f.m, x = f.x + (30 - f.x) * k * k, y = f.y + (36 - f.y) * k * k; ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1 - k * 0.5; ctx.drawImage(glow("#f2d37c"), x - 9, y - 9, 18, 18); ctx.globalCompositeOperation = "source-over"; } ctx.globalAlpha = 1;
+  for (const f of S.flyers) { const k = 1 - f.l / f.m, x = f.x + (30 - f.x) * k * k, y = f.y + (36 - f.y) * k * k; ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1 - k * 0.5; ctx.drawImage(glow("#ffd7a0"), x - 16, y - 16, 32, 32); ctx.globalCompositeOperation = "source-over"; } ctx.globalAlpha = 1;
 
   drawHud(ctx, L);
   // soft edges
   const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.4, W / 2, H / 2, H * 0.78); vg.addColorStop(0, "rgba(10,8,30,0)"); vg.addColorStop(1, "rgba(10,8,30,.35)"); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
-  if (st === "intro") { const a = clamp(Math.min(3.6 - S.introT, S.introT) * 1.2, 0, 1); ctx.globalAlpha = a; text(ctx, `Level ${S.level + 1}`, W / 2, H * 0.34, 28, "#cdbfe8", "center", 600); text(ctx, L.name, W / 2, H * 0.34 + 46, 40, INK, "center", 700); text(ctx, L.tag, W / 2, H * 0.34 + 82, 16, "#cdbfe8", "center", 500); if (L.boss != null) text(ctx, "A big worry waits at the end", W / 2, H * 0.34 + 112, 14, "#e8b4a0", "center", 600); ctx.globalAlpha = 1; }
-  if (st === "play" && !S.towers.length && !S.waveActive) { ctx.globalAlpha = 0.6 + 0.3 * Math.sin(now * 1.2); text(ctx, "Pick a helper below, then tap a glowing tile", W / 2, GY + ROWS * TILE - 18, 15, "#f2d37c", "center", 600); ctx.globalAlpha = 1; }
+  if (st === "intro") { const a = clamp(Math.min(3.6 - S.introT, S.introT) * 1.2, 0, 1); ctx.globalAlpha = a; text(ctx, `Level ${S.level + 1}`, W / 2, H * 0.34, 34, "#e3d9f5", "center", 700); text(ctx, L.name, W / 2, H * 0.34 + 56, 50, INK, "center", 800); text(ctx, L.tag, W / 2, H * 0.34 + 98, 22, "#e3d9f5", "center", 600); if (L.boss != null) text(ctx, "A big worry waits at the end", W / 2, H * 0.34 + 136, 20, "#f0c0b0", "center", 700); ctx.globalAlpha = 1; }
+  if (st === "play" && !S.towers.length && !S.waveActive) { ctx.globalAlpha = 0.6 + 0.3 * Math.sin(now * 1.2); text(ctx, "Pick a helper below, then tap a glowing tile", W / 2, GY + ROWS * TILE - 36, 21, "#f2d37c", "center", 700); ctx.globalAlpha = 1; }
 }
 
 function drawNestAndGate(ctx, now) {
@@ -114,13 +114,13 @@ function drawWorry(ctx, e, now) {
 
 function drawHud(ctx, L) {
   const wave = clamp(S.wave + 1, 0, S.waves.length);
-  text(ctx, "⭐ " + Math.round(S.stars), 14, 34, 22, "#f2d37c");
+  text(ctx, "⭐ " + Math.round(S.stars), 14, 38, 30, "#f2d37c");
   // the calm meter: when it runs out the garden just takes a breather
-  const w = 190, k = clamp(S.calm / 100, 0, 1);
-  ctx.fillStyle = "rgba(14,10,36,.55)"; ctx.beginPath(); ctx.roundRect(14, 46, w, 12, 6); ctx.fill(); ctx.fillStyle = k > 0.35 ? "rgba(168,214,196,.9)" : "rgba(232,176,150,.9)"; ctx.beginPath(); ctx.roundRect(14, 46, Math.max(10, w * k), 12, 6); ctx.fill();
-  text(ctx, "Calm", 18 + w, 57, 12, "#cdbfe8", "left", 600, false);
-  text(ctx, `Wave ${Math.max(1, wave)} of ${S.waves.length}`, 14, 74, 13, "#cdbfe8", "left", 600, false);
-  if (!S.waveActive && S.state === "play" && S.wave + 1 < S.waves.length && SAVE.opt.auto !== false) text(ctx, `Next wave in ${Math.max(0, Math.ceil(S.nextIn))}s`, 150, 74, 13, "#b7a9d8", "left", 500, false);
-  // the big worry's calm bar
-  const b = S.bossRef; if (b && !b.dead) { const bw = 300, bx = W / 2 - bw / 2, by = GY + 8; text(ctx, b.def.name, W / 2, by - 4, 13, b.col, "center", 700); ctx.fillStyle = "rgba(14,10,36,.6)"; ctx.beginPath(); ctx.roundRect(bx, by, bw, 9, 5); ctx.fill(); ctx.fillStyle = b.col; ctx.beginPath(); ctx.roundRect(bx, by, Math.max(8, bw * clamp(b.hp / b.maxhp, 0, 1)), 9, 5); ctx.fill(); }
+  const w = 200, k = clamp(S.calm / 100, 0, 1);
+  ctx.fillStyle = "rgba(14,10,36,.6)"; ctx.beginPath(); ctx.roundRect(14, 48, w, 15, 8); ctx.fill(); ctx.fillStyle = k > 0.35 ? "rgba(168,214,196,.95)" : "rgba(232,176,150,.95)"; ctx.beginPath(); ctx.roundRect(14, 48, Math.max(12, w * k), 15, 8); ctx.fill();
+  text(ctx, "Calm", 22 + w, 62, 17, "#e3d9f5", "left", 700, false);
+  text(ctx, `Wave ${Math.max(1, wave)} of ${S.waves.length}`, 14, 88, 18, "#e3d9f5", "left", 700, false);
+  if (!S.waveActive && S.state === "play" && S.wave + 1 < S.waves.length && SAVE.opt.auto !== false) text(ctx, `Next in ${Math.max(0, Math.ceil(S.nextIn))}s`, 168, 88, 17, "#cdbfe8", "left", 600, false);
+  // the big worry's bar
+  const b = S.bossRef; if (b && !b.dead) { const bw = 320, bx = W / 2 - bw / 2, by = GY + 26; text(ctx, b.def.name, W / 2, by - 6, 19, b.col, "center", 800); ctx.fillStyle = "rgba(14,10,36,.65)"; ctx.beginPath(); ctx.roundRect(bx, by, bw, 11, 6); ctx.fill(); ctx.fillStyle = b.col; ctx.beginPath(); ctx.roundRect(bx, by, Math.max(10, bw * clamp(b.hp / b.maxhp, 0, 1)), 11, 6); ctx.fill(); }
 }
