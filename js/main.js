@@ -1117,7 +1117,7 @@ window.GZWake = (function () {
   }
 
   // Note under the name box on each game's results screen.
-  const BOXES = ["player-name", "r-name", "keepy-name"];
+  const BOXES = ["player-name", "r-name", "keepy-name", "ss-name"];
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   function note() {
     if (document.hidden || onProgress || !root) return;

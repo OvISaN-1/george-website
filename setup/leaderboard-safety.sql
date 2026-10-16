@@ -52,6 +52,7 @@ begin
     when 'guess-the-player' then 60
     when 'georges-run' then 5000000
     when 'georges-run-daily' then 5000000
+    when 'star-striker' then 2000000
     else null end;
   if max_score is null then raise exception 'unknown game'; end if;
   if new.score is null or new.score < 0 or new.score > max_score or new.score <> trunc(new.score) then
