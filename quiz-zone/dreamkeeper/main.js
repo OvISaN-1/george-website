@@ -65,7 +65,7 @@ function setUi() {
   if (key !== lastTray) { lastTray = key; for (const b of $("tws").querySelectorAll(".tw")) { const id = b.dataset.id; b.disabled = S.stars < TOWER[id].cost[0]; b.setAttribute("aria-pressed", S.armed === id); } }
   const hint = S.armed ? `${TOWER[S.armed].name}: ${TOWER[S.armed].desc.split(". ")[0]}.` : S.state === "intro" ? "Worries are drifting in." : S.waveActive ? "Tap a helper to upgrade it." : S.towers.length ? "Add helpers, then start." : "Pick a helper, then tap a tile.";
   if ($("hint").textContent !== hint) $("hint").textContent = hint;
-  const go = S.waveActive || S.wave + 1 >= S.waves.length || S.state !== "play" ? "" : `▶ Start wave ${S.wave + 2}`;
+  const eb = game.earlyBonus(), go = S.waveActive || S.wave + 1 >= S.waves.length || S.state !== "play" ? "" : `▶ Start wave ${S.wave + 2}${eb >= 1 ? ` · +${eb} ⭐` : ""}`;
   if (go !== lastGo) { lastGo = go; $("btn-go").disabled = !go; $("btn-go").textContent = go || (S.waveActive ? "Wave on…" : "▶ Start wave"); }
   // the panel for a picked helper
   const t = S.sel, pk = t ? `${t.id}${t.lv}${S.stars >= (t.lv < 2 ? TOWER[t.id].cost[t.lv + 1] : 0)}${S.stars > 0}${Math.floor(t.invested * 0.7)}` : "";
@@ -84,7 +84,7 @@ $("panel").addEventListener("click", (e) => {
   if (b.id === "pn-up") game.upgradeTower(S.sel); else if (b.id === "pn-sell") game.sellTower(S.sel); else if (b.id === "pn-done") S.sel = null;
   lastPanel = ""; lastTray = "";
 });
-$("btn-go").onclick = () => { audio.unlock(); game.startWave(); lastGo = ""; };
+$("btn-go").onclick = () => { audio.unlock(); game.startWave(true); lastGo = ""; };
 $("btn-auto").onclick = () => { SAVE.opt.auto = !SAVE.opt.auto; saveNow(); $("btn-auto").setAttribute("aria-pressed", SAVE.opt.auto); };
 $("btn-speed").onclick = () => { S.speed = S.speed === 1 ? 2 : 1; SAVE.opt.speed = S.speed; saveNow(); $("btn-speed").textContent = S.speed + "×"; };
 
@@ -112,6 +112,20 @@ function setPause(on) {
 $("btn-pause").onclick = () => setPause(true);
 $("btn-resume").onclick = () => setPause(false);
 $("btn-quit").onclick = () => { S.paused = false; toMenu(); };
+/* ---------------- start the level again ---------------- */
+function restartLevel() { $("scr-pause").hidden = true; $("scr-win").hidden = true; S.paused = false; breathToken++; S.armed = null; S.sel = null; game.beginLevel(S.level); lastTray = ""; lastPanel = ""; lastGo = ""; audio.play("click"); }
+function confirmTwice(btn, ask, normal, then) {
+  let t = 0;
+  btn.addEventListener("click", () => {
+    audio.unlock();
+    if (btn.dataset.sure === "1") { clearTimeout(t); btn.dataset.sure = ""; btn.textContent = normal; then(); return; }
+    btn.dataset.sure = "1"; btn.textContent = ask; audio.play("click");
+    t = setTimeout(() => { btn.dataset.sure = ""; btn.textContent = normal; }, 3500);
+  });
+}
+confirmTwice($("btn-restart"), "Tap again to restart", "🔄 Restart level", restartLevel);
+confirmTwice($("btn-restart-top"), "Sure?", "↻", restartLevel);
+$("btn-win-again").onclick = restartLevel;
 $("btn-finish").onclick = () => { $("scr-pause").hidden = true; S.sleepOn = true; goodnight(); };
 window.addEventListener("blur", () => { if (["intro", "play"].includes(S.state)) setPause(true); });
 document.addEventListener("visibilitychange", () => { if (document.hidden && ["intro", "play"].includes(S.state)) setPause(true); });
