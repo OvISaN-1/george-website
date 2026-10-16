@@ -18,13 +18,78 @@ function wrap(ctx, t, maxW) {
   for (const w of words) { const test = cur ? cur + " " + w : w; if (ctx.measureText(test).width > maxW && cur) { lines.push(cur); cur = w; } else cur = test; }
   if (cur) lines.push(cur); return lines;
 }
-function bubble(ctx, x, y, t, fill, ink, alpha, small) {
-  ctx.save(); ctx.globalAlpha = alpha; ctx.font = `700 ${small ? 21 : 22}px ${FONT}`;
-  const lines = wrap(ctx, t, 230), w = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 28, h = lines.length * 28 + 20;
-  let bx = clamp(x - w / 2, 6, W - w - 6), by = Math.max(GY - 20, y - h);
-  ctx.fillStyle = fill; ctx.beginPath(); ctx.roundRect(bx, by, w, h, 16); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(x - 8, by + h - 1); ctx.lineTo(x, by + h + 9); ctx.lineTo(x + 8, by + h - 1); ctx.fill();
-  ctx.fillStyle = ink; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; lines.forEach((l, i) => ctx.fillText(l, bx + w / 2, by + 28 + i * 28)); ctx.restore();
+/* ---------------- thoughts ----------------
+   Every thought (a worry's worried one, or the happy one that replaces it) sits in the emptiest spot nearby: away from the path,
+   the helpers and the other worries. A thin curved line ties it to the worry it belongs to. A thought keeps its spot (no jitter)
+   and only moves if a much better one opens up, for example because a helper was planted underneath it. */
+let obstacles = [], placedRects = [];
+function buildObstacles() {
+  obstacles = []; placedRects = [];
+  const add = (cx, cy, hw, hh, w) => obstacles.push({ x0: cx - hw, y0: cy - hh, x1: cx + hw, y1: cy + hh, w });
+  for (let i = 1; i < S.pts.length; i++) { const a = S.pts[i - 1], b = S.pts[i]; obstacles.push({ x0: Math.min(a.x, b.x) - 30, y0: Math.min(a.y, b.y) - 30, x1: Math.max(a.x, b.x) + 30, y1: Math.max(a.y, b.y) + 30, w: 1.8 }); }
+  for (const t of S.towers) add(t.x, t.y, 40, 40, 3);
+  for (const e of S.enemies) if (!e.dead) add(e.x, e.y, e.r + 8, e.r + 8, 5);
+  if (S.pts.length) add(S.nestPos.x, S.nestPos.y, 50, 50, 3);
+  if (S.bossRef) add(W / 2, GY + 22, 170, 30, 4);
+}
+const overlap = (a, o) => { const w = Math.min(a.x1, o.x1) - Math.max(a.x0, o.x0), h = Math.min(a.y1, o.y1) - Math.max(a.y0, o.y0); return w > 0 && h > 0 ? w * h : 0; };
+function scoreAt(x, y, w, h, ox, oy) {
+  const r = { x0: x, y0: y, x1: x + w, y1: y + h }; let s = 0, hard = 0;
+  for (const o of obstacles) { const v = overlap(r, o) * o.w; s += v; if (o.w > 2) hard += v; }          // the path (weight < 2) may be crossed; helpers and worries may not
+  for (const p of placedRects) { const v = overlap(r, p) * 8; s += v; hard += v; }
+  return { s: s + Math.hypot(x + w / 2 - ox, y + h / 2 - oy) * 14, hard };
+}
+function measure(ctx, o, text, small) {
+  if (o._m && o._m.t === text) return o._m;
+  ctx.font = `700 ${small ? 21 : 22}px ${FONT}`;
+  const lines = wrap(ctx, text, 190), w = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 28, h = lines.length * 28 + 20;
+  return (o._m = { t: text, lines, w, h });
+}
+const CROWDED = 1800;                      // above this much overlap with helpers, worries or other thoughts, there is no good spot: stay quiet
+function place(o, m, ox, oy, now) {
+  const yMin = GY + 6, yMax = GY + ROWS * TILE - m.h - 26, xMax = W - m.w - 6;
+  if (o._p && now - o._p.t < 0.4) return o._p;
+  let best = null, bs = Infinity, bh = 0;
+  for (let y = yMin; y <= yMax; y += 14) for (let x = 6; x <= xMax; x += 14) { const sc = scoreAt(x, y, m.w, m.h, ox, oy); if (sc.s < bs) { bs = sc.s; bh = sc.hard; best = { x, y }; } }
+  if (!best) best = { x: clamp(ox - m.w / 2, 6, Math.max(6, xMax)), y: yMin, hard: 1e9 };
+  if (!o._p) o._p = { x: best.x, y: best.y, t: now, hard: bh };
+  else { const cur = scoreAt(o._p.x, o._p.y, m.w, m.h, ox, oy); if (bs < cur.s * 0.65) { o._p.x = best.x; o._p.y = best.y; o._p.hard = bh; } else o._p.hard = cur.hard; o._p.t = now; }
+  return o._p;
+}
+function drawThoughts(ctx, now) {
+  buildObstacles();
+  const items = [];
+  const consider = (o, text, ox, oy, orad, alpha, kind) => {
+    if (alpha <= 0.01) return;
+    const m = measure(ctx, o, text, kind === "happy"), p = place(o, m, ox, oy, now);
+    if (p.hard > CROWDED) {
+      if (kind === "worry") { o.bubOn = 0; o.bub = 3 + Math.random() * 4; o._p = null; }              // too crowded: stay quiet, try again soon
+      else { o.l = Math.min(o.l, 0.35); o._p = null; }
+      return;
+    }
+    placedRects.push({ x0: p.x, y0: p.y, x1: p.x + m.w, y1: p.y + m.h });
+    items.push({ m, p, ox, oy, orad, alpha, kind });
+  };
+  for (const e of S.enemies) if (e.bubOn > 0 && (!e.hidden || e.revealed > 0)) consider(e, e.say[0], e.x, e.y, e.r + 6, clamp(e.bubOn * 1.5, 0, 1), "worry");
+  for (const b of S.bubbles) consider(b, "💛 " + b.text, b.ox, b.oy, 12, clamp(b.l / 0.8, 0, 1) * clamp((b.m - b.l) * 2.5 + 0.2, 0, 1), "happy");
+  // the thin lines first, so every thought sits on top of them
+  for (const it of items) {
+    const { m, p } = it, qx = clamp(it.ox, p.x, p.x + m.w), qy = clamp(it.oy, p.y, p.y + m.h), dx = it.ox - qx, dy = it.oy - qy, L = Math.hypot(dx, dy);
+    if (L < it.orad + 10) continue;
+    const ex = it.ox - (dx / L) * it.orad, ey = it.oy - (dy / L) * it.orad, mx = (qx + ex) / 2 - (dy / L) * Math.min(26, L * 0.18), my = (qy + ey) / 2 + (dx / L) * Math.min(26, L * 0.18);
+    const col = it.kind === "happy" ? "rgba(255,206,140," : "rgba(214,204,236,";
+    ctx.save(); ctx.globalAlpha = it.alpha; ctx.lineCap = "round"; ctx.strokeStyle = col + ".95)"; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(qx, qy); ctx.quadraticCurveTo(mx, my, ex, ey); ctx.stroke();
+    ctx.fillStyle = col + "1)"; ctx.beginPath(); ctx.arc(ex, ey, 4.5, 0, TAU); ctx.fill(); ctx.restore();
+  }
+  for (const it of items) {
+    const { m, p } = it, happy = it.kind === "happy";
+    ctx.save(); ctx.globalAlpha = it.alpha;
+    ctx.fillStyle = happy ? "rgba(255,238,208,.97)" : "rgba(228,220,242,.95)"; ctx.strokeStyle = happy ? "rgba(255,206,140,1)" : "rgba(160,146,198,1)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.roundRect(p.x, p.y, m.w, m.h, 16); ctx.fill(); ctx.stroke();
+    ctx.font = `700 ${happy ? 21 : 22}px ${FONT}`; ctx.fillStyle = happy ? "#4a3220" : "#3b3354"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    m.lines.forEach((l, i) => ctx.fillText(l, p.x + m.w / 2, p.y + 28 + i * 28)); ctx.restore();
+  }
 }
 
 export function render(ctx, cv, scale) {
@@ -75,13 +140,17 @@ export function render(ctx, cv, scale) {
   for (const r of S.rings) { const k = clamp(r.l / r.m, 0, 1); ctx.globalAlpha = k * 0.55; ctx.strokeStyle = r.c; ctx.lineWidth = r.w * k + 0.5; ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, TAU); ctx.stroke(); }
   ctx.globalAlpha = 1;
   // thoughts: the worried one, then the kinder one
-  for (const e of S.enemies) if (e.bubOn > 0 && (!e.hidden || e.revealed > 0)) bubble(ctx, e.x, e.y - e.r - 14, e.say[0], "rgba(226,218,238,.9)", "#3b3354", clamp(Math.min(e.bubOn, 4.5 - (4.5 - e.bubOn)) * 1.2, 0, 1) * clamp(e.bubOn * 1.5, 0, 1));
-  for (const b of S.bubbles) bubble(ctx, b.x, b.y, "💛 " + b.text, "rgba(255,236,204,.97)", "#4a3220", clamp(b.l / 0.8, 0, 1) * clamp((b.m - b.l) * 2.5 + 0.2, 0, 1), true);
+  drawThoughts(ctx, now);
   for (const p of S.pops) { const k = clamp(p.l / p.m, 0, 1); ctx.globalAlpha = Math.min(1, k * 2); text(ctx, p.t, p.x, p.y - (1 - k) * 26, Math.round(p.s * 1.4), p.c, "center"); } ctx.globalAlpha = 1;
   // stars that float up into the counter
   for (const f of S.flyers) { const k = 1 - f.l / f.m, x = f.x + (30 - f.x) * k * k, y = f.y + (36 - f.y) * k * k; ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1 - k * 0.5; ctx.drawImage(glow("#ffd7a0"), x - 16, y - 16, 32, 32); ctx.globalCompositeOperation = "source-over"; } ctx.globalAlpha = 1;
 
   drawHud(ctx, L);
+  if (st === "win" && S.winDelay > 0) {                                // all the worries are gone
+    const k = clamp(1 - S.winDelay / 3, 0, 1), a = Math.min(1, k * 2.2), g = ctx.createRadialGradient(W / 2, H * 0.45, 20, W / 2, H * 0.45, H * 0.6);
+    g.addColorStop(0, `rgba(255,226,170,${0.34 * a})`); g.addColorStop(1, "rgba(255,226,170,0)"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = a; text(ctx, "The garden is clear", W / 2, H * 0.42, 42, "#fff3d6", "center", 800); text(ctx, "Every worry is gone.", W / 2, H * 0.42 + 44, 26, "#f2d37c", "center", 700); ctx.globalAlpha = 1;
+  }
   // soft edges
   const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.4, W / 2, H / 2, H * 0.78); vg.addColorStop(0, "rgba(10,8,30,0)"); vg.addColorStop(1, "rgba(10,8,30,.35)"); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
   if (st === "intro") { const a = clamp(Math.min(3.6 - S.introT, S.introT) * 1.2, 0, 1); ctx.globalAlpha = a; text(ctx, `Level ${S.level + 1}`, W / 2, H * 0.34, 34, "#e3d9f5", "center", 700); text(ctx, L.name, W / 2, H * 0.34 + 56, 50, INK, "center", 800); text(ctx, L.tag, W / 2, H * 0.34 + 98, 22, "#e3d9f5", "center", 600); if (L.boss != null) text(ctx, "A big worry waits at the end", W / 2, H * 0.34 + 136, 20, "#f0c0b0", "center", 700); ctx.globalAlpha = 1; }

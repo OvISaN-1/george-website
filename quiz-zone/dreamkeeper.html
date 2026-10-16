@@ -34,16 +34,18 @@
   .chip-new{font-family:'Rajdhani',sans-serif;font-size:12px;letter-spacing:.12em;padding:3px 9px;border-radius:999px;background:linear-gradient(90deg,#b9a6e8,var(--gold));color:#1a1236;}
   .back{color:var(--ink);opacity:.8;text-decoration:none;font-size:14px;padding:10px 6px;} .back:hover{opacity:1;}
 
-  .dk-stage{position:relative;width:min(100%,430px);width:min(100%,calc((100dvh - 140px) * .6667));min-width:280px;aspect-ratio:2/3;border-radius:22px;overflow:hidden;background:#14112e;
+  .dk-stage{position:relative;width:min(100%,430px);width:min(100%,calc((100dvh - 300px) * .75));min-width:280px;display:flex;flex-direction:column;border-radius:22px;overflow:hidden;background:#14112e;
     box-shadow:0 0 0 1px rgba(255,255,255,.08),0 0 50px rgba(150,120,220,.16),0 24px 60px rgba(0,0,0,.5);touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;transition:filter 3s ease;}
-  .dk-stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;}
+  .dk-view{position:relative;flex:none;width:100%;aspect-ratio:3/4;}
+  .dk-view canvas{position:absolute;inset:0;width:100%;height:100%;display:block;}
+  .dk-dock{position:relative;flex:none;height:162px;background:linear-gradient(180deg,rgba(26,20,60,.96),rgba(18,14,44,.98));border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;justify-content:center;}
   .dk-btns{position:absolute;top:6px;right:6px;display:flex;gap:5px;z-index:4;}
   .dk-ib{width:40px;min-width:40px;padding:0;height:40px;white-space:nowrap;border-radius:13px;background:rgba(24,18,56,.6);border:1px solid rgba(255,255,255,.14);font-size:17px;backdrop-filter:blur(4px);}
   #btn-restart-top[data-sure="1"]{width:auto;padding:0 10px;font-size:13px;background:rgba(232,176,150,.45);}
   .dk-ib:hover,.dk-ib:focus-visible{background:rgba(150,120,220,.4);outline:none;}
   .dk-ib[aria-pressed="true"]{background:rgba(168,214,196,.35);}
 
-  .dk-tray{position:absolute;left:0;right:0;bottom:0;height:auto;z-index:3;padding:4px 8px 6px;background:linear-gradient(180deg,rgba(20,16,48,.0),rgba(20,16,48,.92) 22%);display:flex;flex-direction:column;gap:4px;justify-content:flex-end;}
+  .dk-tray{position:static;z-index:3;padding:6px 8px 8px;display:flex;flex-direction:column;gap:4px;justify-content:flex-end;}
   .dk-trow{display:flex;gap:6px;align-items:center;justify-content:space-between;min-height:38px;}
   .dk-go{background:linear-gradient(90deg,#b9a6e8,#f2d37c);color:#1a1236;border-radius:999px;padding:0 16px;min-height:38px;font-size:15.5px;}
   .dk-go[disabled]{opacity:.45;}
@@ -58,8 +60,8 @@
   .tw[aria-pressed="true"]{background:rgba(242,211,124,.28);border-color:var(--gold);}
   .tw[disabled]{opacity:.4;}
   .tw:focus-visible,.dk-go:focus-visible,.dk-mini:focus-visible,.dk-pill:focus-visible,.dk-big:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
-  .dk-panel{position:absolute;left:0;right:0;bottom:0;height:auto;z-index:4;padding:8px 10px 10px;background:linear-gradient(180deg,rgba(20,16,48,.0),rgba(20,16,48,.95) 18%);display:none;}
-  .dk-panel.on{display:block;} .dk-panel h3{font-size:23px;} .dk-panel p{margin:2px 0 10px;font-size:15px;color:#e3d9f5;line-height:1.4;}
+  .dk-panel{position:static;z-index:4;padding:8px 12px 10px;display:none;}
+  .dk-panel.on{display:block;} .dk-panel h3{font-size:23px;} .dk-panel p{margin:2px 0 8px;font-size:14.5px;color:#e3d9f5;line-height:1.4;}
   .dk-prow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
   .dk-pbtn{min-height:46px;border-radius:13px;padding:0 15px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);font-size:15.5px;}
   .dk-pbtn.up{background:linear-gradient(90deg,#b9a6e8,#f2d37c);color:#1a1236;border:0;} .dk-pbtn[disabled]{opacity:.45;}
@@ -92,7 +94,10 @@
   .dk-orb.in{transform:scale(1.9);} .dk-orb.hold{transition:none;}
   .dk-phase{font-size:22px;min-height:2.6em;color:var(--ink);}
   .dk-goods{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:8px 0;} .dk-good{min-height:46px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);font-size:16px;} .dk-good[aria-pressed="true"]{background:rgba(242,211,124,.3);border-color:var(--gold);}
-  .dk-meet{position:absolute;left:10px;right:10px;top:104px;bottom:auto;z-index:5;padding:10px 14px;border-radius:16px;background:rgba(40,32,88,.95);border:1px solid rgba(185,166,232,.45);font-size:16px;line-height:1.4;animation:dkIn .8s ease both;}
+  .dk-aff{margin:10px 0 4px;padding:14px 14px 10px;border-radius:18px;background:linear-gradient(160deg,rgba(255,226,170,.16),rgba(185,166,232,.14));border:1px solid rgba(255,226,170,.35);}
+  .dk-afftext{font:700 clamp(23px,6.3vw,28px)/1.25 'Rajdhani',sans-serif;color:#fff3d6;margin:4px 0 10px;text-shadow:0 0 18px rgba(255,226,170,.3);}
+  .dk-proof{list-style:none;padding:0;margin:0;display:grid;gap:5px;text-align:left;} .dk-proof li{display:flex;gap:8px;font-size:15.5px;line-height:1.4;color:#e8e0f6;} .dk-proof li i{font-style:normal;}
+  .dk-meet{position:absolute;left:10px;right:10px;top:104px;bottom:auto;z-index:5;pointer-events:none;padding:8px 12px;border-radius:16px;background:rgba(40,32,88,.95);border:1px solid rgba(185,166,232,.45);font-size:16px;line-height:1.4;animation:dkIn .8s ease both;}
   .dk-meet b{color:var(--gold);} .dk-meet small{color:#e3d9f5;display:block;margin-top:4px;font-size:15px;}
   .dk-toasts{position:absolute;left:8px;right:8px;top:92px;z-index:5;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;}
   .dk-toast{display:flex;gap:8px;align-items:center;padding:6px 12px 6px 8px;border-radius:12px;background:rgba(185,166,232,.9);color:#1a1236;font-weight:800;font-size:15px;animation:dkToast 3.6s ease both;}
@@ -137,22 +142,26 @@
   </div>
 
   <div class="dk-stage" id="stage">
-    <canvas id="cv" aria-label="Dreamkeeper garden"></canvas>
-    <div class="dk-btns" id="dk-btns" hidden>
-      <button class="dk-ib" id="btn-restart-top" type="button" aria-label="Restart level (tap twice)" title="Restart level (tap twice)">↻</button>
-      <button class="dk-ib" id="btn-speed" type="button" aria-label="Speed" title="Speed">1×</button>
-      <button class="dk-ib" id="btn-breathe" type="button" aria-label="Breathing break" title="Breathe">🌬️</button>
-      <button class="dk-ib" id="btn-snd" type="button" aria-label="Sound on or off" title="Sound">🔊</button>
-      <button class="dk-ib" id="btn-pause" type="button" aria-label="Pause" title="Pause">⏸︎</button>
+    <div class="dk-view" id="view">
+      <canvas id="cv" aria-label="Dreamkeeper garden"></canvas>
+      <div class="dk-btns" id="dk-btns" hidden>
+        <button class="dk-ib" id="btn-restart-top" type="button" aria-label="Restart level (tap twice)" title="Restart level (tap twice)">↻</button>
+        <button class="dk-ib" id="btn-speed" type="button" aria-label="Speed" title="Speed">1×</button>
+        <button class="dk-ib" id="btn-breathe" type="button" aria-label="Breathing break" title="Breathe">🌬️</button>
+        <button class="dk-ib" id="btn-snd" type="button" aria-label="Sound on or off" title="Sound">🔊</button>
+        <button class="dk-ib" id="btn-pause" type="button" aria-label="Pause" title="Pause">⏸︎</button>
+      </div>
+      <div class="dk-toasts" id="toasts" aria-live="polite"></div>
+      <div class="dk-meet" id="meet" hidden></div>
     </div>
-    <div class="dk-toasts" id="toasts" aria-live="polite"></div>
-    <div class="dk-meet" id="meet" hidden></div>
 
-    <div class="dk-tray" id="tray" hidden>
-      <div class="dk-trow"><p class="dk-hint" id="hint">Pick a helper, then tap a glowing tile.</p><button class="dk-mini" id="btn-auto" type="button" aria-pressed="true">Auto waves</button><button class="dk-go" id="btn-go" type="button">▶ Start wave</button></div>
-      <div class="dk-tws" id="tws"></div>
+    <div class="dk-dock" id="dock">
+      <div class="dk-tray" id="tray" hidden>
+        <div class="dk-trow"><p class="dk-hint" id="hint">Pick a helper, then tap a glowing tile.</p><button class="dk-mini" id="btn-auto" type="button" aria-pressed="true">Auto waves</button><button class="dk-go" id="btn-go" type="button">▶ Start wave</button></div>
+        <div class="dk-tws" id="tws"></div>
+      </div>
+      <div class="dk-panel" id="panel"></div>
     </div>
-    <div class="dk-panel" id="panel"></div>
 
     <section class="dk-screen" id="scr-start">
       <div class="dk-card">
@@ -180,7 +189,11 @@
 
     <section class="dk-screen" id="scr-win" hidden><div class="dk-card">
       <p class="dk-kick" id="win-kick">Level complete</p><h2 class="dk-big2" id="win-title">A quiet garden</h2><div class="dk-flowers" id="win-flowers" aria-label="Calm rating"></div>
-      <p class="dk-lede" id="win-text"></p><ul class="dk-list" id="win-cards"></ul><p class="dk-note" id="win-tip"></p>
+      <p class="dk-lede" id="win-text"></p>
+      <div class="dk-aff" id="win-aff"><p class="dk-kick">Something kind to remember</p><p class="dk-afftext" id="aff-text"></p><ul class="dk-proof" id="aff-proof"></ul><p class="dk-note" style="margin-top:6px">Take a slow breath and say it quietly to yourself.</p></div>
+      <div id="win-happy-wrap" hidden><h3 class="dk-h3">Happy thoughts you made</h3><ul class="dk-list" id="win-happy"></ul></div>
+      <h3 class="dk-h3">What matters to you?</h3><div class="dk-goods" id="values"></div><p class="dk-note" id="value-line"></p>
+      <ul class="dk-list" id="win-cards"></ul><p class="dk-note" id="win-tip"></p>
       <button class="dk-big" id="btn-next" type="button">Next level</button>
       <div class="dk-row"><button class="dk-pill" id="btn-win-breathe" type="button">🌬️ Breathe</button><button class="dk-pill" id="btn-win-again" type="button">↻ Play again</button><button class="dk-pill" id="btn-win-night" type="button">🌙 Goodnight</button><button class="dk-pill" id="btn-win-menu" type="button">Menu</button></div>
     </div></section>
@@ -199,6 +212,7 @@
     <section class="dk-screen" id="scr-bye" hidden><div class="dk-card">
       <p class="dk-kick">Goodnight, George</p><h2 class="dk-big2">Time to rest your eyes</h2>
       <p class="dk-lede" id="bye-text">The garden is quiet now. Put the screen away, let your eyes rest, and let your brain wind down.</p>
+      <p class="dk-afftext" id="bye-aff" style="font-size:24px;margin:2px 0 6px"></p><p class="dk-note" style="margin-top:0">A thought to sleep on.</p>
       <h3 class="dk-h3">Three good things from today</h3><div class="dk-goods" id="goods"></div><p class="dk-note" id="good-msg">Tap three that fit your day.</p>
       <div class="dk-row"><button class="dk-pill" id="btn-bye-breathe" type="button">🌬️ Breathe first</button><button class="dk-pill" id="btn-bye-more" type="button">5 more minutes</button></div>
       <button class="dk-big" id="btn-bye-done" type="button">Goodnight</button>
@@ -214,8 +228,9 @@
     <h2 id="par-h">For parents: why it works this way</h2>
     <p class="sub">Dreamkeeper is a game, not a treatment, and it is not a replacement for talking. These are the ideas behind it.</p>
     <ul class="dk-list" style="text-align:left">
-      <li><i>🧠</i><span><b>Worries are named, then answered</b><small>Each enemy is a common "thinking trap" kids' CBT resources use (Fortune Teller, Mind Reader, All-or-Nothing, All My Fault and so on, see <a href="https://www.choosingtherapy.com/therapy-worksheets/cognitive-distortions-worksheet-for-kids/" target="_blank" rel="noopener" style="color:#f2d37c">Choosing Therapy</a> and <a href="https://childmind.org/article/how-to-change-negative-thinking-patterns/" target="_blank" rel="noopener" style="color:#f2d37c">Child Mind Institute</a>). When one becomes a star, a kinder thought replaces it.</small></span></li>
+      <li><i>🧠</i><span><b>Worries are named, then answered</b><small>Each enemy is a common "thinking trap" kids' CBT resources use (Fortune Teller, Mind Reader, All-or-Nothing, All My Fault and so on, see <a href="https://www.choosingtherapy.com/therapy-worksheets/cognitive-distortions-worksheet-for-kids/" target="_blank" rel="noopener" style="color:#f2d37c">Choosing Therapy</a> and <a href="https://childmind.org/article/how-to-change-negative-thinking-patterns/" target="_blank" rel="noopener" style="color:#f2d37c">Child Mind Institute</a>). When one becomes a star, a kinder thought replaces it. There are over 200 different worried thoughts and kinder replies, and they mix so George rarely sees the same one twice. They cover what children this age most often worry about: school and tests, friends and fitting in, nerves in the body, the dark at night, mistakes and being embarrassed (see <a href="https://www.place2be.org.uk/about-us/news-and-blogs/2019/september/secondary-school-transition-it-s-good-to-talk" target="_blank" rel="noopener" style="color:#f2d37c">Place2Be</a> and the <a href="https://www.nemours.org/content/dam/nemours/shared/research/why-kids-worry-survey-summary.pdf" target="_blank" rel="noopener" style="color:#f2d37c">Nemours KidsHealth survey</a>). The kinder replies are honest, not just soothing: they name the feeling, check the facts, and point to a grown-up for bigger things.</small></span></li>
       <li><i>🌬️</i><span><b>Slow breathing</b><small>The breathing break is box breathing (in 4, hold 4, out 4, hold 4), a standard calming exercise (see <a href="https://raisingchildren.net.au/articles/pip_bedtime_worries.html" target="_blank" rel="noopener" style="color:#f2d37c">Raising Children Network</a>).</small></span></li>
+      <li><i>🌟</i><span><b>Kind words at the end of each level</b><small>When a level is clear, George sees what he really did (for example, how many worries he turned into happy thoughts) next to one kind thought. The praise is about effort and coping, not "you're the best", because big claims can backfire when a child does not quite believe them (<a href="https://www.researchgate.net/publication/26263760_Positive_Self-Statements_Power_for_Some_Peril_for_Others" target="_blank" rel="noopener" style="color:#f2d37c">Wood and others, 2009</a>) and praise for effort supports motivation better than praise for cleverness (<a href="https://bingschool.stanford.edu/news/praising-intelligence-costs-childrens-self-esteem-and-motivation" target="_blank" rel="noopener" style="color:#f2d37c">Mueller and Dweck</a>). He can also tap what matters to him, a self-affirmation habit. It is one tap and is only saved on his device and account.</small></span></li>
       <li><i>💛</i><span><b>Three good things</b><small>Ending the night on something positive is a low-risk routine. The research behind it is mostly with adults, so treat it as a nice habit, not a cure (see <a href="https://www.psychologytoday.com/us/blog/confessions-of-a-techie/201409/three-bedtime-reflection-routines-that-will-help-you-sleep" target="_blank" rel="noopener" style="color:#f2d37c">Psychology Today</a>). It uses pick-lists only, so nothing personal is typed or saved.</small></span></li>
       <li><i>📵</i><span><b>Screens and sleep</b><small>Health bodies advise screen-free time before bed (see <a href="https://www.nhs.uk/live-well/sleep-and-tiredness/healthy-sleep-tips-for-children/" target="_blank" rel="noopener" style="color:#f2d37c">NHS</a> and <a href="https://www.thensf.org/effects-of-screen-use-on-childrens-sleep/" target="_blank" rel="noopener" style="color:#f2d37c">National Sleep Foundation</a>). So this game is slow, dim and warm, never flashes, has no scores or timers to chase, and ends itself with the sleep timer. It works best earlier in the wind-down, sitting up, not in bed.</small></span></li>
       <li><i>🛏️</i><span><b>Worry talks belong in the daytime</b><small>Talking through bigger worries is best done earlier in the day, not in bed (see <a href="https://www.connecticutchildrens.org/growing-healthy/3-bedtime-challenges-how-to-solve-them" target="_blank" rel="noopener" style="color:#f2d37c">Connecticut Children's</a>). If a worry is big or keeps coming back, please talk to your child, and to your GP or school if it's affecting sleep or school. Childline (0800 1111, free, UK) is there for children at any time.</small></span></li>

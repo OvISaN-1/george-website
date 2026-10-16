@@ -5,6 +5,7 @@ import { buildSprites, drawGarden } from "./sprites.js";
 import * as game from "./game.js";
 import { render } from "./render.js";
 import { audio, music } from "./audio.js";
+import { VALUES, SLEEP as SLEEP_THOUGHTS, proofLines, pickAffirmation } from "./affirmations.js";
 
 const $ = (id) => document.getElementById(id);
 const cv = $("cv"), ctx = cv.getContext("2d"), stage = $("stage");
@@ -17,7 +18,7 @@ audio.setSound(SAVE.opt.sound); audio.setMusic(SAVE.opt.music); audio.setCricket
 S.speed = SAVE.opt.speed === 2 ? 2 : 1;
 
 function resize() {
-  const r = stage.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+  const r = $("view").getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
   cv.width = Math.max(2, Math.round(r.width * dpr)); cv.height = Math.max(2, Math.round(r.height * dpr)); scale = cv.width / W; S.H = cv.height / scale;
   if (S.pts.length) S.garden = drawGarden(LEVELS[S.level], S.H, pathFor(S.level), S.level);
 }
@@ -73,7 +74,7 @@ function setUi() {
     lastPanel = pk; const p = $("panel");
     if (!t) p.classList.remove("on"); else {
       const def = TOWER[t.id], max = t.lv >= 2, c = max ? 0 : def.cost[t.lv + 1];
-      p.innerHTML = `<h3>${def.e} ${def.name} · level ${t.lv + 1}</h3><p>${def.desc}${max ? " Fully grown ✨" : ""}</p><div class="dk-prow">${max ? "" : `<button class="dk-pbtn up" id="pn-up" type="button" ${S.stars < c ? "disabled" : ""}>Upgrade: ${def.up[t.lv]} · ⭐${c}</button>`}<button class="dk-pbtn" id="pn-sell" type="button">Put away · +⭐${Math.floor(t.invested * 0.7)}</button><button class="dk-pbtn" id="pn-done" type="button">Done</button></div>`;
+      p.innerHTML = `<h3>${def.e} ${def.name} · level ${t.lv + 1}</h3><p>${def.desc.split(". ")[0].replace(/\.$/, "")}.${max ? " Fully grown ✨" : ""}</p><div class="dk-prow">${max ? "" : `<button class="dk-pbtn up" id="pn-up" type="button" ${S.stars < c ? "disabled" : ""}>Upgrade: ${def.up[t.lv]} · ⭐${c}</button>`}<button class="dk-pbtn" id="pn-sell" type="button">Put away · +⭐${Math.floor(t.invested * 0.7)}</button><button class="dk-pbtn" id="pn-done" type="button">Done</button></div>`;
       p.classList.add("on");
     }
   }
@@ -94,7 +95,7 @@ cv.addEventListener("pointermove", (e) => { if (e.pointerType === "mouse" && S.a
 cv.addEventListener("pointerleave", () => { S.tileHover = null; });
 cv.addEventListener("pointerdown", (e) => {
   audio.unlock(); if (S.state !== "play" && S.state !== "intro") return; const [c, r] = tileAt(e); if (r < 0 || r >= ROWS || c < 0 || c >= COLS) { S.sel = null; return; }
-  if (S.armed) { if (game.canBuild(c, r) && S.stars < TOWER[S.armed].cost[0]) { popup(c * TILE + TILE / 2, GY + r * TILE + 20, `Need ⭐${TOWER[S.armed].cost[0]}`, "#e8b4a0", 15); return; } const t = game.placeTower(c, r, S.armed); if (t) { S.armed = null; S.tileHover = null; if (game.towerAt) { /* placed */ } } else if (game.towerAt(c, r)) { S.sel = game.towerAt(c, r); S.armed = null; } lastTray = ""; lastPanel = ""; return; }
+  if (S.armed) { if (game.canBuild(c, r) && S.stars < TOWER[S.armed].cost[0]) { popup(c * TILE + TILE / 2, GY + r * TILE + 20, `Need ⭐${TOWER[S.armed].cost[0]}`, "#e8b4a0", 15); return; } const t = game.placeTower(c, r, S.armed); if (t) { S.armed = null; S.tileHover = null; if (game.towerAt) { /* placed */ } } else if (game.towerAt(c, r)) { popup(c * TILE + TILE / 2, GY + r * TILE + 22, "Spot taken", "#e8b4a0", 15); } lastTray = ""; lastPanel = ""; return; }
   const t = game.towerAt(c, r); S.sel = t || null; lastPanel = "";
 });
 window.addEventListener("keydown", (e) => {
@@ -215,8 +216,20 @@ S.hooks.win = (info) => {
   $("win-cards").innerHTML = info.cards.map((k) => `<li class="got"><i>🃏</i><span><b>New card: ${CARD[k][0]}</b><small>${CARD[k][2]}</small></span></li>`).join("");
   $("win-tip").textContent = bossLv != null ? BOSS[bossLv].tip : "";
   $("btn-next").hidden = last; $("btn-next").textContent = last ? "" : `Level ${info.level + 2}: ${LEVELS[info.level + 1].name}`;
+  // kind words, backed by what George really did this level
+  $("aff-text").textContent = pickAffirmation(info, SAVE);
+  $("aff-proof").innerHTML = proofLines(info).map((l) => `<li><i>✨</i><span>${l}</span></li>`).join("");
+  $("win-happy-wrap").hidden = !info.happy.length;
+  $("win-happy").innerHTML = info.happy.slice(0, 3).map((t) => `<li class="got"><i>💛</i><span><b>${t}</b></span></li>`).join("");
+  renderValues(); saveNow();
   renderAch(); show("scr-win");
 };
+/* "What matters to you?": thinking about what you care about is one of the best ways to feel good about yourself */
+function renderValues() {
+  $("values").innerHTML = VALUES.map(([id, label]) => `<button class="dk-good" data-v="${id}" type="button" aria-pressed="${SAVE.value === id}">${label}</button>`).join("");
+  const v = VALUES.find((x) => x[0] === SAVE.value); $("value-line").textContent = v ? v[2] : "Tap one that fits you.";
+}
+$("values").addEventListener("click", (e) => { const b = e.target.closest(".dk-good"); if (!b) return; SAVE.value = SAVE.value === b.dataset.v ? "" : b.dataset.v; saveNow(); audio.play("click"); renderValues(); });
 $("btn-next").onclick = () => { hideAll(); selLevel = S.level + 1; game.beginLevel(S.level + 1); lastTray = ""; lastGo = ""; };
 $("btn-win-night").onclick = () => { $("scr-win").hidden = true; S.sleepOn = true; goodnight(); };
 $("btn-win-menu").onclick = () => { selLevel = Math.min(S.level + (S.state === "win" ? 1 : 0), 9, SAVE.maxLevel - 1); toMenu(); };
@@ -248,6 +261,7 @@ function sleepTick(dt) {
 function goodnight() {
   sleepDone = true; S.paused = true; goodPicked = []; $("good-msg").textContent = "Tap three that fit your day."; $("btn-bye-more").hidden = sleepExtended;
   $("goods").innerHTML = GOOD.map((g, i) => `<button class="dk-good" data-i="${i}" type="button" aria-pressed="false">${g}</button>`).join("");
+  $("bye-aff").textContent = SLEEP_THOUGHTS[Math.floor(Math.random() * SLEEP_THOUGHTS.length)];
   audio.play("bye"); show("scr-bye");
 }
 $("goods").addEventListener("click", (e) => {

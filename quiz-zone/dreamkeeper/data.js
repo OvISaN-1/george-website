@@ -3,6 +3,8 @@
    The ideas come from common child-friendly CBT habits: naming thinking traps (Fortune Teller, Mind Reader, All-or-Nothing...), swapping them for
    kinder thoughts, slow breathing, noticing good things, and putting worries away for the night. This is a game, not treatment. */
 
+import { SAYS } from "./thoughts.js";
+
 export const W = 600, TILE = 100, COLS = 6, ROWS = 7, GY = 80;      // the garden is a 6 x 7 grid of 100-unit tiles
 
 /* ---------------- the worries ----------------
@@ -43,6 +45,9 @@ export const BOSS = [
   { id: "cloud",  name: "The Big Worry Cloud",   hp: 2300, spd: 26, armor: 1, reward: 200, leak: 30, col: "#a79fc9", r: 48, aura: 150, spawn: "mix",
     says: [["Everything feels too much.", "I can take it one small thing at a time. I'm not alone."]], tip: "When everything feels big, breathe slowly, name one thing, and tell someone you trust." },
 ];
+
+/* every worry and big worry gets its full bank of thoughts (see thoughts.js) */
+for (const k of Object.keys(SAYS)) { const w = WORRY[k] || BOSS.find((b) => b.id === k); if (w) w.says = SAYS[k]; }
 
 /* ---------------- the towers: friendly night-garden helpers ----------------
    Each has three levels. cost = [build, upgrade to 2, upgrade to 3]. */
