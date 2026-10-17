@@ -569,11 +569,11 @@
       cards.forEach((c) => { c.hidden = !(f === "all" || c.dataset.cat.split(" ").includes(f)); });
       groups.forEach((g) => { g.hidden = !g.querySelector("a.game-card:not([hidden])"); });
       none.hidden = cards.some((c) => !c.hidden);
-      try { localStorage.setItem("gz_hub_filter", f); } catch (e) {}
     }
     chips.forEach((c) => c.addEventListener("click", () => apply(c.dataset.f)));
-    let saved = "all"; try { saved = localStorage.getItem("gz_hub_filter") || "all"; } catch (e) {}
-    apply(chips.some((c) => c.dataset.f === saved) ? saved : "all");
+    // always start on All: a filter that was remembered from last time used to hide games
+    try { localStorage.removeItem("gz_hub_filter"); } catch (e) {}
+    apply("all");
     // Jump back in: the game he played last
     const last = (window.GZ && GZ.load().lastGame) || "";
     const jump = document.getElementById("gz-jump");
