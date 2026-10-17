@@ -248,6 +248,9 @@
       <path d="M0 -3.5 L3.3 -1 L2 3 L-2 3 L-3.3 -1 Z" fill="${b.patch}"/>
       <path d="M0 -3.5 L0 -8.5 M3.3 -1 L8 -2.8 M2 3 L5 7 M-2 3 L-5 7 M-3.3 -1 L-8 -2.8" stroke="${b.patch}" stroke-width="1"/>`;
   }
+  // Once the ball is in the net it is drawn behind the keeper (so a diving keeper covers it); every new kick puts it back in front.
+  function ballBehindKeeper() { if (ballG.nextSibling !== keeperG) keeperG.parentNode.insertBefore(ballG, keeperG); }
+  function ballInFront() { if (strikerG.previousSibling !== ballG) strikerG.parentNode.insertBefore(ballG, strikerG); }
   function setBall(x, y, s, spin) { PitchFX.trail(x, y, s); ballG.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${s.toFixed(3)}) rotate(${(spin || 0).toFixed(0)})`); }
   function setShadow(x, y, s, o) {
     shadowEl.setAttribute("cx", x.toFixed(1)); shadowEl.setAttribute("cy", y.toFixed(1));
@@ -306,7 +309,7 @@
     setKickLeg(0);
     ballG.innerHTML = ballMarkup();
     ballG.style.opacity = 1;
-    setBall(BX, BY, 1); setShadow(BX, BY + 7, 1);
+    ballInFront(); setBall(BX, BY, 1); setShadow(BX, BY + 7, 1);
     PitchFX.reset(); PitchFX.spot(BX, BY + 1);
     trailEl.setAttribute("d", ""); trailEl.style.opacity = 0;
     aimEl.setAttribute("opacity", 0);
@@ -646,11 +649,12 @@
       const inward = shot.result === "post-in";
       const dirX = shot.tx < L.gx ? (inward ? 1 : -1) : (inward ? -1 : 1);
       await tween(420 / speed, (t) => setBall(end.x + dirX * 26 * L.k * t, end.y + (inward ? 14 : 30) * L.k * t, end.s, 0));
-      if (inward) rippleNet();
+      if (inward) { ballBehindKeeper(); rippleNet(); }
     } else if (shot.result === "over" || shot.result === "wide") {
       await tween(350 / speed, (t) => { setBall(end.x + (end.x - BX) * 0.15 * t, end.y - 40 * t, end.s * (1 - 0.3 * t), 0); ballG.style.opacity = 1 - t; });
     } else {
       PitchFX.hit(end.x, end.y, "goal");
+      ballBehindKeeper();
       rippleNet();
       // The ball drops down inside the net and bounces once.
       await tween(480 / speed, (t) => {
@@ -748,7 +752,7 @@
     stage.classList.add("replaying");
     // Reset the scene without re-rolling anything.
     const shot = S.lastShot, L = shot.L;
-    setBall(BX, BY, 1); ballG.style.opacity = 1; setShadow(BX, BY + 7, 1);
+    ballInFront(); setBall(BX, BY, 1); ballG.style.opacity = 1; setShadow(BX, BY + 7, 1);
     setKeeper(L.keeperX, L.gy, L.k * 1.05, 0, 0, 0);
     setStriker(STRIKER_HOME.x, STRIKER_HOME.y, STRIKER_HOME.s);
     PitchFX.reset(); PitchFX.shot(true);
