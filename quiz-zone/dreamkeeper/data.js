@@ -100,20 +100,23 @@ export const LEVELS = [
   { name: "The Sleepy Sky",     tag: "One last big worry. Then it's time to rest.",          sky: ["#100f30", "#221e52"], ground: "#262658", lane: "#6a6288", glow: "#f2d37c", pool: ["wonder", "mind", "allnone", "shadow", "gloom", "heap", "replay"], waves: 9, boss: 4, stars0: 330 },
 ];
 
+/* levels are twice as long as they first were: LEN times as many waves, with the strength and the stars spread over them so it is longer, not harder */
+export const LEN = 2;
+
 /* a wave is a list of groups: [type, how many, seconds between them, seconds before the first] */
 export function makeWaves(L) {
-  const lv = LEVELS[L], out = [], n = lv.waves;
+  const lv = LEVELS[L], out = [], n = lv.waves * LEN;
   let seed = L * 977 + 13; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   for (let w = 0; w < n; w++) {
-    const groups = [], k = 1 + (w >= 2 ? 1 : 0) + (w >= 5 && L >= 4 ? 1 : 0);
-    const size = Math.round(4 + w * 1.1 + L * 0.5);
+    const u = w / LEN, groups = [], k = 1 + (u >= 2 ? 1 : 0) + (u >= 5 && L >= 4 ? 1 : 0);
+    const size = Math.round(4 + u * 1.1 + L * 0.5);
     for (let g = 0; g < k; g++) {
       const t = lv.pool[Math.floor(rnd() * lv.pool.length)], big = WORRY[t].hp >= 60;
       const cnt = Math.max(2, Math.round((size / k) * (big ? 0.35 : 1) * (t === "hurry" ? 1.2 : 1)));
       groups.push([t, cnt, big ? 4.2 : t === "hurry" ? 1.8 : 2.6, g * 6]);
     }
     // each level introduces its newest worry in wave 1 so there is something to learn
-    if (w === 1) lv.pool.slice(-1).forEach((t) => groups.push([t, 2, 4, 3]));
+    if (w === LEN) lv.pool.slice(-1).forEach((t) => groups.push([t, 2, 4, 3]));
     out.push(groups);
   }
   if (lv.boss != null) out[n - 1] = [["__boss", 1, 1, 2], ...(L >= 3 ? [[lv.pool[0], 4, 3, 10]] : [])];
