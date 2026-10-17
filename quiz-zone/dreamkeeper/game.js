@@ -1,6 +1,6 @@
 /* Dreamkeeper: the rules. Worries drift along a path towards the Sleep Nest; helper towers turn them into stars. There is no game over:
    if the calm runs out, the garden takes a breather and the wave is tried again with the towers kept. */
-import { WORRY, BOSS, TOWER, TOWER_IDS, LEVELS, TILE, COLS, ROWS, GY, pathFor, makeWaves, CARD_ORDER } from "./data.js";
+import { WORRY, BOSS, TOWER, TOWER_IDS, LEVELS, TILE, COLS, ROWS, GY, pathFor, makeWaves, CARD_ORDER, LEN } from "./data.js";
 import { S, SAVE, saveNow, rand, clamp, lerp, dist, TAU, unlock, cardCount, spark, stardust, ring, popup, markToday } from "./core.js";
 import { audio } from "./audio.js";
 
@@ -45,7 +45,7 @@ export const WAVE_GAP = 30;
 /* Stars for starting the next wave early: worth the most the moment the last wave is calm, shrinking to nothing over the 30 second gap. */
 export function earlyBonus() {
   if (S.waveActive || S.state !== "play" || S.wave + 1 >= S.waves.length) return 0;
-  return Math.max(0, Math.round((12 + S.level * 4) * clamp(S.nextIn / WAVE_GAP, 0, 1)));
+  return Math.max(0, Math.round(((12 + S.level * 4) / LEN) * clamp(S.nextIn / WAVE_GAP, 0, 1)));
 }
 export function startWave(early) {
   if (S.waveActive || S.wave + 1 >= S.waves.length || !["play"].includes(S.state)) return false;
@@ -77,7 +77,7 @@ function pickSay(def) {
 
 function spawn(type) {
   const boss = type === "__boss", def = boss ? BOSS[LEVELS[S.level].boss] : WORRY[type], L = S.level, w = Math.max(0, S.wave);
-  const mul = 1 + 0.11 * L + 0.03 * w, hp = Math.round(def.hp * (boss ? 1 + 0.035 * L : mul));
+  const mul = 1 + 0.11 * L + 0.03 * w / LEN, hp = Math.round(def.hp * (boss ? 1 + 0.035 * L : mul));
   const e = { id: ++S.uid, type: boss ? def.id : type, boss, d: 0, x: 0, y: 0, hp, maxhp: hp, armor: def.armor, spd: def.spd, r: def.r, col: def.col, slow: null, lit: null, calm: null, flash: 0, dead: false,
     say: null, bub: rand(1, 8), bubOn: 0, hidden: !!def.hidden, revealed: 0, aura: def.aura || 0, leak: Math.max(2, Math.round(def.leak * (boss ? 1 : 0.7))), reward: Math.round(def.reward * (1 + 0.1 * L)), again: false, split: false, spawnT: rand(5, 8), wob: rand(0, TAU), def };
   S.enemies.push(e); if (boss) { S.bossRef = e; audio.play("boss"); S.hooks.boss && S.hooks.boss(e); }
@@ -276,7 +276,7 @@ export function update(rawDt) {
   if (!S.waveActive && S.wave + 1 < S.waves.length) { S.nextIn = Math.max(0, S.nextIn - dt); if (SAVE.opt.auto && S.nextIn <= 0) startWave(); }
   if (S.waveActive) {
     S.waveT += dt; while (S.queue.length && S.queue[0].at <= S.waveT) spawn(S.queue.shift().type);
-    if (!S.queue.length && !S.enemies.length) { S.waveActive = false; S.stars += 16 + S.level * 5; popup(S.nestPos.x, S.nestPos.y - 40, "Wave calm", "#b7e8d8", 16); if (S.wave + 1 >= S.waves.length) { levelComplete(); return; } S.nextIn = WAVE_GAP; }
+    if (!S.queue.length && !S.enemies.length) { S.waveActive = false; S.stars += Math.round((16 + S.level * 5) / LEN); popup(S.nestPos.x, S.nestPos.y - 40, "Wave calm", "#b7e8d8", 16); if (S.wave + 1 >= S.waves.length) { levelComplete(); return; } S.nextIn = WAVE_GAP; }
   }
   updateEnemies(dt); updateTowers(dt); updateShots(dt);
   if (S.calm <= 0 && S.state === "play") { S.state = "breather"; S.breathers++; S.hooks.breather && S.hooks.breather(); }
